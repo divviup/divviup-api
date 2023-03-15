@@ -40,7 +40,8 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 * For more options, execute `cargo run -p migration -- --help` emits this:
 
 <details>
-  <summary>`cargo run -p migration -- --help`</summary>
+  <summary><code>cargo run -p migration -- --help</code></summary>
+  
 ```
 sea-orm-migration 0.11.0
 
@@ -98,7 +99,7 @@ $ cargo run
 
 <details>
     <summary>
-### Optional: cargo-devserver
+<h3>Optional: cargo-devserver</h3>
 </summary>
 For development purposes, you may want to install and use [`cargo devserver`](https://github.com/jbr/cargo-devserver), which binds to the environment's `PORT` and `HOST`, runs the server under a shared FD, recompiles the application in the background on source change and restarts the server on successful compilation.
 </details>
