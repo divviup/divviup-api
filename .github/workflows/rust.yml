@@ -17,17 +17,16 @@ jobs:
     steps:
     - uses: Swatinem/rust-cache@v2.2.1
     - uses: actions/checkout@v3
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        components: rustfmt, clippy
+        override: true
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
     - name: Clippy
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          components: rustfmt, clippy
-          override: true
-      - uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
+      run: cargo clippy
+    - name: Format
+      run: cargo fmt --all -- --check
