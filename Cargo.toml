@@ -27,7 +27,6 @@ trillium-client = { version = "0.3.0", features = ["json"] }
 trillium-compression = "0.1.0"
 trillium-conn-id = "0.2.1"
 trillium-cookies = "0.3.0"
-trillium-forwarding = "0.2.1"
 trillium-http = { version = "0.2.11", features = ["http-compat"] }
 trillium-logger = "0.4.1"
 trillium-redirect = "0.1.0"
