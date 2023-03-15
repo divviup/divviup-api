@@ -15,7 +15,7 @@ pub async fn cors_headers(mut conn: Conn) -> Conn {
     origin.pop();
 
     let conn_origin = conn.headers().get_str(Origin);
-    if conn_origin.as_deref() == Some(&origin) {
+    if conn_origin == Some(&origin) {
         conn.headers_mut().extend([
             (
                 AccessControlAllowMethods,

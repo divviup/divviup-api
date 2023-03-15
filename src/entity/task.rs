@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::{
     entity::{account, membership},
     handler::Error,
@@ -7,6 +5,8 @@ use crate::{
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as BASE64, Engine};
 use sea_orm::{entity::prelude::*, ActiveValue::Set, IntoActiveModel};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+use time::OffsetDateTime;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -21,14 +21,14 @@ pub struct Model {
     pub vdaf: Json,
     pub min_batch_size: i64,
     #[serde(with = "time::serde::iso8601")]
-    pub created_at: TimeDateTimeWithTimeZone,
+    pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::iso8601")]
-    pub updated_at: TimeDateTimeWithTimeZone,
+    pub updated_at: OffsetDateTime,
     pub time_precision_seconds: i32,
     pub report_count: i32,
     pub aggregate_collection_count: i32,
     #[serde(default, with = "time::serde::iso8601::option")]
-    pub expiration: Option<TimeDateTimeWithTimeZone>,
+    pub expiration: Option<OffsetDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -105,19 +105,19 @@ pub struct Histogram {
 
 fn sorted(buckets: &Vec<usize>) -> Result<(), ValidationError> {
     let mut buckets_cloned = buckets.clone();
-    buckets_cloned.sort();
-    if &buckets_cloned != buckets {
-        Err(ValidationError::new("sorted"))
-    } else {
+    buckets_cloned.sort_unstable();
+    if &buckets_cloned == buckets {
         Ok(())
+    } else {
+        Err(ValidationError::new("sorted"))
     }
 }
 
 fn unique(buckets: &Vec<usize>) -> Result<(), ValidationError> {
-    if buckets.iter().collect::<HashSet<_>>().len() != buckets.len() {
-        Err(ValidationError::new("unique"))
-    } else {
+    if buckets.iter().collect::<HashSet<_>>().len() == buckets.len() {
         Ok(())
+    } else {
+        Err(ValidationError::new("unique"))
     }
 }
 
@@ -162,7 +162,7 @@ impl Validate for Vdaf {
 //max batch query count
 
 impl NewTask {
-    pub fn build(self, account: account::Model) -> Result<ActiveModel, ValidationErrors> {
+    pub fn build(self, account: &account::Model) -> Result<ActiveModel, ValidationErrors> {
         self.validate()?;
 
         // this is temporary. janus will generate an id
@@ -174,7 +174,7 @@ impl NewTask {
             account_id: Set(account.id),
             name: Set(self.name.unwrap()), //aggregator endpoint and role
             partner: Set(self.partner.unwrap()),
-            vdaf: Set(serde_json::to_value(&self.vdaf.unwrap()).unwrap()),
+            vdaf: Set(serde_json::to_value(self.vdaf.unwrap()).unwrap()),
             min_batch_size: Set(self.min_batch_size.unwrap()),
             created_at: Set(TimeDateTimeWithTimeZone::now_utc()),
             updated_at: Set(TimeDateTimeWithTimeZone::now_utc()),

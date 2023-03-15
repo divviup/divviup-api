@@ -1,4 +1,9 @@
-use crate::{entity::*, handler::Error, user::User, DbConnExt};
+use crate::{
+    entity::{Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask},
+    handler::Error,
+    user::User,
+    DbConnExt,
+};
 use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait};
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
@@ -9,7 +14,7 @@ pub async fn index(conn: &mut Conn, account: Account) -> Result<impl Handler, Er
     let db = conn.db();
     let tasks = account.find_related(Tasks).all(db).await?;
     if let Some(last_modified) = tasks.iter().map(|task| task.updated_at).max() {
-        conn.set_last_modified(last_modified.into())
+        conn.set_last_modified(last_modified.into());
     }
     Ok(Json(tasks))
 }
@@ -44,7 +49,7 @@ pub async fn create(
     conn: &mut Conn,
     (account, Json(new_task)): (Account, Json<NewTask>),
 ) -> Result<impl Handler, Error> {
-    let task = new_task.build(account)?.insert(conn.db()).await?;
+    let task = new_task.build(&account)?.insert(conn.db()).await?;
     Ok((Status::Created, Json(task)))
 }
 

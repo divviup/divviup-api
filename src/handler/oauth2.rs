@@ -131,8 +131,7 @@ pub struct OauthClient(Arc<OauthClientInner>);
 struct OauthClientInner {
     oauth_config: Oauth2Config,
     oauth2_client: BasicClient,
-    http_client: trillium_client::Client<ClientConnector>,
-    // jwks: RwLock<Option<jsonwebtoken::jwk::JwkSet>>,
+    http_client: Client<ClientConnector>,
 }
 
 impl OauthClient {
@@ -204,7 +203,7 @@ impl OauthClient {
         &self.0.oauth2_client
     }
 
-    pub fn http_client(&self) -> &trillium_client::Client<ClientConnector> {
+    pub fn http_client(&self) -> &Client<ClientConnector> {
         &self.0.http_client
     }
 }

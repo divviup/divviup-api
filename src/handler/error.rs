@@ -24,15 +24,15 @@ impl Handler for ErrorHandler {
 
             Error::NotFound => conn.with_status(Status::NotFound).with_body(""),
 
-            Error::JsonError(e @ ApiError::UnsupportedMimeType { .. }) => conn
+            Error::Json(e @ ApiError::UnsupportedMimeType { .. }) => conn
                 .with_status(Status::NotAcceptable)
                 .with_body(e.to_string()),
 
-            Error::JsonError(ApiError::ParseError { path, message }) => conn
+            Error::Json(ApiError::ParseError { path, message }) => conn
                 .with_status(Status::BadRequest)
                 .with_json(&json!({"path": path, "message": message})),
 
-            Error::ValidationErrors(e) => conn.with_status(Status::BadRequest).with_json(&e),
+            Error::Validation(e) => conn.with_status(Status::BadRequest).with_json(&e),
 
             e => {
                 let mut conn = conn.with_status(Status::InternalServerError);
@@ -54,18 +54,18 @@ pub enum Error {
     #[error("Access denied")]
     AccessDenied,
     #[error(transparent)]
-    DatabaseError(#[from] Arc<DbErr>),
+    Database(#[from] Arc<DbErr>),
     #[error("Not found")]
     NotFound,
     #[error(transparent)]
-    JsonError(#[from] ApiError),
+    Json(#[from] ApiError),
     #[error(transparent)]
-    ValidationErrors(#[from] ValidationErrors),
+    Validation(#[from] ValidationErrors),
 }
 
 impl From<DbErr> for Error {
     fn from(value: DbErr) -> Self {
-        Self::DatabaseError(Arc::new(value))
+        Self::Database(Arc::new(value))
     }
 }
 

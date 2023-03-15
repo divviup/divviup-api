@@ -1,4 +1,9 @@
-use crate::{entity::*, handler::Error, user::User, DbConnExt};
+use crate::{
+    entity::{Account, Accounts, CreateMembership, MembershipColumn, Memberships},
+    handler::Error,
+    user::User,
+    DbConnExt,
+};
 use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait};
 use trillium::{Conn, Handler, Status};
 use trillium_api::Json;
@@ -12,7 +17,7 @@ pub async fn index(conn: &mut Conn, account: Account) -> Result<impl Handler, Er
         .map(|membership| membership.created_at)
         .max()
     {
-        conn.set_last_modified(last_modified.into())
+        conn.set_last_modified(last_modified.into());
     }
     Ok(Json(memberships))
 }

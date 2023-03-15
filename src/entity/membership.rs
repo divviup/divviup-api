@@ -1,6 +1,7 @@
 use crate::entity::{account, task};
 use sea_orm::{entity::prelude::*, ActiveValue::Set};
 use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
 use validator::{Validate, ValidationErrors};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -11,8 +12,8 @@ pub struct Model {
     pub id: Uuid,
     pub account_id: Uuid,
     pub user_email: String,
-    #[serde(with = "time::serde::iso8601")]
-    pub created_at: TimeDateTimeWithTimeZone,
+    #[serde(with = "::time::serde::iso8601")]
+    pub created_at: OffsetDateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -54,7 +55,7 @@ impl CreateMembership {
         self.validate()?;
         Ok(ActiveModel {
             id: Set(Uuid::new_v4()),
-            account_id: Set(account.id.clone()),
+            account_id: Set(account.id),
             user_email: Set(self.user_email.unwrap()),
             created_at: Set(TimeDateTimeWithTimeZone::now_utc()),
         })

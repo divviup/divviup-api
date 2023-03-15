@@ -24,7 +24,7 @@ impl SessionStore {
 impl TryFrom<&Session> for session::Model {
     type Error = serde_json::Error;
 
-    fn try_from(session: &Session) -> std::result::Result<Self, Self::Error> {
+    fn try_from(session: &Session) -> Result<Self, Self::Error> {
         Ok(Self {
             id: session.id().to_string(),
             expiry: session
@@ -39,7 +39,7 @@ impl TryFrom<&Session> for session::Model {
 
 impl TryFrom<session::Model> for Session {
     type Error = serde_json::Error;
-    fn try_from(db_session: session::Model) -> std::result::Result<Session, serde_json::Error> {
+    fn try_from(db_session: session::Model) -> Result<Session, serde_json::Error> {
         let mut session: Session = serde_json::from_value(json!({
             "id": db_session.id,
             "data": db_session.data,
@@ -48,7 +48,7 @@ impl TryFrom<session::Model> for Session {
             session.set_expiry(DateTime::from_utc(
                 NaiveDateTime::from_timestamp_opt(x.unix_timestamp(), x.nanosecond()).unwrap(),
                 Utc,
-            ))
+            ));
         }
         Ok(session)
     }
@@ -77,7 +77,7 @@ impl async_session::SessionStore for SessionStore {
             .on_conflict(
                 OnConflict::column(session::Column::Id)
                     .update_columns([session::Column::Data, session::Column::Expiry])
-                    .to_owned(),
+                    .clone(),
             )
             .exec(&self.db)
             .await?;

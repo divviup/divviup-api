@@ -1,3 +1,12 @@
+#![forbid(unsafe_code)]
+#![deny(
+    clippy::dbg_macro,
+    missing_copy_implementations,
+    missing_debug_implementations,
+    nonstandard_style
+)]
+#![warn(clippy::perf, clippy::cargo)]
+
 mod config;
 mod db;
 pub(crate) mod entity;

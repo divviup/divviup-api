@@ -15,7 +15,7 @@ pub struct ApiConfig {
     pub auth_audience: String,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone, Copy)]
 pub enum ApiConfigError {
     #[error("environment variable `{0}` was not found.")]
     MissingEnvVar(&'static str),
