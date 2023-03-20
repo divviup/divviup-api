@@ -15,21 +15,21 @@ env_logger = "0.10.0"
 fastrand = "1.9.0"
 log = "0.4.17"
 querystrong = "0.2.0"
-serde = { version = "1.0.154", features = ["derive"] }
+serde = { version = "1.0.157", features = ["derive"] }
 serde_json = "1.0.94"
 serde_path_to_error = "0.1.10"
 sqlx = { version = "0.6.2", features = ["runtime-tokio-rustls"] }
-thiserror = "1.0.39"
+thiserror = "1.0.40"
 time = { version = "0.3.20", features = ["serde", "serde-well-known"] }
 trillium = "0.2.6"
 trillium-api = { version = "0.2.0-rc.2", default-features = false }
-trillium-caching-headers = "0.2.0"
+trillium-caching-headers = "0.2.1"
 trillium-client = { version = "0.3.0", features = ["json"] }
 trillium-compression = "0.1.0"
 trillium-conn-id = "0.2.1"
 trillium-cookies = "0.3.0"
-trillium-http = { version = "0.2.11", features = ["http-compat"] }
-trillium-logger = "0.4.1"
+trillium-http = { version = "0.2.12", features = ["http-compat"] }
+trillium-logger = "0.4.2"
 trillium-redirect = "0.1.0"
 trillium-router = "0.3.4"
 trillium-rustls = "0.2.0"
@@ -45,7 +45,7 @@ default-features = false
 features = ["pkce-plain"]
 
 [dependencies.sea-orm]
-version = "0.11.0"
+version = "0.11.1"
 features = [
   "runtime-tokio-rustls",
   "macros",
