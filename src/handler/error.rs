@@ -4,6 +4,7 @@ use std::{backtrace::Backtrace, sync::Arc};
 use trillium::{async_trait, Conn, Handler, Status};
 use trillium_api::{ApiConnExt, Error as ApiError};
 use validator::ValidationErrors;
+use crate::client::ClientError;
 
 pub struct ErrorHandler;
 #[async_trait]
@@ -61,11 +62,27 @@ pub enum Error {
     Json(#[from] ApiError),
     #[error(transparent)]
     Validation(#[from] ValidationErrors),
+    #[error(transparent)]
+    Client(#[from] Arc<ClientError>),
+    #[error(transparent)]
+    Sqlx(#[from] Arc<sea_orm::SqlxError>),
 }
 
 impl From<DbErr> for Error {
     fn from(value: DbErr) -> Self {
         Self::Database(Arc::new(value))
+    }
+}
+
+impl From<sea_orm::SqlxError> for Error {
+    fn from(value: sea_orm::SqlxError) -> Self {
+        Self::Sqlx(Arc::new(value))
+    }
+}
+
+impl From<ClientError> for Error {
+    fn from(value: ClientError) -> Self {
+        Self::Client(Arc::new(value))
     }
 }
 

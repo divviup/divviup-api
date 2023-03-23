@@ -1,8 +1,8 @@
 use crate::{
-    entity::{account, membership},
+    client::{TaskResponse},
+    entity::{account, membership, Account},
     handler::Error,
 };
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD as BASE64, Engine};
 use sea_orm::{entity::prelude::*, ActiveValue::Set, IntoActiveModel};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -19,14 +19,16 @@ pub struct Model {
     pub name: String,
     pub partner: String,
     pub vdaf: Json,
-    pub min_batch_size: i64,
+    pub min_batch_size: u64,
+    pub max_batch_size: Option<u64>,
+    pub is_leader: bool,
     #[serde(with = "time::serde::iso8601")]
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::iso8601")]
     pub updated_at: OffsetDateTime,
-    pub time_precision_seconds: i32,
-    pub report_count: i32,
-    pub aggregate_collection_count: i32,
+    pub time_precision_seconds: u32,
+    pub report_count: u32,
+    pub aggregate_collection_count: u32,
     #[serde(default, with = "time::serde::iso8601::option")]
     pub expiration: Option<OffsetDateTime>,
 }
@@ -61,7 +63,7 @@ impl Related<membership::Entity> for Entity {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-#[derive(Deserialize, Validate, Debug)]
+#[derive(Deserialize, Validate, Debug, Clone)]
 pub struct NewTask {
     #[validate(required, length(min = 1))]
     pub name: Option<String>,
@@ -73,7 +75,12 @@ pub struct NewTask {
     pub vdaf: Option<Vdaf>,
 
     #[validate(required, range(min = 100))]
-    pub min_batch_size: Option<i64>,
+    pub min_batch_size: Option<u64>,
+
+    pub max_batch_size: Option<u64>,
+
+    #[validate(required)]
+    pub is_leader: Option<bool>,
 
     #[validate(custom = "in_the_future")]
     #[serde(default, with = "time::serde::iso8601::option")]
@@ -87,7 +94,28 @@ pub struct NewTask {
             message = "must be between 1 minute and 4 weeks"
         )
     )]
-    pub time_precision_seconds: Option<i32>,
+    pub time_precision_seconds: Option<u32>,
+
+    #[validate(required_nested)]
+    pub hpke_config: Option<HpkeConfig>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Validate)]
+pub struct HpkeConfig {
+    #[validate(required)]
+    pub id: Option<u8>,
+
+    #[validate(required)]
+    pub kem_id: Option<u8>,
+
+    #[validate(required)]
+    pub kdf_id: Option<u8>,
+
+    #[validate(required)]
+    pub aead_id: Option<u8>,
+
+    #[validate(required)]
+    pub public_key: Option<Vec<u8>>,
 }
 
 fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError> {
@@ -97,13 +125,13 @@ fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError>
     Ok(())
 }
 
-#[derive(Serialize, Deserialize, Validate, Debug)]
+#[derive(Serialize, Deserialize, Validate, Debug, Clone)]
 pub struct Histogram {
     #[validate(required, custom = "sorted", custom = "unique")]
-    pub buckets: Option<Vec<usize>>,
+    pub buckets: Option<Vec<u32>>,
 }
 
-fn sorted(buckets: &Vec<usize>) -> Result<(), ValidationError> {
+fn sorted(buckets: &Vec<u32>) -> Result<(), ValidationError> {
     let mut buckets_cloned = buckets.clone();
     buckets_cloned.sort_unstable();
     if &buckets_cloned == buckets {
@@ -113,7 +141,7 @@ fn sorted(buckets: &Vec<usize>) -> Result<(), ValidationError> {
     }
 }
 
-fn unique(buckets: &Vec<usize>) -> Result<(), ValidationError> {
+fn unique(buckets: &Vec<u32>) -> Result<(), ValidationError> {
     if buckets.iter().collect::<HashSet<_>>().len() == buckets.len() {
         Ok(())
     } else {
@@ -121,13 +149,13 @@ fn unique(buckets: &Vec<usize>) -> Result<(), ValidationError> {
     }
 }
 
-#[derive(Serialize, Deserialize, Validate, Debug)]
+#[derive(Serialize, Deserialize, Validate, Debug, Clone, Copy)]
 pub struct Sum {
     #[validate(required)]
     pub bits: Option<u8>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum Vdaf {
     #[serde(rename = "count")]
@@ -161,31 +189,6 @@ impl Validate for Vdaf {
 //add query type
 //max batch query count
 
-impl NewTask {
-    pub fn build(self, account: &account::Model) -> Result<ActiveModel, ValidationErrors> {
-        self.validate()?;
-
-        // this is temporary. janus will generate an id
-        let mut id = vec![0u8; 8];
-        fastrand::Rng::new().fill(&mut id);
-
-        Ok(ActiveModel {
-            id: Set(BASE64.encode(id)),
-            account_id: Set(account.id),
-            name: Set(self.name.unwrap()), //aggregator endpoint and role
-            partner: Set(self.partner.unwrap()),
-            vdaf: Set(serde_json::to_value(self.vdaf.unwrap()).unwrap()),
-            min_batch_size: Set(self.min_batch_size.unwrap()),
-            created_at: Set(TimeDateTimeWithTimeZone::now_utc()),
-            updated_at: Set(TimeDateTimeWithTimeZone::now_utc()),
-            time_precision_seconds: Set(self.time_precision_seconds.unwrap()),
-            report_count: Set(0),
-            aggregate_collection_count: Set(0),
-            expiration: Set(self.expiration),
-        })
-    }
-}
-
 #[derive(Deserialize, Validate, Debug)]
 pub struct UpdateTask {
     #[validate(required, length(min = 1))]
@@ -198,5 +201,26 @@ impl UpdateTask {
         am.name = Set(self.name.unwrap());
         am.updated_at = Set(TimeDateTimeWithTimeZone::now_utc());
         Ok(am)
+    }
+}
+
+pub fn build_task(name: String, task: TaskResponse, account: &Account) -> ActiveModel {
+    ActiveModel {
+        id: Set(task.task_id),
+        account_id: Set(account.id),
+        name: Set(name),
+        partner: Set("".into()),
+        vdaf: Set(serde_json::to_value(task.vdaf).unwrap()),
+        min_batch_size: Set(task.min_batch_size),
+        max_batch_size: Set(task.query_type.into()),
+        is_leader: Set(task.role.is_leader()),
+        created_at: Set(OffsetDateTime::now_utc()),
+        updated_at: Set(OffsetDateTime::now_utc()),
+        time_precision_seconds: Set(task.time_precision),
+        report_count: Set(0),
+        aggregate_collection_count: Set(0),
+        expiration: Set(Some(
+            OffsetDateTime::from_unix_timestamp(task.task_expiration).unwrap(),
+        )), // aggregator api won't allow None. maybe our schema is wrong?
     }
 }

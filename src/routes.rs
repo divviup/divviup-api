@@ -23,7 +23,7 @@ use trillium_router::router;
 pub fn routes(config: &ApiConfig) -> impl Handler {
     router()
         .get("/", "ok")
-        .get("/health", health_check)
+        .get("/health", api(health_check))
         .get(
             "/login",
             (

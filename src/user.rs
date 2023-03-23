@@ -1,6 +1,6 @@
 use crate::{
     entity::{AccountColumn, Accounts, MembershipColumn, Memberships},
-    DbConnExt,
+    Db,
 };
 use sea_orm::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -25,7 +25,7 @@ pub struct User {
 }
 
 impl User {
-    async fn populate_admin(&mut self, db: &DbConn) {
+    async fn populate_admin(&mut self, db: &Db) {
         let membership = Memberships::find()
             .inner_join(Accounts)
             .filter(MembershipColumn::UserEmail.eq(String::from(&self.email)))
@@ -46,10 +46,11 @@ impl User {
 #[async_trait]
 impl FromConn for User {
     async fn from_conn(conn: &mut Conn) -> Option<Self> {
+        let db = Db::from_conn(conn).await?;
         let mut user: Self = conn
             .take_state()
             .or_else(|| conn.session().get(USER_SESSION_KEY))?;
-        user.populate_admin(conn.db()).await;
+        user.populate_admin(&db).await;
         conn.set_state(user.clone());
         Some(user)
     }

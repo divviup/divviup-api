@@ -13,6 +13,8 @@ pub struct ApiConfig {
     pub auth_client_id: String,
     pub auth_client_secret: String,
     pub auth_audience: String,
+    pub aggregator_url: Url,
+    pub aggregator_secret: String,
 }
 
 #[derive(Debug, Error, Clone, Copy)]
@@ -48,6 +50,8 @@ impl ApiConfig {
             auth_audience: var("AUTH_AUDIENCE", "string")?,
             app_url: var("APP_URL", "url")?,
             auth_url: var("AUTH_URL", "url")?,
+            aggregator_url: var("AGGREGATOR_URL", "url")?,
+            aggregator_secret: var("AGGREGATOR_SECRET", "string")?,
         })
     }
 

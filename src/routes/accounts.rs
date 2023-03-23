@@ -5,7 +5,7 @@ use crate::{
     },
     handler::Error,
     user::User,
-    DbConnExt,
+    Db,
 };
 use sea_orm::{prelude::*, EntityTrait, TransactionTrait};
 use trillium::{async_trait, Conn, Handler, Status};
@@ -16,17 +16,18 @@ use trillium_router::RouterConnExt;
 #[async_trait]
 impl FromConn for Account {
     async fn from_conn(conn: &mut Conn) -> Option<Self> {
+        let db = Db::from_conn(conn).await?;
         let user = User::from_conn(conn).await?;
         let account_id = conn.param("account_id")?;
         let account_id = Uuid::parse_str(account_id).ok()?;
 
         let account = if user.is_admin() {
-            Accounts::find_by_id(account_id).one(conn.db()).await
+            Accounts::find_by_id(account_id).one(&db).await
         } else {
             Accounts::find_by_id(account_id)
                 .inner_join(Memberships)
                 .filter(MembershipColumn::UserEmail.eq(&user.email))
-                .one(conn.db())
+                .one(&db)
                 .await
         };
 
@@ -45,14 +46,14 @@ pub async fn show(conn: &mut Conn, account: Account) -> Json<Account> {
     Json(account)
 }
 
-pub async fn index(conn: &mut Conn, user: User) -> Result<impl Handler, Error> {
+pub async fn index(conn: &mut Conn, (user, db): (User, Db)) -> Result<impl Handler, Error> {
     let accounts = if user.is_admin() {
-        Accounts::find().all(conn.db()).await?
+        Accounts::find().all(&db).await?
     } else {
         Accounts::find()
             .inner_join(Memberships)
             .filter(MembershipColumn::UserEmail.eq(&user.email))
-            .all(conn.db())
+            .all(&db)
             .await?
     };
 
@@ -64,10 +65,10 @@ pub async fn index(conn: &mut Conn, user: User) -> Result<impl Handler, Error> {
 }
 
 pub async fn create(
-    conn: &mut Conn,
-    (Json(new_account), current_user): (Json<NewAccount>, User),
+    _: &mut Conn,
+    (Json(new_account), current_user, db): (Json<NewAccount>, User, Db),
 ) -> Result<impl Handler, Error> {
-    let transaction = conn.db().begin().await?;
+    let transaction = db.begin().await?;
     let account = new_account.build()?.insert(&transaction).await?;
     let membership = CreateMembership {
         user_email: Some(current_user.email),
@@ -78,9 +79,9 @@ pub async fn create(
 }
 
 pub async fn update(
-    conn: &mut Conn,
-    (account, Json(update_account)): (Account, Json<UpdateAccount>),
+    _: &mut Conn,
+    (account, Json(update_account), db): (Account, Json<UpdateAccount>, Db),
 ) -> Result<impl Handler, Error> {
-    let account = update_account.build(account)?.update(conn.db()).await?;
+    let account = update_account.build(account)?.update(&db).await?;
     Ok((Json(account), Status::Accepted))
 }
