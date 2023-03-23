@@ -7,7 +7,7 @@
 )]
 #![warn(clippy::perf, clippy::cargo)]
 
-mod client;
+pub mod client;
 mod config;
 mod db;
 pub(crate) mod entity;

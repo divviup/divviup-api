@@ -3,6 +3,7 @@ name = "divviup-api"
 version = "0.0.1"
 edition = "2021"
 publish = false
+default-run="divviup_api_bin"
 
 [workspace]
 members = [".", "migration"]
@@ -62,5 +63,10 @@ path = "src/lib.rs"
 [[bin]]
 name = "divviup_api_bin"
 path = "src/bin.rs"
+
+[[bin]]
+name = "aggregator_api_mock"
+path = "src/aggregator_api_mock.rs"
+
 
 

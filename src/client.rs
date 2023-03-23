@@ -155,7 +155,19 @@ async fn expect_ok(conn: &mut Conn<'_>) -> Result<(), ClientError> {
 pub enum VdafInstance {
     Prio3Count,
     Prio3Sum { bits: u8 },
-    Prio3Histogram { buckets: Vec<u32> },
+    Prio3Histogram { buckets: Vec<i32> },
+}
+
+impl From<VdafInstance> for Vdaf {
+    fn from(value: VdafInstance) -> Self {
+        match value {
+            VdafInstance::Prio3Count => Self::Count,
+            VdafInstance::Prio3Sum { bits } => Self::Sum(Sum { bits: Some(bits) }),
+            VdafInstance::Prio3Histogram { buckets } => Self::Histogram(Histogram {
+                buckets: Some(buckets),
+            }),
+        }
+    }
 }
 
 impl From<Vdaf> for VdafInstance {
@@ -190,11 +202,11 @@ impl Role {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HpkeConfig {
-    id: u8,
-    kem_id: u8,
-    kdf_id: u8,
-    aead_id: u8,
-    public_key: Vec<u8>,
+    pub id: u8,
+    pub kem_id: u8,
+    pub kdf_id: u8,
+    pub aead_id: u8,
+    pub public_key: Vec<u8>,
 }
 
 impl From<crate::entity::task::HpkeConfig> for HpkeConfig {
@@ -204,7 +216,7 @@ impl From<crate::entity::task::HpkeConfig> for HpkeConfig {
             kem_id: value.kem_id.unwrap(),
             kdf_id: value.kdf_id.unwrap(),
             aead_id: value.aead_id.unwrap(),
-            public_key: value.public_key.unwrap(),
+            public_key: value.public_key.unwrap().into_bytes(),
         }
     }
 }
@@ -213,6 +225,12 @@ impl From<crate::entity::task::HpkeConfig> for HpkeConfig {
 pub enum QueryType {
     TimeInterval,
     FixedSize { max_batch_size: u64 },
+}
+
+impl From<QueryType> for Option<i64> {
+    fn from(value: QueryType) -> Self {
+        Option::<u64>::from(value).map(|u| u.try_into().unwrap())
+    }
 }
 
 impl From<QueryType> for Option<u64> {
@@ -232,16 +250,22 @@ impl From<Option<u64>> for QueryType {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+impl From<Option<i64>> for QueryType {
+    fn from(value: Option<i64>) -> Self {
+        value.map(|i| u64::try_from(i).unwrap()).into()
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct TaskCreate {
     pub aggregator_endpoints: Vec<Url>,
     pub query_type: QueryType,
     pub vdaf: VdafInstance,
     pub role: Role,
-    pub max_batch_query_count: u64,
+    pub max_batch_query_count: i64,
     pub task_expiration: i64,
-    pub min_batch_size: u64,
-    pub time_precision: u32,
+    pub min_batch_size: i64,
+    pub time_precision: i32,
     pub collector_hpke_config: HpkeConfig,
 }
 
@@ -253,12 +277,12 @@ pub struct TaskResponse {
     pub vdaf: VdafInstance,
     pub role: Role,
     pub vdaf_verify_keys: Vec<String>,
-    pub max_batch_query_count: u64,
+    pub max_batch_query_count: i64,
     pub task_expiration: i64,
-    pub report_expiry_age: Option<u64>,
-    pub min_batch_size: u64,
-    pub time_precision: u32,
-    pub tolerable_clock_skew: u64,
+    pub report_expiry_age: Option<i64>,
+    pub min_batch_size: i64,
+    pub time_precision: i32,
+    pub tolerable_clock_skew: i64,
     pub collector_hpke_config: HpkeConfig,
     pub aggregator_auth_tokens: Vec<String>,
     pub collector_auth_tokens: Vec<String>,
@@ -291,7 +315,7 @@ pub struct TaskIds {
     pub pagination_token: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
 pub struct TaskMetrics {
     pub reports: u64,
     pub report_aggregations: u64,

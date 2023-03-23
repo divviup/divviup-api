@@ -1,5 +1,5 @@
 use crate::{
-    client::{TaskResponse},
+    client::TaskResponse,
     entity::{account, membership, Account},
     handler::Error,
 };
@@ -19,16 +19,16 @@ pub struct Model {
     pub name: String,
     pub partner: String,
     pub vdaf: Json,
-    pub min_batch_size: u64,
-    pub max_batch_size: Option<u64>,
+    pub min_batch_size: i64,
+    pub max_batch_size: Option<i64>,
     pub is_leader: bool,
     #[serde(with = "time::serde::iso8601")]
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::iso8601")]
     pub updated_at: OffsetDateTime,
-    pub time_precision_seconds: u32,
-    pub report_count: u32,
-    pub aggregate_collection_count: u32,
+    pub time_precision_seconds: i32,
+    pub report_count: i32,
+    pub aggregate_collection_count: i32,
     #[serde(default, with = "time::serde::iso8601::option")]
     pub expiration: Option<OffsetDateTime>,
 }
@@ -75,14 +75,15 @@ pub struct NewTask {
     pub vdaf: Option<Vdaf>,
 
     #[validate(required, range(min = 100))]
-    pub min_batch_size: Option<u64>,
+    pub min_batch_size: Option<i64>,
 
-    pub max_batch_size: Option<u64>,
+    #[validate(range(min = 0))]
+    pub max_batch_size: Option<i64>,
 
     #[validate(required)]
     pub is_leader: Option<bool>,
 
-    #[validate(custom = "in_the_future")]
+    #[validate(required, custom = "in_the_future")]
     #[serde(default, with = "time::serde::iso8601::option")]
     pub expiration: Option<TimeDateTimeWithTimeZone>,
 
@@ -94,7 +95,7 @@ pub struct NewTask {
             message = "must be between 1 minute and 4 weeks"
         )
     )]
-    pub time_precision_seconds: Option<u32>,
+    pub time_precision_seconds: Option<i32>,
 
     #[validate(required_nested)]
     pub hpke_config: Option<HpkeConfig>,
@@ -115,7 +116,7 @@ pub struct HpkeConfig {
     pub aead_id: Option<u8>,
 
     #[validate(required)]
-    pub public_key: Option<Vec<u8>>,
+    pub public_key: Option<String>,
 }
 
 fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError> {
@@ -128,10 +129,10 @@ fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError>
 #[derive(Serialize, Deserialize, Validate, Debug, Clone)]
 pub struct Histogram {
     #[validate(required, custom = "sorted", custom = "unique")]
-    pub buckets: Option<Vec<u32>>,
+    pub buckets: Option<Vec<i32>>,
 }
 
-fn sorted(buckets: &Vec<u32>) -> Result<(), ValidationError> {
+fn sorted(buckets: &Vec<i32>) -> Result<(), ValidationError> {
     let mut buckets_cloned = buckets.clone();
     buckets_cloned.sort_unstable();
     if &buckets_cloned == buckets {
@@ -141,7 +142,7 @@ fn sorted(buckets: &Vec<u32>) -> Result<(), ValidationError> {
     }
 }
 
-fn unique(buckets: &Vec<u32>) -> Result<(), ValidationError> {
+fn unique(buckets: &Vec<i32>) -> Result<(), ValidationError> {
     if buckets.iter().collect::<HashSet<_>>().len() == buckets.len() {
         Ok(())
     } else {
@@ -210,8 +211,8 @@ pub fn build_task(name: String, task: TaskResponse, account: &Account) -> Active
         account_id: Set(account.id),
         name: Set(name),
         partner: Set("".into()),
-        vdaf: Set(serde_json::to_value(task.vdaf).unwrap()),
-        min_batch_size: Set(task.min_batch_size),
+        vdaf: Set(serde_json::to_value(Vdaf::from(task.vdaf)).unwrap()),
+        min_batch_size: Set(task.min_batch_size.try_into().unwrap()),
         max_batch_size: Set(task.query_type.into()),
         is_leader: Set(task.role.is_leader()),
         created_at: Set(OffsetDateTime::now_utc()),
