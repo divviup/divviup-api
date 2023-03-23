@@ -1,10 +1,10 @@
+use crate::client::ClientError;
 use sea_orm::DbErr;
 use serde_json::json;
 use std::{backtrace::Backtrace, sync::Arc};
 use trillium::{async_trait, Conn, Handler, Status};
 use trillium_api::{ApiConnExt, Error as ApiError};
 use validator::ValidationErrors;
-use crate::client::ClientError;
 
 pub struct ErrorHandler;
 #[async_trait]

@@ -7,7 +7,9 @@ use trillium_logger::logger;
 use trillium_router::router;
 
 pub fn main() {
-    trillium_tokio::config().with_port(8082).run(aggregator_api());
+    trillium_tokio::config()
+        .with_port(8082)
+        .run(aggregator_api());
 }
 
 pub fn aggregator_api() -> impl Handler {

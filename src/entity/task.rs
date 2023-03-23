@@ -212,7 +212,7 @@ pub fn build_task(name: String, task: TaskResponse, account: &Account) -> Active
         name: Set(name),
         partner: Set("".into()),
         vdaf: Set(serde_json::to_value(Vdaf::from(task.vdaf)).unwrap()),
-        min_batch_size: Set(task.min_batch_size.try_into().unwrap()),
+        min_batch_size: Set(task.min_batch_size),
         max_batch_size: Set(task.query_type.into()),
         is_leader: Set(task.role.is_leader()),
         created_at: Set(OffsetDateTime::now_utc()),
