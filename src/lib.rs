@@ -7,6 +7,7 @@
 )]
 #![warn(clippy::perf, clippy::cargo)]
 
+pub mod aggregator_api_mock;
 pub mod client;
 mod config;
 mod db;

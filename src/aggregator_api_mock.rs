@@ -1,20 +1,14 @@
-use divviup_api::client::{HpkeConfig, TaskCreate, TaskMetrics, TaskResponse};
+use crate::client::{HpkeConfig, TaskCreate, TaskMetrics, TaskResponse};
 use fastrand::alphanumeric;
 use std::iter::repeat_with;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Json};
-use trillium_logger::logger;
+use trillium_logger::{dev_formatter, logger};
 use trillium_router::router;
-
-pub fn main() {
-    trillium_tokio::config()
-        .with_port(8082)
-        .run(aggregator_api());
-}
 
 pub fn aggregator_api() -> impl Handler {
     (
-        logger(),
+        logger().with_formatter(("[aggregator mock] ", dev_formatter)),
         router()
             .post("/tasks", api(post_task))
             .delete("/tasks/:task_id", Status::Ok)
