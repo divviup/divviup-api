@@ -263,7 +263,7 @@ pub struct TaskCreate {
     pub vdaf: VdafInstance,
     pub role: Role,
     pub max_batch_query_count: i64,
-    pub task_expiration: i64,
+    pub task_expiration: u64,
     pub min_batch_size: i64,
     pub time_precision: i32,
     pub collector_hpke_config: HpkeConfig,
@@ -278,7 +278,7 @@ pub struct TaskResponse {
     pub role: Role,
     pub vdaf_verify_keys: Vec<String>,
     pub max_batch_query_count: i64,
-    pub task_expiration: i64,
+    pub task_expiration: u64,
     pub report_expiry_age: Option<i64>,
     pub min_batch_size: i64,
     pub time_precision: i32,
@@ -301,7 +301,10 @@ impl From<NewTask> for TaskCreate {
                 Role::Helper
             },
             max_batch_query_count: 0,
-            task_expiration: value.expiration.unwrap().unix_timestamp(),
+            task_expiration: value
+                .expiration
+                .map(|task| task.unix_timestamp().try_into().unwrap())
+                .unwrap_or(u64::MAX),
             min_batch_size: value.min_batch_size.unwrap(),
             time_precision: value.time_precision_seconds.unwrap(),
             collector_hpke_config: value.hpke_config.unwrap().into(),

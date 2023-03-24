@@ -1,5 +1,8 @@
 use crate::{
-    entity::{task, Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask},
+    entity::{
+        task::{self, build_task},
+        Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask,
+    },
     handler::Error,
     user::User,
     AggregatorClient, Db,
@@ -48,14 +51,11 @@ impl FromConn for Task {
 
 pub async fn create(
     _: &mut Conn,
-    (account, Json(mut task), api_client, db): (Account, Json<NewTask>, AggregatorClient, Db),
+    (account, Json(task), api_client, db): (Account, Json<NewTask>, AggregatorClient, Db),
 ) -> Result<impl Handler, Error> {
     task.validate()?;
-    let name = task.name.take().unwrap();
-    let api_response = api_client.create_task(task).await?;
-    let task = task::build_task(name, api_response, &account)
-        .insert(&db)
-        .await?;
+    let api_response = api_client.create_task(task.clone()).await?;
+    let task = build_task(task, api_response, &account).insert(&db).await?;
     Ok((Status::Created, Json(task)))
 }
 

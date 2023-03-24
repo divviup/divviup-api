@@ -83,7 +83,7 @@ pub struct NewTask {
     #[validate(required)]
     pub is_leader: Option<bool>,
 
-    #[validate(required, custom = "in_the_future")]
+    #[validate(custom = "in_the_future")]
     #[serde(default, with = "time::serde::iso8601::option")]
     pub expiration: Option<TimeDateTimeWithTimeZone>,
 
@@ -205,23 +205,21 @@ impl UpdateTask {
     }
 }
 
-pub fn build_task(name: String, task: TaskResponse, account: &Account) -> ActiveModel {
+pub fn build_task(mut task: NewTask, api_response: TaskResponse, account: &Account) -> ActiveModel {
     ActiveModel {
-        id: Set(task.task_id),
+        id: Set(api_response.task_id),
         account_id: Set(account.id),
-        name: Set(name),
+        name: Set(task.name.take().unwrap()),
         partner: Set("".into()),
-        vdaf: Set(serde_json::to_value(Vdaf::from(task.vdaf)).unwrap()),
-        min_batch_size: Set(task.min_batch_size),
-        max_batch_size: Set(task.query_type.into()),
-        is_leader: Set(task.role.is_leader()),
+        vdaf: Set(serde_json::to_value(Vdaf::from(api_response.vdaf)).unwrap()),
+        min_batch_size: Set(api_response.min_batch_size),
+        max_batch_size: Set(api_response.query_type.into()),
+        is_leader: Set(api_response.role.is_leader()),
         created_at: Set(OffsetDateTime::now_utc()),
         updated_at: Set(OffsetDateTime::now_utc()),
-        time_precision_seconds: Set(task.time_precision),
+        time_precision_seconds: Set(api_response.time_precision),
         report_count: Set(0),
         aggregate_collection_count: Set(0),
-        expiration: Set(Some(
-            OffsetDateTime::from_unix_timestamp(task.task_expiration).unwrap(),
-        )), // aggregator api won't allow None. maybe our schema is wrong?
+        expiration: Set(task.expiration.take()),
     }
 }
