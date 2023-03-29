@@ -88,7 +88,7 @@ impl AggregatorClient {
     }
 
     pub async fn health_check(&self) -> Result<(), ClientError> {
-        let mut conn = self.get("/").await?;
+        let mut conn = self.get("/health").await?;
         expect_ok(&mut conn).await?;
         Ok(())
     }

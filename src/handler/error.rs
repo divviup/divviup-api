@@ -64,19 +64,11 @@ pub enum Error {
     Validation(#[from] ValidationErrors),
     #[error(transparent)]
     Client(#[from] Arc<ClientError>),
-    #[error(transparent)]
-    Sqlx(#[from] Arc<sea_orm::SqlxError>),
 }
 
 impl From<DbErr> for Error {
     fn from(value: DbErr) -> Self {
         Self::Database(Arc::new(value))
-    }
-}
-
-impl From<sea_orm::SqlxError> for Error {
-    fn from(value: sea_orm::SqlxError) -> Self {
-        Self::Sqlx(Arc::new(value))
     }
 }
 

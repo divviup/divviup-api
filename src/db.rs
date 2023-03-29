@@ -1,20 +1,17 @@
-use sea_orm::{ConnectionTrait, DbConn};
+use sea_orm::{ConnectionTrait, Database, DbConn};
 use std::ops::{Deref, DerefMut};
 use trillium::{async_trait, Conn, Handler};
 use trillium_api::FromConn;
-
-use crate::ApiConfig;
 
 #[derive(Clone, Debug)]
 pub struct Db(DbConn);
 
 impl Db {
-    pub async fn connect(config: &ApiConfig) -> Self {
-        Self(
-            sea_orm::Database::connect(config.database_url.to_string())
-                .await
-                .expect("database connection"),
-        )
+    pub async fn connect(url: &str) -> Self {
+        Database::connect(url)
+            .await
+            .map(Self)
+            .expect("could not connect to the database")
     }
 }
 

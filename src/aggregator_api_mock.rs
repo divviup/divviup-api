@@ -10,6 +10,7 @@ pub fn aggregator_api() -> impl Handler {
     (
         logger().with_formatter(("[aggregator mock] ", dev_formatter)),
         router()
+            .get("/health", Status::Ok)
             .post("/tasks", api(post_task))
             .delete("/tasks/:task_id", Status::Ok)
             .get("/tasks/:task_id/metrics", api(get_task_metrics)),

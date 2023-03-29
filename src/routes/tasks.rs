@@ -1,7 +1,6 @@
 use crate::{
     entity::{
-        task::{self, build_task},
-        Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask,
+        task::build_task, Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask,
     },
     handler::Error,
     user::User,
