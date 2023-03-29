@@ -10,6 +10,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry --mount=type=cache,targe
 
 FROM alpine:3.17.2
 EXPOSE 8080
+ENV HOST=0.0.0.0
 COPY --from=builder /migration /migration
 COPY --from=builder /divviup_api_bin /divviup_api_bin
 ENTRYPOINT ["/divviup_api_bin"]
