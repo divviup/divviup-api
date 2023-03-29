@@ -53,11 +53,8 @@ impl DivviupApi {
                 caching_headers(),
                 cache_control([Private, MustRevalidate]),
                 cookies(),
-                sessions(
-                    SessionStore::new(db.clone()),
-                    config.session_secret.clone(),
-                )
-                .with_cookie_name("divviup.sid"),
+                sessions(SessionStore::new(db.clone()), config.session_secret.clone())
+                    .with_cookie_name("divviup.sid"),
                 routes(&config),
                 ErrorHandler,
             )),
