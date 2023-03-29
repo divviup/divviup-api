@@ -9,6 +9,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry --mount=type=cache,targe
 RUN --mount=type=cache,target=/usr/local/cargo/registry --mount=type=cache,target=/src/target cargo build --profile release && cp /src/target/release/divviup_api_bin /divviup_api_bin
 
 FROM alpine:3.17.2
+EXPOSE 8080
 COPY --from=builder /migration /migration
 COPY --from=builder /divviup_api_bin /divviup_api_bin
 ENTRYPOINT ["/divviup_api_bin"]
