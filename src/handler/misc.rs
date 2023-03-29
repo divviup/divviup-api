@@ -1,5 +1,5 @@
-use crate::{handler::oauth2::OauthClient, ApiConfig, User};
-use trillium::{state, Conn, Handler, Status};
+use crate::{ApiConfig, User};
+use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Halt};
 use trillium_redirect::Redirect;
 use trillium_sessions::SessionConnExt;
@@ -33,10 +33,6 @@ pub fn logout_from_auth0(config: &ApiConfig) -> impl Handler {
 pub async fn destroy_session(mut conn: Conn) -> Conn {
     conn.session_mut().destroy();
     conn
-}
-
-pub fn populate_oauth2_client(config: &ApiConfig) -> impl Handler {
-    state(OauthClient::new(&config.oauth_config()))
 }
 
 pub async fn user_required(_: &mut Conn, user: Option<User>) -> impl Handler {

@@ -1,38 +1,22 @@
 use divviup_api::{aggregator_api_mock::aggregator_api, entity::*, ApiConfig, Db, DivviupApi};
-use sea_orm::{ConnectionTrait, DbBackend, Schema};
+use sea_orm::{ConnectionTrait, DbBackend, EntityTrait, Schema};
 use std::future::Future;
 use trillium::Handler;
 use url::Url;
 
+async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
+    let backend = db.get_database_backend();
+    db.execute(backend.build(&schema.create_table_from_entity(t)))
+        .await
+        .unwrap();
+}
+
 async fn set_up_schema(db: &Db) {
     let schema = Schema::new(DbBackend::Sqlite);
-    db.execute(
-        db.get_database_backend()
-            .build(&schema.create_table_from_entity(Sessions)),
-    )
-    .await
-    .unwrap();
-
-    db.execute(
-        db.get_database_backend()
-            .build(&schema.create_table_from_entity(Accounts)),
-    )
-    .await
-    .unwrap();
-
-    db.execute(
-        db.get_database_backend()
-            .build(&schema.create_table_from_entity(Memberships)),
-    )
-    .await
-    .unwrap();
-
-    db.execute(
-        db.get_database_backend()
-            .build(&schema.create_table_from_entity(Tasks)),
-    )
-    .await
-    .unwrap();
+    set_up_schema_for(&schema, &db, Sessions).await;
+    set_up_schema_for(&schema, &db, Accounts).await;
+    set_up_schema_for(&schema, &db, Memberships).await;
+    set_up_schema_for(&schema, &db, Tasks).await;
 }
 
 pub fn config(aggregator_url: Url) -> ApiConfig {
@@ -58,13 +42,14 @@ pub async fn build_test_app(aggregator_url: Url) -> DivviupApi {
     app
 }
 
-pub fn with_server<F, Fut>(f: F)
+pub fn set_up<F, Fut>(f: F)
 where
     F: FnOnce(DivviupApi) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
 {
     trillium_testing::with_server(aggregator_api(), |aggregator_url| async move {
-        f(build_test_app(aggregator_url).await).await;
+        let app = build_test_app(aggregator_url).await;
+        f(app).await;
         Ok(())
     });
 }

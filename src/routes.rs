@@ -6,14 +6,15 @@ mod users;
 
 use crate::{
     handler::{
-        destroy_session, logout_from_auth0, oauth2, populate_oauth2_client, redirect_if_logged_in,
-        user_required, ReplaceMimeTypes,
+        destroy_session, logout_from_auth0,
+        oauth2::{self, OauthClient},
+        redirect_if_logged_in, user_required, ReplaceMimeTypes,
     },
     ApiConfig,
 };
 use health_check::health_check;
 use trillium::{
-    Handler,
+    state, Handler,
     Method::{Delete, Get, Patch, Post},
 };
 use trillium_api::api;
@@ -21,6 +22,8 @@ use trillium_redirect::redirect;
 use trillium_router::router;
 
 pub fn routes(config: &ApiConfig) -> impl Handler {
+    let oauth2_client = OauthClient::new(&config.oauth_config());
+
     router()
         .get("/", "ok")
         .get("/health", api(health_check))
@@ -28,7 +31,7 @@ pub fn routes(config: &ApiConfig) -> impl Handler {
             "/login",
             (
                 redirect_if_logged_in(config),
-                populate_oauth2_client(config),
+                state(oauth2_client.clone()),
                 oauth2::redirect,
             ),
         )
@@ -36,7 +39,7 @@ pub fn routes(config: &ApiConfig) -> impl Handler {
         .get(
             "/callback",
             (
-                populate_oauth2_client(config),
+                state(oauth2_client),
                 oauth2::callback,
                 redirect(config.app_url.to_string()),
             ),
