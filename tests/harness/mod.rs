@@ -1,4 +1,7 @@
-use divviup_api::{aggregator_api_mock::aggregator_api, entity::*, ApiConfig, Db, DivviupApi};
+#![allow(dead_code)] // because different tests use different parts of this
+use divviup_api::{
+    aggregator_api_mock::aggregator_api, entity::*, ApiConfig, Db, DivviupApi, User,
+};
 use sea_orm::{ConnectionTrait, DbBackend, EntityTrait, Schema};
 use std::future::Future;
 use trillium::Handler;
@@ -52,4 +55,17 @@ where
         f(app).await;
         Ok(())
     });
+}
+
+pub fn test_user() -> User {
+    User {
+        email: "test@example.example".into(),
+        email_verified: true,
+        name: "test user".into(),
+        nickname: "testy".into(),
+        picture: None,
+        sub: "".into(),
+        updated_at: time::OffsetDateTime::now_utc(),
+        admin: Some(false),
+    }
 }
