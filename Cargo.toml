@@ -20,24 +20,24 @@ env_logger = "0.10.0"
 fastrand = "1.9.0"
 log = "0.4.17"
 querystrong = "0.3.0"
-serde = { version = "1.0.157", features = ["derive"] }
-serde_json = "1.0.94"
-serde_path_to_error = "0.1.10"
+serde = { version = "1.0.159", features = ["derive"] }
+serde_json = "1.0.95"
+serde_path_to_error = "0.1.11"
 thiserror = "1.0.40"
 time = { version = "0.3.20", features = ["serde", "serde-well-known"] }
-tokio = { version = "1.26.0", features = ["full"] }
-trillium = "0.2.6"
+tokio = { version = "1.27.0", features = ["full"] }
+trillium = "0.2.8"
 trillium-api = { version = "0.2.0-rc.2", default-features = false }
 trillium-caching-headers = "0.2.1"
-trillium-client = { version = "0.3.0", features = ["json"] }
+trillium-client = { version = "0.3.1", features = ["json"] }
 trillium-compression = "0.1.0"
 trillium-conn-id = "0.2.1"
 trillium-cookies = "0.3.0"
-trillium-http = { version = "0.2.12", features = ["http-compat"] }
+trillium-http = { version = "0.2.13", features = ["http-compat"] }
 trillium-logger = "0.4.2"
 trillium-macros = "0.0.2"
 trillium-redirect = "0.1.0"
-trillium-router = "0.3.4"
+trillium-router = "0.3.5"
 trillium-rustls = "0.2.0"
 trillium-sessions = "0.3.0"
 trillium-tokio = "0.2.1"
@@ -51,7 +51,7 @@ default-features = false
 features = ["pkce-plain"]
 
 [dependencies.sea-orm]
-version = "0.11.1"
+version = "0.11.2"
 features = [
     "runtime-tokio-rustls",
     "macros",
@@ -62,7 +62,7 @@ features = [
 
 [dev-dependencies]
 trillium-testing = { version = "0.4.1", features = ["tokio"] }
-sea-orm = { version = "0.11.1", features = ["sqlx-sqlite"] }
+sea-orm = { version = "0.11.2", features = ["sqlx-sqlite"] }
 
 [lib]
 name = "divviup_api"
