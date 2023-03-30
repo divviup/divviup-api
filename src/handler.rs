@@ -20,6 +20,7 @@ use trillium_caching_headers::{
 use trillium_compression::compression;
 use trillium_conn_id::conn_id;
 use trillium_cookies::cookies;
+use trillium_forwarding::Forwarding;
 use trillium_macros::Handler;
 use trillium_sessions::sessions;
 
@@ -43,6 +44,7 @@ impl DivviupApi {
 
         Self {
             handler: Box::new((
+                Forwarding::trust_always(),
                 db.clone(),
                 compression(),
                 conn_id(),

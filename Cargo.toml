@@ -33,6 +33,7 @@ trillium-client = { version = "0.3.1", features = ["json"] }
 trillium-compression = "0.1.0"
 trillium-conn-id = "0.2.1"
 trillium-cookies = "0.4.0"
+trillium-forwarding = "0.2.1"
 trillium-http = { version = "0.2.13", features = ["http-compat"] }
 trillium-logger = "0.4.2"
 trillium-macros = "0.0.2"
