@@ -7,7 +7,6 @@ use validator::{Validate, ValidationErrors};
 #[sea_orm(table_name = "account")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    #[serde(skip_deserializing)]
     pub id: Uuid,
 
     pub name: String,
@@ -18,7 +17,6 @@ pub struct Model {
     #[serde(with = "::time::serde::iso8601")]
     pub updated_at: OffsetDateTime,
 
-    #[serde(skip)]
     pub admin: bool,
 }
 
@@ -60,11 +58,11 @@ impl NewAccount {
     pub fn build(self) -> Result<ActiveModel, ValidationErrors> {
         self.validate()?;
         Ok(ActiveModel {
-            name: Set(self.name.unwrap()),
             id: Set(Uuid::new_v4()),
+            name: Set(self.name.unwrap()),
             created_at: Set(TimeDateTimeWithTimeZone::now_utc()),
             updated_at: Set(TimeDateTimeWithTimeZone::now_utc()),
-            ..Default::default()
+            admin: Set(false),
         })
     }
 }

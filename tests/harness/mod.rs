@@ -1,9 +1,9 @@
 #![allow(dead_code)] // because different tests use different parts of this
-use divviup_api::{
-    aggregator_api_mock::aggregator_api, entity::*, ApiConfig, Db, DivviupApi, User,
-};
+use divviup_api::{aggregator_api_mock::aggregator_api, ApiConfig, Db, DivviupApi};
+pub use divviup_api::{entity::*, User};
 pub use querystrong::QueryStrong;
-use sea_orm::{ActiveValue, ConnectionTrait, DbBackend, EntityTrait, Schema};
+pub use sea_orm::{ActiveModelTrait, ActiveValue, ConnectionTrait, DbBackend, EntityTrait, Schema};
+use serde::de::DeserializeOwned;
 use std::future::Future;
 use trillium::Handler;
 pub use trillium::KnownHeaderName;
@@ -74,7 +74,27 @@ pub fn test_user() -> User {
 }
 
 pub fn build_admin_account(name: &str) -> account::ActiveModel {
-    let mut account = Account::build(name.into()).unwrap();
+    let mut account = Account::build(name.into()).expect("could not validate account");
     account.admin = ActiveValue::Set(true);
     account
+}
+
+pub const APP_CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
+
+pub async fn json_response<T: DeserializeOwned>(conn: &mut Conn) -> T {
+    assert_eq!(
+        conn.response_headers()
+            .get_str(KnownHeaderName::ContentType)
+            .unwrap(),
+        APP_CONTENT_TYPE
+    );
+
+    let body = conn
+        .take_response_body()
+        .expect("no body was set")
+        .into_bytes()
+        .await
+        .expect("could not read body");
+
+    serde_json::from_slice(&body).expect("could not deserialize body")
 }

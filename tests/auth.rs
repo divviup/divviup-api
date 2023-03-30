@@ -3,38 +3,41 @@ mod harness;
 use harness::*;
 use trillium_sessions::{Session, SessionConnExt};
 
-#[test]
-fn login_when_not_already_logged_in() {
-    set_up(|app| async move {
-        let conn = get("/login").run_async(&app).await;
-        let auth_base = app.config().auth_url.join("/authorize")?;
-        assert_status!(conn, 302);
-        let location = conn
-            .inner()
-            .response_headers()
-            .get_str(KnownHeaderName::Location)
-            .unwrap();
-        assert!(location.starts_with(auth_base.as_ref()));
-        let url = Url::parse(location)?;
-        let query = QueryStrong::parse(url.query().unwrap())?;
-        assert_eq!(query["response_type"], "code");
-        assert!(query.get_str("code_challenge").is_some());
-        assert_eq!(query["client_id"], app.config().auth_client_id);
-        assert_eq!(
-            query["redirect_uri"],
-            app.config().api_url.join("callback").unwrap().as_ref()
-        );
-        Ok(())
-    });
-}
+mod login {
+    use super::*;
+    #[test]
+    fn when_not_already_logged_in() {
+        set_up(|app| async move {
+            let conn = get("/login").run_async(&app).await;
+            let auth_base = app.config().auth_url.join("/authorize")?;
+            assert_status!(conn, 302);
+            let location = conn
+                .inner()
+                .response_headers()
+                .get_str(KnownHeaderName::Location)
+                .unwrap();
+            assert!(location.starts_with(auth_base.as_ref()));
+            let url = Url::parse(location)?;
+            let query = QueryStrong::parse(url.query().unwrap())?;
+            assert_eq!(query["response_type"], "code");
+            assert!(query.get_str("code_challenge").is_some());
+            assert_eq!(query["client_id"], app.config().auth_client_id);
+            assert_eq!(
+                query["redirect_uri"],
+                app.config().api_url.join("callback").unwrap().as_ref()
+            );
+            Ok(())
+        });
+    }
 
-#[test]
-fn login_when_logged_in() {
-    set_up(|app| async move {
-        let conn = get("/login").with_state(test_user()).run_async(&app).await;
-        assert_response!(conn, 302, "", "Location" => app.config().app_url.as_ref());
-        Ok(())
-    });
+    #[test]
+    fn when_already_logged_in() {
+        set_up(|app| async move {
+            let conn = get("/login").with_state(test_user()).run_async(&app).await;
+            assert_response!(conn, 302, "", "Location" => app.config().app_url.as_ref());
+            Ok(())
+        });
+    }
 }
 
 #[test]
