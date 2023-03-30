@@ -2,13 +2,13 @@
 use divviup_api::{
     aggregator_api_mock::aggregator_api, entity::*, ApiConfig, Db, DivviupApi, User,
 };
+pub use querystrong::QueryStrong;
 use sea_orm::{ActiveValue, ConnectionTrait, DbBackend, EntityTrait, Schema};
 use std::future::Future;
 use trillium::Handler;
 pub use trillium::KnownHeaderName;
 pub use trillium_testing::prelude::*;
 pub use url::Url;
-pub use querystrong::QueryStrong;
 
 async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
     let backend = db.get_database_backend();

@@ -46,7 +46,10 @@ impl Related<task::Entity> for Entity {
 
 impl Model {
     pub fn build(email: String, account: &account::Model) -> Result<ActiveModel, ValidationErrors> {
-        CreateMembership { user_email: Some(email) }.build(account)
+        CreateMembership {
+            user_email: Some(email),
+        }
+        .build(account)
     }
 }
 
