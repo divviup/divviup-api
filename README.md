@@ -20,12 +20,14 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 
 * `AUTH_URL` -- The auth0-hosted base url that we use for identity (see [auth0 config section](#auth0))
 * `API_URL` -- The public-facing base url for this application
-* `AUTH_CLIENT_ID` -- auth0-provided client id (see [auth0 config section](#auth0))
-* `AUTH_CLIENT_SECRET` -- auth0-provided client secret (see [auth0 config section](#auth0))
+* `AUTH_CLIENT_ID` -- Auth0-provided client id (see [auth0 config section](#auth0))
+* `AUTH_CLIENT_SECRET` -- Auth0-provided client secret (see [auth0 config section](#auth0))
 * `SESSION_SECRET` -- A cryptographically-randomly secret that is at least 32 bytes long. Future note: trillium sessions support [secret rotation](https://docs.trillium.rs/trillium_sessions/struct.sessionhandler#method.with_older_secrets), but divviup-api does not yet use this
-* `AUTH_AUDIENCE` -- this is not currently used for anything important and probably will go away, but for now you should set it to `https://api.divviup.org`
+* `AUTH_AUDIENCE` -- This is not currently used for anything important and probably will go away, but for now you should set it to `https://api.divviup.org`
 * `APP_URL` -- The public-facing url for the associated browser client application
 * `DATABASE_URL` -- A [libpq-compatible postgres uri](https://www.postgresql.org/docs/current/libpq-connect.html#id-1.7.3.8.3.6)
+* `AGGREGATOR_URL` -- A url for the [janus](https://github.com/divviup/janus/) server aggregator-api.
+* `AGGREGATOR_SECRET` -- A bearer token that will be sent in an Authorization header with all api requests. When running in development/api mock mode, this is ignored
 
 ### Optional binding environment variables
 
