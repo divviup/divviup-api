@@ -93,16 +93,18 @@ SUBCOMMANDS:
 
 ## Running the server
 
-```bash
-$ cargo run
-```
+Because this server has a service dependency on the aggregator api
+now, we include a mock aggregator api that runs on the port specified
+by `AGGREGATOR_URL`. This aggregator api mock is FOR DEVELOPMENT ONLY
+and will not be enabled if compiled in a release profile. In addition
+to this safeguard, running this server requires turning enabling a
+`aggregator-api-mock` cargo feature.
 
-<details>
-    <summary>
-<h3>Optional: cargo-devserver</h3>
-</summary>
-For development purposes, you may want to install and use [`cargo devserver`](https://github.com/jbr/cargo-devserver), which binds to the environment's `PORT` and `HOST`, runs the server under a shared FD, recompiles the application in the background on source change and restarts the server on successful compilation.
-</details>
+As such, to run a standalone development server,
+
+```bash
+$ cargo run --features aggregator-api-mock
+```
 
 ## Security Notes
 
