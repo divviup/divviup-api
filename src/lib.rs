@@ -7,15 +7,18 @@
 )]
 #![warn(clippy::perf, clippy::cargo)]
 
+pub mod aggregator_api_mock;
+pub mod client;
 mod config;
 mod db;
-pub(crate) mod entity;
+pub mod entity;
 pub(crate) mod handler;
 mod routes;
 mod user;
 
+pub use client::AggregatorClient;
 pub use config::{ApiConfig, ApiConfigError};
-pub use db::{Db, DbConnExt};
-pub use handler::divviup_api;
+pub use db::Db;
+pub use handler::DivviupApi;
 pub use routes::routes;
 pub use user::{User, USER_SESSION_KEY};

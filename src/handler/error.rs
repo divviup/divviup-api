@@ -1,3 +1,4 @@
+use crate::client::ClientError;
 use sea_orm::DbErr;
 use serde_json::json;
 use std::{backtrace::Backtrace, sync::Arc};
@@ -61,11 +62,19 @@ pub enum Error {
     Json(#[from] ApiError),
     #[error(transparent)]
     Validation(#[from] ValidationErrors),
+    #[error(transparent)]
+    Client(#[from] Arc<ClientError>),
 }
 
 impl From<DbErr> for Error {
     fn from(value: DbErr) -> Self {
         Self::Database(Arc::new(value))
+    }
+}
+
+impl From<ClientError> for Error {
+    fn from(value: ClientError) -> Self {
+        Self::Client(Arc::new(value))
     }
 }
 

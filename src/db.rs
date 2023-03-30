@@ -1,10 +1,19 @@
-use sea_orm::{ConnectionTrait, DbConn};
+use sea_orm::{ConnectionTrait, Database, DbConn};
 use std::ops::{Deref, DerefMut};
 use trillium::{async_trait, Conn, Handler};
 use trillium_api::FromConn;
 
 #[derive(Clone, Debug)]
 pub struct Db(DbConn);
+
+impl Db {
+    pub async fn connect(url: &str) -> Self {
+        Database::connect(url)
+            .await
+            .map(Self)
+            .expect("could not connect to the database")
+    }
+}
 
 impl From<DbConn> for Db {
     fn from(value: DbConn) -> Self {
@@ -69,15 +78,5 @@ impl ConnectionTrait for Db {
         stmt: sea_orm::Statement,
     ) -> Result<Vec<sea_orm::QueryResult>, sea_orm::DbErr> {
         self.0.query_all(stmt).await
-    }
-}
-
-pub trait DbConnExt {
-    fn db(&self) -> &Db;
-}
-
-impl DbConnExt for Conn {
-    fn db(&self) -> &Db {
-        self.state().unwrap()
     }
 }

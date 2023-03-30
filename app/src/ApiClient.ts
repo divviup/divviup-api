@@ -46,17 +46,29 @@ export interface Task {
   created_at: string;
   updated_at: string;
   expiration: string | null;
+  is_leader: boolean;
+  max_batch_size: number | null;
 }
 
-export type NewTask = Pick<
+export type NewTask = Omit<
   Task,
-  | "name"
-  | "partner"
-  | "vdaf"
-  | "min_batch_size"
-  | "time_precision_seconds"
-  | "expiration"
->;
+  | "id"
+  | "report_count"
+  | "aggregate_collection_count"
+  | "account_id"
+  | "created_at"
+  | "updated_at"
+> & {
+  hpke_config: HpkeConfig;
+};
+
+export interface HpkeConfig {
+  id: number;
+  kem_id: number;
+  kdf_id: number;
+  aead_id: number;
+  public_key: string;
+}
 
 export interface UpdateTask {
   name: string;

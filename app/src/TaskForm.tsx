@@ -73,6 +73,14 @@ export default function TaskForm() {
                 name: "",
                 time_precision_seconds: 3600,
                 expiration: null,
+                is_leader: true,
+                hpke_config: {
+                  id: 1,
+                  kem_id: 1,
+                  kdf_id: 1,
+                  aead_id: 1,
+                  public_key: "public_key",
+                },
               } as NewTask
             }
             onSubmit={handleSubmit}
@@ -88,8 +96,11 @@ export default function TaskForm() {
                 <VdafType {...props} />
                 <VdafDetails {...props} />
                 <MinBatchSize {...props} />
+                <HpkeConfig {...props} />
+                <IsLeader {...props} />
                 <TimePrecisionSeconds {...props} />
                 <Expiration {...props} />
+                <QueryType {...props} />
                 <Button
                   variant="primary"
                   type="submit"
@@ -102,6 +113,121 @@ export default function TaskForm() {
           </Formik>
         </Col>
       </Row>
+    </>
+  );
+}
+
+function IsLeader({ handleChange, values }: FormikProps<NewTask>) {
+  return (
+    <FormCheck
+      type="switch"
+      checked={values.is_leader}
+      onChange={handleChange}
+      name="is_leader"
+      label="Leader"
+    />
+  );
+}
+
+function QueryType({
+  values,
+  setFieldValue,
+  errors,
+  handleBlur,
+}: FormikProps<NewTask>) {
+  let { max_batch_size } = values;
+  const [fixedSize, setFixedSize] = React.useState(false);
+
+  const checkboxChange = React.useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      let checked = event.target.value === "fixed";
+      setFixedSize(checked);
+      if (!checked) setFieldValue("max_batch_size", null);
+    },
+    [setFixedSize, setFieldValue]
+  );
+
+  const handleChange = React.useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      if (event.target.value) {
+        setFieldValue("max_batch_size", event.target.valueAsNumber);
+      } else {
+        setFieldValue("max_batch_size", null);
+      }
+    },
+    [setFieldValue]
+  );
+
+  return (
+    <FormGroup className="mb-3" controlId="querytype">
+      <FormCheck
+        type="radio"
+        name="query-type"
+        checked={!fixedSize}
+        onChange={checkboxChange}
+        label="Time Interval"
+        value="time"
+      />
+      <FormCheck
+        type="radio"
+        name="query-type"
+        checked={fixedSize}
+        onChange={checkboxChange}
+        label="Fixed Size"
+        value="fixed"
+      />
+      {fixedSize ? (
+        <FormControl
+          type="number"
+          name="max_batch_size"
+          value={max_batch_size || 1}
+          onChange={handleChange}
+          step={1}
+          onBlur={handleBlur}
+          min={1}
+          isInvalid={!!errors.max_batch_size}
+        />
+      ) : null}
+      <FormControl.Feedback type="invalid">
+        {errors.max_batch_size}
+      </FormControl.Feedback>
+    </FormGroup>
+  );
+}
+
+function HpkeConfig({ values }: FormikProps<NewTask>) {
+///temporary
+  return (
+    <>
+      <input
+        type="hidden"
+        name="hpke_config.id"
+        value={values.hpke_config.id}
+      />
+
+      <input
+        type="hidden"
+        name="hpke_config.kem_id"
+        value={values.hpke_config.kem_id}
+      />
+
+      <input
+        type="hidden"
+        name="hpke_config.kdf_id"
+        value={values.hpke_config.kdf_id}
+      />
+
+      <input
+        type="hidden"
+        name="hpke_config.aead_id"
+        value={values.hpke_config.aead_id}
+      />
+
+      <input
+        type="hidden"
+        name="hpke_config.public_key"
+        value={values.hpke_config.public_key}
+      />
     </>
   );
 }
