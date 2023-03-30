@@ -44,6 +44,12 @@ impl Related<task::Entity> for Entity {
     }
 }
 
+impl Model {
+    pub fn build(email: String, account: &account::Model) -> Result<ActiveModel, ValidationErrors> {
+        CreateMembership { user_email: Some(email) }.build(account)
+    }
+}
+
 #[derive(serde::Deserialize, Clone, Debug, Validate)]
 pub struct CreateMembership {
     #[validate(required, email)]

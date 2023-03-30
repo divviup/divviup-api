@@ -50,6 +50,12 @@ pub struct NewAccount {
     name: Option<String>,
 }
 
+impl Model {
+    pub fn build(name: String) -> Result<ActiveModel, ValidationErrors> {
+        NewAccount { name: Some(name) }.build()
+    }
+}
+
 impl NewAccount {
     pub fn build(self) -> Result<ActiveModel, ValidationErrors> {
         self.validate()?;
