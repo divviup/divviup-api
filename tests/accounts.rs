@@ -161,3 +161,98 @@ mod get_account {
         });
     }
 }
+
+mod post_accounts {
+    use super::*;
+
+    #[test]
+    fn not_logged_in() {
+        set_up(|app| async move {
+            let conn = post("/api/accounts")
+                .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+                .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+                .with_request_body(
+                    serde_json::to_string(&json!({
+                       "name": "some account name"
+                    }))
+                    .unwrap(),
+                )
+                .run_async(&app)
+                .await;
+
+            assert_response!(conn, 403);
+
+            let accounts = Accounts::find().all(app.db()).await?;
+            assert_eq!(accounts.len(), 0);
+            let memberships = Memberships::find().all(app.db()).await?;
+            assert_eq!(memberships.len(), 0);
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn valid() {
+        set_up(|app| async move {
+            let user = test_user();
+            let mut conn = post("/api/accounts")
+                .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+                .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+                .with_state(user.clone())
+                .with_request_body(
+                    serde_json::to_string(&json!({
+                       "name": "some account name"
+                    }))
+                    .unwrap(),
+                )
+                .run_async(&app)
+                .await;
+            assert_response!(conn, 202);
+            let account: Account = json_response(&mut conn).await;
+            assert_eq!(account.name, "some account name");
+
+            let accounts = Accounts::find().all(app.db()).await?;
+
+            assert_eq!(accounts, [account.clone()]);
+
+            let memberships = Memberships::find().all(app.db()).await?;
+            assert_eq!(memberships.len(), 1);
+            assert_eq!(&memberships[0].user_email, &user.email);
+            assert_eq!(&memberships[0].account_id, &account.id);
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn invalid() {
+        set_up(|app| async move {
+            let user = test_user();
+            let mut conn = post("/api/accounts")
+                .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+                .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+                .with_state(user.clone())
+                .with_request_body(serde_json::to_string(&json!({ "name": "" })).unwrap())
+                .run_async(&app)
+                .await;
+
+            assert_response!(conn, 400);
+            let errors: serde_json::Value = json_response(&mut conn).await;
+            assert_eq!(
+                errors,
+                json!({
+                    "name": [{
+                        "code": "length",
+                        "message": null,
+                        "params": { "min": 3, "max": 100, "value": "" }
+                    }]
+                })
+            );
+            let accounts = Accounts::find().all(app.db()).await?;
+            assert_eq!(accounts.len(), 0);
+            let memberships = Memberships::find().all(app.db()).await?;
+            assert_eq!(memberships.len(), 0);
+            Ok(())
+        })
+    }
+}

@@ -1,9 +1,10 @@
 #![allow(dead_code)] // because different tests use different parts of this
-use divviup_api::{aggregator_api_mock::aggregator_api, ApiConfig, Db, DivviupApi};
-pub use divviup_api::{entity::*, User};
+use divviup_api::{aggregator_api_mock::aggregator_api, ApiConfig, Db};
+pub use divviup_api::{entity::*, DivviupApi, User};
 pub use querystrong::QueryStrong;
 pub use sea_orm::{ActiveModelTrait, ActiveValue, ConnectionTrait, DbBackend, EntityTrait, Schema};
 use serde::de::DeserializeOwned;
+pub use serde_json::json;
 use std::future::Future;
 use trillium::Handler;
 pub use trillium::KnownHeaderName;
