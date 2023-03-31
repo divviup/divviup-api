@@ -14,14 +14,14 @@ pub const USER_SESSION_KEY: &str = "user";
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct User {
     pub email: String,
-    email_verified: bool,
-    name: String,
-    nickname: String,
-    picture: String,
-    sub: String,
+    pub email_verified: bool,
+    pub name: String,
+    pub nickname: String,
+    pub picture: Option<String>,
+    pub sub: String,
     #[serde(with = "time::serde::iso8601")]
-    updated_at: OffsetDateTime,
-    pub(crate) admin: Option<bool>,
+    pub updated_at: OffsetDateTime,
+    pub admin: Option<bool>,
 }
 
 impl User {

@@ -11,4 +11,4 @@ pub use membership::{
 };
 pub use task::{Column as TaskColumn, Entity as Tasks, Model as Task, NewTask, UpdateTask};
 
-pub use session::Entity as Sessions;
+pub use session::{Entity as Sessions, Model as Session};
