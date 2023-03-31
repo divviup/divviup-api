@@ -20,12 +20,14 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 
 * `AUTH_URL` -- The auth0-hosted base url that we use for identity (see [auth0 config section](#auth0))
 * `API_URL` -- The public-facing base url for this application
-* `AUTH_CLIENT_ID` -- auth0-provided client id (see [auth0 config section](#auth0))
-* `AUTH_CLIENT_SECRET` -- auth0-provided client secret (see [auth0 config section](#auth0))
+* `AUTH_CLIENT_ID` -- Auth0-provided client id (see [auth0 config section](#auth0))
+* `AUTH_CLIENT_SECRET` -- Auth0-provided client secret (see [auth0 config section](#auth0))
 * `SESSION_SECRET` -- A cryptographically-randomly secret that is at least 32 bytes long. Future note: trillium sessions support [secret rotation](https://docs.trillium.rs/trillium_sessions/struct.sessionhandler#method.with_older_secrets), but divviup-api does not yet use this
-* `AUTH_AUDIENCE` -- this is not currently used for anything important and probably will go away, but for now you should set it to `https://api.divviup.org`
+* `AUTH_AUDIENCE` -- This is not currently used for anything important and probably will go away, but for now you should set it to `https://api.divviup.org`
 * `APP_URL` -- The public-facing url for the associated browser client application
 * `DATABASE_URL` -- A [libpq-compatible postgres uri](https://www.postgresql.org/docs/current/libpq-connect.html#id-1.7.3.8.3.6)
+* `AGGREGATOR_URL` -- A url for the [janus](https://github.com/divviup/janus/) server aggregator-api.
+* `AGGREGATOR_SECRET` -- A bearer token that will be sent in an Authorization header with all api requests. When running in development/api mock mode, this is ignored
 
 ### Optional binding environment variables
 
@@ -93,16 +95,18 @@ SUBCOMMANDS:
 
 ## Running the server
 
-```bash
-$ cargo run
-```
+Because this server has a service dependency on the aggregator api
+now, we include a mock aggregator api that runs on the port specified
+by `AGGREGATOR_URL`. This aggregator api mock is FOR DEVELOPMENT ONLY
+and will not be enabled if compiled in a release profile. In addition
+to this safeguard, running this server requires turning enabling a
+`aggregator-api-mock` cargo feature.
 
-<details>
-    <summary>
-<h3>Optional: cargo-devserver</h3>
-</summary>
-For development purposes, you may want to install and use [`cargo devserver`](https://github.com/jbr/cargo-devserver), which binds to the environment's `PORT` and `HOST`, runs the server under a shared FD, recompiles the application in the background on source change and restarts the server on successful compilation.
-</details>
+As such, to run a standalone development server,
+
+```bash
+$ cargo run --features aggregator-api-mock
+```
 
 ## Security Notes
 
