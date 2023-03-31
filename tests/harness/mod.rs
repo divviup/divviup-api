@@ -1,15 +1,19 @@
 #![allow(dead_code)] // because different tests use different parts of this
 use divviup_api::{aggregator_api_mock::aggregator_api, ApiConfig, Db};
+use serde::de::DeserializeOwned;
+use std::future::Future;
+use trillium::Handler;
+
 pub use divviup_api::{entity::*, DivviupApi, User};
 pub use querystrong::QueryStrong;
 pub use sea_orm::{ActiveModelTrait, ActiveValue, ConnectionTrait, DbBackend, EntityTrait, Schema};
-use serde::de::DeserializeOwned;
 pub use serde_json::json;
-use std::future::Future;
-use trillium::Handler;
+pub use test_harness::test;
 pub use trillium::KnownHeaderName;
 pub use trillium_testing::prelude::*;
 pub use url::Url;
+
+pub type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
     let backend = db.get_database_backend();
@@ -61,23 +65,65 @@ where
     });
 }
 
-pub fn test_user() -> User {
-    User {
-        email: "test@example.example".into(),
-        email_verified: true,
-        name: "test user".into(),
-        nickname: "testy".into(),
-        picture: None,
-        sub: "".into(),
-        updated_at: time::OffsetDateTime::now_utc(),
-        admin: Some(false),
-    }
-}
+pub mod fixtures {
+    use super::*;
 
-pub fn build_admin_account(name: &str) -> account::ActiveModel {
-    let mut account = Account::build(name.into()).expect("could not validate account");
-    account.admin = ActiveValue::Set(true);
-    account
+    pub fn user() -> User {
+        User {
+            email: format!("test-{}@example.example", random_name()),
+            email_verified: true,
+            name: "test user".into(),
+            nickname: "testy".into(),
+            picture: None,
+            sub: "".into(),
+            updated_at: time::OffsetDateTime::now_utc(),
+            admin: Some(false),
+        }
+    }
+
+    pub fn random_name() -> String {
+        std::iter::repeat_with(fastrand::alphabetic)
+            .take(10)
+            .collect()
+    }
+
+    pub async fn account(app: &DivviupApi) -> Account {
+        Account::build(random_name())
+            .unwrap()
+            .insert(app.db())
+            .await
+            .unwrap()
+    }
+
+    pub async fn admin_account(app: &DivviupApi) -> Account {
+        let mut active_model = Account::build(random_name()).unwrap();
+        active_model.admin = ActiveValue::Set(true);
+        active_model.insert(app.db()).await.unwrap()
+    }
+
+    pub async fn membership(app: &DivviupApi, account: &Account, user: &User) -> Membership {
+        Membership::build(user.email.clone(), &account)
+            .unwrap()
+            .insert(app.db())
+            .await
+            .unwrap()
+    }
+
+    pub async fn admin(app: &DivviupApi) -> (User, Account, Membership) {
+        let user = user();
+        let account = admin_account(app).await;
+        let membership = membership(app, &account, &user).await;
+
+        (user, account, membership)
+    }
+
+    pub async fn member(app: &DivviupApi) -> (User, Account, Membership) {
+        let user = user();
+        let account = account(app).await;
+        let membership = membership(app, &account, &user).await;
+
+        (user, account, membership)
+    }
 }
 
 pub const APP_CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
