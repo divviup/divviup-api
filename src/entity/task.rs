@@ -13,7 +13,6 @@ use validator::{Validate, ValidationError, ValidationErrors};
 #[sea_orm(table_name = "task")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    #[serde(skip_deserializing)]
     pub id: String,
     pub account_id: Uuid,
     pub name: String,

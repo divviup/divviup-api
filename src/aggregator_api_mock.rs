@@ -24,19 +24,23 @@ async fn get_task_metrics(_: &mut Conn, (): ()) -> Json<TaskMetrics> {
     })
 }
 
-async fn post_task(_: &mut Conn, Json(req): Json<TaskCreate>) -> Json<TaskResponse> {
-    Json(TaskResponse {
+async fn post_task(_: &mut Conn, Json(task_create): Json<TaskCreate>) -> Json<TaskResponse> {
+    Json(task_response(task_create))
+}
+
+pub fn task_response(task_create: TaskCreate) -> TaskResponse {
+    TaskResponse {
         task_id: repeat_with(alphanumeric).take(10).collect(),
-        aggregator_endpoints: req.aggregator_endpoints,
-        query_type: req.query_type,
-        vdaf: req.vdaf,
-        role: req.role,
+        aggregator_endpoints: task_create.aggregator_endpoints,
+        query_type: task_create.query_type,
+        vdaf: task_create.vdaf,
+        role: task_create.role,
         vdaf_verify_keys: vec![repeat_with(alphanumeric).take(10).collect()],
-        max_batch_query_count: req.max_batch_query_count,
-        task_expiration: req.task_expiration,
+        max_batch_query_count: task_create.max_batch_query_count,
+        task_expiration: task_create.task_expiration,
         report_expiry_age: None,
-        min_batch_size: req.min_batch_size,
-        time_precision: req.time_precision,
+        min_batch_size: task_create.min_batch_size,
+        time_precision: task_create.time_precision,
         tolerable_clock_skew: 60,
         collector_hpke_config: HpkeConfig {
             id: 1,
@@ -59,5 +63,5 @@ async fn post_task(_: &mut Conn, Json(req): Json<TaskCreate>) -> Json<TaskRespon
         )]
         .into_iter()
         .collect(),
-    })
+    }
 }

@@ -6,7 +6,9 @@ use trillium::Handler;
 
 pub use divviup_api::{entity::*, DivviupApi, User};
 pub use querystrong::QueryStrong;
-pub use sea_orm::{ActiveModelTrait, ActiveValue, ConnectionTrait, DbBackend, EntityTrait, Schema};
+pub use sea_orm::{
+    ActiveModelTrait, ActiveValue, ConnectionTrait, DbBackend, EntityTrait, PaginatorTrait, Schema,
+};
 pub use serde_json::json;
 pub use test_harness::test;
 pub use trillium::KnownHeaderName;
@@ -68,6 +70,9 @@ where
 }
 
 pub mod fixtures {
+    use divviup_api::{aggregator_api_mock, entity::task::HpkeConfig};
+    use validator::Validate;
+
     use super::*;
 
     pub fn user() -> User {
@@ -125,6 +130,32 @@ pub mod fixtures {
         let membership = membership(app, &account, &user).await;
 
         (user, account, membership)
+    }
+
+    pub async fn task(app: &DivviupApi, account: &Account) -> Task {
+        let new_task = NewTask {
+            name: Some(random_name()),
+            partner: Some(random_name()),
+            vdaf: Some(task::Vdaf::Count),
+            min_batch_size: Some(500),
+            max_batch_size: Some(10000),
+            is_leader: Some(true),
+            expiration: None,
+            time_precision_seconds: Some(60 * 60),
+            hpke_config: Some(HpkeConfig {
+                id: Some(1),
+                kem_id: Some(1),
+                kdf_id: Some(1),
+                aead_id: Some(1),
+                public_key: Some("stuff".into()),
+            }),
+        };
+        new_task.validate().unwrap();
+        let api_response = aggregator_api_mock::task_response(new_task.clone().into());
+        task::build_task(new_task, api_response, &account)
+            .insert(app.db())
+            .await
+            .unwrap()
     }
 }
 
