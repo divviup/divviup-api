@@ -33,7 +33,8 @@ mod login {
     #[test]
     fn when_already_logged_in() {
         set_up(|app| async move {
-            let conn = get("/login").with_state(test_user()).run_async(&app).await;
+            let user = fixtures::user();
+            let conn = get("/login").with_state(user).run_async(&app).await;
             assert_response!(conn, 302, "", "Location" => app.config().app_url.as_ref());
             Ok(())
         });
@@ -43,7 +44,7 @@ mod login {
 #[test]
 fn logout() {
     set_up(|app| async move {
-        let user = test_user();
+        let user = fixtures::user();
         let mut session = Session::new();
         session.insert(USER_SESSION_KEY, &user)?;
 
