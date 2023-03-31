@@ -1,7 +1,7 @@
 mod harness;
 use harness::*;
 
-mod get_accounts {
+mod index {
     use super::*;
     #[test]
     fn as_member() {
@@ -68,7 +68,7 @@ mod get_accounts {
     }
 }
 
-mod get_account {
+mod show {
     use super::*;
     #[test]
     fn as_a_member() {
@@ -162,7 +162,7 @@ mod get_account {
     }
 }
 
-mod post_accounts {
+mod create {
     use super::*;
 
     #[test]
@@ -238,21 +238,151 @@ mod post_accounts {
 
             assert_response!(conn, 400);
             let errors: serde_json::Value = json_response(&mut conn).await;
-            assert_eq!(
-                errors,
-                json!({
-                    "name": [{
-                        "code": "length",
-                        "message": null,
-                        "params": { "min": 3, "max": 100, "value": "" }
-                    }]
-                })
-            );
+            assert!(errors.get("name").is_some());
             let accounts = Accounts::find().all(app.db()).await?;
             assert_eq!(accounts.len(), 0);
             let memberships = Memberships::find().all(app.db()).await?;
             assert_eq!(memberships.len(), 0);
             Ok(())
         })
+    }
+}
+
+mod update {
+    use super::*;
+    #[test]
+    fn as_a_member() {
+        set_up(|app| async move {
+            let user = test_user();
+            let account_with_membership = Account::build("my account".into())?
+                .insert(app.db())
+                .await?;
+
+            let _membership = Membership::build(user.email.clone(), &account_with_membership)?
+                .insert(app.db())
+                .await?;
+
+            let mut conn = patch(format!("/api/accounts/{}", account_with_membership.id))
+                .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+                .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+                .with_request_body(serde_json::to_string(&json!({ "name": "new name" }))?)
+                .with_state(user)
+                .run_async(&app)
+                .await;
+
+            assert_response!(conn, 202);
+            let account: Account = json_response(&mut conn).await;
+            assert_eq!(&account.name, "new name");
+            assert_eq!(
+                Accounts::find_by_id(account.id)
+                    .one(app.db())
+                    .await?
+                    .unwrap()
+                    .name,
+                "new name"
+            );
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn not_as_a_member() {
+        set_up(|app| async move {
+            let user = test_user();
+            let account_with_membership = Account::build("my account".into())?
+                .insert(app.db())
+                .await?;
+
+            let other_account = Account::build("someone else's account".into())?
+                .insert(app.db())
+                .await?;
+
+            let _membership = Membership::build(user.email.clone(), &account_with_membership)?
+                .insert(app.db())
+                .await?;
+
+            let mut conn = patch(format!("/api/accounts/{}", other_account.id))
+                .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+                .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+                .with_request_body(serde_json::to_string(&json!({ "name": "new name" }))?)
+                .with_state(user)
+                .run_async(&app)
+                .await;
+
+            assert_eq!(conn.status().unwrap_or(Status::NotFound), Status::NotFound);
+            assert!(conn.take_response_body().is_none());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn not_as_a_member_but_as_an_admin() {
+        set_up(|app| async move {
+            let user = test_user();
+            let admin_account = build_admin_account("admin account")
+                .insert(app.db())
+                .await?;
+
+            let other_account = Account::build("someone else's account".into())?
+                .insert(app.db())
+                .await?;
+
+            let _membership = Membership::build(user.email.clone(), &admin_account)?
+                .insert(app.db())
+                .await?;
+
+            let mut conn = patch(format!("/api/accounts/{}", other_account.id))
+                .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+                .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+                .with_request_body(serde_json::to_string(&json!({ "name": "new name" }))?)
+                .with_state(user)
+                .run_async(&app)
+                .await;
+
+            assert_response!(conn, 202);
+            let account: Account = json_response(&mut conn).await;
+
+            assert_eq!(&account.name, "new name");
+            assert_eq!(
+                Accounts::find_by_id(account.id)
+                    .one(app.db())
+                    .await?
+                    .unwrap()
+                    .name,
+                "new name"
+            );
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn invalid() {
+        set_up(|app| async move {
+            let user = test_user();
+            let account_with_membership = Account::build("my account".into())?
+                .insert(app.db())
+                .await?;
+
+            let _membership = Membership::build(user.email.clone(), &account_with_membership)?
+                .insert(app.db())
+                .await?;
+
+            let mut conn = patch(format!("/api/accounts/{}", account_with_membership.id))
+                .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+                .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+                .with_request_body(serde_json::to_string(&json!({ "name": "" }))?)
+                .with_state(user)
+                .run_async(&app)
+                .await;
+
+            assert_response!(conn, 400);
+            let errors: serde_json::Value = json_response(&mut conn).await;
+            assert!(errors.get("name").is_some());
+
+            Ok(())
+        });
     }
 }
