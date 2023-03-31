@@ -1,15 +1,19 @@
 #![allow(dead_code)] // because different tests use different parts of this
 use divviup_api::{aggregator_api_mock::aggregator_api, ApiConfig, Db};
+use serde::de::DeserializeOwned;
+use std::future::Future;
+use trillium::Handler;
+
 pub use divviup_api::{entity::*, DivviupApi, User};
 pub use querystrong::QueryStrong;
 pub use sea_orm::{ActiveModelTrait, ActiveValue, ConnectionTrait, DbBackend, EntityTrait, Schema};
-use serde::de::DeserializeOwned;
 pub use serde_json::json;
-use std::future::Future;
-use trillium::Handler;
+pub use test_harness::test;
 pub use trillium::KnownHeaderName;
 pub use trillium_testing::prelude::*;
 pub use url::Url;
+
+pub type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
     let backend = db.get_database_backend();
@@ -75,12 +79,6 @@ pub mod fixtures {
             updated_at: time::OffsetDateTime::now_utc(),
             admin: Some(false),
         }
-    }
-
-    pub struct Member {
-        pub user: User,
-        pub account: Account,
-        pub membership: Membership,
     }
 
     pub fn random_name() -> String {

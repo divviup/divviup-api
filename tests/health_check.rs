@@ -1,18 +1,14 @@
 mod harness;
-use harness::*;
+use harness::{test, *};
 
-#[test]
-fn root() {
-    set_up(|app| async move {
-        assert_ok!(get("/").run_async(&app).await);
-        Ok(())
-    });
+#[test(harness = set_up)]
+async fn root(app: DivviupApi) -> TestResult {
+    assert_ok!(get("/").run_async(&app).await);
+    Ok(())
 }
 
-#[test]
-fn health_check() {
-    set_up(|app| async move {
-        assert_ok!(get("/health").run_async(&app).await);
-        Ok(())
-    });
+#[test(harness = set_up)]
+async fn health_check(app: DivviupApi) -> TestResult {
+    assert_ok!(get("/health").run_async(&app).await);
+    Ok(())
 }
