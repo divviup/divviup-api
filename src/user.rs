@@ -11,7 +11,7 @@ use trillium_sessions::SessionConnExt;
 
 pub const USER_SESSION_KEY: &str = "user";
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct User {
     pub email: String,
     pub email_verified: bool,

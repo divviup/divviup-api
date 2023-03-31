@@ -2,10 +2,13 @@
 use divviup_api::{
     aggregator_api_mock::aggregator_api, entity::*, ApiConfig, Db, DivviupApi, User,
 };
-use sea_orm::{ConnectionTrait, DbBackend, EntityTrait, Schema};
+pub use querystrong::QueryStrong;
+use sea_orm::{ActiveValue, ConnectionTrait, DbBackend, EntityTrait, Schema};
 use std::future::Future;
 use trillium::Handler;
-use url::Url;
+pub use trillium::KnownHeaderName;
+pub use trillium_testing::prelude::*;
+pub use url::Url;
 
 async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
     let backend = db.get_database_backend();
@@ -48,11 +51,11 @@ pub async fn build_test_app(aggregator_url: Url) -> DivviupApi {
 pub fn set_up<F, Fut>(f: F)
 where
     F: FnOnce(DivviupApi) -> Fut,
-    Fut: Future<Output = ()> + Send + 'static,
+    Fut: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,
 {
     trillium_testing::with_server(aggregator_api(), |aggregator_url| async move {
         let app = build_test_app(aggregator_url).await;
-        f(app).await;
+        f(app).await?;
         Ok(())
     });
 }
@@ -68,4 +71,10 @@ pub fn test_user() -> User {
         updated_at: time::OffsetDateTime::now_utc(),
         admin: Some(false),
     }
+}
+
+pub fn build_admin_account(name: &str) -> account::ActiveModel {
+    let mut account = Account::build(name.into()).unwrap();
+    account.admin = ActiveValue::Set(true);
+    account
 }
