@@ -8,7 +8,6 @@ use validator::{Validate, ValidationErrors};
 #[sea_orm(table_name = "membership")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    #[serde(skip_deserializing)]
     pub id: Uuid,
     pub account_id: Uuid,
     pub user_email: String,
