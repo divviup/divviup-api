@@ -2,8 +2,6 @@ mod harness;
 use harness::*;
 
 mod create {
-    use sea_orm::PaginatorTrait;
-
     use super::{test, *};
 
     #[test(harness = set_up)]
