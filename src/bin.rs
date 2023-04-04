@@ -1,4 +1,4 @@
-use divviup_api::{ApiConfig, DivviupApi};
+use divviup_api::{telemetry::install_metrics_exporter, ApiConfig, DivviupApi};
 use trillium_http::Stopper;
 
 #[tokio::main]
@@ -7,6 +7,9 @@ async fn main() {
 
     let config = ApiConfig::from_env().expect("Missing config");
     let stopper = Stopper::new();
+
+    install_metrics_exporter(&config.prometheus_host, config.prometheus_port)
+        .expect("Error setting up metrics");
 
     #[cfg(all(debug_assertions, feature = "aggregator-api-mock"))]
     if let Some(port) = config.aggregator_url.port() {
