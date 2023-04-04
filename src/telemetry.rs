@@ -37,7 +37,7 @@ pub fn install_metrics_exporter(host: &str, port: u16) -> Result<(), MetricsErro
         .u64_observable_gauge("divviup_api_build_info")
         .with_description("Build-time version information")
         .init();
-    let mut git_revision: &str = git_version!(fallback = "unknwon");
+    let mut git_revision: &str = git_version!(fallback = "unknown");
     if git_revision == "unknown" {
         if let Some(value) = option_env!("GIT_REVISION") {
             git_revision = value;
