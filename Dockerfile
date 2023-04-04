@@ -3,6 +3,7 @@ RUN apk add libc-dev
 WORKDIR /src
 COPY Cargo.toml /src/Cargo.toml
 COPY Cargo.lock /src/Cargo.lock
+COPY build.rs /src/build.rs
 COPY migration /src/migration
 COPY src /src/src
 RUN --mount=type=cache,target=/usr/local/cargo/registry --mount=type=cache,target=/src/target cargo build --profile release -p migration && cp /src/target/release/migration /migration
