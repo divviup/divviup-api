@@ -18,6 +18,7 @@ async-session = "3.0.0"
 base64 = "0.21.0"
 env_logger = "0.10.0"
 fastrand = "1.9.0"
+git-version = "0.3.5"
 log = "0.4.17"
 opentelemetry = { version = "0.19.0", features = ["metrics"] }
 opentelemetry-prometheus = { version = "0.12.0", features = ["prometheus-encoding"] }
@@ -67,6 +68,9 @@ features = [
 [dev-dependencies]
 trillium-testing = { version = "0.4.2", features = ["tokio"] }
 sea-orm = { version = "0.11.2", features = ["sqlx-sqlite"] }
+
+[build-dependencies]
+rustc_version = "0.4.0"
 
 [lib]
 name = "divviup_api"
