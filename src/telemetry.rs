@@ -10,11 +10,8 @@ use opentelemetry::{
     },
     Context, KeyValue,
 };
-use opentelemetry_prometheus::{Encoder, TextEncoder};
 use tokio::{spawn, task::JoinHandle};
-use trillium::{KnownHeaderName, Status};
 use trillium_http::Stopper;
-use trillium_router::Router;
 
 /// Install a Prometheus metrics provider and exporter. The OpenTelemetry global API can be used to
 /// create and update instruments, and they will be sent through this exporter.
@@ -58,22 +55,7 @@ pub fn install_metrics_exporter(
         ],
     );
 
-    let router = Router::new().get("metrics", move |conn: trillium::Conn| {
-        let exporter = Arc::clone(&exporter);
-        async move {
-            let mut buffer = Vec::new();
-            let encoder = TextEncoder::new();
-            match encoder.encode(&exporter.registry().gather(), &mut buffer) {
-                Ok(()) => conn
-                    .with_header(
-                        KnownHeaderName::ContentType,
-                        encoder.format_type().to_owned(),
-                    )
-                    .ok(buffer),
-                Err(_) => conn.with_status(Status::InternalServerError),
-            }
-        }
-    });
+    let router = trillium_prometheus::text_format_handler(exporter.registry().clone());
 
     Ok(spawn(
         trillium_tokio::config()
