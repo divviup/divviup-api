@@ -1,0 +1,36 @@
+name: Docker Release
+
+on:
+  release:
+    types: [published]
+
+env:
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  build-and-push:
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: echo "GIT_REVISION=$(git describe --always --dirty=-modified)" >> $GITHUB_ENV
+      - id: gcp-auth
+        name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ vars.GCP_ARTIFACT_PUBLISHER_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_ARTIFACT_PUBLISHER_LOAD_GEN_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_lifetime: "3600s"
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+      - uses: docker/login-action@v2
+        with:
+          registry: us-west2-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.gcp-auth.outputs.access_token }}
+      - id: get_version
+        run: echo VERSION=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT
+      - run: docker build --tag us-west2-docker.pkg.dev/janus-artifacts/divviup-api/divviup_api:${{ steps.get_version.outputs.VERSION }} --build-arg GIT_REVISION=${GIT_REVISION} .
+      - run: docker push us-west2-docker.pkg.dev/janus-artifacts/divviup-api/divviup_api:{{ steps.get_version.outputs.VERSION }}
