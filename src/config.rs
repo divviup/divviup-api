@@ -75,7 +75,7 @@ impl ApiConfig {
             auth_url: var("AUTH_URL", "url")?,
             aggregator_url: var("AGGREGATOR_URL", "url")?,
             aggregator_secret: var("AGGREGATOR_SECRET", "string")?,
-            prometheus_host: var_optional("OTEL_EXPORTER_PROMETHEUS_HOST", "0.0.0.0", "string")?,
+            prometheus_host: var_optional("OTEL_EXPORTER_PROMETHEUS_HOST", "localhost", "string")?,
             prometheus_port: var_optional(
                 "OTEL_EXPORTER_PROMETHEUS_PORT",
                 "9464",
