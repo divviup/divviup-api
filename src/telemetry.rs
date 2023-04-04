@@ -11,13 +11,18 @@ use opentelemetry::{
     Context, KeyValue,
 };
 use opentelemetry_prometheus::{Encoder, TextEncoder};
-use tokio::spawn;
+use tokio::{spawn, task::JoinHandle};
 use trillium::{KnownHeaderName, Status};
+use trillium_http::Stopper;
 use trillium_router::Router;
 
 /// Install a Prometheus metrics provider and exporter. The OpenTelemetry global API can be used to
 /// create and update instruments, and they will be sent through this exporter.
-pub fn install_metrics_exporter(host: &str, port: u16) -> Result<(), MetricsError> {
+pub fn install_metrics_exporter(
+    host: &str,
+    port: u16,
+    stopper: Stopper,
+) -> Result<JoinHandle<()>, MetricsError> {
     let exporter = Arc::new(
         opentelemetry_prometheus::exporter(
             controllers::basic(processors::factory(
@@ -70,13 +75,12 @@ pub fn install_metrics_exporter(host: &str, port: u16) -> Result<(), MetricsErro
         }
     });
 
-    spawn(
+    Ok(spawn(
         trillium_tokio::config()
             .with_host(host)
             .with_port(port)
             .without_signals()
+            .with_stopper(stopper)
             .run_async(router),
-    );
-
-    Ok(())
+    ))
 }
