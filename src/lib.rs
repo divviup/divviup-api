@@ -14,6 +14,7 @@ mod db;
 pub mod entity;
 pub(crate) mod handler;
 mod routes;
+pub mod telemetry;
 mod user;
 
 pub use client::AggregatorClient;

@@ -1,5 +1,5 @@
 use crate::handler::oauth2::Oauth2Config;
-use std::str::FromStr;
+use std::{env::VarError, str::FromStr};
 use thiserror::Error;
 use url::Url;
 
@@ -15,6 +15,8 @@ pub struct ApiConfig {
     pub auth_audience: String,
     pub aggregator_url: Url,
     pub aggregator_secret: String,
+    pub prometheus_host: String,
+    pub prometheus_port: u16,
 }
 
 #[derive(Debug, Error, Clone, Copy)]
@@ -31,12 +33,33 @@ pub enum ApiConfigError {
 
 fn var<T: FromStr>(name: &'static str, format: &'static str) -> Result<T, ApiConfigError> {
     std::env::var(name)
-        .map_err(|_| ApiConfigError::MissingEnvVar(name))
-        .and_then(|domain| {
-            domain
+        .map_err(|error| match error {
+            VarError::NotPresent => ApiConfigError::MissingEnvVar(name),
+            VarError::NotUnicode(_) => ApiConfigError::InvalidEnvVarFormat(name, format),
+        })
+        .and_then(|input| {
+            input
                 .parse()
                 .map_err(|_| ApiConfigError::InvalidEnvVarFormat(name, format))
         })
+}
+
+fn var_optional<T: FromStr + 'static>(
+    name: &'static str,
+    default: &'static str,
+    format: &'static str,
+) -> Result<T, ApiConfigError> {
+    let input_res = std::env::var(name);
+    let input = match &input_res {
+        Ok(value) => value,
+        Err(VarError::NotPresent) => default,
+        Err(VarError::NotUnicode(_)) => {
+            return Err(ApiConfigError::InvalidEnvVarFormat(name, format))
+        }
+    };
+    input
+        .parse()
+        .map_err(|_| ApiConfigError::InvalidEnvVarFormat(name, format))
 }
 
 impl ApiConfig {
@@ -52,6 +75,12 @@ impl ApiConfig {
             auth_url: var("AUTH_URL", "url")?,
             aggregator_url: var("AGGREGATOR_URL", "url")?,
             aggregator_secret: var("AGGREGATOR_SECRET", "string")?,
+            prometheus_host: var_optional("OTEL_EXPORTER_PROMETHEUS_HOST", "localhost", "string")?,
+            prometheus_port: var_optional(
+                "OTEL_EXPORTER_PROMETHEUS_PORT",
+                "9464",
+                "16-bit number",
+            )?,
         })
     }
 

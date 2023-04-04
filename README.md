@@ -34,6 +34,8 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 * `HOST` -- default `"localhost"`, on unix-like systems, the server can also be configured to bind to bsd/berkeley sockets by setting `HOST` to a filesystem path, in which case `PORT` is ignored
 * `PORT` -- default `8080`
 * `LISTEN_FD` -- if supplied on unix-like systems, if this is set to an open file descriptor number, the server will listen to that fd
+* `OTEL_EXPORTER_PROMETHEUS_HOST` -- default `"localhost"`
+* `OTEL_EXPORTER_PROMETHEUS_PORT` -- default `9464`
 
 ## Migrating the database
 
