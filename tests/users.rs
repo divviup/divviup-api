@@ -16,7 +16,7 @@ mod get_users_me {
             .run_async(&app)
             .await;
 
-        let response_user: User = json_response(&mut conn).await;
+        let response_user: User = conn.response_json().await;
 
         assert_eq!(user, response_user);
         assert!(!response_user.is_admin());
@@ -35,7 +35,7 @@ mod get_users_me {
             .run_async(&app)
             .await;
 
-        let response_user: User = json_response(&mut conn).await;
+        let response_user: User = conn.response_json().await;
 
         assert!(response_user.is_admin());
         Ok(())

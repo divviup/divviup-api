@@ -9,13 +9,13 @@ mod index {
         let _other_account = fixtures::account(&app).await;
 
         let mut conn = get("/api/accounts")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let accounts: Vec<Account> = json_response(&mut conn).await;
+        let accounts: Vec<Account> = conn.response_json().await;
         assert_eq!(accounts.len(), 1);
         assert_eq!(accounts, vec![account]);
         Ok(())
@@ -26,12 +26,12 @@ mod index {
         let (user, account, ..) = fixtures::admin(&app).await;
         let other_account = fixtures::account(&app).await;
         let mut conn = get("/api/accounts")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
-        let accounts: Vec<Account> = json_response(&mut conn).await;
+        let accounts: Vec<Account> = conn.response_json().await;
 
         assert_eq!(accounts.len(), 2);
 
@@ -48,13 +48,13 @@ mod show {
     async fn as_a_member(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let mut conn = get(format!("/api/accounts/{}", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let account_response: Account = json_response(&mut conn).await;
+        let account_response: Account = conn.response_json().await;
         assert_eq!(account_response, account);
 
         Ok(())
@@ -65,13 +65,12 @@ mod show {
         let (user, ..) = fixtures::member(&app).await;
         let other_account = fixtures::account(&app).await;
         let mut conn = get(format!("/api/accounts/{}", other_account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_eq!(conn.status().unwrap_or(Status::NotFound), Status::NotFound);
-        assert!(conn.take_response_body().is_none());
+        assert_not_found!(conn);
 
         Ok(())
     }
@@ -82,13 +81,13 @@ mod show {
         let other_account = fixtures::account(&app).await;
 
         let mut conn = get(format!("/api/accounts/{}", other_account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let account: Account = json_response(&mut conn).await;
+        let account: Account = conn.response_json().await;
 
         assert_eq!(account, other_account);
 
@@ -102,14 +101,8 @@ mod create {
     #[test(harness = set_up)]
     async fn not_logged_in(app: DivviupApi) -> TestResult {
         let conn = post("/api/accounts")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
-            .with_request_body(
-                serde_json::to_string(&json!({
-                   "name": "some account name"
-                }))
-                .unwrap(),
-            )
+            .with_api_headers()
+            .with_request_json(json!({ "name": "some account name" }))
             .run_async(&app)
             .await;
 
@@ -126,19 +119,13 @@ mod create {
     async fn valid(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let mut conn = post("/api/accounts")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user.clone())
-            .with_request_body(
-                serde_json::to_string(&json!({
-                   "name": "some account name"
-                }))
-                .unwrap(),
-            )
+            .with_request_json(json!({ "name": "some account name" }))
             .run_async(&app)
             .await;
         assert_response!(conn, 202);
-        let account: Account = json_response(&mut conn).await;
+        let account: Account = conn.response_json().await;
         assert_eq!(account.name, "some account name");
 
         let accounts = Accounts::find().all(app.db()).await?;
@@ -157,15 +144,14 @@ mod create {
     async fn invalid(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let mut conn = post("/api/accounts")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user.clone())
-            .with_request_body(serde_json::to_string(&json!({ "name": "" })).unwrap())
+            .with_request_json(json!({ "name": "" }))
             .run_async(&app)
             .await;
 
         assert_response!(conn, 400);
-        let errors: serde_json::Value = json_response(&mut conn).await;
+        let errors: Value = conn.response_json().await;
         assert!(errors.get("name").is_some());
         let accounts = Accounts::find().all(app.db()).await?;
         assert_eq!(accounts.len(), 0);
@@ -183,15 +169,14 @@ mod update {
         let (user, account, ..) = fixtures::member(&app).await;
 
         let mut conn = patch(format!("/api/accounts/{}", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
-            .with_request_body(serde_json::to_string(&json!({ "name": "new name" }))?)
+            .with_api_headers()
+            .with_request_json(json!({ "name": "new name" }))
             .with_state(user)
             .run_async(&app)
             .await;
 
         assert_response!(conn, 202);
-        let account: Account = json_response(&mut conn).await;
+        let account: Account = conn.response_json().await;
         assert_eq!(&account.name, "new name");
         assert_eq!(
             Accounts::find_by_id(account.id)
@@ -210,15 +195,13 @@ mod update {
         let (user, ..) = fixtures::member(&app).await;
         let other_account = fixtures::account(&app).await;
         let mut conn = patch(format!("/api/accounts/{}", other_account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
-            .with_request_body(serde_json::to_string(&json!({ "name": "new name" }))?)
+            .with_api_headers()
+            .with_request_json(json!({ "name": "new name" }))
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_eq!(conn.status().unwrap_or(Status::NotFound), Status::NotFound);
-        assert!(conn.take_response_body().is_none());
+        assert_not_found!(conn);
 
         Ok(())
     }
@@ -229,15 +212,14 @@ mod update {
         let other_account = fixtures::account(&app).await;
 
         let mut conn = patch(format!("/api/accounts/{}", other_account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
-            .with_request_body(serde_json::to_string(&json!({ "name": "new name" }))?)
+            .with_api_headers()
+            .with_request_json(json!({ "name": "new name" }))
             .with_state(user)
             .run_async(&app)
             .await;
 
         assert_response!(conn, 202);
-        let account: Account = json_response(&mut conn).await;
+        let account: Account = conn.response_json().await;
 
         assert_eq!(&account.name, "new name");
         assert_eq!(
@@ -256,15 +238,14 @@ mod update {
     async fn invalid(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let mut conn = patch(format!("/api/accounts/{}", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
-            .with_request_body(serde_json::to_string(&json!({ "name": "" }))?)
+            .with_api_headers()
+            .with_request_json(json!({ "name": "" }))
             .with_state(user)
             .run_async(&app)
             .await;
 
         assert_response!(conn, 400);
-        let errors: serde_json::Value = json_response(&mut conn).await;
+        let errors: Value = conn.response_json().await;
         assert!(errors.get("name").is_some());
 
         Ok(())

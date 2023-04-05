@@ -13,7 +13,6 @@ use validator::{Validate, ValidationError, ValidationErrors};
 #[sea_orm(table_name = "task")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    #[serde(skip_deserializing)]
     pub id: String,
     pub account_id: Uuid,
     pub name: String,
@@ -210,7 +209,7 @@ pub fn build_task(mut task: NewTask, api_response: TaskResponse, account: &Accou
         id: Set(api_response.task_id),
         account_id: Set(account.id),
         name: Set(task.name.take().unwrap()),
-        partner: Set("".into()),
+        partner: Set(task.partner.take().unwrap()),
         vdaf: Set(serde_json::to_value(Vdaf::from(api_response.vdaf)).unwrap()),
         min_batch_size: Set(api_response.min_batch_size),
         max_batch_size: Set(api_response.query_type.into()),
