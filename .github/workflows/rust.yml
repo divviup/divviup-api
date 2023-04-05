@@ -25,9 +25,9 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Collect coverage data
         run: cargo llvm-cov nextest --lcov --output-path lcov.info
-      - name: Upload coverage data to codecov
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage data to coveralls
+        uses: coverallsapp/github-action@v1
         with:
-          files: lcov.info
+          path-to-lcov: ./lcov.info
       - name: Format
         run: cargo fmt --all -- --check
