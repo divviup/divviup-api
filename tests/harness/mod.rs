@@ -69,7 +69,7 @@ where
     });
 }
 
-pub fn with_api_server<F, Fut>(f: F)
+pub fn with_aggregator_api_mock<F, Fut>(f: F)
 where
     F: FnOnce(DivviupApi) -> Fut,
     Fut: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,

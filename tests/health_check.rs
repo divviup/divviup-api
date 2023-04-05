@@ -7,7 +7,7 @@ async fn root(app: DivviupApi) -> TestResult {
     Ok(())
 }
 
-#[test(harness = with_api_server)]
+#[test(harness = with_aggregator_api_mock)]
 async fn health_check(app: DivviupApi) -> TestResult {
     assert_ok!(get("/health").run_async(&app).await);
     Ok(())
