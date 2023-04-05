@@ -1,15 +1,16 @@
 #![allow(dead_code)] // because different tests use different parts of this
 use divviup_api::{aggregator_api_mock::aggregator_api, ApiConfig, Db};
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Serialize};
 use std::future::Future;
 use trillium::Handler;
+use trillium_testing::TestConn;
 
 pub use divviup_api::{entity::*, DivviupApi, User};
 pub use querystrong::QueryStrong;
 pub use sea_orm::{
     ActiveModelTrait, ActiveValue, ConnectionTrait, DbBackend, EntityTrait, PaginatorTrait, Schema,
 };
-pub use serde_json::json;
+pub use serde_json::{json, Value};
 pub use test_harness::test;
 pub use trillium::KnownHeaderName;
 pub use trillium_testing::prelude::*;
@@ -161,20 +162,41 @@ pub mod fixtures {
 
 pub const APP_CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
 
-pub async fn json_response<T: DeserializeOwned>(conn: &mut Conn) -> T {
-    assert_eq!(
-        conn.response_headers()
-            .get_str(KnownHeaderName::ContentType)
-            .unwrap(),
-        APP_CONTENT_TYPE
-    );
+#[macro_export]
+macro_rules! assert_not_found {
+    ($conn:expr) => {
+        assert_eq!($conn.status().unwrap_or(Status::NotFound), Status::NotFound);
+        assert_eq!($conn.take_response_body_string().unwrap_or_default(), "");
+    };
+}
 
-    let body = conn
-        .take_response_body()
-        .expect("no body was set")
-        .into_bytes()
-        .await
-        .expect("could not read body");
+#[trillium::async_trait]
+pub trait TestingJsonExt {
+    async fn response_json<T: DeserializeOwned>(&mut self) -> T;
+    fn with_request_json<T: Serialize>(self, t: T) -> Self;
+}
 
-    serde_json::from_slice(&body).expect("could not deserialize body")
+#[trillium::async_trait]
+impl TestingJsonExt for TestConn {
+    async fn response_json<T: DeserializeOwned>(&mut self) -> T {
+        assert_eq!(
+            self.response_headers()
+                .get_str(KnownHeaderName::ContentType)
+                .unwrap(),
+            APP_CONTENT_TYPE
+        );
+
+        let body = self
+            .take_response_body()
+            .expect("no body was set")
+            .into_bytes()
+            .await
+            .expect("could not read body");
+
+        serde_json::from_slice(&body).expect("could not deserialize body")
+    }
+
+    fn with_request_json<T: Serialize>(self, t: T) -> Self {
+        self.with_request_body(serde_json::to_string(&t).unwrap())
+    }
 }
