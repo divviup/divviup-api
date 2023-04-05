@@ -1,5 +1,13 @@
 # DivviUp API Server
 
+## Badges
+
+* [![Coverage Status](https://coveralls.io/repos/github/divviup/divviup-api/badge.svg?branch=main)](https://coveralls.io/github/divviup/divviup-api?branch=main)
+* ![Rust CI](https://github.com/divviup/divviup-api/actions/workflows/rust.yml/badge.svg?branch=main)
+* ![TypeScript CI](https://github.com/divviup/divviup-api/actions/workflows/ts.yml/badge.svg?branch=main)
+* ![Docker Build](https://github.com/divviup/divviup-api/actions/workflows/docker.yml/badge.svg?branch=main)
+
+
 ## API Specification:
 <b style="color:red">TODO: This will either be an inline description of the API or a link to another markdown document or swagger definition</b>
 

@@ -2,31 +2,32 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: Swatinem/rust-cache@v2.2.1
-    - uses: actions/checkout@v3
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: nightly
-        components: rustfmt, clippy
-        override: true
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
-    - name: Clippy
-      run: cargo clippy
-    - name: Format
-      run: cargo fmt --all -- --check
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Install latest nextest release
+        uses: taiki-e/install-action@nextest
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Collect coverage data
+        run: cargo llvm-cov nextest --lcov --output-path lcov.info
+      - name: Upload coverage data to coveralls
+        uses: coverallsapp/github-action@v1
+        with:
+          path-to-lcov: ./lcov.info
+      - name: Format
+        run: cargo fmt --all -- --check
