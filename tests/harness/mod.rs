@@ -200,3 +200,17 @@ impl TestingJsonExt for TestConn {
         self.with_request_body(serde_json::to_string(&t).unwrap())
     }
 }
+
+pub trait ApiHeadersExt {
+    fn with_api_headers(self) -> Self;
+}
+impl ApiHeadersExt for TestConn {
+    fn with_api_headers(self) -> Self {
+        if self.method() == Method::Get {
+            self.with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+        } else {
+            self.with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+                .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+        }
+    }
+}

@@ -9,7 +9,7 @@ mod index {
         let _other_account = fixtures::account(&app).await;
 
         let mut conn = get("/api/accounts")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -26,7 +26,7 @@ mod index {
         let (user, account, ..) = fixtures::admin(&app).await;
         let other_account = fixtures::account(&app).await;
         let mut conn = get("/api/accounts")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -48,7 +48,7 @@ mod show {
     async fn as_a_member(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let mut conn = get(format!("/api/accounts/{}", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -65,7 +65,7 @@ mod show {
         let (user, ..) = fixtures::member(&app).await;
         let other_account = fixtures::account(&app).await;
         let mut conn = get(format!("/api/accounts/{}", other_account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -81,7 +81,7 @@ mod show {
         let other_account = fixtures::account(&app).await;
 
         let mut conn = get(format!("/api/accounts/{}", other_account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -101,14 +101,8 @@ mod create {
     #[test(harness = set_up)]
     async fn not_logged_in(app: DivviupApi) -> TestResult {
         let conn = post("/api/accounts")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
-            .with_request_body(
-                serde_json::to_string(&json!({
-                   "name": "some account name"
-                }))
-                .unwrap(),
-            )
+            .with_api_headers()
+            .with_request_json(json!({ "name": "some account name" }))
             .run_async(&app)
             .await;
 
@@ -125,15 +119,9 @@ mod create {
     async fn valid(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let mut conn = post("/api/accounts")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user.clone())
-            .with_request_body(
-                serde_json::to_string(&json!({
-                   "name": "some account name"
-                }))
-                .unwrap(),
-            )
+            .with_request_json(json!({ "name": "some account name" }))
             .run_async(&app)
             .await;
         assert_response!(conn, 202);
@@ -156,8 +144,7 @@ mod create {
     async fn invalid(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let mut conn = post("/api/accounts")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user.clone())
             .with_request_json(json!({ "name": "" }))
             .run_async(&app)
@@ -182,8 +169,7 @@ mod update {
         let (user, account, ..) = fixtures::member(&app).await;
 
         let mut conn = patch(format!("/api/accounts/{}", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "name": "new name" }))
             .with_state(user)
             .run_async(&app)
@@ -209,8 +195,7 @@ mod update {
         let (user, ..) = fixtures::member(&app).await;
         let other_account = fixtures::account(&app).await;
         let mut conn = patch(format!("/api/accounts/{}", other_account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "name": "new name" }))
             .with_state(user)
             .run_async(&app)
@@ -227,8 +212,7 @@ mod update {
         let other_account = fixtures::account(&app).await;
 
         let mut conn = patch(format!("/api/accounts/{}", other_account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "name": "new name" }))
             .with_state(user)
             .run_async(&app)
@@ -254,8 +238,7 @@ mod update {
     async fn invalid(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let mut conn = patch(format!("/api/accounts/{}", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "name": "" }))
             .with_state(user)
             .run_async(&app)

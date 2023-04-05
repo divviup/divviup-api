@@ -8,8 +8,7 @@ mod create {
     async fn success(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let mut conn = post(format!("/api/accounts/{}/memberships", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "user_email": "someone.else@example.com" }))
             .with_state(user)
             .run_async(&app)
@@ -35,8 +34,7 @@ mod create {
         let membership_count_before = Memberships::find().count(app.db()).await?;
 
         let mut conn = post(format!("/api/accounts/{}/memberships", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "user_email": "not a valid email" }))
             .with_state(user)
             .run_async(&app)
@@ -59,8 +57,7 @@ mod create {
         let (user, ..) = fixtures::member(&app).await;
         let account = fixtures::account(&app).await;
         let conn = post(format!("/api/accounts/{}/memberships", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "user_email": "someone.else@example.com" }))
             .with_state(user)
             .run_async(&app)
@@ -73,8 +70,7 @@ mod create {
     async fn nonexistant_account(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
         let conn = post("/api/accounts/no-account-with-this-id/memberships")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "user_email": "someone.else@example.com" }))
             .with_state(user)
             .run_async(&app)
@@ -88,8 +84,7 @@ mod create {
         let (user, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
         let mut conn = post(format!("/api/accounts/{}/memberships", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "user_email": "someone.else@example.com" }))
             .with_state(user)
             .run_async(&app)
@@ -122,7 +117,7 @@ mod index {
         fixtures::membership(&app, &account, &fixtures::user()).await;
         fixtures::membership(&app, &account, &fixtures::user()).await;
         let mut conn = get(format!("/api/accounts/{}/memberships", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -137,7 +132,7 @@ mod index {
         let (_, account, ..) = fixtures::member(&app).await;
         let (user, ..) = fixtures::member(&app).await;
         let mut conn = get(format!("/api/accounts/{}/memberships", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -149,7 +144,7 @@ mod index {
     async fn nonexistant_account(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
         let mut conn = get("/api/accounts/not-an-id/memberships")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -165,7 +160,7 @@ mod index {
         fixtures::membership(&app, &account, &fixtures::user()).await;
 
         let mut conn = get(format!("/api/accounts/{}/memberships", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
@@ -186,7 +181,7 @@ mod delete {
         let other_membership = fixtures::membership(&app, &account, &fixtures::user()).await;
         fixtures::membership(&app, &account, &fixtures::user()).await;
         let conn = delete(format!("/api/memberships/{}", other_membership.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -205,7 +200,7 @@ mod delete {
         let account = fixtures::account(&app).await;
         let other_membership = fixtures::membership(&app, &account, &fixtures::user()).await;
         let mut conn = delete(format!("/api/memberships/{}", other_membership.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -221,7 +216,7 @@ mod delete {
     async fn nonexistant_id(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
         let mut conn = delete("/api/memberships/876b2071-9da8-4bda-bd4c-8d42a3ae7d90")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -233,7 +228,7 @@ mod delete {
     async fn removing_self(app: DivviupApi) -> TestResult {
         let (user, _, membership) = fixtures::member(&app).await;
         let conn = delete(format!("/api/memberships/{}", membership.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -247,7 +242,7 @@ mod delete {
         let account = fixtures::account(&app).await;
         let other_membership = fixtures::membership(&app, &account, &fixtures::user()).await;
         let conn = delete(format!("/api/memberships/{}", other_membership.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;

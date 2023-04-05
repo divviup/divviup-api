@@ -14,7 +14,7 @@ mod index {
         let task2 = fixtures::task(&app, &account).await;
 
         let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -34,7 +34,7 @@ mod index {
         fixtures::task(&app, &account).await;
 
         let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -52,7 +52,7 @@ mod index {
         fixtures::task(&app, &account).await;
 
         let mut conn = get("/api/accounts/not-an-account/tasks")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -71,7 +71,7 @@ mod index {
         let task2 = fixtures::task(&app, &account).await;
 
         let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
@@ -110,8 +110,7 @@ mod create {
         let (user, account, ..) = fixtures::member(&app).await;
 
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .with_request_json(valid_task_json())
             .run_async(&app)
@@ -133,8 +132,7 @@ mod create {
         let (user, account, ..) = fixtures::member(&app).await;
 
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .with_request_json(json!({
                 "name": "my task name",
@@ -169,8 +167,7 @@ mod create {
         let account = fixtures::account(&app).await; // no membership
 
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .with_request_json(valid_task_json())
             .run_async(&app)
@@ -186,8 +183,7 @@ mod create {
         let user = fixtures::user();
 
         let mut conn = post("/api/accounts/does-not-exist/tasks")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .with_request_json(valid_task_json())
             .run_async(&app)
@@ -203,8 +199,7 @@ mod create {
         let (admin, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(admin)
             .with_request_json(valid_task_json())
             .run_async(&app)
@@ -225,7 +220,7 @@ mod show {
         let (user, account, ..) = fixtures::member(&app).await;
         let task = fixtures::task(&app, &account).await;
         let mut conn = get(format!("/api/tasks/{}", task.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -241,7 +236,7 @@ mod show {
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
         let mut conn = get(format!("/api/tasks/{}", task.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -255,7 +250,7 @@ mod show {
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
         let mut conn = get(format!("/api/tasks/{}", task.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
@@ -269,7 +264,7 @@ mod show {
     async fn nonexistant_task(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let mut conn = get("/api/tasks/some-made-up-id")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
@@ -288,8 +283,7 @@ mod update {
 
         let new_name = format!("new name {}", fixtures::random_name());
         let mut conn = patch(format!("/api/tasks/{}", task.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "name": &new_name }))
             .with_state(user)
             .run_async(&app)
@@ -315,8 +309,7 @@ mod update {
         let task = fixtures::task(&app, &account).await;
 
         let mut conn = patch(format!("/api/tasks/{}", task.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "name": "" }))
             .with_state(user)
             .run_async(&app)
@@ -344,8 +337,7 @@ mod update {
         let task = fixtures::task(&app, &account).await;
 
         let mut conn = patch(format!("/api/tasks/{}", task.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "name": "irrelevant" }))
             .with_state(user)
             .run_async(&app)
@@ -371,8 +363,7 @@ mod update {
 
         let new_name = format!("new name {}", fixtures::random_name());
         let mut conn = patch(format!("/api/tasks/{}", task.id))
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "name": &new_name }))
             .with_state(admin)
             .run_async(&app)
@@ -396,8 +387,7 @@ mod update {
     async fn nonexistant_task(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let mut conn = patch("/api/tasks/not-a-task-id")
-            .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-            .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            .with_api_headers()
             .with_request_json(json!({ "name": "irrelevant" }))
             .with_state(user)
             .run_async(&app)
