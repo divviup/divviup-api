@@ -84,7 +84,6 @@ mod index {
 }
 
 mod create {
-
     use super::{test, *};
 
     fn valid_task_json() -> Value {
@@ -105,7 +104,7 @@ mod create {
         })
     }
 
-    #[test(harness = set_up)]
+    #[test(harness = with_api_server)]
     async fn success(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
 
@@ -127,7 +126,7 @@ mod create {
         Ok(())
     }
 
-    #[test(harness = set_up)]
+    #[test(harness = with_api_server)]
     async fn invalid(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
 
@@ -161,7 +160,7 @@ mod create {
         Ok(())
     }
 
-    #[test(harness = set_up)]
+    #[test(harness = with_api_server)]
     async fn not_member(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let account = fixtures::account(&app).await; // no membership
@@ -178,7 +177,7 @@ mod create {
         Ok(())
     }
 
-    #[test(harness = set_up)]
+    #[test(harness = with_api_server)]
     async fn nonexistant_account(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
 
@@ -194,7 +193,7 @@ mod create {
         Ok(())
     }
 
-    #[test(harness = set_up)]
+    #[test(harness = with_api_server)]
     async fn admin_not_member(app: DivviupApi) -> TestResult {
         let (admin, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;

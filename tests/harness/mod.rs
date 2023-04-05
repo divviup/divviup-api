@@ -63,6 +63,17 @@ where
     F: FnOnce(DivviupApi) -> Fut,
     Fut: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,
 {
+    block_on(async move {
+        let app = build_test_app("https://aggregator_url.example".parse().unwrap()).await;
+        f(app).await.unwrap();
+    });
+}
+
+pub fn with_api_server<F, Fut>(f: F)
+where
+    F: FnOnce(DivviupApi) -> Fut,
+    Fut: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,
+{
     trillium_testing::with_server(aggregator_api(), |aggregator_url| async move {
         let app = build_test_app(aggregator_url).await;
         f(app).await?;
