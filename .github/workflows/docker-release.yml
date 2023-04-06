@@ -33,4 +33,4 @@ jobs:
       - id: get_version
         run: echo VERSION=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT
       - run: docker build --tag us-west2-docker.pkg.dev/janus-artifacts/divviup-api/divviup_api:${{ steps.get_version.outputs.VERSION }} --build-arg GIT_REVISION=${GIT_REVISION} .
-      - run: docker push us-west2-docker.pkg.dev/janus-artifacts/divviup-api/divviup_api:{{ steps.get_version.outputs.VERSION }}
+      - run: docker push us-west2-docker.pkg.dev/janus-artifacts/divviup-api/divviup_api:${{ steps.get_version.outputs.VERSION }}
