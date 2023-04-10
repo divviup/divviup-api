@@ -1,7 +1,7 @@
 use crate::user::User;
 use std::borrow::Cow;
 use trillium::{Conn, Handler, KnownHeaderName};
-use trillium_logger::dev_formatter;
+use trillium_logger::{dev_formatter, formatters::request_header};
 
 fn redirect_url(conn: &Conn, _color: bool) -> Cow<'static, str> {
     match conn
@@ -25,6 +25,14 @@ fn user(conn: &Conn, _color: bool) -> String {
         None => String::from("-"),
     }
 }
+
 pub fn logger() -> impl Handler {
-    trillium_logger::logger().with_formatter((user, ": ", dev_formatter, redirect_url))
+    trillium_logger::logger().with_formatter((
+        request_header(KnownHeaderName::Host),
+        " ",
+        user,
+        ": ",
+        dev_formatter,
+        redirect_url,
+    ))
 }

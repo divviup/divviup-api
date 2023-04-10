@@ -1,3 +1,4 @@
+pub(crate) mod assets;
 pub(crate) mod cors;
 pub(crate) mod custom_mime_types;
 pub(crate) mod error;
@@ -6,7 +7,7 @@ pub(crate) mod misc;
 pub(crate) mod oauth2;
 pub(crate) mod session_store;
 
-use crate::{routes, AggregatorClient, ApiConfig, Db};
+use crate::{handler::assets::static_assets, routes, AggregatorClient, ApiConfig, Db};
 use cors::cors_headers;
 use error::ErrorHandler;
 use logger::logger;
@@ -47,12 +48,13 @@ impl DivviupApi {
                 Forwarding::trust_always(),
                 db.clone(),
                 compression(),
+                caching_headers(),
                 conn_id(),
+                static_assets(&config),
                 state(config.clone()),
                 state(aggregator_client),
                 cors_headers,
                 logger(),
-                caching_headers(),
                 cache_control([Private, MustRevalidate]),
                 cookies(),
                 sessions(SessionStore::new(db.clone()), config.session_secret.clone())
