@@ -37,6 +37,8 @@ pub struct DivviupApi {
 }
 
 impl DivviupApi {
+    pub fn noop() {}
+
     pub async fn new(config: ApiConfig) -> Self {
         let db = Db::connect(config.database_url.as_ref()).await;
         let config = Arc::new(config);
