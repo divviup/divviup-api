@@ -32,7 +32,7 @@ impl<H: Handler> Handler for HostFilter<H> {
 
 pub fn static_assets(config: &ApiConfig) -> impl Handler {
     HostFilter {
-        handler: ReactApp(static_compiled!("app/build").with_index_file("index.html")),
+        handler: ReactApp(static_compiled!("$OUT_DIR").with_index_file("index.html")),
         host: config.app_url.host().unwrap().to_string(),
     }
 }
