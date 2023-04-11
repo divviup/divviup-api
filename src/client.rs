@@ -132,7 +132,7 @@ impl AggregatorClient {
     }
 }
 
-async fn expect_ok(conn: &mut Conn<'_>) -> Result<(), ClientError> {
+pub async fn expect_ok(conn: &mut Conn<'_>) -> Result<(), ClientError> {
     if conn.status().map_or(false, |s| s.is_success()) {
         Ok(())
     } else {
