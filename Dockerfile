@@ -1,6 +1,8 @@
 FROM rust:1.68.2-alpine as builder
 RUN apk add libc-dev
+RUN apk add --update npm
 WORKDIR /src
+COPY app /src/app
 COPY Cargo.toml /src/Cargo.toml
 COPY Cargo.lock /src/Cargo.lock
 COPY build.rs /src/build.rs

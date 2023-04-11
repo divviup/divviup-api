@@ -9,6 +9,9 @@ on:
   schedule:
     - cron: "26 8 * * 6"
 
+env:
+  SKIP_APP_COMPILATION: true
+
 jobs:
   rust-clippy-analyze:
     name: Run rust-clippy analyzing
