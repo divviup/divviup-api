@@ -87,12 +87,6 @@ impl AggregatorClient {
         self.conn(Method::Delete, path)
     }
 
-    pub async fn health_check(&self) -> Result<(), ClientError> {
-        let mut conn = self.get("/health").await?;
-        expect_ok(&mut conn).await?;
-        Ok(())
-    }
-
     pub async fn get_task_ids(&self) -> Result<Vec<String>, ClientError> {
         let mut ids = vec![];
         let mut path = String::from("/task_ids");
@@ -116,13 +110,13 @@ impl AggregatorClient {
         }
     }
 
-    pub async fn get_task_metrics(&self, task_id: String) -> Result<TaskMetrics, ClientError> {
+    pub async fn get_task_metrics(&self, task_id: &str) -> Result<TaskMetrics, ClientError> {
         let mut conn = self.get(&format!("/tasks/{task_id}/metrics")).await?;
         expect_ok(&mut conn).await?;
         Ok(conn.response_json().await?)
     }
 
-    pub async fn delete_task(&self, task_id: String) -> Result<(), ClientError> {
+    pub async fn delete_task(&self, task_id: &str) -> Result<(), ClientError> {
         let mut conn = self.delete(&format!("/tasks/{task_id}")).await?;
         expect_ok(&mut conn).await?;
         Ok(())
@@ -312,7 +306,7 @@ impl From<NewTask> for TaskCreate {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TaskIds {
     pub task_ids: Vec<String>,
     pub pagination_token: Option<String>,
