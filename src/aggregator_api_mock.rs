@@ -1,17 +1,19 @@
-use crate::client::{HpkeConfig, TaskCreate, TaskMetrics, TaskResponse};
+use crate::client::{HpkeConfig, TaskCreate, TaskIds, TaskMetrics, TaskResponse};
 use fastrand::alphanumeric;
+use querystrong::QueryStrong;
 use std::iter::repeat_with;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Json};
 use trillium_logger::{dev_formatter, logger};
 use trillium_router::router;
+use uuid::Uuid;
 
 pub fn aggregator_api() -> impl Handler {
     (
         logger().with_formatter(("[aggregator mock] ", dev_formatter)),
         router()
-            .get("/health", Status::Ok)
             .post("/tasks", api(post_task))
+            .get("/task_ids", api(task_ids))
             .delete("/tasks/:task_id", Status::Ok)
             .get("/tasks/:task_id/metrics", api(get_task_metrics)),
     )
@@ -63,5 +65,31 @@ pub fn task_response(task_create: TaskCreate) -> TaskResponse {
         )]
         .into_iter()
         .collect(),
+    }
+}
+
+async fn task_ids(conn: &mut Conn, (): ()) -> Result<Json<TaskIds>, Status> {
+    let query = QueryStrong::parse(conn.querystring()).map_err(|_| Status::InternalServerError)?;
+    match query.get_str("pagination_token") {
+        None => Ok(Json(TaskIds {
+            task_ids: std::iter::repeat_with(|| Uuid::new_v4().to_string())
+                .take(10)
+                .collect(),
+            pagination_token: Some("second".into()),
+        })),
+
+        Some("second") => Ok(Json(TaskIds {
+            task_ids: std::iter::repeat_with(|| Uuid::new_v4().to_string())
+                .take(10)
+                .collect(),
+            pagination_token: Some("last".into()),
+        })),
+
+        _ => Ok(Json(TaskIds {
+            task_ids: std::iter::repeat_with(|| Uuid::new_v4().to_string())
+                .take(5)
+                .collect(),
+            pagination_token: None,
+        })),
     }
 }
