@@ -87,12 +87,6 @@ impl AggregatorClient {
         self.conn(Method::Delete, path)
     }
 
-    pub async fn health_check(&self) -> Result<(), ClientError> {
-        let mut conn = self.get("/health").await?;
-        expect_ok(&mut conn).await?;
-        Ok(())
-    }
-
     pub async fn get_task_ids(&self) -> Result<Vec<String>, ClientError> {
         let mut ids = vec![];
         let mut path = String::from("/task_ids");
