@@ -8,7 +8,7 @@ use trillium_router::router;
 
 pub fn aggregator_api() -> impl Handler {
     (
-        logger().with_formatter(("[aggregator mock] ", dev_formatter)),
+        logger().with_formatter(("[ aggregator mock ] ", dev_formatter)),
         router()
             .get("/health", Status::Ok)
             .post("/tasks", api(post_task))
