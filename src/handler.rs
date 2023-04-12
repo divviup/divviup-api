@@ -70,16 +70,16 @@ impl DivviupApi {
 }
 
 fn api(db: &Db, config: &ApiConfig) -> impl Handler {
-    let aggregator_client = AggregatorClient::new(&config);
+    let aggregator_client = AggregatorClient::new(config);
     (
         compression(),
         cookies(),
         sessions(SessionStore::new(db.clone()), config.session_secret.clone())
             .with_cookie_name("divviup.sid"),
         state(aggregator_client),
-        cors_headers(&config),
+        cors_headers(config),
         cache_control([Private, MustRevalidate]),
         db.clone(),
-        routes(&config),
+        routes(config),
     )
 }

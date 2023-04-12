@@ -27,15 +27,15 @@ async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
 
 async fn set_up_schema(db: &Db) {
     let schema = Schema::new(DbBackend::Sqlite);
-    set_up_schema_for(&schema, &db, Sessions).await;
-    set_up_schema_for(&schema, &db, Accounts).await;
-    set_up_schema_for(&schema, &db, Memberships).await;
-    set_up_schema_for(&schema, &db, Tasks).await;
+    set_up_schema_for(&schema, db, Sessions).await;
+    set_up_schema_for(&schema, db, Accounts).await;
+    set_up_schema_for(&schema, db, Memberships).await;
+    set_up_schema_for(&schema, db, Tasks).await;
 }
 
 pub fn config(aggregator_url: Url) -> ApiConfig {
     ApiConfig {
-        session_secret: std::iter::repeat('x').take(32).collect(),
+        session_secret: "x".repeat(32),
         api_url: "https://api.example".parse().unwrap(),
         app_url: "https://app.example".parse().unwrap(),
         database_url: "sqlite::memory:".parse().unwrap(),
@@ -121,7 +121,7 @@ pub mod fixtures {
     }
 
     pub async fn membership(app: &DivviupApi, account: &Account, user: &User) -> Membership {
-        Membership::build(user.email.clone(), &account)
+        Membership::build(user.email.clone(), account)
             .unwrap()
             .insert(app.db())
             .await
@@ -164,7 +164,7 @@ pub mod fixtures {
         };
         new_task.validate().unwrap();
         let api_response = aggregator_api_mock::task_response(new_task.clone().into());
-        task::build_task(new_task, api_response, &account)
+        task::build_task(new_task, api_response, account)
             .insert(app.db())
             .await
             .unwrap()
