@@ -8,7 +8,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  SKIP_APP_COMPILATION: true
 
 jobs:
   build:
