@@ -6,16 +6,7 @@ fn main() {
     if std::env::var("SKIP_APP_COMPILATION").is_err() {
         let status = Command::new("npm")
             .current_dir("app")
-            .args(["ci"])
-            .status()
-            .unwrap();
-
-        assert!(status.success());
-
-        let status = Command::new("npm")
-            .current_dir("app")
             .args(["run", "build"])
-            .env("REACT_APP_API_URL", std::env::var("API_URL").unwrap())
             .env("BUILD_PATH", std::env::var("OUT_DIR").unwrap())
             .status()
             .unwrap();

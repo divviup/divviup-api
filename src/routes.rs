@@ -25,7 +25,6 @@ pub fn routes(config: &ApiConfig) -> impl Handler {
     let oauth2_client = OauthClient::new(&config.oauth_config());
 
     router()
-        .get("/", "ok")
         .get("/health", api(health_check))
         .get(
             "/login",

@@ -11,7 +11,9 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
     switch (error.response?.status) {
       case 403:
         if (!apiClient.isLoggedIn()) {
-          window.location.href = apiClient.loginUrl();
+          apiClient.loginUrl().then((url) => {
+            window.location.href = url;
+          });
         }
         break;
       case 404:

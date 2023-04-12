@@ -8,6 +8,7 @@ COPY Cargo.lock /src/Cargo.lock
 COPY build.rs /src/build.rs
 COPY migration /src/migration
 COPY src /src/src
+RUN --mount=type=cache,target=/src/app/node_modules cd app && npm ci
 RUN --mount=type=cache,target=/usr/local/cargo/registry --mount=type=cache,target=/src/target cargo build --profile release -p migration && cp /src/target/release/migration /migration
 RUN --mount=type=cache,target=/usr/local/cargo/registry --mount=type=cache,target=/src/target cargo build --profile release && cp /src/target/release/divviup_api_bin /divviup_api_bin
 

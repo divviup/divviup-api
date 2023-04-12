@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance, AxiosResponse } from "axios";
 import { FormikErrors } from "formik";
 
 export interface User {
@@ -81,13 +81,20 @@ export interface CreateMembership {
 const mime = "application/vnd.divviup+json;version=0.1";
 
 export class ApiClient {
-  public static base = process.env.API_URL;
-  client: AxiosInstance;
+  private client?: Promise<AxiosInstance> | AxiosInstance;
   currentUser?: User;
 
-  constructor() {
-    this.client = axios.create({
-      baseURL: process.env.REACT_APP_API_URL,
+  static async fetchBaseUrl(): Promise<URL> {
+    let url = new URL(window.location.href);
+    url.pathname = "/api_url";
+    let contents = await axios.get(url.toString());
+    return new URL(await contents.data);
+  }
+
+  private async buildClient(): Promise<AxiosInstance> {
+    let baseUrl = await ApiClient.fetchBaseUrl();
+    return axios.create({
+      baseURL: baseUrl.toString(),
       withCredentials: true,
       headers: {
         "Content-Type": mime,
@@ -99,12 +106,19 @@ export class ApiClient {
     });
   }
 
-  loginUrl(): string {
-    return this.client.getUri({ url: "/login" });
+  private async populateClient(): Promise<AxiosInstance> {
+    if (!this.client) {
+      this.client = this.buildClient();
+    }
+    return this.client;
   }
 
-  logoutUrl(): string {
-    return this.client.getUri({ url: "/logout" });
+  async loginUrl(): Promise<string> {
+    return (await this.populateClient()).getUri({ url: "/login" });
+  }
+
+  async logoutUrl(): Promise<string> {
+    return (await this.populateClient()).getUri({ url: "/logout" });
   }
 
   isLoggedIn(): boolean {
@@ -116,33 +130,54 @@ export class ApiClient {
     if (this.currentUser) {
       return this.currentUser;
     }
-    let res = await this.client.get("/api/users/me");
+    let client = await this.populateClient();
+    let res = await client.get("/api/users/me");
     this.currentUser = res.data as User;
     return this.currentUser;
   }
 
+  private async get(path: string): Promise<AxiosResponse> {
+    let client = await this.populateClient();
+    return client.get(path);
+  }
+
+  private async post(path: string, body: unknown): Promise<AxiosResponse> {
+    let client = await this.populateClient();
+    return client.post(path, body);
+  }
+
+  private async delete(path: string): Promise<AxiosResponse> {
+    let client = await this.populateClient();
+    return client.delete(path);
+  }
+
+  private async patch(path: string, body: unknown): Promise<AxiosResponse> {
+    let client = await this.populateClient();
+    return client.patch(path, body);
+  }
+
   async accounts(): Promise<Account[]> {
-    let res = await this.client.get("/api/accounts");
+    let res = await this.get("/api/accounts");
     return res.data as Account[];
   }
 
   async account(id: string): Promise<Account> {
-    let res = await this.client.get(`/api/accounts/${id}`);
+    let res = await this.get(`/api/accounts/${id}`);
     return res.data as Account;
   }
 
   async createAccount(account: PartialAccount): Promise<Account> {
-    const res = await this.client.post("/api/accounts", account);
+    const res = await this.post("/api/accounts", account);
     return res.data as Account;
   }
 
   async updateAccount(id: string, account: PartialAccount): Promise<Account> {
-    const res = await this.client.patch(`/api/accounts/${id}`, account);
+    const res = await this.patch(`/api/accounts/${id}`, account);
     return res.data as Account;
   }
 
   async accountMemberships(accountId: string): Promise<Membership[]> {
-    const res = await this.client.get(`/api/accounts/${accountId}/memberships`);
+    const res = await this.get(`/api/accounts/${accountId}/memberships`);
     return res.data as Membership[];
   }
 
@@ -150,7 +185,7 @@ export class ApiClient {
     accountId: string,
     membership: CreateMembership
   ): Promise<Membership | { error: ValidationErrorsFor<CreateMembership> }> {
-    const res = await this.client.post(
+    const res = await this.post(
       `/api/accounts/${accountId}/memberships`,
       membership
     );
@@ -158,17 +193,17 @@ export class ApiClient {
   }
 
   async accountTasks(accountId: string): Promise<Task[]> {
-    const res = await this.client.get(`/api/accounts/${accountId}/tasks`);
+    const res = await this.get(`/api/accounts/${accountId}/tasks`);
     return res.data as Task[];
   }
 
   async task(taskId: string): Promise<Task> {
-    const res = await this.client.get(`/api/tasks/${taskId}`);
+    const res = await this.get(`/api/tasks/${taskId}`);
     return res.data as Task;
   }
 
   async deleteMembership(membershipId: string): Promise<null> {
-    await this.client.delete(`/api/memberships/${membershipId}`);
+    await this.delete(`/api/memberships/${membershipId}`);
     return null;
   }
 
@@ -176,7 +211,7 @@ export class ApiClient {
     taskId: string,
     task: UpdateTask
   ): Promise<Task | { error: ValidationErrorsFor<UpdateTask> }> {
-    const res = await this.client.patch(`/api/tasks/${taskId}`, task);
+    const res = await this.patch(`/api/tasks/${taskId}`, task);
     switch (res.status) {
       case 201:
         return res.data as Task;
@@ -193,10 +228,7 @@ export class ApiClient {
     accountId: string,
     task: NewTask
   ): Promise<Task | { error: ValidationErrorsFor<NewTask> }> {
-    const res = await this.client.post(
-      `/api/accounts/${accountId}/tasks`,
-      task
-    );
+    const res = await this.post(`/api/accounts/${accountId}/tasks`, task);
     switch (res.status) {
       case 201:
         return res.data as Task;
