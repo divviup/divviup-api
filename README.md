@@ -124,7 +124,6 @@ to this safeguard, running this server requires turning enabling a
 As such, to run a standalone development server,
 
 ```bash
-$ cd app && npm ci && cd -
 $ cargo run --features aggregator-api-mock
 ```
 
