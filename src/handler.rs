@@ -47,7 +47,6 @@ impl DivviupApi {
         Self {
             handler: Box::new((
                 Forwarding::trust_always(),
-                compression(),
                 caching_headers(),
                 conn_id(),
                 logger(),
@@ -73,6 +72,7 @@ impl DivviupApi {
 fn api(db: &Db, config: &ApiConfig) -> impl Handler {
     let aggregator_client = AggregatorClient::new(&config);
     (
+        compression(),
         cookies(),
         sessions(SessionStore::new(db.clone()), config.session_secret.clone())
             .with_cookie_name("divviup.sid"),
