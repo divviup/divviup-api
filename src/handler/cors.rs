@@ -31,7 +31,8 @@ impl Handler for CorsHeaders {
                 ),
                 (AccessControlMaxAge, "86400"),
             ]);
-            conn.headers_mut().insert(AccessControlAllowOrigin, self.origin.clone());
+            conn.headers_mut()
+                .insert(AccessControlAllowOrigin, self.origin.clone());
 
             if conn.method() == Method::Options {
                 return conn.with_status(Status::NoContent).halt();
