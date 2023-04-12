@@ -14,7 +14,7 @@
 ## Configuring and running
 
 ## System requirements
-
+* [NodeJS](https://nodejs.org/) and [npm](https://www.npmjs.com/)
 * [Rust (current stable or nightly)](https://www.rust-lang.org/tools/install)
 * [PostgreSQL](https://www.postgresql.org/)
 
@@ -44,6 +44,7 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 * `LISTEN_FD` -- if supplied on unix-like systems, if this is set to an open file descriptor number, the server will listen to that fd
 * `OTEL_EXPORTER_PROMETHEUS_HOST` -- default `"localhost"`
 * `OTEL_EXPORTER_PROMETHEUS_PORT` -- default `9464`
+* `SKIP_APP_COMPILATION` -- we currently build the react app in a build script. To avoid this behavior, set this environment variable.
 
 ## Migrating the database
 
@@ -115,7 +116,16 @@ to this safeguard, running this server requires turning enabling a
 As such, to run a standalone development server,
 
 ```bash
+$ cd app && npm ci && cd -
 $ cargo run --features aggregator-api-mock
+```
+
+### Embedded React App
+
+By default, building the rust server will also build the react app. To skip this (for example, when running a development server), set `SKIP_APP_COMPIILATION=1`
+
+```bash
+$ SKIP_APP_COMPILATION=1 cargo run --features aggregator-api-mock
 ```
 
 ## Security Notes
