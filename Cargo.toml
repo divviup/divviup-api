@@ -80,3 +80,7 @@ path = "src/lib.rs"
 [[bin]]
 name = "divviup_api_bin"
 path = "src/bin.rs"
+
+[profile.release]
+lto = "fat"
+
