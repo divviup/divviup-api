@@ -2,7 +2,11 @@ FROM rust:1.68.2-alpine as builder
 RUN apk add libc-dev
 RUN apk add --update npm
 WORKDIR /src
-COPY app /src/app
+COPY app/src /src/app/src
+COPY app/package-lock.json /src/app/package-lock.json
+COPY app/package.json /src/app/package.json
+COPY app/public /src/app/public
+COPY app/tsconfig.json /src/app/tsconfig.json
 COPY Cargo.toml /src/Cargo.toml
 COPY Cargo.lock /src/Cargo.lock
 COPY build.rs /src/build.rs
