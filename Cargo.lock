@@ -947,6 +947,7 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-prometheus",
  "querystrong",
+ "regex",
  "rustc_version",
  "sea-orm",
  "serde",

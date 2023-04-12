@@ -12,7 +12,7 @@ pub use sea_orm::{
 };
 pub use serde_json::{json, Value};
 pub use test_harness::test;
-pub use trillium::KnownHeaderName;
+pub use trillium::{Conn, KnownHeaderName, Method, Status};
 pub use trillium_testing::prelude::*;
 pub use url::Url;
 
@@ -212,16 +212,30 @@ impl TestingJsonExt for TestConn {
     }
 }
 
-pub trait ApiHeadersExt {
+pub trait TestExt {
     fn with_api_headers(self) -> Self;
+    fn with_api_host(self) -> Self;
+    fn with_app_host(self) -> Self;
 }
-impl ApiHeadersExt for TestConn {
+
+impl TestExt for TestConn {
+    fn with_api_host(self) -> Self {
+        self.with_request_header(KnownHeaderName::Host, "api.example")
+            .secure()
+    }
+
+    fn with_app_host(self) -> Self {
+        self.with_request_header(KnownHeaderName::Host, "app.example")
+            .secure()
+    }
+
     fn with_api_headers(self) -> Self {
         if self.method() == Method::Get {
-            self.with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            self
         } else {
-            self.with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-                .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            self.with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
         }
+        .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+        .with_api_host()
     }
 }
