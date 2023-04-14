@@ -46,7 +46,11 @@ pub fn routes(config: &ApiConfig) -> impl Handler {
                 redirect(config.app_url.to_string()),
             ),
         )
-        .any(&[Get, Post, Delete, Patch], "/api/*", api_routes())
+        .any(
+            &[Get, Post, Delete, Patch],
+            "/api/*",
+            (state(auth0_client), api_routes()),
+        )
 }
 
 fn api_routes() -> impl Handler {

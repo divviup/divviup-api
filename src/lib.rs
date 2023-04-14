@@ -14,6 +14,7 @@ mod config;
 mod db;
 pub mod entity;
 pub(crate) mod handler;
+pub mod postmark_client;
 mod routes;
 pub mod telemetry;
 mod user;

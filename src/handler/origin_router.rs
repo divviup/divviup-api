@@ -26,13 +26,20 @@ impl OriginRouter {
         Self::default()
     }
 
-    /// add a handler to this origin router at the specified exact origin
+    /// add a handler to this origin router at the specified exact origin, returning self
+    /// see also [`add_handler`]
     pub fn with_handler(mut self, origin: &str, handler: impl Handler) -> Self {
+        self.add_handler(origin, handler);
+        self
+    }
+
+    /// add a handler to this origin router at the specified exect origin.
+    /// see also [`with_handler`] for chainability
+    pub fn add_handler(&mut self, origin: &str, handler: impl Handler) {
         self.map.insert(
             origin.to_lowercase().trim_end_matches('/').to_owned(),
             Box::new(handler),
         );
-        self
     }
 }
 

@@ -31,6 +31,9 @@ pub enum ClientError {
 
     #[error(transparent)]
     Http(#[from] trillium_http::Error),
+
+    #[error("{0}")]
+    Other(String),
 }
 
 impl From<ClientSerdeError> for ClientError {
@@ -137,6 +140,7 @@ pub async fn expect_ok(conn: &mut Conn<'_>) -> Result<(), ClientError> {
         Ok(())
     } else {
         let body = conn.response_body().read_string().await?;
+        log::error!("{:?}: {body}", conn.status());
         Err(ClientError::HttpStatusNotSuccess {
             status: conn.status(),
             body,

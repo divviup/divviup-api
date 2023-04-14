@@ -1,13 +1,19 @@
 use async_lock::RwLock;
+use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use std::{
     sync::Arc,
     time::{Duration, SystemTime},
 };
 use trillium::KnownHeaderName;
+use trillium_api::FromConn;
 use url::Url;
 
-use crate::{client::expect_ok, ApiConfig, User};
+use crate::{
+    client::{expect_ok, ClientError},
+    postmark_client::{Email, PostmarkClient},
+    ApiConfig,
+};
 type ClientConnector = trillium_rustls::RustlsConnector<trillium_tokio::TcpConnector>;
 type Client = trillium_client::Client<ClientConnector>;
 
@@ -18,7 +24,17 @@ pub struct Auth0Client {
     base_url: Url,
     secret: String,
     client_id: String,
+    postmark_client: PostmarkClient,
+    api_url: Url,
 }
+
+#[trillium::async_trait]
+impl FromConn for Auth0Client {
+    async fn from_conn(conn: &mut trillium::Conn) -> Option<Self> {
+        conn.state().cloned()
+    }
+}
+
 impl Auth0Client {
     pub fn new(config: &ApiConfig) -> Self {
         Self {
@@ -27,15 +43,18 @@ impl Auth0Client {
             base_url: config.auth_url.clone(),
             secret: config.auth_client_secret.clone(),
             client_id: config.auth_client_id.clone(),
+            postmark_client: PostmarkClient::new(config),
+            api_url: config.api_url.clone(),
         }
     }
 
     pub fn with_http_client(mut self, client: Client) -> Self {
-        self.client = client;
+        self.client = client.clone();
+        self.postmark_client.set_http_client(client);
         self
     }
 
-    async fn get_new_token(&self) -> Result<String, crate::client::ClientError> {
+    async fn get_new_token(&self) -> Result<String, ClientError> {
         // we have to check again here because someone may have taken
         // a write lock and populated the token since we relinquished
         // our read lock
@@ -69,7 +88,7 @@ impl Auth0Client {
         Ok(token_string)
     }
 
-    async fn token(&self) -> Result<String, crate::client::ClientError> {
+    async fn token(&self) -> Result<String, ClientError> {
         if let Some(token) = &*self.token.read().await {
             if token.is_fresh() {
                 return Ok(token.token.clone());
@@ -79,39 +98,99 @@ impl Auth0Client {
         self.get_new_token().await
     }
 
-    pub async fn create_user(&self, email: &str) -> Result<User, crate::client::ClientError> {
+    async fn post<T>(&self, path: &str, json: &impl Serialize) -> Result<T, ClientError>
+    where
+        T: DeserializeOwned,
+    {
         let token = self.token().await?;
         let mut conn = self
             .client
-            .post(self.base_url.join("/api/v2/users").unwrap())
+            .post(self.base_url.join(path).unwrap())
             .with_header(KnownHeaderName::Accept, "application/json")
             .with_header(KnownHeaderName::ContentType, "application/json")
             .with_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
-            .with_json_body(&json!({
-                "connection":"Username-Password-Authentication",
-                "email": email,
-                "password": std::iter::repeat_with(fastrand::alphanumeric).take(60).collect::<String>()
-            }))?
+            .with_json_body(json)?
             .await?;
-
         expect_ok(&mut conn).await?;
-
         Ok(conn.response_json().await?)
     }
 
-    pub async fn users(&self) -> Result<Value, crate::client::ClientError> {
+    async fn get<T>(&self, path: &str) -> Result<T, ClientError>
+    where
+        T: DeserializeOwned,
+    {
         let token = self.token().await?;
         let mut conn = self
             .client
-            .get(self.base_url.join("/api/v2/users").unwrap())
+            .get(self.base_url.join(path).unwrap())
             .with_header(KnownHeaderName::Accept, "application/json")
             .with_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
             .await?;
-
         expect_ok(&mut conn).await?;
+        Ok(conn.response_json().await?)
+    }
 
-        let data = conn.response_json::<Value>().await?;
-        Ok(data)
+    pub async fn invite(&self, email: &str, account_name: &str) -> Result<(), ClientError> {
+        let user = self.create_user(email).await?;
+        let user_id = user.get("user_id").unwrap().as_str().unwrap();
+        let reset = self.password_reset(user_id).await?;
+
+        self.postmark_client
+            .send_email_template(
+                email,
+                "user-invitation",
+                &json!({
+                    "email": email,
+                    "account_name": account_name,
+                    "action_url": reset
+                }),
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub async fn password_reset(&self, user_id: &str) -> Result<Url, ClientError> {
+        let value: Value = self
+            .post(
+                "/api/v2/tickets/password-change",
+                &json!({ "user_id": user_id, "client_id": &self.client_id }),
+            )
+            .await?;
+        value
+            .get("ticket")
+            .and_then(Value::as_str)
+            .and_then(|u| Url::parse(u).ok())
+            .ok_or(ClientError::Other(format!("password reset")))
+    }
+
+    pub async fn create_user(&self, email: &str) -> Result<Value, ClientError> {
+        self.post("/api/v2/users", &json!({
+            "connection": "Username-Password-Authentication",
+            "email": email,
+            "password": std::iter::repeat_with(fastrand::alphanumeric).take(60).collect::<String>(),
+            "verify_email": false
+        })).await
+    }
+
+    pub async fn users(&self) -> Result<Vec<Value>, ClientError> {
+        self.get("/api/v2/users").await
+    }
+
+    pub(crate) fn spawn_invitation_task(
+        &self,
+        membership: crate::entity::Membership,
+        account: crate::entity::Account,
+    ) {
+        let client = self.clone();
+        tokio::task::spawn(async move {
+            match client.invite(&membership.user_email, &account.name).await {
+                Ok(()) => log::info!("sent email regarding {membership:?}"),
+
+                Err(e) => log::error!(
+                    "error while sending email regarding membership {membership:?}: \n\n{e}"
+                ),
+            }
+        });
     }
 }
 

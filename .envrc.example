@@ -15,3 +15,5 @@ export APP_PORT=8081
 export API_URL=http://localhost:8080
 export AGGREGATOR_URL=http://localhost:8082
 export AGGREGATOR_SECRET=...
+export POSTMARK_TOKEN=looks-like-a-uuid
+export EMAIL_ADDRESS=the@from.address

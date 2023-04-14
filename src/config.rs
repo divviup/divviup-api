@@ -17,6 +17,8 @@ pub struct ApiConfig {
     pub aggregator_secret: String,
     pub prometheus_host: String,
     pub prometheus_port: u16,
+    pub postmark_token: String,
+    pub email_address: String,
 }
 
 #[derive(Debug, Error, Clone, Copy)]
@@ -81,6 +83,8 @@ impl ApiConfig {
                 "9464",
                 "16-bit number",
             )?,
+            postmark_token: var("POSTMARK_TOKEN", "string")?,
+            email_address: var("EMAIL_ADDRESS", "string")?,
         })
     }
 
