@@ -168,7 +168,7 @@ impl From<NewTask> for TaskCreate {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TaskIds {
     pub task_ids: Vec<String>,
     pub pagination_token: Option<String>,
