@@ -25,7 +25,7 @@ use trillium_router::router;
 pub fn routes(config: &ApiConfig) -> impl Handler {
     let oauth2_client = OauthClient::new(&config.oauth_config());
     let auth0_client =
-        Auth0Client::new(&config).with_http_client(oauth2_client.http_client().clone());
+        Auth0Client::new(config).with_http_client(oauth2_client.http_client().clone());
 
     router()
         .get("/health", api(health_check))

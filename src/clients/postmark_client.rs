@@ -30,7 +30,7 @@ impl PostmarkClient {
             token: config.postmark_token.clone(),
             client: Client::new().with_default_pool(),
             email: config.email_address.clone(),
-            base_url: Url::parse("https://api.postmarkapp.com").unwrap(),
+            base_url: config.postmark_url.clone(),
         }
     }
 

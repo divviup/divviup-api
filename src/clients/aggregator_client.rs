@@ -84,13 +84,13 @@ impl AggregatorClient {
         }
     }
 
-    pub async fn get_task_metrics(&self, task_id: String) -> Result<TaskMetrics, ClientError> {
+    pub async fn get_task_metrics(&self, task_id: &str) -> Result<TaskMetrics, ClientError> {
         let mut conn = self.get(&format!("/tasks/{task_id}/metrics")).await?;
         expect_ok(&mut conn).await?;
         Ok(conn.response_json().await?)
     }
 
-    pub async fn delete_task(&self, task_id: String) -> Result<(), ClientError> {
+    pub async fn delete_task(&self, task_id: &str) -> Result<(), ClientError> {
         let mut conn = self.delete(&format!("/tasks/{task_id}")).await?;
         expect_ok(&mut conn).await?;
         Ok(())

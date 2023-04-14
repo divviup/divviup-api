@@ -19,6 +19,7 @@ pub struct ApiConfig {
     pub prometheus_port: u16,
     pub postmark_token: String,
     pub email_address: String,
+    pub postmark_url: Url,
 }
 
 #[derive(Debug, Error, Clone, Copy)]
@@ -85,6 +86,7 @@ impl ApiConfig {
             )?,
             postmark_token: var("POSTMARK_TOKEN", "string")?,
             email_address: var("EMAIL_ADDRESS", "string")?,
+            postmark_url: Url::parse("https://api.postmarkapp.com").unwrap(),
         })
     }
 

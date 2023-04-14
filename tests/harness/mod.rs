@@ -45,8 +45,11 @@ pub fn config(aggregator_url: Url) -> ApiConfig {
         auth_audience: "aud".into(),
         aggregator_url,
         aggregator_secret: "unused".into(),
-        prometheus_host: "localhost".to_string(),
+        prometheus_host: "localhost".into(),
         prometheus_port: 9464,
+        postmark_url: "http://postmark.example".parse().unwrap(),
+        postmark_token: "-".into(),
+        email_address: "test@example.test".into(),
     }
 }
 

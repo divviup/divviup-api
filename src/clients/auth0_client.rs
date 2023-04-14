@@ -160,7 +160,7 @@ impl Auth0Client {
             .get("ticket")
             .and_then(Value::as_str)
             .and_then(|u| Url::parse(u).ok())
-            .ok_or(ClientError::Other(format!("password reset")))
+            .ok_or(ClientError::Other("password reset".to_string()))
     }
 
     pub async fn create_user(&self, email: &str) -> Result<Value, ClientError> {
