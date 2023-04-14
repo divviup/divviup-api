@@ -8,9 +8,9 @@ pub(crate) mod oauth2;
 pub(crate) mod origin_router;
 pub(crate) mod session_store;
 
-use crate::{
-    auth0_client, handler::assets::static_assets, routes, AggregatorClient, ApiConfig, Db,
-};
+use crate::{clients::AggregatorClient, routes, ApiConfig, Db};
+
+use assets::static_assets;
 use cors::cors_headers;
 use error::ErrorHandler;
 use logger::logger;

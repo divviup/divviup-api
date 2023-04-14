@@ -5,17 +5,19 @@ use std::{
     sync::Arc,
     time::{Duration, SystemTime},
 };
-use trillium::KnownHeaderName;
+use tokio::task::spawn;
+use trillium::{
+    Conn,
+    KnownHeaderName::{Accept, Authorization, ContentType},
+};
 use trillium_api::FromConn;
 use url::Url;
 
 use crate::{
-    client::{expect_ok, ClientError},
-    postmark_client::{Email, PostmarkClient},
+    clients::{expect_ok, Client, ClientError, PostmarkClient},
+    entity::{Account, Membership},
     ApiConfig,
 };
-type ClientConnector = trillium_rustls::RustlsConnector<trillium_tokio::TcpConnector>;
-type Client = trillium_client::Client<ClientConnector>;
 
 #[derive(Debug, Clone)]
 pub struct Auth0Client {
@@ -25,12 +27,11 @@ pub struct Auth0Client {
     secret: String,
     client_id: String,
     postmark_client: PostmarkClient,
-    api_url: Url,
 }
 
 #[trillium::async_trait]
 impl FromConn for Auth0Client {
-    async fn from_conn(conn: &mut trillium::Conn) -> Option<Self> {
+    async fn from_conn(conn: &mut Conn) -> Option<Self> {
         conn.state().cloned()
     }
 }
@@ -44,7 +45,6 @@ impl Auth0Client {
             secret: config.auth_client_secret.clone(),
             client_id: config.auth_client_id.clone(),
             postmark_client: PostmarkClient::new(config),
-            api_url: config.api_url.clone(),
         }
     }
 
@@ -70,7 +70,7 @@ impl Auth0Client {
         let mut conn = self
             .client
             .post(self.base_url.join("/oauth/token").unwrap())
-            .with_header(KnownHeaderName::ContentType, "application/json")
+            .with_header(ContentType, "application/json")
             .with_json_body(&json!({
                 "grant_type": "client_credentials",
                 "client_id": self.client_id,
@@ -106,9 +106,9 @@ impl Auth0Client {
         let mut conn = self
             .client
             .post(self.base_url.join(path).unwrap())
-            .with_header(KnownHeaderName::Accept, "application/json")
-            .with_header(KnownHeaderName::ContentType, "application/json")
-            .with_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
+            .with_header(Accept, "application/json")
+            .with_header(ContentType, "application/json")
+            .with_header(Authorization, format!("Bearer {token}"))
             .with_json_body(json)?
             .await?;
         expect_ok(&mut conn).await?;
@@ -123,8 +123,8 @@ impl Auth0Client {
         let mut conn = self
             .client
             .get(self.base_url.join(path).unwrap())
-            .with_header(KnownHeaderName::Accept, "application/json")
-            .with_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
+            .with_header(Accept, "application/json")
+            .with_header(Authorization, format!("Bearer {token}"))
             .await?;
         expect_ok(&mut conn).await?;
         Ok(conn.response_json().await?)
@@ -176,13 +176,9 @@ impl Auth0Client {
         self.get("/api/v2/users").await
     }
 
-    pub(crate) fn spawn_invitation_task(
-        &self,
-        membership: crate::entity::Membership,
-        account: crate::entity::Account,
-    ) {
+    pub(crate) fn spawn_invitation_task(&self, membership: Membership, account: Account) {
         let client = self.clone();
-        tokio::task::spawn(async move {
+        spawn(async move {
             match client.invite(&membership.user_email, &account.name).await {
                 Ok(()) => log::info!("sent email regarding {membership:?}"),
 

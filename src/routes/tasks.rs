@@ -1,10 +1,11 @@
 use crate::{
+    clients::AggregatorClient,
     entity::{
         task::build_task, Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask,
     },
     handler::Error,
     user::User,
-    AggregatorClient, Db,
+    Db,
 };
 use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait};
 use trillium::{Conn, Handler, Status};

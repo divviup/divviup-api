@@ -1,4 +1,6 @@
-use crate::client::{HpkeConfig, TaskCreate, TaskIds, TaskMetrics, TaskResponse};
+use crate::clients::aggregator_client::api_types::{
+    HpkeConfig, TaskCreate, TaskIds, TaskMetrics, TaskResponse,
+};
 use fastrand::alphanumeric;
 use querystrong::QueryStrong;
 use std::iter::repeat_with;

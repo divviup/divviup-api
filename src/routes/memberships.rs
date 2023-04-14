@@ -1,11 +1,11 @@
 use crate::{
-    auth0_client::Auth0Client,
-    entity::{Account, Accounts, CreateMembership, Membership, MembershipColumn, Memberships},
+    clients::Auth0Client,
+    entity::{Account, Accounts, CreateMembership, MembershipColumn, Memberships},
     handler::Error,
     user::User,
     Db,
 };
-use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait, TransactionTrait};
+use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait};
 use trillium::{Conn, Handler, Status};
 use trillium_api::Json;
 use trillium_caching_headers::CachingHeadersExt;

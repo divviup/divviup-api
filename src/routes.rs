@@ -5,7 +5,7 @@ mod tasks;
 mod users;
 
 use crate::{
-    auth0_client::Auth0Client,
+    clients::Auth0Client,
     handler::{
         destroy_session, logout_from_auth0,
         oauth2::{self, OauthClient},
@@ -15,10 +15,10 @@ use crate::{
 };
 use health_check::health_check;
 use trillium::{
-    state, Conn, Handler,
+    state, Handler,
     Method::{Delete, Get, Patch, Post},
 };
-use trillium_api::{api, Json};
+use trillium_api::api;
 use trillium_redirect::redirect;
 use trillium_router::router;
 

@@ -1,15 +1,13 @@
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
-use trillium::KnownHeaderName;
+use trillium::{async_trait, Conn, KnownHeaderName};
 use trillium_api::FromConn;
 use url::Url;
 
 use crate::{
-    client::{expect_ok, ClientError},
+    clients::{expect_ok, Client, ClientError},
     ApiConfig,
 };
-type ClientConnector = trillium_rustls::RustlsConnector<trillium_tokio::TcpConnector>;
-type Client = trillium_client::Client<ClientConnector>;
 
 #[derive(Debug, Clone)]
 pub struct PostmarkClient {
@@ -19,9 +17,9 @@ pub struct PostmarkClient {
     base_url: Url,
 }
 
-#[trillium::async_trait]
+#[async_trait]
 impl FromConn for PostmarkClient {
-    async fn from_conn(conn: &mut trillium::Conn) -> Option<Self> {
+    async fn from_conn(conn: &mut Conn) -> Option<Self> {
         conn.state().cloned()
     }
 }
@@ -88,7 +86,7 @@ impl PostmarkClient {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Email {
     pub to: String,
