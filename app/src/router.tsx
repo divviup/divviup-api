@@ -15,12 +15,16 @@ import { AxiosError } from "axios";
 import ErrorPage from "./ErrorPage";
 
 function Login({ apiClient }: { apiClient: ApiClient }) {
-  window.location.href = apiClient.loginUrl();
+  apiClient.loginUrl().then((url) => {
+    window.location.href = url;
+  });
   return <></>;
 }
 
 function Logout({ apiClient }: { apiClient: ApiClient }) {
-  window.location.href = apiClient.logoutUrl();
+  apiClient.logoutUrl().then((url) => {
+    window.location.href = url;
+  });
   return <></>;
 }
 

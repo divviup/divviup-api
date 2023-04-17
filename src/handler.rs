@@ -1,12 +1,14 @@
+pub(crate) mod assets;
 pub(crate) mod cors;
 pub(crate) mod custom_mime_types;
 pub(crate) mod error;
 pub(crate) mod logger;
 pub(crate) mod misc;
 pub(crate) mod oauth2;
+pub(crate) mod origin_router;
 pub(crate) mod session_store;
 
-use crate::{routes, AggregatorClient, ApiConfig, Db};
+use crate::{handler::assets::static_assets, routes, AggregatorClient, ApiConfig, Db};
 use cors::cors_headers;
 use error::ErrorHandler;
 use logger::logger;
@@ -28,6 +30,8 @@ pub(crate) use custom_mime_types::ReplaceMimeTypes;
 pub(crate) use error::Error;
 pub(crate) use misc::*;
 
+use origin_router::origin_router;
+
 #[derive(Handler, Debug)]
 pub struct DivviupApi {
     #[handler]
@@ -38,26 +42,17 @@ pub struct DivviupApi {
 
 impl DivviupApi {
     pub async fn new(config: ApiConfig) -> Self {
-        let db = Db::connect(config.database_url.as_ref()).await;
         let config = Arc::new(config);
-        let aggregator_client = AggregatorClient::new(&config);
-
+        let db = Db::connect(config.database_url.as_ref()).await;
         Self {
             handler: Box::new((
                 Forwarding::trust_always(),
-                db.clone(),
-                compression(),
-                conn_id(),
-                state(config.clone()),
-                state(aggregator_client),
-                cors_headers,
-                logger(),
                 caching_headers(),
-                cache_control([Private, MustRevalidate]),
-                cookies(),
-                sessions(SessionStore::new(db.clone()), config.session_secret.clone())
-                    .with_cookie_name("divviup.sid"),
-                routes(&config),
+                conn_id(),
+                logger(),
+                origin_router()
+                    .with_handler(config.app_url.as_ref(), static_assets(&config))
+                    .with_handler(config.api_url.as_ref(), api(&db, &config)),
                 ErrorHandler,
             )),
             db,
@@ -72,4 +67,19 @@ impl DivviupApi {
     pub fn config(&self) -> &ApiConfig {
         &self.config
     }
+}
+
+fn api(db: &Db, config: &ApiConfig) -> impl Handler {
+    let aggregator_client = AggregatorClient::new(config);
+    (
+        compression(),
+        cookies(),
+        sessions(SessionStore::new(db.clone()), config.session_secret.clone())
+            .with_cookie_name("divviup.sid"),
+        state(aggregator_client),
+        cors_headers(config),
+        cache_control([Private, MustRevalidate]),
+        db.clone(),
+        routes(config),
+    )
 }

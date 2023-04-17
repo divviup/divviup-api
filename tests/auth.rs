@@ -8,7 +8,7 @@ mod login {
 
     #[test(harness = set_up)]
     async fn when_not_already_logged_in(app: DivviupApi) -> TestResult {
-        let conn = get("/login").run_async(&app).await;
+        let conn = get("/login").with_api_host().run_async(&app).await;
         let auth_base = app.config().auth_url.join("/authorize")?;
         assert_status!(conn, 302);
         let location = conn
@@ -32,7 +32,11 @@ mod login {
     #[test(harness = set_up)]
     async fn when_already_logged_in(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
-        let conn = get("/login").with_state(user).run_async(&app).await;
+        let conn = get("/login")
+            .with_api_host()
+            .with_state(user)
+            .run_async(&app)
+            .await;
         assert_response!(conn, 302, "", "Location" => app.config().app_url.as_ref());
         Ok(())
     }
@@ -44,7 +48,11 @@ async fn logout(app: DivviupApi) -> TestResult {
     let mut session = Session::new();
     session.insert(USER_SESSION_KEY, &user)?;
 
-    let conn = get("/logout").with_state(session).run_async(&app).await;
+    let conn = get("/logout")
+        .with_api_host()
+        .with_state(session)
+        .run_async(&app)
+        .await;
 
     assert!(conn.session().is_destroyed());
 

@@ -119,7 +119,7 @@ mod create {
         assert_eq!(task.partner, "partner");
         assert_eq!(task.vdaf, json!({"type": "count"}));
         assert_eq!(task.min_batch_size, 500);
-        assert_eq!(task.is_leader, true);
+        assert!(task.is_leader);
         assert_eq!(task.time_precision_seconds, 60);
         assert!(Tasks::find_by_id(task.id).one(app.db()).await?.is_some());
 

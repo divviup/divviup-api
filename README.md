@@ -14,7 +14,7 @@
 ## Configuring and running
 
 ## System requirements
-
+* [NodeJS](https://nodejs.org/) and [npm](https://www.npmjs.com/)
 * [Rust (current stable or nightly)](https://www.rust-lang.org/tools/install)
 * [PostgreSQL](https://www.postgresql.org/)
 
@@ -44,8 +44,11 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 * `LISTEN_FD` -- if supplied on unix-like systems, if this is set to an open file descriptor number, the server will listen to that fd
 * `OTEL_EXPORTER_PROMETHEUS_HOST` -- default `"localhost"`
 * `OTEL_EXPORTER_PROMETHEUS_PORT` -- default `9464`
+* `SKIP_APP_COMPILATION` -- we currently build the react app in a build script. To avoid this behavior, set this environment variable.
 
-## Migrating the database
+## Initial setup
+
+### Migrating the database
 
 * First, create the database referred to by `DATABASE_URL` in your environment. This may an invocation of [`createdb`](https://www.postgresql.org/docs/current/app-createdb.html) if running locally.
 * `cargo run -p migration -- up` will bring the application up to the current schema
@@ -103,6 +106,12 @@ SUBCOMMANDS:
 ```
 </details>
 
+### Installing npm dependencies
+
+```bash
+$ cd app && npm ci && cd -
+```
+
 ## Running the server
 
 Because this server has a service dependency on the aggregator api
@@ -117,6 +126,23 @@ As such, to run a standalone development server,
 ```bash
 $ cargo run --features aggregator-api-mock
 ```
+
+### Embedded React App
+
+By default, building the rust server will also build the react app. To skip this (for example, when running a development server), set `SKIP_APP_COMPIILATION=1`
+
+```bash
+$ SKIP_APP_COMPILATION=1 cargo run --features aggregator-api-mock
+```
+
+### Running the React development server
+
+Configure the rust app environment to point `APP_URL` to whatever port you're using here, eg `SKIP_APP_COMPILATION=1 APP_URL=http://localhost:8082 cargo run --features aggregator-api-mock`
+
+```bash
+$ cd app && PORT=8082 npm start
+```
+
 
 ## Security Notes
 

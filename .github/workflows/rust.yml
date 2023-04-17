@@ -15,6 +15,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: latest
+          cache: "npm"
+          cache-dependency-path: ./app/package-lock.json
+      - run: npm ci
+        working-directory: ./app
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools-preview, rustfmt

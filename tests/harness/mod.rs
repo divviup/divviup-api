@@ -12,7 +12,7 @@ pub use sea_orm::{
 };
 pub use serde_json::{json, Value};
 pub use test_harness::test;
-pub use trillium::KnownHeaderName;
+pub use trillium::{Conn, KnownHeaderName, Method, Status};
 pub use trillium_testing::prelude::*;
 pub use url::Url;
 
@@ -27,15 +27,15 @@ async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
 
 async fn set_up_schema(db: &Db) {
     let schema = Schema::new(DbBackend::Sqlite);
-    set_up_schema_for(&schema, &db, Sessions).await;
-    set_up_schema_for(&schema, &db, Accounts).await;
-    set_up_schema_for(&schema, &db, Memberships).await;
-    set_up_schema_for(&schema, &db, Tasks).await;
+    set_up_schema_for(&schema, db, Sessions).await;
+    set_up_schema_for(&schema, db, Accounts).await;
+    set_up_schema_for(&schema, db, Memberships).await;
+    set_up_schema_for(&schema, db, Tasks).await;
 }
 
 pub fn config(aggregator_url: Url) -> ApiConfig {
     ApiConfig {
-        session_secret: std::iter::repeat('x').take(32).collect(),
+        session_secret: "x".repeat(32),
         api_url: "https://api.example".parse().unwrap(),
         app_url: "https://app.example".parse().unwrap(),
         database_url: "sqlite::memory:".parse().unwrap(),
@@ -121,7 +121,7 @@ pub mod fixtures {
     }
 
     pub async fn membership(app: &DivviupApi, account: &Account, user: &User) -> Membership {
-        Membership::build(user.email.clone(), &account)
+        Membership::build(user.email.clone(), account)
             .unwrap()
             .insert(app.db())
             .await
@@ -164,7 +164,7 @@ pub mod fixtures {
         };
         new_task.validate().unwrap();
         let api_response = aggregator_api_mock::task_response(new_task.clone().into());
-        task::build_task(new_task, api_response, &account)
+        task::build_task(new_task, api_response, account)
             .insert(app.db())
             .await
             .unwrap()
@@ -212,16 +212,30 @@ impl TestingJsonExt for TestConn {
     }
 }
 
-pub trait ApiHeadersExt {
+pub trait TestExt {
     fn with_api_headers(self) -> Self;
+    fn with_api_host(self) -> Self;
+    fn with_app_host(self) -> Self;
 }
-impl ApiHeadersExt for TestConn {
+
+impl TestExt for TestConn {
+    fn with_api_host(self) -> Self {
+        self.with_request_header(KnownHeaderName::Host, "api.example")
+            .secure()
+    }
+
+    fn with_app_host(self) -> Self {
+        self.with_request_header(KnownHeaderName::Host, "app.example")
+            .secure()
+    }
+
     fn with_api_headers(self) -> Self {
         if self.method() == Method::Get {
-            self.with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            self
         } else {
-            self.with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
-                .with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
+            self.with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
         }
+        .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+        .with_api_host()
     }
 }
