@@ -14,8 +14,6 @@ use trillium_redirect::RedirectConnExt;
 use trillium_sessions::SessionConnExt;
 use url::Url;
 
-type ClientConnector = trillium_rustls::RustlsConnector<trillium_tokio::TcpConnector>;
-
 #[derive(Clone, Debug)]
 pub struct Oauth2Config {
     pub authorize_url: Url,
@@ -25,6 +23,7 @@ pub struct Oauth2Config {
     pub redirect_url: Url,
     pub base_url: Url,
     pub audience: String,
+    pub http_client: Client,
 }
 
 pub async fn redirect(conn: Conn) -> Conn {
@@ -131,7 +130,6 @@ pub struct OauthClient(Arc<OauthClientInner>);
 struct OauthClientInner {
     oauth_config: Oauth2Config,
     oauth2_client: BasicClient,
-    http_client: Client<ClientConnector>,
 }
 
 impl OauthClient {
@@ -183,7 +181,6 @@ impl OauthClient {
     }
 
     pub fn new(config: &Oauth2Config) -> Self {
-        let http_client = Client::new().with_default_pool();
         let oauth2_client = BasicClient::new(
             ClientId::new(config.client_id.clone()),
             Some(ClientSecret::new(config.client_secret.clone())),
@@ -194,7 +191,6 @@ impl OauthClient {
 
         Self(Arc::new(OauthClientInner {
             oauth_config: config.clone(),
-            http_client,
             oauth2_client,
         }))
     }
@@ -203,7 +199,7 @@ impl OauthClient {
         &self.0.oauth2_client
     }
 
-    pub fn http_client(&self) -> &Client<ClientConnector> {
-        &self.0.http_client
+    pub fn http_client(&self) -> &Client {
+        &self.0.oauth_config.http_client
     }
 }

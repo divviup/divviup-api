@@ -1,4 +1,5 @@
 use crate::{
+    clients::Auth0Client,
     entity::{Account, Accounts, CreateMembership, MembershipColumn, Memberships},
     handler::Error,
     user::User,
@@ -24,9 +25,21 @@ pub async fn index(conn: &mut Conn, (account, db): (Account, Db)) -> Result<impl
 
 pub async fn create(
     _: &mut Conn,
-    (account, Json(membership), db): (Account, Json<CreateMembership>, Db),
+    (account, Json(membership), db, client): (Account, Json<CreateMembership>, Db, Auth0Client),
 ) -> Result<impl Handler, Error> {
-    let membership = membership.build(&account)?.insert(&db).await?;
+    let membership = membership.build(&account)?;
+    let first_membership_for_this_email = Memberships::find()
+        .filter(MembershipColumn::UserEmail.eq(membership.user_email.as_ref()))
+        .one(&db)
+        .await?
+        .is_none();
+
+    let membership = membership.insert(&db).await?;
+
+    if first_membership_for_this_email {
+        client.invite(&membership.user_email, &account.name).await?;
+    }
+
     Ok((Json(membership), Status::Created))
 }
 

@@ -1,5 +1,5 @@
 use crate::{
-    client::TaskResponse,
+    clients::aggregator_client::api_types::TaskResponse,
     entity::{account, membership, Account},
     handler::Error,
 };

@@ -1,8 +1,13 @@
 #![allow(dead_code)] // because different tests use different parts of this
-use divviup_api::{aggregator_api_mock::aggregator_api, ApiConfig, Db};
+use divviup_api::{
+    aggregator_api_mock::aggregator_api, clients::auth0_client::Token, ApiConfig, Db,
+};
 use serde::{de::DeserializeOwned, Serialize};
 use std::future::Future;
 use trillium::Handler;
+use trillium_api::Json;
+use trillium_client::Client;
+use trillium_router::router;
 use trillium_testing::TestConn;
 
 pub use divviup_api::{entity::*, DivviupApi, User};
@@ -17,6 +22,10 @@ pub use trillium_testing::prelude::*;
 pub use url::Url;
 
 pub type TestResult = Result<(), Box<dyn std::error::Error>>;
+
+const POSTMARK_URL: &str = "https://postmark.example";
+const AGGREGATOR_URL: &str = "https://aggregator.example";
+const AUTH0_URL: &str = "https://auth.example";
 
 async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
     let backend = db.get_database_backend();
@@ -33,25 +42,63 @@ async fn set_up_schema(db: &Db) {
     set_up_schema_for(&schema, db, Tasks).await;
 }
 
-pub fn config(aggregator_url: Url) -> ApiConfig {
+fn postmark_mock() -> impl Handler {
+    router().post("/email/withTemplate", Json(json!({})))
+}
+
+fn auth0_mock() -> impl Handler {
+    router()
+        .post(
+            "/oauth/token",
+            Json(Token {
+                access_token: "access token".into(),
+                expires_in: 60,
+                scope: "".into(),
+                token_type: "bearer".into(),
+            }),
+        )
+        .post(
+            "/api/v2/users",
+            Json(json!({ "user_id": fixtures::random_name() })),
+        )
+        .post(
+            "/api/v2/tickets/password-change",
+            Json(json!({
+                "ticket": format!("{AUTH0_URL}/password_tickets/{}", fixtures::random_name())
+            })),
+        )
+}
+
+fn api_mocks() -> impl Handler {
+    divviup_api::handler::origin_router()
+        .with_handler(POSTMARK_URL, postmark_mock())
+        .with_handler(AGGREGATOR_URL, aggregator_api())
+        .with_handler(AUTH0_URL, auth0_mock())
+}
+
+pub fn config() -> ApiConfig {
     ApiConfig {
         session_secret: "x".repeat(32),
         api_url: "https://api.example".parse().unwrap(),
         app_url: "https://app.example".parse().unwrap(),
         database_url: "sqlite::memory:".parse().unwrap(),
-        auth_url: "https://auth.example".parse().unwrap(),
+        auth_url: AUTH0_URL.parse().unwrap(),
         auth_client_id: "client id".into(),
         auth_client_secret: "client secret".into(),
         auth_audience: "aud".into(),
-        aggregator_url,
+        aggregator_url: AGGREGATOR_URL.parse().unwrap(),
         aggregator_secret: "unused".into(),
-        prometheus_host: "localhost".to_string(),
+        prometheus_host: "localhost".into(),
         prometheus_port: 9464,
+        postmark_url: POSTMARK_URL.parse().unwrap(),
+        postmark_token: "-".into(),
+        email_address: "test@example.test".into(),
+        client: Client::new(trillium_testing::connector(api_mocks())),
     }
 }
 
-pub async fn build_test_app(aggregator_url: Url) -> DivviupApi {
-    let mut app = DivviupApi::new(config(aggregator_url)).await;
+pub async fn build_test_app() -> DivviupApi {
+    let mut app = DivviupApi::new(config()).await;
     set_up_schema(app.db()).await;
     let mut info = "testing".into();
     app.init(&mut info).await;
@@ -64,20 +111,8 @@ where
     Fut: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,
 {
     block_on(async move {
-        let app = build_test_app("https://aggregator_url.example".parse().unwrap()).await;
+        let app = build_test_app().await;
         f(app).await.unwrap();
-    });
-}
-
-pub fn with_aggregator_api_mock<F, Fut>(f: F)
-where
-    F: FnOnce(DivviupApi) -> Fut,
-    Fut: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,
-{
-    trillium_testing::with_server(aggregator_api(), |aggregator_url| async move {
-        let app = build_test_app(aggregator_url).await;
-        f(app).await?;
-        Ok(())
     });
 }
 

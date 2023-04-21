@@ -1,4 +1,4 @@
-use crate::client::ClientError;
+use crate::clients::ClientError;
 use sea_orm::DbErr;
 use serde_json::json;
 use std::{backtrace::Backtrace, sync::Arc};

@@ -8,7 +8,9 @@ pub(crate) mod oauth2;
 pub(crate) mod origin_router;
 pub(crate) mod session_store;
 
-use crate::{handler::assets::static_assets, routes, AggregatorClient, ApiConfig, Db};
+use crate::{clients::AggregatorClient, routes, ApiConfig, Db};
+
+use assets::static_assets;
 use cors::cors_headers;
 use error::ErrorHandler;
 use logger::logger;
@@ -30,7 +32,7 @@ pub(crate) use custom_mime_types::ReplaceMimeTypes;
 pub(crate) use error::Error;
 pub(crate) use misc::*;
 
-use origin_router::origin_router;
+pub use origin_router::origin_router;
 
 #[derive(Handler, Debug)]
 pub struct DivviupApi {

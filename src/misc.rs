@@ -1,61 +1,65 @@
-use crate::{handler::oauth2::OauthClient, routes, ApiConfig, Db, User};
-use cors::cors_headers;
-use error::ErrorHandler;
-use logger::logger;
-use sea_orm::Database;
-use session_store::SessionStore;
-use std::sync::Arc;
-use trillium::{init, state, Conn, Handler, Status};
-use trillium_api::{api, Halt};
-use trillium_caching_headers::{
-    cache_control, caching_headers,
-    CacheControlDirective::{MustRevalidate, Private},
-};
-use trillium_compression::compression;
-use trillium_conn_id::conn_id;
-use trillium_cookies::cookies;
-use trillium_redirect::Redirect;
-use trillium_sessions::{sessions, SessionConnExt};
+use std::future::Future;
 
-/// note(jbr): most of these need to find better places to live
-pub fn redirect_if_logged_in(config: &ApiConfig) -> impl Handler {
-    let app_url = config.app_url.clone().to_string();
-    api(move |_: &mut Conn, user: Option<User>| {
-        let app_url = app_url.clone();
-        async move {
-            if user.is_some() {
-                Some(Redirect::to(app_url.clone()))
-            } else {
-                None
+pub trait AsyncResultExt<T, E> {
+    fn async_map_err<Fun, Fut, Ret>(
+        self,
+        map_fn: Fun,
+    ) -> Pin<Box<dyn Future<Output = Result<T, Ret>> + Send + 'static>>
+    where
+        Fun: Fn(E) -> Fut,
+        Fut: Future<Output = Ret>;
+
+    fn async_map_ok<Fun, Fut, Ret>(
+        self,
+        map_fn: Fun,
+    ) -> Pin<Box<dyn Future<Output = Result<Ret, E>> + Send + 'static>>
+    where
+        Fun: Fn(T) -> Fut,
+        Fut: Future<Output = Ret>;
+}
+
+impl<T, E> AsyncResultExt<T, E> for Result<T, E> {
+    fn async_map_err<Fun, Fut, Ret>(
+        self,
+        map_fn: Fun,
+    ) -> Pin<Box<dyn Future<Output = Result<T, Ret>> + Send + 'static>>
+    where
+        Fun: Fn(E) -> Fut,
+        Fut: Future<Output = Ret>,
+    {
+        Box::pin(async move {
+            match self {
+                Ok(t) => Ok(t),
+                Err(e) => Err(map_fn(e).await),
             }
-        }
-    })
-}
+        })
+    }
 
-pub fn logout_from_auth0(config: &ApiConfig) -> impl Handler {
-    let mut logout_url = config.auth_url.join("/v2/logout").unwrap();
-
-    logout_url.query_pairs_mut().extend_pairs([
-        ("client_id", config.auth_client_id.clone()),
-        ("returnTo", config.app_url.to_string()),
-    ]);
-
-    Redirect::to(logout_url.to_string())
-}
-
-pub async fn destroy_session(mut conn: Conn) -> Conn {
-    conn.session_mut().destroy();
-    conn
-}
-
-pub fn populate_oauth2_client(config: &ApiConfig) -> impl Handler {
-    trillium::state(OauthClient::new(&config.oauth_config()))
-}
-
-pub async fn user_required(_: &mut Conn, user: Option<User>) -> impl Handler {
-    if user.is_none() {
-        Some((Status::Forbidden, Halt))
-    } else {
-        None
+    fn async_map_ok<Fun, Fut, Ret>(
+        self,
+        map_fn: Fun,
+    ) -> Pin<Box<dyn Future<Output = Result<Ret, E>> + Send + 'static>>
+    where
+        Fun: Fn(T) -> Fut,
+        Fut: Future<Output = Ret>,
+    {
+        Box::pin(async move {
+            match self {
+                Ok(t) => Ok(map_fn(t).await),
+                Err(e) => Err(e),
+            }
+        })
     }
 }
+
+pub trait AsyncMap {
+    fn async_map<Fun, Fut, Ret>(self, map_fn: Fun) -> Fut
+    where
+        Fun: Fn(Self) -> Fut,
+        Fut: Future,
+    {
+        map_fn(self)
+    }
+}
+
+impl<T> AsyncMap for T {}

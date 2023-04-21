@@ -5,6 +5,7 @@ mod tasks;
 mod users;
 
 use crate::{
+    clients::Auth0Client,
     handler::{
         destroy_session, logout_from_auth0,
         oauth2::{self, OauthClient},
@@ -23,6 +24,7 @@ use trillium_router::router;
 
 pub fn routes(config: &ApiConfig) -> impl Handler {
     let oauth2_client = OauthClient::new(&config.oauth_config());
+    let auth0_client = Auth0Client::new(config);
 
     router()
         .get("/health", api(health_check))
@@ -43,7 +45,11 @@ pub fn routes(config: &ApiConfig) -> impl Handler {
                 redirect(config.app_url.to_string()),
             ),
         )
-        .any(&[Get, Post, Delete, Patch], "/api/*", api_routes())
+        .any(
+            &[Get, Post, Delete, Patch],
+            "/api/*",
+            (state(auth0_client), api_routes()),
+        )
 }
 
 fn api_routes() -> impl Handler {
