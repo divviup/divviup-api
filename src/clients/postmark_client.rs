@@ -1,13 +1,13 @@
+use crate::{
+    clients::{ClientConnExt, ClientError},
+    ApiConfig,
+};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 use trillium::{async_trait, Conn, KnownHeaderName};
 use trillium_api::FromConn;
+use trillium_client::Client;
 use url::Url;
-
-use crate::{
-    clients::{expect_ok, Client, ClientError},
-    ApiConfig,
-};
 
 #[derive(Debug, Clone)]
 pub struct PostmarkClient {
@@ -28,30 +28,10 @@ impl PostmarkClient {
     pub fn new(config: &ApiConfig) -> Self {
         Self {
             token: config.postmark_token.clone(),
-            client: Client::new().with_default_pool(),
+            client: config.client.clone(),
             email: config.email_address.clone(),
             base_url: config.postmark_url.clone(),
         }
-    }
-
-    pub fn with_http_client(mut self, client: Client) -> Self {
-        self.client = client;
-        self
-    }
-
-    async fn post<T>(&self, path: &str, json: &impl Serialize) -> Result<T, ClientError>
-    where
-        T: DeserializeOwned,
-    {
-        let mut conn = self
-            .client
-            .post(self.base_url.join(path).unwrap())
-            .with_header("X-Postmark-Server-Token", self.token.clone())
-            .with_header(KnownHeaderName::Accept, "application/json")
-            .with_json_body(json)?
-            .await?;
-        expect_ok(&mut conn).await?;
-        Ok(conn.response_json().await?)
     }
 
     pub async fn send_email(&self, email: Email) -> Result<Value, ClientError> {
@@ -81,8 +61,22 @@ impl PostmarkClient {
         .await
     }
 
-    pub fn set_http_client(&mut self, client: Client) {
-        self.client = client;
+    // private below here
+
+    async fn post<T>(&self, path: &str, json: &impl Serialize) -> Result<T, ClientError>
+    where
+        T: DeserializeOwned,
+    {
+        self.client
+            .post(self.base_url.join(path).unwrap())
+            .with_header("X-Postmark-Server-Token", self.token.clone())
+            .with_header(KnownHeaderName::Accept, "application/json")
+            .with_json_body(json)?
+            .success_or_client_error()
+            .await?
+            .response_json()
+            .await
+            .map_err(ClientError::from)
     }
 }
 

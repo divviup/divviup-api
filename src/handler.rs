@@ -32,7 +32,7 @@ pub(crate) use custom_mime_types::ReplaceMimeTypes;
 pub(crate) use error::Error;
 pub(crate) use misc::*;
 
-use origin_router::origin_router;
+pub use origin_router::origin_router;
 
 #[derive(Handler, Debug)]
 pub struct DivviupApi {

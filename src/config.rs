@@ -1,6 +1,9 @@
 use crate::handler::oauth2::Oauth2Config;
 use std::{env::VarError, str::FromStr};
 use thiserror::Error;
+use trillium_client::Client;
+use trillium_rustls::RustlsConfig;
+use trillium_tokio::ClientConfig;
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -20,6 +23,7 @@ pub struct ApiConfig {
     pub postmark_token: String,
     pub email_address: String,
     pub postmark_url: Url,
+    pub client: Client,
 }
 
 #[derive(Debug, Error, Clone, Copy)]
@@ -87,6 +91,8 @@ impl ApiConfig {
             postmark_token: var("POSTMARK_TOKEN", "string")?,
             email_address: var("EMAIL_ADDRESS", "string")?,
             postmark_url: Url::parse("https://api.postmarkapp.com").unwrap(),
+            client: Client::new(RustlsConfig::default().with_tcp_config(ClientConfig::default()))
+                .with_default_pool(),
         })
     }
 
@@ -99,6 +105,7 @@ impl ApiConfig {
             client_secret: self.auth_client_secret.clone(),
             base_url: self.auth_url.clone(),
             audience: self.auth_audience.clone(),
+            http_client: self.client.clone(),
         }
     }
 }

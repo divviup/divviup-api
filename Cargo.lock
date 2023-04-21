@@ -73,9 +73,9 @@ dependencies = [
 
 [[package]]
 name = "aho-corasick"
-version = "0.7.20"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc936419f96fa211c1b9166887b38e5e40b19958e5b895be7c1f93adec7071ac"
+checksum = "67fc08ce920c31afb70f013dcce1bfc3a3195de6a228474e45e1f145b36f8d04"
 dependencies = [
  "memchr",
 ]
@@ -329,7 +329,7 @@ checksum = "16e62a023e7c117e27523144c5d2459f4397fcc3cab0085af8e2224f643a0193"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.13",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -346,7 +346,7 @@ checksum = "b9ccdd8f2a161be9bd5c023df56f1b2a0bd1d83872ae53b71a84a12c9bf6e842"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.13",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -741,9 +741,9 @@ checksum = "e496a50fda8aacccc86d7529e2c1e0892dbd0f898a6b5645b5561b89c3210efa"
 
 [[package]]
 name = "cpufeatures"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "280a9f2d8b3a38871a3c8a46fb80db65e5e5ed97da80c4d08bf27fb63e35e181"
+checksum = "3e4c1eaa2012c47becbbad2ab175484c2a84d1185b566fb2cc5b8707343dfe58"
 dependencies = [
  "libc",
 ]
@@ -860,7 +860,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "scratch",
- "syn 2.0.13",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -877,7 +877,7 @@ checksum = "2345488264226bf682893e25de0769f3360aac9957980ec49361b083ddaa5bc5"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.13",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -1181,7 +1181,7 @@ checksum = "89ca545a94061b6365f2c7355b4b32bd20df3ff95f02da9329b34ccc3bd6ee72"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.13",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -1570,9 +1570,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.141"
+version = "0.2.142"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3304a64d199bb964be99741b7a14d26972741915b3649639149b2479bb46f4b5"
+checksum = "6a987beff54b60ffa6d51982e1aa1146bc42f19bd26be28b0586f252fccf5317"
 
 [[package]]
 name = "libsqlite3-sys"
@@ -1596,9 +1596,9 @@ dependencies = [
 
 [[package]]
 name = "linux-raw-sys"
-version = "0.3.1"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d59d8c75012853d2e872fb56bc8a2e53718e2cafe1a4c823143141c6d90c322f"
+checksum = "9b085a4f2cde5781fc4b1717f2e86c62f5cda49de7ba99a7c2eae02b61c9064c"
 
 [[package]]
 name = "lock_api"
@@ -2004,9 +2004,9 @@ checksum = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160"
 
 [[package]]
 name = "polling"
-version = "2.7.0"
+version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4be1c66a6add46bff50935c313dae30a5030cf8385c5206e8a95e9e9def974aa"
+checksum = "4b2d323e8ca7996b3e23126511a523f7e62924d93ecd5ae73b333815b0eb3dce"
 dependencies = [
  "autocfg",
  "bitflags",
@@ -2205,13 +2205,13 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.7.3"
+version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b1f693b24f6ac912f4893ef08244d70b6067480d2f1a46e950c9691e6749d1d"
+checksum = "af83e617f331cc6ae2da5443c602dfa5af81e517212d9d611a5b3ba1777b5370"
 dependencies = [
  "aho-corasick",
  "memchr",
- "regex-syntax",
+ "regex-syntax 0.7.1",
 ]
 
 [[package]]
@@ -2220,7 +2220,7 @@ version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c230d73fb8d8c1b9c0b3135c5142a8acee3a0558fb8db5cf1cb65f8d7862132"
 dependencies = [
- "regex-syntax",
+ "regex-syntax 0.6.29",
 ]
 
 [[package]]
@@ -2228,6 +2228,12 @@ name = "regex-syntax"
 version = "0.6.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f162c6dd7b008981e4d40210aca20b4bd0f9b60ca9271061b07f78537722f2e1"
+
+[[package]]
+name = "regex-syntax"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5996294f19bd3aae0453a862ad728f60e6600695733dd5df01da90c54363a3c"
 
 [[package]]
 name = "rend"
@@ -2326,9 +2332,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.37.11"
+version = "0.37.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85597d61f83914ddeba6a47b3b8ffe7365107221c2e557ed94426489fefb5f77"
+checksum = "f79bef90eb6d984c72722595b5b1348ab39275a5e5123faca6863bf07d75a4e0"
 dependencies = [
  "bitflags",
  "errno",
@@ -2490,9 +2496,9 @@ dependencies = [
 
 [[package]]
 name = "sea-query"
-version = "0.28.3"
+version = "0.28.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2fbe015dbdaa7d8829d71c1e14fb6289e928ac256b93dfda543c85cd89d6f03"
+checksum = "5dd34be05fdde9ec79231414bdd44ba1aa9c57349190076699e90721cb5eb59b"
 dependencies = [
  "bigdecimal",
  "chrono",
@@ -2629,7 +2635,7 @@ checksum = "291a097c63d8497e00160b166a967a4a79c64f3facdd01cbd7502231688d77df"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.13",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -2984,9 +2990,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.13"
+version = "2.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c9da457c5285ac1f936ebd076af6dac17a61cfe7826f2076b4d015cf47bc8ec"
+checksum = "a34fcf3e8b60f57e6a14301a2e916d323af98b0ea63c599441eec8558660c822"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3010,7 +3016,7 @@ checksum = "e71277381bd8b17eea2126a849dced540862c498398d4dd52405233a5d3cc643"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.13",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -3036,7 +3042,7 @@ checksum = "f9456a42c5b0d803c8cd86e73dd7cc9edd429499f37a3550d286d5e86720569f"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.13",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -3120,7 +3126,7 @@ checksum = "61a573bdc87985e9d6ddeed1b3d864e8a302c847e40d647746df2f1de209d1ce"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.13",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -3204,9 +3210,9 @@ dependencies = [
 
 [[package]]
 name = "trillium"
-version = "0.2.8"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79b4d1605a08d6bda5d3023035007fad7f220aa4aeefb24caac3856c0dfdede8"
+checksum = "3f06392b9c819adcd9416b88d26244603e73ca84d40b191e7a751524b30bb3a9"
 dependencies = [
  "async-trait",
  "futures-lite",
@@ -3216,9 +3222,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-api"
-version = "0.2.0-rc.2"
+version = "0.2.0-rc.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca25de1243325a6ca367d4fa1736fe6589c5a11c8414271c1ce0dafaa7eec6e8"
+checksum = "6b9f41bf4e58d42642f4ba58d0d609d7d06499fea2df21d66f371a63f2849f8a"
 dependencies = [
  "log",
  "mime",
@@ -3227,7 +3233,6 @@ dependencies = [
  "serde_path_to_error",
  "thiserror",
  "trillium",
- "trillium-http",
 ]
 
 [[package]]
@@ -3243,9 +3248,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-client"
-version = "0.3.1"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1aed2e4d30d049ed3bc72248c43efd7509702c14c86dcae681f757ccc0a3d8a"
+checksum = "823a00471eba20caf1abba184e05265cff9211ecc7225c135983c7515dd723b8"
 dependencies = [
  "crossbeam-queue",
  "dashmap",
@@ -3260,7 +3265,7 @@ dependencies = [
  "size",
  "thiserror",
  "trillium-http",
- "trillium-tls-common",
+ "trillium-server-common",
  "url",
 ]
 
@@ -3310,9 +3315,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-http"
-version = "0.2.14"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ddf37800f8c1205755b6d6f3ec5259e88c8da268ef2537bb01a851bac0fb983"
+checksum = "ebe2d7f65b0f99e2b138650addffb1075a859aaf08accbcdd850e48357cbb77f"
 dependencies = [
  "encoding_rs",
  "futures-lite",
@@ -3328,6 +3333,7 @@ dependencies = [
  "smartstring",
  "stopper",
  "thiserror",
+ "trillium-macros",
 ]
 
 [[package]]
@@ -3346,13 +3352,13 @@ dependencies = [
 
 [[package]]
 name = "trillium-macros"
-version = "0.0.3"
+version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6aeb704a6816c9b6319a0bffbeab5807ecb9a2c4ff8a9385e04cf7a130c8a2f2"
+checksum = "6d19bf7f37bc3e66beae9792c0f7a0e3500465cf431da63fdb6af593b0e353a4"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.13",
+ "syn 2.0.15",
 ]
 
 [[package]]
@@ -3389,32 +3395,33 @@ dependencies = [
 
 [[package]]
 name = "trillium-rustls"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fdf879b294df824890538e88cedb0cbefaccecb262ff4671247377d26934476c"
+checksum = "9c3c0dbf82692cc1dad726f53cb49b091478dd29c8c0256eaf763d0929b3e5d2"
 dependencies = [
  "async-rustls",
  "log",
  "rustls",
  "rustls-native-certs",
  "rustls-pemfile",
- "trillium-tls-common",
+ "trillium-server-common",
  "webpki-roots",
 ]
 
 [[package]]
 name = "trillium-server-common"
-version = "0.3.1"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a275c3bed1e20f28b163c716c70762256b08a553dd008552212162977f0581cf"
+checksum = "aafafc4458fd5d18a7f237a7cca76a8bc254a98a234f306879f0b05a2f758d81"
 dependencies = [
+ "async-trait",
  "atomic-waker",
  "futures-lite",
  "log",
  "rlimit",
  "trillium",
  "trillium-http",
- "trillium-tls-common",
+ "url",
 ]
 
 [[package]]
@@ -3455,9 +3462,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-testing"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89d156a52e6df12cac72ba9d2a0beee96b303c72a15e2850c443e25450f9c8f1"
+checksum = "556cad53e12159259c9f8eb56fc1fe6b6d54057c61d1da80a59cbf9ebf162ba6"
 dependencies = [
  "async-channel",
  "async-dup",
@@ -3466,27 +3473,17 @@ dependencies = [
  "portpicker",
  "trillium",
  "trillium-http",
+ "trillium-macros",
  "trillium-server-common",
  "trillium-tokio",
  "url",
 ]
 
 [[package]]
-name = "trillium-tls-common"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25c024962f8fdad586fb329e91b64ef0f4034652779ef5d3720102ca0f88d714"
-dependencies = [
- "async-trait",
- "futures-lite",
- "url",
-]
-
-[[package]]
 name = "trillium-tokio"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8cc915392c17586f51a945ac6c11a7840582ff1efa2063ef81bb30fe20fc061"
+checksum = "7432ae7a226f1e116ac0c9ef40f8f857de2d5845d2f3ded6319fce7141ea0b63"
 dependencies = [
  "async-compat",
  "log",
@@ -3496,6 +3493,7 @@ dependencies = [
  "tokio-stream",
  "trillium",
  "trillium-http",
+ "trillium-macros",
  "trillium-server-common",
 ]
 

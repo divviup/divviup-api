@@ -8,14 +8,11 @@ use oauth2::{
 use querystrong::QueryStrong;
 use std::sync::Arc;
 use trillium::{conn_try, conn_unwrap, Conn, KnownHeaderName::Authorization, Status};
-use trillium_client::ClientSerdeError;
+use trillium_client::{Client, ClientSerdeError};
 use trillium_http::Headers;
 use trillium_redirect::RedirectConnExt;
 use trillium_sessions::SessionConnExt;
 use url::Url;
-
-type ClientConnector = trillium_rustls::RustlsConnector<trillium_tokio::TcpConnector>;
-type Client = trillium_client::Client<ClientConnector>;
 
 #[derive(Clone, Debug)]
 pub struct Oauth2Config {
@@ -26,6 +23,7 @@ pub struct Oauth2Config {
     pub redirect_url: Url,
     pub base_url: Url,
     pub audience: String,
+    pub http_client: Client,
 }
 
 pub async fn redirect(conn: Conn) -> Conn {
@@ -132,7 +130,6 @@ pub struct OauthClient(Arc<OauthClientInner>);
 struct OauthClientInner {
     oauth_config: Oauth2Config,
     oauth2_client: BasicClient,
-    http_client: Client,
 }
 
 impl OauthClient {
@@ -184,7 +181,6 @@ impl OauthClient {
     }
 
     pub fn new(config: &Oauth2Config) -> Self {
-        let http_client = Client::new().with_default_pool();
         let oauth2_client = BasicClient::new(
             ClientId::new(config.client_id.clone()),
             Some(ClientSecret::new(config.client_secret.clone())),
@@ -195,7 +191,6 @@ impl OauthClient {
 
         Self(Arc::new(OauthClientInner {
             oauth_config: config.clone(),
-            http_client,
             oauth2_client,
         }))
     }
@@ -205,6 +200,6 @@ impl OauthClient {
     }
 
     pub fn http_client(&self) -> &Client {
-        &self.0.http_client
+        &self.0.oauth_config.http_client
     }
 }

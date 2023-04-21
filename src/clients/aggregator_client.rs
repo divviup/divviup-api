@@ -1,12 +1,13 @@
 use crate::{
-    clients::{expect_ok, Client, ClientError, Conn},
+    clients::{ClientConnExt, ClientError},
     entity::NewTask,
     ApiConfig,
 };
+use serde::{de::DeserializeOwned, Serialize};
 use trillium::{HeaderValue, KnownHeaderName, Method};
 use trillium_api::FromConn;
+use trillium_client::{Client, Conn};
 use url::Url;
-
 pub mod api_types;
 pub use api_types::{TaskCreate, TaskIds, TaskMetrics, TaskResponse};
 
@@ -27,51 +28,20 @@ impl FromConn for AggregatorClient {
 impl AggregatorClient {
     pub fn new(config: &ApiConfig) -> Self {
         Self {
-            client: Client::new().with_default_pool(),
+            client: config.client.clone(),
             base_url: config.aggregator_url.clone(),
             auth_header: HeaderValue::from(format!("Bearer {}", config.aggregator_secret.clone())),
         }
-    }
-
-    fn url(&self, path: &str) -> Url {
-        self.base_url.join(path).unwrap()
-    }
-
-    fn conn(&self, method: Method, path: &str) -> Conn<'_> {
-        self.client
-            .build_conn(method, self.url(path))
-            .with_header(KnownHeaderName::Authorization, self.auth_header.clone())
-    }
-
-    fn get(&self, path: &str) -> Conn<'_> {
-        self.conn(Method::Get, path)
-    }
-
-    fn post(&self, path: &str) -> Conn<'_> {
-        self.conn(Method::Post, path)
-    }
-
-    fn delete(&self, path: &str) -> Conn<'_> {
-        self.conn(Method::Delete, path)
-    }
-
-    pub async fn health_check(&self) -> Result<(), ClientError> {
-        let mut conn = self.get("/health").await?;
-        expect_ok(&mut conn).await?;
-        Ok(())
     }
 
     pub async fn get_task_ids(&self) -> Result<Vec<String>, ClientError> {
         let mut ids = vec![];
         let mut path = String::from("/task_ids");
         loop {
-            let mut conn = self.get(&path).await?;
-            expect_ok(&mut conn).await?;
-
             let TaskIds {
                 task_ids,
                 pagination_token,
-            } = conn.response_json().await?;
+            } = self.get(&path).await?;
 
             ids.extend(task_ids);
 
@@ -85,23 +55,57 @@ impl AggregatorClient {
     }
 
     pub async fn get_task_metrics(&self, task_id: &str) -> Result<TaskMetrics, ClientError> {
-        let mut conn = self.get(&format!("/tasks/{task_id}/metrics")).await?;
-        expect_ok(&mut conn).await?;
-        Ok(conn.response_json().await?)
+        self.get(&format!("/tasks/{task_id}/metrics")).await
     }
 
     pub async fn delete_task(&self, task_id: &str) -> Result<(), ClientError> {
-        let mut conn = self.delete(&format!("/tasks/{task_id}")).await?;
-        expect_ok(&mut conn).await?;
-        Ok(())
+        self.delete(&format!("/tasks/{task_id}")).await
     }
 
     pub async fn create_task(&self, task: NewTask) -> Result<TaskResponse, ClientError> {
-        let mut conn = self
-            .post("/tasks")
-            .with_json_body(&TaskCreate::from(task))?
+        self.post("/tasks", &TaskCreate::from(task)).await
+    }
+
+    // private below here
+
+    fn url(&self, path: &str) -> Url {
+        self.base_url.join(path).unwrap()
+    }
+
+    fn conn(&self, method: Method, path: &str) -> Conn {
+        self.client
+            .build_conn(method, self.url(path))
+            .with_header(KnownHeaderName::Authorization, self.auth_header.clone())
+    }
+
+    async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T, ClientError> {
+        self.conn(Method::Get, path)
+            .success_or_client_error()
+            .await?
+            .response_json()
+            .await
+            .map_err(ClientError::from)
+    }
+
+    async fn post<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        body: &impl Serialize,
+    ) -> Result<T, ClientError> {
+        self.conn(Method::Post, path)
+            .with_json_body(body)?
+            .success_or_client_error()
+            .await?
+            .response_json()
+            .await
+            .map_err(ClientError::from)
+    }
+
+    async fn delete(&self, path: &str) -> Result<(), ClientError> {
+        let _ = self
+            .conn(Method::Delete, path)
+            .success_or_client_error()
             .await?;
-        expect_ok(&mut conn).await?;
-        Ok(conn.response_json().await?)
+        Ok(())
     }
 }
