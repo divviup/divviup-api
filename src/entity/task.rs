@@ -5,9 +5,11 @@ use crate::{
 };
 use sea_orm::{entity::prelude::*, ActiveValue::Set, IntoActiveModel};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use time::OffsetDateTime;
-use validator::{Validate, ValidationError, ValidationErrors};
+use validator::{Validate, ValidationError};
+
+mod vdaf;
+pub use vdaf::{Histogram, Sum, Vdaf};
 
 mod url;
 use self::url::Url;
@@ -21,7 +23,7 @@ pub struct Model {
     pub name: String,
     pub leader_url: Url,
     pub helper_url: Url,
-    pub vdaf: Json,
+    pub vdaf: Vdaf,
     pub min_batch_size: i64,
     pub max_batch_size: Option<i64>,
     pub is_leader: bool,
@@ -124,74 +126,11 @@ pub struct HpkeConfig {
 
 fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError> {
     if time < &TimeDateTimeWithTimeZone::now_utc() {
-        return Err(ValidationError::new("past"));
-    }
-    Ok(())
-}
-
-#[derive(Serialize, Deserialize, Validate, Debug, Clone)]
-pub struct Histogram {
-    #[validate(required, custom = "sorted", custom = "unique")]
-    pub buckets: Option<Vec<i32>>,
-}
-
-fn sorted(buckets: &Vec<i32>) -> Result<(), ValidationError> {
-    let mut buckets_cloned = buckets.clone();
-    buckets_cloned.sort_unstable();
-    if &buckets_cloned == buckets {
-        Ok(())
+        Err(ValidationError::new("past"))
     } else {
-        Err(ValidationError::new("sorted"))
-    }
-}
-
-fn unique(buckets: &Vec<i32>) -> Result<(), ValidationError> {
-    if buckets.iter().collect::<HashSet<_>>().len() == buckets.len() {
         Ok(())
-    } else {
-        Err(ValidationError::new("unique"))
     }
 }
-
-#[derive(Serialize, Deserialize, Validate, Debug, Clone, Copy)]
-pub struct Sum {
-    #[validate(required)]
-    pub bits: Option<u8>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "snake_case", tag = "type")]
-pub enum Vdaf {
-    #[serde(rename = "count")]
-    Count,
-
-    #[serde(rename = "histogram")]
-    Histogram(Histogram),
-
-    #[serde(rename = "sum")]
-    Sum(Sum), // 128 is ceiling
-
-    #[serde(other)]
-    Unrecognized,
-}
-
-impl Validate for Vdaf {
-    fn validate(&self) -> Result<(), ValidationErrors> {
-        match self {
-            Vdaf::Count => Ok(()),
-            Vdaf::Histogram(h) => h.validate(),
-            Vdaf::Sum(s) => s.validate(),
-            Vdaf::Unrecognized => {
-                let mut errors = ValidationErrors::new();
-                errors.add("type", ValidationError::new("unknown"));
-                Err(errors)
-            }
-        }
-    }
-}
-
-//add query type
-//max batch query count
 
 #[derive(Deserialize, Validate, Debug)]
 pub struct UpdateTask {
@@ -215,7 +154,7 @@ pub fn build_task(mut task: NewTask, api_response: TaskResponse, account: &Accou
         name: Set(task.name.take().unwrap()),
         leader_url: Set(api_response.aggregator_endpoints[0].clone().into()),
         helper_url: Set(api_response.aggregator_endpoints[1].clone().into()),
-        vdaf: Set(serde_json::to_value(Vdaf::from(api_response.vdaf)).unwrap()),
+        vdaf: Set(Vdaf::from(api_response.vdaf)),
         min_batch_size: Set(api_response.min_batch_size.try_into().unwrap()),
         max_batch_size: Set(api_response.query_type.into()),
         is_leader: Set(matches!(api_response.role, Role::Leader)),

@@ -84,7 +84,10 @@ mod index {
 }
 
 mod create {
-    use divviup_api::{aggregator_api_mock::random_hpke_config, entity::task::HpkeConfig};
+    use divviup_api::{
+        aggregator_api_mock::random_hpke_config,
+        entity::task::{HpkeConfig, Vdaf},
+    };
 
     use super::{test, *};
 
@@ -114,7 +117,7 @@ mod create {
         let task: Task = conn.response_json().await;
         assert_eq!(task.helper_url, "https://dap.partner.url/");
         assert_eq!(task.leader_url, "https://dap.divviup.test/");
-        assert_eq!(task.vdaf, json!({"type": "count"}));
+        assert_eq!(task.vdaf, Vdaf::Count);
         assert_eq!(task.min_batch_size, 500);
         assert!(task.is_leader);
         assert_eq!(task.time_precision_seconds, 60);
