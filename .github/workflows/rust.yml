@@ -36,5 +36,6 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           file: ./lcov.info
+        continue-on-error: true
       - name: Format
         run: cargo fmt --all -- --check
