@@ -1,8 +1,4 @@
-use sea_orm::{
-    entity::prelude::*,
-    sea_query::{ArrayType, Nullable, ValueType, ValueTypeErr},
-    TryGetError, TryGetable, Value,
-};
+use crate::json_newtype;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use validator::{Validate, ValidationError, ValidationErrors};
@@ -53,45 +49,7 @@ pub enum Vdaf {
     Unrecognized,
 }
 
-impl From<Vdaf> for Value {
-    fn from(value: Vdaf) -> Self {
-        Value::Json(serde_json::to_value(&value).ok().map(Box::new))
-    }
-}
-
-impl TryGetable for Vdaf {
-    fn try_get_by<I: sea_orm::ColIdx>(res: &QueryResult, idx: I) -> Result<Self, TryGetError> {
-        let json = res.try_get_by(idx).map_err(TryGetError::DbErr)?;
-        serde_json::from_value(json).map_err(|e| TryGetError::DbErr(DbErr::Json(e.to_string())))
-    }
-}
-
-impl ValueType for Vdaf {
-    fn try_from(v: Value) -> Result<Self, ValueTypeErr> {
-        match v {
-            Value::Json(Some(x)) => serde_json::from_value(*x).map_err(|_| ValueTypeErr),
-            _ => Err(ValueTypeErr),
-        }
-    }
-
-    fn type_name() -> String {
-        stringify!(Vdaf).to_owned()
-    }
-
-    fn array_type() -> ArrayType {
-        ArrayType::Json
-    }
-
-    fn column_type() -> ColumnType {
-        ColumnType::Json
-    }
-}
-
-impl Nullable for Vdaf {
-    fn null() -> Value {
-        Value::Json(Some(Box::new(Json::Null)))
-    }
-}
+json_newtype!(Vdaf);
 
 impl Validate for Vdaf {
     fn validate(&self) -> Result<(), ValidationErrors> {

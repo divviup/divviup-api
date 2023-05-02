@@ -1,0 +1,113 @@
+use crate::{
+    clients::{Auth0Client, ClientError, PostmarkClient},
+    entity::Membership,
+    ApiConfig,
+};
+use sea_orm::{ActiveModelTrait, ConnectionTrait, DbErr};
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+use trillium::{Method, Status};
+use url::Url;
+
+mod v1;
+pub use v1::{CreateUser, ResetPassword, SendInvitationEmail, V1};
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub enum Job {
+    V1(V1),
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Error)]
+pub enum JobError {
+    #[error("{0}")]
+    Db(String),
+
+    #[error("{0} with id {1} was not found")]
+    MissingRecord(String, String),
+
+    #[error("{0}")]
+    ClientOther(String),
+
+    #[error("unexpected http status {method} {url} {status:?}: {body}")]
+    HttpStatusNotSuccess {
+        method: Method,
+        url: Url,
+        status: Option<Status>,
+        body: String,
+    },
+}
+
+impl JobError {
+    pub fn is_retryable(&self) -> bool {
+        matches!(
+            self,
+            Self::Db(_) | Self::ClientOther(_) | Self::HttpStatusNotSuccess { .. }
+        )
+    }
+}
+
+impl From<DbErr> for JobError {
+    fn from(value: DbErr) -> Self {
+        Self::Db(value.to_string())
+    }
+}
+
+impl From<ClientError> for JobError {
+    fn from(value: ClientError) -> Self {
+        match value {
+            ClientError::HttpStatusNotSuccess {
+                method,
+                url,
+                status,
+                body,
+            } => Self::HttpStatusNotSuccess {
+                method,
+                url,
+                status,
+                body,
+            },
+            other => Self::ClientOther(other.to_string()),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct SharedJobState {
+    pub auth0_client: Auth0Client,
+    pub postmark_client: PostmarkClient,
+}
+impl From<&ApiConfig> for SharedJobState {
+    fn from(config: &ApiConfig) -> Self {
+        Self {
+            auth0_client: Auth0Client::new(config),
+            postmark_client: PostmarkClient::new(config),
+        }
+    }
+}
+
+impl Job {
+    pub fn new_invitation_flow(membership: &Membership) -> Self {
+        Self::from(CreateUser {
+            membership_id: membership.id,
+        })
+    }
+
+    pub async fn perform(
+        &mut self,
+        job_state: &SharedJobState,
+        db: &impl ConnectionTrait,
+    ) -> Result<Option<Job>, JobError> {
+        match self {
+            Job::V1(job) => job.perform(job_state, db).await,
+        }
+    }
+
+    pub async fn insert(
+        self,
+        db: &impl ConnectionTrait,
+    ) -> Result<crate::entity::queue::Model, DbErr> {
+        crate::entity::queue::ActiveModel::from(self)
+            .insert(db)
+            .await
+    }
+}

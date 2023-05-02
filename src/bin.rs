@@ -27,10 +27,17 @@ async fn main() {
                 .run_async(divviup_api::aggregator_api_mock::aggregator_api()),
         );
     }
+    let app = DivviupApi::new(config).await;
+
+    let db = app.db().clone();
+    let config = app.config().clone();
+    tokio::task::spawn(async move {
+        divviup_api::queue::run(db, config).await;
+    });
 
     trillium_tokio::config()
         .with_stopper(stopper)
-        .run_async(DivviupApi::new(config).await)
+        .run_async(app)
         .await;
 
     if let Err(e) = metrics_task_handle.await {
