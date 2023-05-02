@@ -34,7 +34,7 @@ fn schedule_based_on_failure_count(failure_count: i32) -> Option<OffsetDateTime>
     }
 }
 
-pub async fn one(db: &Db, job_state: &SharedJobState) -> Result<Option<Model>, DbErr> {
+pub async fn dequeue_one(db: &Db, job_state: &SharedJobState) -> Result<Option<Model>, DbErr> {
     let tx = db.begin().await?;
     let model = if let Some(model) = next(&tx).await? {
         let mut active_model = model.into_active_model();
@@ -91,7 +91,7 @@ fn spawn(join_set: &mut JoinSet<()>, db: &Db, job_state: &Arc<SharedJobState>) {
     let job_state = Arc::clone(job_state);
     join_set.spawn(async move {
         loop {
-            match one(&db, &job_state).await {
+            match dequeue_one(&db, &job_state).await {
                 Err(e) => {
                     tracing::error!("job error {e}");
                 }

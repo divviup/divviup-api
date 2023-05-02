@@ -1,7 +1,7 @@
 mod harness;
 use divviup_api::{
     entity::queue::Entity,
-    queue::{one, CreateUser, Job, JobStatus, ResetPassword, SendInvitationEmail},
+    queue::{dequeue_one, CreateUser, Job, JobStatus, ResetPassword, SendInvitationEmail},
 };
 use harness::{test, *};
 
@@ -105,7 +105,7 @@ async fn all_together(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
 
     let shared_job_state = app.config().into();
 
-    while let Some(_) = one(app.db(), &shared_job_state).await? {}
+    while dequeue_one(app.db(), &shared_job_state).await?.is_some() {}
 
     let full_queue = Entity::find().all(app.db()).await?;
     assert_eq!(full_queue.len(), 3);
