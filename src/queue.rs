@@ -19,7 +19,7 @@ These configuration variables may eventually be useful to put on ApiConfig
 */
 const MAX_RETRY: i32 = 5;
 const QUEUE_CHECK_INTERVAL: Range<u64> = 10..20;
-const QUEUE_WORKER_COUNT: u8 = 5;
+const QUEUE_WORKER_COUNT: u8 = 2;
 
 fn schedule_based_on_failure_count(failure_count: i32) -> Option<OffsetDateTime> {
     if failure_count >= MAX_RETRY {
