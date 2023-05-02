@@ -93,7 +93,7 @@ fn spawn(join_set: &mut JoinSet<()>, db: &Db, job_state: &Arc<SharedJobState>) {
         loop {
             match one(&db, &job_state).await {
                 Err(e) => {
-                    eprintln!("job error {e}");
+                    tracing::error!("job error {e}");
                 }
 
                 Ok(Some(_)) => {}
@@ -114,7 +114,7 @@ pub async fn run(db: Db, config: ApiConfig) {
     }
 
     while join_set.join_next().await.is_some() {
-        eprintln!("Worker task shut down. Restarting.");
+        tracing::error!("Worker task shut down. Restarting.");
         spawn(&mut join_set, &db, &job_state);
     }
 }

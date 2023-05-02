@@ -922,6 +922,7 @@ dependencies = [
  "thiserror",
  "time",
  "tokio",
+ "tracing",
  "trillium",
  "trillium-api",
  "trillium-caching-headers",
