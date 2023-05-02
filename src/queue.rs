@@ -21,7 +21,7 @@ const MAX_RETRY: i32 = 5;
 const QUEUE_CHECK_INTERVAL: Range<u64> = 10..20;
 const QUEUE_WORKER_COUNT: u8 = 2;
 
-fn schedule_based_on_failure_count(failure_count: i32) -> Option<OffsetDateTime> {
+fn reschedule_based_on_failure_count(failure_count: i32) -> Option<OffsetDateTime> {
     if failure_count >= MAX_RETRY {
         None
     } else {
@@ -36,49 +36,53 @@ fn schedule_based_on_failure_count(failure_count: i32) -> Option<OffsetDateTime>
 
 pub async fn dequeue_one(db: &Db, job_state: &SharedJobState) -> Result<Option<Model>, DbErr> {
     let tx = db.begin().await?;
-    let model = if let Some(model) = next(&tx).await? {
-        let mut active_model = model.into_active_model();
-        let mut job = active_model
+    let model = if let Some(queue_item) = next(&tx).await? {
+        let mut queue_item = queue_item.into_active_model();
+        let mut job = queue_item
             .job
             .take()
             .expect("queue jobs should always have a Job");
         let result = job.perform(job_state, &tx).await;
-        active_model.job = Set(job);
-        active_model.updated_at = Set(OffsetDateTime::now_utc());
+        queue_item.job = Set(job);
+
         match result {
-            Ok(Some(job)) => {
-                active_model.status = Set(JobStatus::Success);
-                active_model.scheduled_at = Set(None);
-                let mut next_job = ActiveModel::from(job);
-                next_job.parent_id = Set(Some(*active_model.id.as_ref()));
+            Ok(Some(next_job)) => {
+                queue_item.status = Set(JobStatus::Success);
+                queue_item.scheduled_at = Set(None);
+
+                let mut next_job = ActiveModel::from(next_job);
+                next_job.parent_id = Set(Some(*queue_item.id.as_ref()));
                 let next_job = next_job.insert(&tx).await?;
-                active_model.result = Set(Some(JobResult::Child(next_job.id)));
+
+                queue_item.result = Set(Some(JobResult::Child(next_job.id)));
             }
 
             Ok(None) => {
-                active_model.scheduled_at = Set(None);
-                active_model.status = Set(JobStatus::Success);
-                active_model.result = Set(Some(JobResult::Complete));
+                queue_item.scheduled_at = Set(None);
+                queue_item.status = Set(JobStatus::Success);
+                queue_item.result = Set(Some(JobResult::Complete));
             }
 
             Err(e) if e.is_retryable() => {
-                active_model.failure_count = Set(active_model.failure_count.as_ref() + 1);
+                queue_item.failure_count = Set(queue_item.failure_count.as_ref() + 1);
                 let reschedule =
-                    schedule_based_on_failure_count(*active_model.failure_count.as_ref());
-                active_model.status =
+                    reschedule_based_on_failure_count(*queue_item.failure_count.as_ref());
+                queue_item.status =
                     Set(reschedule.map_or(JobStatus::Failed, |_| JobStatus::Pending));
-                active_model.scheduled_at = Set(reschedule);
-                active_model.result = Set(Some(JobResult::Error(e)));
+                queue_item.scheduled_at = Set(reschedule);
+                queue_item.result = Set(Some(JobResult::Error(e)));
             }
 
             Err(e) => {
-                active_model.failure_count = Set(active_model.failure_count.as_ref() + 1);
-                active_model.scheduled_at = Set(None);
-                active_model.status = Set(JobStatus::Failed);
-                active_model.result = Set(Some(JobResult::Error(e)));
+                queue_item.failure_count = Set(queue_item.failure_count.as_ref() + 1);
+                queue_item.scheduled_at = Set(None);
+                queue_item.status = Set(JobStatus::Failed);
+                queue_item.result = Set(Some(JobResult::Error(e)));
             }
         }
-        Some(active_model.update(&tx).await?)
+
+        queue_item.updated_at = Set(OffsetDateTime::now_utc());
+        Some(queue_item.update(&tx).await?)
     } else {
         None
     };
