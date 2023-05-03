@@ -69,6 +69,7 @@ impl Auth0Client {
                     "account_name": account_name,
                     "action_url": reset
                 }),
+                None,
             )
             .await?;
 

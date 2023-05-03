@@ -48,14 +48,24 @@ impl PostmarkClient {
         to: &str,
         template_name: &str,
         model: &impl Serialize,
+        message_id: Option<String>,
     ) -> Result<Value, ClientError> {
+        let headers = match message_id {
+            Some(m) => json!([{
+                "Name": "Message-ID",
+                "Value": format!("<{m}>")
+            }]),
+            None => json!([]),
+        };
+
         self.post(
             "/email/withTemplate",
             &json!({
                 "To": to,
                 "From": self.email,
                 "TemplateAlias": template_name,
-                "TemplateModel": model
+                "TemplateModel": model,
+                "Headers": headers
             }),
         )
         .await
