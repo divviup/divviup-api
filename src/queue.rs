@@ -67,10 +67,14 @@ impl Queue {
         let model = if let Some(queue_item) = Entity::next(&tx).await? {
             let _counter = self.observer.counter();
             let mut queue_item = queue_item.into_active_model();
-            let mut job = queue_item
-                .job
-                .take()
-                .expect("queue jobs should always have a Job");
+
+            let mut job = queue_item.job.take().ok_or_else(|| {
+                DbErr::Custom(String::from(
+                    r#"Queue item found without a job.
+                       We believe this to be unreachable"#,
+                ))
+            })?;
+
             let result = job.perform(&self.job_state, &tx).await;
             queue_item.job = Set(job);
 
