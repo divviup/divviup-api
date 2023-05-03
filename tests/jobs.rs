@@ -5,11 +5,15 @@ use divviup_api::{
 };
 use harness::{test, *};
 
-#[test(harness = with_client_logs)]
-async fn create_account(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+async fn build_membership(app: &DivviupApi) -> Result<Membership, Box<dyn std::error::Error>> {
     let account = fixtures::account(&app).await;
     let email = format!("test-{}@example.test", fixtures::random_name());
-    let membership = Membership::build(email, &account)?.insert(app.db()).await?;
+    Ok(Membership::build(email, &account)?.insert(app.db()).await?)
+}
+
+#[test(harness = with_client_logs)]
+async fn create_account(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+    let membership = build_membership(&app).await?;
     let membership_id = membership.id;
     let mut job = CreateUser { membership_id };
     let next = job.perform(&app.config().into(), app.db()).await?.unwrap();
@@ -34,9 +38,7 @@ async fn create_account(app: DivviupApi, client_logs: ClientLogs) -> TestResult 
 
 #[test(harness = with_client_logs)]
 async fn reset_password(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
-    let account = fixtures::account(&app).await;
-    let email = format!("test-{}@example.test", fixtures::random_name());
-    let membership = Membership::build(email, &account)?.insert(app.db()).await?;
+    let membership = build_membership(&app).await?;
     let membership_id = membership.id;
     let mut job = ResetPassword {
         membership_id,
@@ -70,9 +72,7 @@ async fn reset_password(app: DivviupApi, client_logs: ClientLogs) -> TestResult 
 
 #[test(harness = with_client_logs)]
 async fn send_email(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
-    let account = fixtures::account(&app).await;
-    let email = format!("test-{}@example.test", fixtures::random_name());
-    let membership = Membership::build(email, &account)?.insert(app.db()).await?;
+    let membership = build_membership(&app).await?;
     let membership_id = membership.id;
     let mut job = SendInvitationEmail {
         membership_id,
@@ -95,18 +95,20 @@ async fn send_email(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
 
 #[test(harness = with_client_logs)]
 async fn all_together(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
-    let account = fixtures::account(&app).await;
-    let email = format!("test-{}@example.test", fixtures::random_name());
-    let membership = Membership::build(email, &account)?.insert(app.db()).await?;
+    let membership = build_membership(&app).await?;
 
     Job::new_invitation_flow(&membership)
         .insert(app.db())
         .await?;
 
+    let mut completed_queue_jobs = vec![];
     let queue = Queue::new(app.db(), app.config());
-    while queue.perform_one_queue_job().await?.is_some() {}
+    while let Some(queue_job) = queue.perform_one_queue_job().await? {
+        completed_queue_jobs.push(queue_job);
+    }
 
     let full_queue = Entity::find().all(app.db()).await?;
+    assert_eq!(completed_queue_jobs, full_queue);
     assert_eq!(full_queue.len(), 3);
     assert!(full_queue.iter().all(|q| q.status == JobStatus::Success));
     let logs = client_logs.logs();
