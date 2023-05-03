@@ -26,6 +26,25 @@ pub struct Oauth2Config {
     pub http_client: Client,
 }
 
+pub async fn fake_redirect(conn: Conn) -> Conn {
+    println!("making a fake user");
+    conn.with_session(
+        USER_SESSION_KEY,
+        User {
+            email: "fake@example.com".to_string(),
+            email_verified: true,
+            name: "Fake".to_string(),
+            nickname: "Fakey".to_string(),
+            picture: None,
+            sub: "".to_string(),
+            updated_at: time::OffsetDateTime::now_utc(),
+            admin: None,
+        },
+    )
+    .with_status(200)
+    .halt()
+}
+
 pub async fn redirect(conn: Conn) -> Conn {
     let client: &OauthClient = conn.state().unwrap();
 

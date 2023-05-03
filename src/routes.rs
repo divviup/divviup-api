@@ -28,6 +28,7 @@ pub fn routes(config: &ApiConfig) -> impl Handler {
 
     router()
         .get("/health", api(health_check))
+        .get("/fake_login", oauth2::fake_redirect)
         .get(
             "/login",
             (

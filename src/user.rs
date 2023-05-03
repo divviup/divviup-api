@@ -46,10 +46,14 @@ impl User {
 #[async_trait]
 impl FromConn for User {
     async fn from_conn(conn: &mut Conn) -> Option<Self> {
+        println!("get user from conn");
         let db = Db::from_conn(conn).await?;
-        let mut user: Self = conn
-            .take_state()
-            .or_else(|| conn.session().get(USER_SESSION_KEY))?;
+        println!("got DB");
+        let mut user: Self = conn.take_state().or_else(|| {
+            println!("get user from session");
+            conn.session().get(USER_SESSION_KEY)
+        })?;
+        println!("got user {user:?}");
         user.populate_admin(&db).await;
         conn.set_state(user.clone());
         Some(user)
