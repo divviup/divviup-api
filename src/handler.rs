@@ -76,7 +76,7 @@ fn api(db: &Db, config: &ApiConfig) -> impl Handler {
     (
         compression(),
         #[cfg(feature = "integration-testing")]
-        state(crate::User::for_kind()),
+        state(crate::User::for_integration_testing()),
         cookies(),
         sessions(SessionStore::new(db.clone()), config.session_secret.clone())
             .with_cookie_name("divviup.sid"),
