@@ -1,6 +1,7 @@
 mod job;
 pub use crate::entity::queue::{JobResult, JobStatus};
 pub use job::*;
+use trillium_http::Stopper;
 
 use crate::{
     entity::queue::{ActiveModel, Entity, Model},
@@ -90,11 +91,15 @@ pub async fn dequeue_one(db: &Db, job_state: &SharedJobState) -> Result<Option<M
     Ok(model)
 }
 
-fn spawn(join_set: &mut JoinSet<()>, db: &Db, job_state: &Arc<SharedJobState>) {
+fn spawn(stopper: Stopper, join_set: &mut JoinSet<()>, db: &Db, job_state: &Arc<SharedJobState>) {
     let db = db.clone();
     let job_state = Arc::clone(job_state);
     join_set.spawn(async move {
         loop {
+            if stopper.is_stopped() {
+                break;
+            }
+
             match dequeue_one(&db, &job_state).await {
                 Err(e) => {
                     tracing::error!("job error {e}");
@@ -110,16 +115,18 @@ fn spawn(join_set: &mut JoinSet<()>, db: &Db, job_state: &Arc<SharedJobState>) {
     });
 }
 
-pub async fn run(db: Db, config: ApiConfig) {
+pub async fn run(stopper: Stopper, db: Db, config: ApiConfig) {
     let mut join_set = JoinSet::new();
     let job_state = Arc::new(SharedJobState::from(&config));
     for _ in 0..QUEUE_WORKER_COUNT {
-        spawn(&mut join_set, &db, &job_state);
+        spawn(stopper.clone(), &mut join_set, &db, &job_state);
     }
 
     while join_set.join_next().await.is_some() {
-        tracing::error!("Worker task shut down. Restarting.");
-        spawn(&mut join_set, &db, &job_state);
+        if !stopper.is_stopped() {
+            tracing::error!("Worker task shut down. Restarting.");
+            spawn(stopper.clone(), &mut join_set, &db, &job_state);
+        }
     }
 }
 
