@@ -8,7 +8,7 @@ default-run = "divviup_api_bin"
 [features]
 default = []
 aggregator-api-mock = []
-kind-integration = []
+integration-testing = []
 
 [workspace]
 members = [".", "migration"]

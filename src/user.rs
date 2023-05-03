@@ -25,7 +25,7 @@ pub struct User {
 }
 
 impl User {
-    #[cfg(feature = "kind-integration")]
+    #[cfg(feature = "integration-testing")]
     pub fn for_kind() -> Self {
         use std::time::Duration;
 
