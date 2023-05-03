@@ -1,4 +1,4 @@
-use divviup_api::{ApiConfig, DivviupApi};
+use divviup_api::{ApiConfig, DivviupApi, Queue};
 
 use trillium_http::Stopper;
 use trillium_tokio::CloneCounterObserver;
@@ -30,12 +30,11 @@ async fn main() {
     }
 
     let app = DivviupApi::new(config).await;
-    divviup_api::queue::spawn_workers(
-        observer.clone(),
-        stopper.clone(),
-        app.db().clone(),
-        app.config().clone(),
-    );
+
+    Queue::new(app.db(), app.config())
+        .with_observer(observer.clone())
+        .with_stopper(stopper.clone())
+        .spawn_workers();
 
     trillium_tokio::config()
         .with_stopper(stopper)

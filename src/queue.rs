@@ -9,9 +9,19 @@ use crate::{
 use sea_orm::{ActiveModelTrait, DbErr, IntoActiveModel, Set, TransactionTrait};
 use std::{ops::Range, sync::Arc, time::Duration};
 use time::OffsetDateTime;
-use tokio::{task::JoinSet, time::sleep};
+use tokio::{
+    task::{JoinHandle, JoinSet},
+    time::sleep,
+};
 use trillium_tokio::{CloneCounterObserver, Stopper};
 
+#[derive(Clone, Debug)]
+pub struct Queue {
+    observer: CloneCounterObserver,
+    stopper: Stopper,
+    db: Db,
+    job_state: Arc<SharedJobState>,
+}
 /*
 These configuration variables may eventually be useful to put on ApiConfig
 */
@@ -32,131 +42,122 @@ fn reschedule_based_on_failure_count(failure_count: i32) -> Option<OffsetDateTim
     }
 }
 
-pub async fn dequeue_one(
-    db: &Db,
-    observer: &CloneCounterObserver,
-    job_state: &SharedJobState,
-) -> Result<Option<Model>, DbErr> {
-    let tx = db.begin().await?;
-    let model = if let Some(queue_item) = Entity::next(&tx).await? {
-        let _counter = observer.counter();
-        let mut queue_item = queue_item.into_active_model();
-        let mut job = queue_item
-            .job
-            .take()
-            .expect("queue jobs should always have a Job");
-        let result = job.perform(job_state, &tx).await;
-        queue_item.job = Set(job);
-
-        match result {
-            Ok(Some(next_job)) => {
-                queue_item.status = Set(JobStatus::Success);
-                queue_item.scheduled_at = Set(None);
-
-                let mut next_job = ActiveModel::from(next_job);
-                next_job.parent_id = Set(Some(*queue_item.id.as_ref()));
-                let next_job = next_job.insert(&tx).await?;
-
-                queue_item.result = Set(Some(JobResult::Child(next_job.id)));
-            }
-
-            Ok(None) => {
-                queue_item.scheduled_at = Set(None);
-                queue_item.status = Set(JobStatus::Success);
-                queue_item.result = Set(Some(JobResult::Complete));
-            }
-
-            Err(e) if e.is_retryable() => {
-                queue_item.failure_count = Set(queue_item.failure_count.as_ref() + 1);
-                let reschedule =
-                    reschedule_based_on_failure_count(*queue_item.failure_count.as_ref());
-                queue_item.status =
-                    Set(reschedule.map_or(JobStatus::Failed, |_| JobStatus::Pending));
-                queue_item.scheduled_at = Set(reschedule);
-                queue_item.result = Set(Some(JobResult::Error(e)));
-            }
-
-            Err(e) => {
-                queue_item.failure_count = Set(queue_item.failure_count.as_ref() + 1);
-                queue_item.scheduled_at = Set(None);
-                queue_item.status = Set(JobStatus::Failed);
-                queue_item.result = Set(Some(JobResult::Error(e)));
-            }
+impl Queue {
+    pub fn new(db: &Db, config: &ApiConfig) -> Self {
+        Self {
+            observer: Default::default(),
+            db: db.clone(),
+            stopper: Default::default(),
+            job_state: Arc::new(config.into()),
         }
+    }
 
-        queue_item.updated_at = Set(OffsetDateTime::now_utc());
-        Some(queue_item.update(&tx).await?)
-    } else {
-        None
-    };
-    tx.commit().await?;
-    Ok(model)
-}
+    pub fn with_observer(mut self, observer: CloneCounterObserver) -> Self {
+        self.observer = observer;
+        self
+    }
 
-fn spawn(
-    observer: CloneCounterObserver,
-    stopper: Stopper,
-    join_set: &mut JoinSet<()>,
-    db: &Db,
-    job_state: &Arc<SharedJobState>,
-) {
-    let db = db.clone();
-    let job_state = Arc::clone(job_state);
-    join_set.spawn(async move {
-        loop {
-            if stopper.is_stopped() {
-                break;
-            }
+    pub fn with_stopper(mut self, stopper: Stopper) -> Self {
+        self.stopper = stopper;
+        self
+    }
 
-            match dequeue_one(&db, &observer, &job_state).await {
-                Err(e) => {
-                    tracing::error!("job error {e}");
+    pub async fn perform_one_queue_job(&self) -> Result<Option<Model>, DbErr> {
+        let tx = self.db.begin().await?;
+        let model = if let Some(queue_item) = Entity::next(&tx).await? {
+            let _counter = self.observer.counter();
+            let mut queue_item = queue_item.into_active_model();
+            let mut job = queue_item
+                .job
+                .take()
+                .expect("queue jobs should always have a Job");
+            let result = job.perform(&self.job_state, &tx).await;
+            queue_item.job = Set(job);
+
+            match result {
+                Ok(Some(next_job)) => {
+                    queue_item.status = Set(JobStatus::Success);
+                    queue_item.scheduled_at = Set(None);
+
+                    let mut next_job = ActiveModel::from(next_job);
+                    next_job.parent_id = Set(Some(*queue_item.id.as_ref()));
+                    let next_job = next_job.insert(&tx).await?;
+
+                    queue_item.result = Set(Some(JobResult::Child(next_job.id)));
                 }
-
-                Ok(Some(_)) => {}
 
                 Ok(None) => {
-                    let sleep_future =
-                        sleep(Duration::from_secs(fastrand::u64(QUEUE_CHECK_INTERVAL)));
-                    stopper.stop_future(sleep_future).await;
+                    queue_item.scheduled_at = Set(None);
+                    queue_item.status = Set(JobStatus::Success);
+                    queue_item.result = Set(Some(JobResult::Complete));
+                }
+
+                Err(e) if e.is_retryable() => {
+                    queue_item.failure_count = Set(queue_item.failure_count.as_ref() + 1);
+                    let reschedule =
+                        reschedule_based_on_failure_count(*queue_item.failure_count.as_ref());
+                    queue_item.status =
+                        Set(reschedule.map_or(JobStatus::Failed, |_| JobStatus::Pending));
+                    queue_item.scheduled_at = Set(reschedule);
+                    queue_item.result = Set(Some(JobResult::Error(e)));
+                }
+
+                Err(e) => {
+                    queue_item.failure_count = Set(queue_item.failure_count.as_ref() + 1);
+                    queue_item.scheduled_at = Set(None);
+                    queue_item.status = Set(JobStatus::Failed);
+                    queue_item.result = Set(Some(JobResult::Error(e)));
                 }
             }
-        }
-    });
-}
 
-pub async fn run(observer: CloneCounterObserver, stopper: Stopper, db: Db, config: ApiConfig) {
-    let mut join_set = JoinSet::new();
-    let job_state = Arc::new(SharedJobState::from(&config));
-    for _ in 0..QUEUE_WORKER_COUNT {
-        spawn(
-            observer.clone(),
-            stopper.clone(),
-            &mut join_set,
-            &db,
-            &job_state,
-        );
+            queue_item.updated_at = Set(OffsetDateTime::now_utc());
+            Some(queue_item.update(&tx).await?)
+        } else {
+            None
+        };
+        tx.commit().await?;
+        Ok(model)
     }
 
-    while join_set.join_next().await.is_some() {
-        if !stopper.is_stopped() {
-            tracing::error!("Worker task shut down. Restarting.");
-            spawn(
-                observer.clone(),
-                stopper.clone(),
-                &mut join_set,
-                &db,
-                &job_state,
-            );
+    fn spawn_worker(self, join_set: &mut JoinSet<()>) {
+        join_set.spawn(async move {
+            loop {
+                if self.stopper.is_stopped() {
+                    break;
+                }
+
+                match self.perform_one_queue_job().await {
+                    Err(e) => {
+                        tracing::error!("job error {e}");
+                    }
+
+                    Ok(Some(_)) => {}
+
+                    Ok(None) => {
+                        let sleep_future =
+                            sleep(Duration::from_secs(fastrand::u64(QUEUE_CHECK_INTERVAL)));
+                        self.stopper.stop_future(sleep_future).await;
+                    }
+                }
+            }
+        });
+    }
+
+    async fn supervise_workers(self) {
+        let mut join_set = JoinSet::new();
+        for _ in 0..QUEUE_WORKER_COUNT {
+            self.clone().spawn_worker(&mut join_set);
+        }
+
+        while join_set.join_next().await.is_some() {
+            if !self.stopper.is_stopped() {
+                tracing::error!("Worker task shut down. Restarting.");
+                self.clone().spawn_worker(&mut join_set);
+            }
         }
     }
-}
 
-pub fn spawn_workers(
-    observer: CloneCounterObserver,
-    stopper: Stopper,
-    db: Db,
-    config: ApiConfig,
-) -> tokio::task::JoinHandle<()> {
-    tokio::task::spawn(async move { run(observer, stopper, db, config).await })
+    pub fn spawn_workers(self) -> JoinHandle<()> {
+        tokio::task::spawn(self.supervise_workers())
+    }
 }
