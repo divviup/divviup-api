@@ -1,7 +1,7 @@
-use std::panic;
+use divviup_api::{ApiConfig, DivviupApi};
 
-use divviup_api::{telemetry::install_metrics_exporter, ApiConfig, DivviupApi};
 use trillium_http::Stopper;
+use trillium_tokio::CloneCounterObserver;
 
 #[tokio::main]
 async fn main() {
@@ -9,44 +9,37 @@ async fn main() {
 
     let config = ApiConfig::from_env().expect("Missing config");
     let stopper = Stopper::new();
+    let observer = CloneCounterObserver::default();
 
-    let metrics_task_handle = install_metrics_exporter(
-        &config.prometheus_host,
-        config.prometheus_port,
-        stopper.clone(),
-    )
-    .expect("Error setting up metrics");
+    trillium_tokio::config()
+        .without_signals()
+        .with_port(config.prometheus_port)
+        .with_host(&config.prometheus_host)
+        .with_observer(observer.clone())
+        .with_stopper(stopper.clone())
+        .spawn(divviup_api::telemetry::metrics_exporter().unwrap());
 
     #[cfg(all(debug_assertions, feature = "aggregator-api-mock"))]
     if let Some(port) = config.aggregator_api_url.port() {
-        tokio::task::spawn(
-            trillium_tokio::config()
-                .without_signals()
-                .with_port(port)
-                .with_stopper(stopper.clone())
-                .run_async(divviup_api::aggregator_api_mock::aggregator_api()),
-        );
+        trillium_tokio::config()
+            .without_signals()
+            .with_port(port)
+            .with_observer(observer.clone())
+            .with_stopper(stopper.clone())
+            .spawn(divviup_api::aggregator_api_mock::aggregator_api());
     }
 
     let app = DivviupApi::new(config).await;
-
-    {
-        let db = app.db().clone();
-        let config = app.config().clone();
-        let stopper = stopper.clone();
-        tokio::task::spawn(async move {
-            divviup_api::queue::run(stopper, db, config).await;
-        });
-    }
+    divviup_api::queue::spawn_workers(
+        observer.clone(),
+        stopper.clone(),
+        app.db().clone(),
+        app.config().clone(),
+    );
 
     trillium_tokio::config()
         .with_stopper(stopper)
-        .run_async(app)
+        .with_observer(observer)
+        .spawn(app)
         .await;
-
-    if let Err(e) = metrics_task_handle.await {
-        if let Ok(reason) = e.try_into_panic() {
-            panic::resume_unwind(reason);
-        }
-    }
 }

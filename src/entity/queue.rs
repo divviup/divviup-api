@@ -2,7 +2,11 @@ use crate::{
     json_newtype,
     queue::{Job, JobError},
 };
-use sea_orm::{entity::prelude::*, Set};
+use sea_orm::{
+    entity::prelude::*,
+    sea_query::{self, all, any, LockBehavior, LockType},
+    DatabaseTransaction, QueryOrder, QuerySelect, Set,
+};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use time::OffsetDateTime;
@@ -64,5 +68,26 @@ impl From<Job> for ActiveModel {
             result: Set(None),
             parent_id: Set(None),
         }
+    }
+}
+
+impl Entity {
+    pub async fn next(tx: &DatabaseTransaction) -> Result<Option<Model>, DbErr> {
+        use Column::*;
+        let mut select = Entity::find()
+            .filter(all![
+                Status.eq(JobStatus::Pending),
+                any![
+                    ScheduledAt.is_null(),
+                    ScheduledAt.lt(OffsetDateTime::now_utc())
+                ]
+            ])
+            .order_by_asc(CreatedAt)
+            .limit(1);
+
+        QuerySelect::query(&mut select)
+            .lock_with_behavior(LockType::Update, LockBehavior::SkipLocked);
+
+        select.one(tx).await
     }
 }

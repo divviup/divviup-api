@@ -105,7 +105,10 @@ async fn all_together(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
 
     let shared_job_state = app.config().into();
 
-    while dequeue_one(app.db(), &shared_job_state).await?.is_some() {}
+    while dequeue_one(app.db(), &Default::default(), &shared_job_state)
+        .await?
+        .is_some()
+    {}
 
     let full_queue = Entity::find().all(app.db()).await?;
     assert_eq!(full_queue.len(), 3);

@@ -1,19 +1,16 @@
 mod job;
 pub use crate::entity::queue::{JobResult, JobStatus};
 pub use job::*;
-use trillium_http::Stopper;
 
 use crate::{
     entity::queue::{ActiveModel, Entity, Model},
     ApiConfig, Db,
 };
-use sea_orm::{
-    ActiveModelTrait, ConnectionTrait, DatabaseBackend, DatabaseTransaction, DbErr, EntityTrait,
-    IntoActiveModel, Set, Statement, TransactionTrait,
-};
+use sea_orm::{ActiveModelTrait, DbErr, IntoActiveModel, Set, TransactionTrait};
 use std::{ops::Range, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 use tokio::{task::JoinSet, time::sleep};
+use trillium_tokio::{CloneCounterObserver, Stopper};
 
 /*
 These configuration variables may eventually be useful to put on ApiConfig
@@ -35,9 +32,14 @@ fn reschedule_based_on_failure_count(failure_count: i32) -> Option<OffsetDateTim
     }
 }
 
-pub async fn dequeue_one(db: &Db, job_state: &SharedJobState) -> Result<Option<Model>, DbErr> {
+pub async fn dequeue_one(
+    db: &Db,
+    observer: &CloneCounterObserver,
+    job_state: &SharedJobState,
+) -> Result<Option<Model>, DbErr> {
     let tx = db.begin().await?;
-    let model = if let Some(queue_item) = next(&tx).await? {
+    let model = if let Some(queue_item) = Entity::next(&tx).await? {
+        let _counter = observer.counter();
         let mut queue_item = queue_item.into_active_model();
         let mut job = queue_item
             .job
@@ -91,7 +93,13 @@ pub async fn dequeue_one(db: &Db, job_state: &SharedJobState) -> Result<Option<M
     Ok(model)
 }
 
-fn spawn(stopper: Stopper, join_set: &mut JoinSet<()>, db: &Db, job_state: &Arc<SharedJobState>) {
+fn spawn(
+    observer: CloneCounterObserver,
+    stopper: Stopper,
+    join_set: &mut JoinSet<()>,
+    db: &Db,
+    job_state: &Arc<SharedJobState>,
+) {
     let db = db.clone();
     let job_state = Arc::clone(job_state);
     join_set.spawn(async move {
@@ -100,7 +108,7 @@ fn spawn(stopper: Stopper, join_set: &mut JoinSet<()>, db: &Db, job_state: &Arc<
                 break;
             }
 
-            match dequeue_one(&db, &job_state).await {
+            match dequeue_one(&db, &observer, &job_state).await {
                 Err(e) => {
                     tracing::error!("job error {e}");
                 }
@@ -108,52 +116,47 @@ fn spawn(stopper: Stopper, join_set: &mut JoinSet<()>, db: &Db, job_state: &Arc<
                 Ok(Some(_)) => {}
 
                 Ok(None) => {
-                    sleep(Duration::from_secs(fastrand::u64(QUEUE_CHECK_INTERVAL))).await;
+                    let sleep_future =
+                        sleep(Duration::from_secs(fastrand::u64(QUEUE_CHECK_INTERVAL)));
+                    stopper.stop_future(sleep_future).await;
                 }
             }
         }
     });
 }
 
-pub async fn run(stopper: Stopper, db: Db, config: ApiConfig) {
+pub async fn run(observer: CloneCounterObserver, stopper: Stopper, db: Db, config: ApiConfig) {
     let mut join_set = JoinSet::new();
     let job_state = Arc::new(SharedJobState::from(&config));
     for _ in 0..QUEUE_WORKER_COUNT {
-        spawn(stopper.clone(), &mut join_set, &db, &job_state);
+        spawn(
+            observer.clone(),
+            stopper.clone(),
+            &mut join_set,
+            &db,
+            &job_state,
+        );
     }
 
     while join_set.join_next().await.is_some() {
         if !stopper.is_stopped() {
             tracing::error!("Worker task shut down. Restarting.");
-            spawn(stopper.clone(), &mut join_set, &db, &job_state);
+            spawn(
+                observer.clone(),
+                stopper.clone(),
+                &mut join_set,
+                &db,
+                &job_state,
+            );
         }
     }
 }
 
-async fn next(tx: &DatabaseTransaction) -> Result<Option<Model>, DbErr> {
-    let select = match tx.get_database_backend() {
-        backend @ DatabaseBackend::Postgres => Statement::from_sql_and_values(
-            backend,
-            r#"SELECT * FROM queue
-               WHERE status = $1 AND (scheduled_at IS NULL OR scheduled_at < $2)
-               ORDER BY updated_at ASC
-               FOR UPDATE
-               SKIP LOCKED
-               LIMIT 1"#,
-            [JobStatus::Pending.into(), OffsetDateTime::now_utc().into()],
-        ),
-
-        backend @ DatabaseBackend::Sqlite => Statement::from_sql_and_values(
-            backend,
-            r#"SELECT * FROM queue
-               WHERE status = $1 AND (scheduled_at IS NULL OR scheduled_at < $2)
-               ORDER BY updated_at ASC
-               LIMIT 1"#,
-            [JobStatus::Pending.into(), OffsetDateTime::now_utc().into()],
-        ),
-
-        _ => unimplemented!(),
-    };
-
-    Entity::find().from_raw_sql(select).one(tx).await
+pub fn spawn_workers(
+    observer: CloneCounterObserver,
+    stopper: Stopper,
+    db: Db,
+    config: ApiConfig,
+) -> tokio::task::JoinHandle<()> {
+    tokio::task::spawn(async move { run(observer, stopper, db, config).await })
 }
