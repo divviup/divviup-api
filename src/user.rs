@@ -25,6 +25,22 @@ pub struct User {
 }
 
 impl User {
+    #[cfg(feature = "kind-integration")]
+    pub fn for_kind() -> Self {
+        use std::time::Duration;
+
+        Self {
+            email: "kind@test.example".into(),
+            email_verified: true,
+            name: "kind user".into(),
+            nickname: "kind".into(),
+            picture: None,
+            sub: "".into(),
+            updated_at: OffsetDateTime::now_utc() - Duration::from_secs(24 * 60 * 60),
+            admin: Some(false),
+        }
+    }
+
     async fn populate_admin(&mut self, db: &Db) {
         let membership = Memberships::find()
             .inner_join(Accounts)

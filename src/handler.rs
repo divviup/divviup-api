@@ -75,6 +75,8 @@ fn api(db: &Db, config: &ApiConfig) -> impl Handler {
     let aggregator_client = AggregatorClient::new(config);
     (
         compression(),
+        #[cfg(feature = "kind-integration")]
+        state(crate::User::for_kind()),
         cookies(),
         sessions(SessionStore::new(db.clone()), config.session_secret.clone())
             .with_cookie_name("divviup.sid"),

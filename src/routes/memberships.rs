@@ -36,7 +36,7 @@ pub async fn create(
 
     let membership = membership.insert(&db).await?;
 
-    if first_membership_for_this_email {
+    if first_membership_for_this_email && !cfg!(feature = "kind-integration") {
         client.invite(&membership.user_email, &account.name).await?;
     }
 
