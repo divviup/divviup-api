@@ -1,4 +1,5 @@
 use async_lock::RwLock;
+use rand::distributions::{Alphanumeric, DistString};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -34,6 +35,10 @@ impl FromConn for Auth0Client {
     async fn from_conn(conn: &mut Conn) -> Option<Self> {
         conn.state().cloned()
     }
+}
+
+fn generate_password() -> String {
+    Alphanumeric.sample_string(&mut rand::thread_rng(), 60)
 }
 
 impl Auth0Client {
@@ -83,12 +88,17 @@ impl Auth0Client {
     }
 
     pub async fn create_user(&self, email: &str) -> Result<String, ClientError> {
-        let user: serde_json::Value = self.post("/api/v2/users", &json!({
-            "connection": "Username-Password-Authentication",
-            "email": email,
-            "password": std::iter::repeat_with(fastrand::alphanumeric).take(60).collect::<String>(),
-            "verify_email": false
-        })).await?;
+        let user: serde_json::Value = self
+            .post(
+                "/api/v2/users",
+                &json!({
+                    "connection": "Username-Password-Authentication",
+                    "email": email,
+                    "password": generate_password(),
+                    "verify_email": false
+                }),
+            )
+            .await?;
 
         user.get("user_id")
             .ok_or_else(|| ClientError::Other("expected user_id".into()))?
