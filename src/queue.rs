@@ -29,7 +29,7 @@ fn reschedule_based_on_failure_count(failure_count: i32) -> Option<OffsetDateTim
         Some(
             OffsetDateTime::now_utc()
                 + Duration::from_millis(
-                    4000_u64.pow(failure_count.try_into().unwrap()) + fastrand::u64(0..15000),
+                    1000 * 4_u64.pow(failure_count.try_into().unwrap()) + fastrand::u64(0..15000),
                 ),
         )
     }
