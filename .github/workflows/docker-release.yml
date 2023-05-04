@@ -9,6 +9,12 @@ env:
 
 jobs:
   build-and-push:
+    strategy:
+      matrix:
+        image: [
+          { name: "divviup_api", rust_features: "default" },
+          { name: "divviup_api_integration_test", rust_features: "integration-testing" },
+        ]
     permissions:
       id-token: write
       contents: read
@@ -32,5 +38,12 @@ jobs:
           password: ${{ steps.gcp-auth.outputs.access_token }}
       - id: get_version
         run: echo VERSION=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT
-      - run: docker build --tag us-west2-docker.pkg.dev/janus-artifacts/divviup-api/divviup_api:${{ steps.get_version.outputs.VERSION }} --build-arg GIT_REVISION=${GIT_REVISION} .
-      - run: docker push us-west2-docker.pkg.dev/janus-artifacts/divviup-api/divviup_api:${{ steps.get_version.outputs.VERSION }}
+      - run: |-
+          docker build \
+            --tag us-west2-docker.pkg.dev/janus-artifacts/divviup-api/${{ matrix.image.name }}:${{ steps.get_version.outputs.VERSION }} \
+            --build-arg RUST_FEATURES=${{ matrix.image.rust_features }} \
+            --build-arg GIT_REVISION=${GIT_REVISION} \
+            .
+      - run: |-
+          docker push \
+            us-west2-docker.pkg.dev/janus-artifacts/divviup-api/${{ matrix.image.name }}:${{ steps.get_version.outputs.VERSION }}
