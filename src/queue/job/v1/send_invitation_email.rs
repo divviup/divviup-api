@@ -5,17 +5,14 @@ use crate::{
 use sea_orm::{ConnectionTrait, EntityTrait};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::{
-    collections::hash_map::DefaultHasher,
-    hash::{Hash, Hasher},
-};
 use url::Url;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct SendInvitationEmail {
     pub membership_id: Uuid,
     pub action_url: Url,
+    pub message_id: Uuid,
 }
 
 impl SendInvitationEmail {
@@ -36,10 +33,6 @@ impl SendInvitationEmail {
             JobError::MissingRecord(String::from("account"), membership.account_id.to_string())
         })?;
 
-        let mut hasher = DefaultHasher::new();
-        self.hash(&mut hasher);
-        let hash = hasher.finish();
-
         job_state
             .postmark_client
             .send_email_template(
@@ -50,7 +43,7 @@ impl SendInvitationEmail {
                     "account_name": &account.name,
                     "action_url": self.action_url
                 }),
-                Some(format!("{hash}@divviup.org")),
+                Some(format!("{}@divviup.org", self.message_id)),
             )
             .await?;
 

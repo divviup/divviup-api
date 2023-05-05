@@ -19,6 +19,7 @@ impl ResetPassword {
         Ok(Some(Job::from(SendInvitationEmail {
             membership_id: self.membership_id,
             action_url,
+            message_id: Uuid::new_v4(),
         })))
     }
 }

@@ -1,9 +1,10 @@
 mod harness;
 use divviup_api::{
     entity::queue::Entity,
-    queue::{CreateUser, Job, JobStatus, Queue, ResetPassword, SendInvitationEmail},
+    queue::{CreateUser, Job, JobStatus, Queue, ResetPassword, SendInvitationEmail, V1},
 };
 use harness::{test, *};
+use uuid::Uuid;
 
 async fn build_membership(app: &DivviupApi) -> Result<Membership, Box<dyn std::error::Error>> {
     let account = fixtures::account(&app).await;
@@ -60,13 +61,10 @@ async fn reset_password(app: DivviupApi, client_logs: ClientLogs) -> TestResult 
         .unwrap()
         .parse()
         .unwrap();
-    assert_eq!(
-        next,
-        SendInvitationEmail {
-            membership_id,
-            action_url
-        }
-    );
+
+    let Job::V1(V1::SendInvitationEmail(next)) = next else { panic!() };
+    assert_eq!(next.membership_id, membership_id);
+    assert_eq!(next.action_url, action_url);
     Ok(())
 }
 
@@ -77,6 +75,7 @@ async fn send_email(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
     let mut job = SendInvitationEmail {
         membership_id,
         action_url: Url::parse("http://any.url/for-now").unwrap(),
+        message_id: Uuid::new_v4(),
     };
 
     assert!(job.perform(&app.config().into(), app.db()).await?.is_none());
