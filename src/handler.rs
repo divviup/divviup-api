@@ -52,9 +52,8 @@ impl DivviupApi {
                 caching_headers(),
                 conn_id(),
                 logger(),
-                origin_router()
-                    .with_handler(config.app_url.as_ref(), static_assets(&config))
-                    .with_handler(config.api_url.as_ref(), api(&db, &config)),
+                origin_router().with_handler(config.app_url.as_ref(), static_assets(&config)),
+                api(&db, &config),
                 ErrorHandler,
             )),
             db,
