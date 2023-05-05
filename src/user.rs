@@ -25,6 +25,22 @@ pub struct User {
 }
 
 impl User {
+    #[cfg(feature = "integration-testing")]
+    pub fn for_integration_testing() -> Self {
+        use std::time::Duration;
+
+        Self {
+            email: "integration@test.example".into(),
+            email_verified: true,
+            name: "integration testing user".into(),
+            nickname: "test".into(),
+            picture: None,
+            sub: "".into(),
+            updated_at: OffsetDateTime::now_utc() - Duration::from_secs(24 * 60 * 60),
+            admin: Some(false),
+        }
+    }
+
     async fn populate_admin(&mut self, db: &Db) {
         let membership = Memberships::find()
             .inner_join(Accounts)
