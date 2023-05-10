@@ -9,6 +9,7 @@ export interface User {
   picture: string;
   sub: string;
   updated_at: string;
+  admin: boolean;
 }
 
 export interface Account {
@@ -26,6 +27,18 @@ export interface Membership {
   account_id: string;
   id: string;
   created_at: string;
+}
+
+export interface QueueJob {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  scheduled_at: string | null;
+  failure_count: number;
+  status: "Success" | "Pending" | "Failed";
+  job: { type: string; version: string;[key: string]: unknown };
+  result: unknown;
+  parent_id: string | null;
 }
 
 type VdafDefinition =
@@ -128,7 +141,6 @@ export class ApiClient {
   }
 
   async getCurrentUser(): Promise<User> {
-    console.log("GETTING CURRENT USER");
     if (this.currentUser) {
       return this.currentUser;
     }
@@ -239,6 +251,16 @@ export class ApiClient {
       default:
         throw res;
     }
+  }
+
+  async queue(searchParams: URLSearchParams): Promise<QueueJob[]> {
+    const res = await this.get(`/api/admin/queue?${searchParams}`);
+    return res.data as QueueJob[];
+  }
+
+  async queueJob(id: string): Promise<QueueJob> {
+    const res = await this.get(`/api/admin/queue/${id}`);
+    return res.data as QueueJob;
   }
 }
 

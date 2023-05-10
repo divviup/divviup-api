@@ -6,15 +6,9 @@ use divviup_api::{
 use harness::{test, *};
 use uuid::Uuid;
 
-async fn build_membership(app: &DivviupApi) -> Result<Membership, Box<dyn std::error::Error>> {
-    let account = fixtures::account(&app).await;
-    let email = format!("test-{}@example.test", fixtures::random_name());
-    Ok(Membership::build(email, &account)?.insert(app.db()).await?)
-}
-
 #[test(harness = with_client_logs)]
 async fn create_account(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
-    let membership = build_membership(&app).await?;
+    let membership = fixtures::build_membership(&app).await;
     let membership_id = membership.id;
     let mut job = CreateUser { membership_id };
     let next = job.perform(&app.config().into(), app.db()).await?.unwrap();
@@ -39,7 +33,7 @@ async fn create_account(app: DivviupApi, client_logs: ClientLogs) -> TestResult 
 
 #[test(harness = with_client_logs)]
 async fn reset_password(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
-    let membership = build_membership(&app).await?;
+    let membership = fixtures::build_membership(&app).await;
     let membership_id = membership.id;
     let mut job = ResetPassword {
         membership_id,
@@ -70,7 +64,7 @@ async fn reset_password(app: DivviupApi, client_logs: ClientLogs) -> TestResult 
 
 #[test(harness = with_client_logs)]
 async fn send_email(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
-    let membership = build_membership(&app).await?;
+    let membership = fixtures::build_membership(&app).await;
     let membership_id = membership.id;
     let mut job = SendInvitationEmail {
         membership_id,
@@ -94,7 +88,7 @@ async fn send_email(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
 
 #[test(harness = with_client_logs)]
 async fn all_together(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
-    let membership = build_membership(&app).await?;
+    let membership = fixtures::build_membership(&app).await;
 
     Job::new_invitation_flow(&membership)
         .insert(app.db())
@@ -123,4 +117,51 @@ async fn all_together(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         ]
     );
     Ok(())
+}
+
+#[test]
+fn json_representations() {
+    let membership_id = Uuid::new_v4();
+    assert_eq!(
+        serde_json::to_value(&Job::from(CreateUser { membership_id })).unwrap(),
+        json!({
+            "version": "V1",
+            "type": "CreateUser",
+            "membership_id": membership_id
+        })
+    );
+
+    let message_id = Uuid::new_v4();
+    let action_url: Url = "https://action.url".parse().unwrap();
+
+    assert_eq!(
+        serde_json::to_value(&Job::from(SendInvitationEmail {
+            membership_id,
+            action_url: action_url.clone(),
+            message_id
+        }))
+        .unwrap(),
+        json!({
+            "version": "V1",
+            "type": "SendInvitationEmail",
+            "membership_id": membership_id,
+            "action_url": action_url,
+            "message_id": message_id
+        })
+    );
+
+    let user_id: String = "user-id".into();
+    assert_eq!(
+        serde_json::to_value(&Job::from(ResetPassword {
+            membership_id,
+            user_id: user_id.clone()
+        }))
+        .unwrap(),
+        json!({
+            "version": "V1",
+            "type": "ResetPassword",
+            "membership_id": membership_id,
+            "user_id": user_id
+        })
+    );
 }

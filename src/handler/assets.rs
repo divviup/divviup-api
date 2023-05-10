@@ -1,4 +1,4 @@
-use crate::ApiConfig;
+use crate::{handler::origin_router, ApiConfig};
 use std::time::Duration;
 use trillium::{
     Conn, Handler,
@@ -12,9 +12,16 @@ use url::Url;
 const ONE_YEAR: Duration = Duration::from_secs(60 * 60 * 24 * 365);
 
 pub fn static_assets(config: &ApiConfig) -> impl Handler {
-    ReactApp {
-        handler: static_compiled!("$ASSET_DIR").with_index_file("index.html"),
-        api_url: config.api_url.clone(),
+    if std::env::var("SKIP_APP_COMPILATION").is_ok() {
+        None
+    } else {
+        Some(origin_router().with_handler(
+            config.app_url.as_ref(),
+            ReactApp {
+                handler: static_compiled!("$ASSET_DIR").with_index_file("index.html"),
+                api_url: config.api_url.clone(),
+            },
+        ))
     }
 }
 

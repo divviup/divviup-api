@@ -528,13 +528,13 @@ function Expiration(props: FormikProps<NewTask>) {
                   includeOffset: false,
                   suppressSeconds: true,
                   suppressMilliseconds: true,
-                })
+                }) || undefined
               : ""
           }
           onChange={handleChange}
           onBlur={props.handleBlur}
           step={60}
-          min={min}
+          min={min || undefined}
           isInvalid={!!props.errors.expiration}
         />
       ) : null}

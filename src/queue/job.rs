@@ -13,6 +13,7 @@ mod v1;
 pub use v1::{CreateUser, ResetPassword, SendInvitationEmail, V1};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(tag = "version")]
 pub enum Job {
     V1(V1),
 }

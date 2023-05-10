@@ -11,6 +11,7 @@ pub use reset_password::ResetPassword;
 pub use send_invitation_email::SendInvitationEmail;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(tag = "type")]
 pub enum V1 {
     SendInvitationEmail(SendInvitationEmail),
     CreateUser(CreateUser),

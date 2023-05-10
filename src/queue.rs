@@ -4,7 +4,7 @@ pub use job::*;
 
 use crate::{
     entity::queue::{ActiveModel, Entity, Model},
-    ApiConfig, Db,
+    ApiConfig, Db, DivviupApi,
 };
 use sea_orm::{ActiveModelTrait, DbErr, IntoActiveModel, Set, TransactionTrait};
 use std::{ops::Range, sync::Arc, time::Duration};
@@ -26,19 +26,25 @@ pub struct Queue {
 These configuration variables may eventually be useful to put on ApiConfig
 */
 const MAX_RETRY: i32 = 5;
-const QUEUE_CHECK_INTERVAL: Range<u64> = 10..20;
+const QUEUE_CHECK_INTERVAL: Range<u64> = 60_000..120_000;
+const SCHEDULE_RANDOMNESS: Range<u64> = 0..15_000;
 const QUEUE_WORKER_COUNT: u8 = 2;
 
 fn reschedule_based_on_failure_count(failure_count: i32) -> Option<OffsetDateTime> {
     if failure_count >= MAX_RETRY {
         None
     } else {
-        Some(
-            OffsetDateTime::now_utc()
-                + Duration::from_millis(
-                    1000 * 4_u64.pow(failure_count.try_into().unwrap()) + fastrand::u64(0..15000),
-                ),
-        )
+        let duration = Duration::from_millis(
+            1000 * 4_u64.pow(failure_count.try_into().unwrap())
+                + fastrand::u64(SCHEDULE_RANDOMNESS),
+        );
+        Some(OffsetDateTime::now_utc() + duration)
+    }
+}
+
+impl From<&DivviupApi> for Queue {
+    fn from(app: &DivviupApi) -> Self {
+        Self::new(app.db(), app.config())
     }
 }
 
@@ -139,7 +145,7 @@ impl Queue {
 
                     Ok(None) => {
                         let sleep_future =
-                            sleep(Duration::from_secs(fastrand::u64(QUEUE_CHECK_INTERVAL)));
+                            sleep(Duration::from_millis(fastrand::u64(QUEUE_CHECK_INTERVAL)));
                         self.stopper.stop_future(sleep_future).await;
                     }
                 }

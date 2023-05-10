@@ -16,7 +16,7 @@ use error::ErrorHandler;
 use logger::logger;
 use session_store::SessionStore;
 use std::sync::Arc;
-use trillium::{state, Handler};
+use trillium::{state, Handler, Info};
 use trillium_caching_headers::{
     cache_control, caching_headers,
     CacheControlDirective::{MustRevalidate, Private},
@@ -36,13 +36,22 @@ pub use origin_router::origin_router;
 
 #[derive(Handler, Debug)]
 pub struct DivviupApi {
-    #[handler]
+    #[handler(except = init)]
     handler: Box<dyn Handler>,
     db: Db,
     config: Arc<ApiConfig>,
 }
 
 impl DivviupApi {
+    async fn init(&mut self, info: &mut Info) {
+        *info.server_description_mut() = format!("divviup-api {}", env!("CARGO_PKG_VERSION"));
+        *info.listener_description_mut() = format!(
+            "api url: {}\n             app url: {}\n",
+            self.config.api_url, self.config.app_url,
+        );
+        self.handler.init(info).await
+    }
+
     pub async fn new(config: ApiConfig) -> Self {
         let config = Arc::new(config);
         let db = Db::connect(config.database_url.as_ref()).await;
@@ -53,7 +62,7 @@ impl DivviupApi {
                 Forwarding::trust_always(),
                 caching_headers(),
                 logger(),
-                origin_router().with_handler(config.app_url.as_ref(), static_assets(&config)),
+                static_assets(&config),
                 api(&db, &config),
                 ErrorHandler,
             )),

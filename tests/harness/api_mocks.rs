@@ -1,13 +1,10 @@
-use super::{fixtures, AGGREGATOR_URL, AUTH0_URL, POSTMARK_URL};
+use super::{fixtures, ClientLogs, LoggedConn, AGGREGATOR_URL, AUTH0_URL, POSTMARK_URL};
 use divviup_api::{aggregator_api_mock::aggregator_api, clients::auth0_client::Token};
-use serde_json::{json, Value};
-use std::sync::Arc;
+use serde_json::json;
 use trillium::{async_trait, Conn, Handler};
 use trillium_api::Json;
-use trillium_http::{Body, Headers, Method, Status};
 use trillium_macros::Handler;
 use trillium_router::router;
-use url::Url;
 
 fn postmark_mock() -> impl Handler {
     router().post("/email/withTemplate", Json(json!({})))
@@ -34,85 +31,6 @@ fn auth0_mock() -> impl Handler {
                 "ticket": format!("{AUTH0_URL}/password_tickets/{}", fixtures::random_name())
             })),
         )
-}
-
-#[derive(Debug, Clone)]
-pub struct LoggedConn {
-    pub url: Url,
-    pub method: Method,
-    pub response_body: Option<String>,
-    pub response_status: Status,
-    pub request_headers: Headers,
-    pub response_headers: Headers,
-}
-
-impl LoggedConn {
-    pub fn response_json(&self) -> Value {
-        serde_json::from_str(&self.response_body.as_ref().unwrap()).unwrap()
-    }
-}
-
-impl From<&Conn> for LoggedConn {
-    fn from(conn: &Conn) -> Self {
-        let url = Url::parse(&format!(
-            "{}://{}{}{}",
-            if conn.is_secure() { "https" } else { "http" },
-            conn.inner().host().unwrap(),
-            conn.path(),
-            match conn.querystring() {
-                "" => "".into(),
-                q => format!("?{q}"),
-            }
-        ))
-        .unwrap();
-
-        Self {
-            url,
-            method: conn.method(),
-            response_body: conn
-                .inner()
-                .response_body()
-                .and_then(Body::static_bytes)
-                .map(|s| String::from_utf8_lossy(s).to_string()),
-            response_status: conn.status().unwrap_or(Status::NotFound),
-            request_headers: conn.request_headers().clone(),
-            response_headers: conn.response_headers().clone(),
-        }
-    }
-}
-
-impl std::fmt::Display for LoggedConn {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!(
-            "{} {}: {}",
-            self.method, self.url, self.response_status
-        ))
-    }
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct ClientLogs {
-    logged_conns: Arc<std::sync::RwLock<Vec<LoggedConn>>>,
-}
-
-impl ClientLogs {
-    pub fn logs(&self) -> Vec<LoggedConn> {
-        self.logged_conns.read().unwrap().clone()
-    }
-
-    pub fn last(&self) -> LoggedConn {
-        self.logged_conns.read().unwrap().last().unwrap().clone()
-    }
-
-    pub fn matching_url(&self, url: Url) -> Vec<LoggedConn> {
-        self.logged_conns
-            .read()
-            .unwrap()
-            .iter()
-            .filter(|lc| (**lc).url == url)
-            .cloned()
-            .collect()
-    }
 }
 
 #[derive(Handler, Debug)]
