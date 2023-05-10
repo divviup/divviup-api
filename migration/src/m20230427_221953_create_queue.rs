@@ -40,8 +40,9 @@ impl MigrationTrait for Migration {
                             .default(0),
                     )
                     .col(ColumnDef::new(Queue::Job).json().not_null())
-                    .col(ColumnDef::new(Queue::Result).json().null())
+                    .col(ColumnDef::new(Queue::ErrorMessage).json().null())
                     .col(ColumnDef::new(Queue::ParentId).uuid().null())
+                    .col(ColumnDef::new(Queue::ChildId).uuid().null())
                     .to_owned(),
             )
             .await?;
@@ -77,6 +78,7 @@ enum Queue {
     FailureCount,
     Status,
     Job,
-    Result,
+    ErrorMessage,
     ParentId,
+    ChildId,
 }

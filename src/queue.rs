@@ -1,5 +1,5 @@
 mod job;
-pub use crate::entity::queue::{JobResult, JobStatus};
+pub use crate::entity::queue::JobStatus;
 pub use job::*;
 
 use crate::{
@@ -92,14 +92,12 @@ impl Queue {
                     let mut next_job = ActiveModel::from(next_job);
                     next_job.parent_id = Set(Some(*queue_item.id.as_ref()));
                     let next_job = next_job.insert(&tx).await?;
-
-                    queue_item.result = Set(Some(JobResult::Child(next_job.id)));
+                    queue_item.child_id = Set(Some(next_job.id));
                 }
 
                 Ok(None) => {
                     queue_item.scheduled_at = Set(None);
                     queue_item.status = Set(JobStatus::Success);
-                    queue_item.result = Set(Some(JobResult::Complete));
                 }
 
                 Err(e) if e.is_retryable() => {
@@ -109,14 +107,14 @@ impl Queue {
                     queue_item.status =
                         Set(reschedule.map_or(JobStatus::Failed, |_| JobStatus::Pending));
                     queue_item.scheduled_at = Set(reschedule);
-                    queue_item.result = Set(Some(JobResult::Error(e)));
+                    queue_item.error_message = Set(Some(e));
                 }
 
                 Err(e) => {
                     queue_item.failure_count = Set(queue_item.failure_count.as_ref() + 1);
                     queue_item.scheduled_at = Set(None);
                     queue_item.status = Set(JobStatus::Failed);
-                    queue_item.result = Set(Some(JobResult::Error(e)));
+                    queue_item.error_message = Set(Some(e));
                 }
             }
 

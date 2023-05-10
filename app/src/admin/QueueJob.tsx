@@ -96,12 +96,10 @@ function Job({ job }: { job: QueueJob }) {
             </LabeledRow>
           ) : null}
 
-          {typeof job.result === "object" &&
-            job.result !== null &&
-            "Child" in job.result ? (
+          {job.child_id ? (
             <LabeledRow label="child">
-              <Link to={`/admin/queue/${job.result.Child}`}>
-                <>{job.result.Child}</>
+              <Link to={`/admin/queue/${job.child_id}`}>
+                <>{job.child_id}</>
               </Link>
             </LabeledRow>
           ) : null}

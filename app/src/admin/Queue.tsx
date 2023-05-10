@@ -88,7 +88,15 @@ function JobStatus({ job }: { job: QueueJob }) {
     case "Failed":
       return <XCircle />;
     case "Pending":
-      return <Stopwatch />;
+      if (job.failure_count > 0) {
+        return (
+          <>
+            <XCircle /> {job.failure_count}
+          </>
+        );
+      } else {
+        return <Stopwatch />;
+      }
   }
 }
 

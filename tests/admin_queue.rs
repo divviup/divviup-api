@@ -3,9 +3,7 @@ use harness::{test, *};
 
 mod index {
     use super::{test, *};
-    use divviup_api::entity::queue::{
-        Column as QueueColumn, Entity as QueueItems, JobStatus, Model as QueueItem,
-    };
+    use divviup_api::entity::queue::{JobStatus, Model as QueueItem};
 
     #[test(harness = set_up)]
     async fn as_an_admin(app: DivviupApi) -> TestResult {

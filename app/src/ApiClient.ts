@@ -36,8 +36,13 @@ export interface QueueJob {
   scheduled_at: string | null;
   failure_count: number;
   status: "Success" | "Pending" | "Failed";
-  job: { type: string; version: string;[key: string]: unknown };
-  result: unknown;
+  job: {
+    type: string;
+    version: string;
+    [key: string]: unknown;
+  };
+  error_message: { [key: string]: unknown };
+  child_id: string | null;
   parent_id: string | null;
 }
 
@@ -316,8 +321,8 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-  ? ValidationErrorsFor<T[K]>
-  : ValidationError[];
+    ? ValidationErrorsFor<T[K]>
+    : ValidationError[];
 };
 
 export interface ValidationError {

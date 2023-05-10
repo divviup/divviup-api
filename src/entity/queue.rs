@@ -11,14 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use time::OffsetDateTime;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub enum JobResult {
-    Complete,
-    Child(Uuid),
-    Error(JobError),
-}
-
-json_newtype!(JobResult);
+json_newtype!(JobError);
 json_newtype!(Job);
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -35,8 +28,9 @@ pub struct Model {
     pub failure_count: i32,
     pub status: JobStatus,
     pub job: Job,
-    pub result: Option<JobResult>,
+    pub error_message: Option<JobError>,
     pub parent_id: Option<Uuid>,
+    pub child_id: Option<Uuid>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
@@ -65,8 +59,9 @@ impl From<Job> for ActiveModel {
             failure_count: Set(0),
             status: Set(JobStatus::Pending),
             job: Set(job),
-            result: Set(None),
+            error_message: Set(None),
             parent_id: Set(None),
+            child_id: Set(None),
         }
     }
 }
