@@ -1,8 +1,22 @@
-use crate::{handler::Error, Db};
+use crate::Db;
 use sea_orm::ConnectionTrait;
-use trillium::{Conn, Status};
+use trillium::{async_trait, Conn, Handler, Status};
 
-pub async fn health_check(_: &mut Conn, db: Db) -> Result<Status, Error> {
-    db.execute_unprepared("select 1").await?;
-    Ok(Status::Ok)
+struct HealthCheck(Db);
+
+#[async_trait]
+impl Handler for HealthCheck {
+    async fn run(&self, conn: Conn) -> Conn {
+        if conn.path() != "/health" {
+            return conn;
+        }
+        if self.0.execute_unprepared("select 1").await.is_err() {
+            return conn.halt().with_status(500);
+        }
+        conn.halt().with_status(Status::NoContent)
+    }
+}
+
+pub fn health_check(db: &Db) -> impl Handler {
+    HealthCheck(db.clone())
 }

@@ -48,9 +48,10 @@ impl DivviupApi {
         let db = Db::connect(config.database_url.as_ref()).await;
         Self {
             handler: Box::new((
+                conn_id(),
+                routes::health_check(&db),
                 Forwarding::trust_always(),
                 caching_headers(),
-                conn_id(),
                 logger(),
                 origin_router().with_handler(config.app_url.as_ref(), static_assets(&config)),
                 api(&db, &config),

@@ -13,7 +13,7 @@ use crate::{
     },
     ApiConfig,
 };
-use health_check::health_check;
+pub use health_check::health_check;
 use trillium::{
     state, Handler,
     Method::{Delete, Get, Patch, Post},
@@ -27,7 +27,6 @@ pub fn routes(config: &ApiConfig) -> impl Handler {
     let auth0_client = Auth0Client::new(config);
 
     router()
-        .get("/health", api(health_check))
         .get(
             "/login",
             (
