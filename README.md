@@ -47,6 +47,7 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 * `OTEL_EXPORTER_PROMETHEUS_HOST` -- default `"localhost"`
 * `OTEL_EXPORTER_PROMETHEUS_PORT` -- default `9464`
 * `SKIP_APP_COMPILATION` -- we currently build the react app in a build script. To avoid this behavior, set this environment variable.
+* `ASSET_DIR` -- set this to skip building the react app and include react app assets from a different directory
 
 ## Initial setup
 
