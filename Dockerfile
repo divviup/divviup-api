@@ -7,9 +7,23 @@ COPY app /src/app
 RUN npm ci
 RUN npm run build
 
-FROM rust:1.69.0-alpine as builder
+FROM rust:1.69.0-alpine as chef
 RUN apk add libc-dev
+RUN cargo install cargo-chef
 WORKDIR /src
+
+FROM chef AS planner
+COPY Cargo.toml /src/Cargo.toml
+COPY Cargo.lock /src/Cargo.lock
+COPY build.rs /src/build.rs
+COPY migration /src/migration
+COPY src /src/src
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef as builder
+WORKDIR /src
+COPY --from=planner /src/recipe.json /src/recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 COPY Cargo.toml /src/Cargo.toml
 COPY Cargo.lock /src/Cargo.lock
 COPY build.rs /src/build.rs
@@ -17,14 +31,10 @@ COPY migration /src/migration
 COPY src /src/src
 COPY --from=assets /src/app/build /src/app/build
 ARG RUST_FEATURES=default
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/src/target \
-    ASSET_DIR=/src/app/build \
+RUN ASSET_DIR=/src/app/build \
     cargo build --profile release -p migration && \
     cp /src/target/release/migration /migration
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/src/target \
-    ASSET_DIR=/src/app/build \
+RUN ASSET_DIR=/src/app/build \
     cargo build --profile release --features ${RUST_FEATURES} && \
     cp /src/target/release/divviup_api_bin /divviup_api_bin
 
