@@ -1,21 +1,30 @@
+FROM node:alpine as assets
+WORKDIR /src/app
+COPY app/package.json /src/app/package.json
+COPY app/package-lock.json /src/app/package-lock.json
+RUN npm ci
+COPY app /src/app
+RUN npm ci
+RUN npm run build
+
 FROM rust:1.69.0-alpine as builder
 RUN apk add libc-dev
-RUN apk add --update npm
 WORKDIR /src
-COPY app /src/app
 COPY Cargo.toml /src/Cargo.toml
 COPY Cargo.lock /src/Cargo.lock
 COPY build.rs /src/build.rs
 COPY migration /src/migration
 COPY src /src/src
-RUN cd app && npm ci
+COPY --from=assets /src/app/build /src/app/build
 ARG RUST_FEATURES=default
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
+    ASSET_DIR=/src/app/build \
     cargo build --profile release -p migration && \
     cp /src/target/release/migration /migration
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
+    ASSET_DIR=/src/app/build \
     cargo build --profile release --features ${RUST_FEATURES} && \
     cp /src/target/release/divviup_api_bin /divviup_api_bin
 
