@@ -156,7 +156,7 @@ impl From<NewTask> for TaskCreate {
             } else {
                 Role::Helper
             },
-            max_batch_query_count: 0,
+            max_batch_query_count: 1,
             task_expiration: value
                 .expiration
                 .map(|task| task.unix_timestamp().try_into().unwrap())
