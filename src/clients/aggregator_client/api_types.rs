@@ -2,6 +2,11 @@ use crate::entity::{
     task::{self, Histogram, Sum, Vdaf},
     NewTask,
 };
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+pub use janus_messages::{
+    Duration as JanusDuration, HpkeAeadId, HpkeConfig, HpkeConfigId, HpkeConfigList, HpkeKdfId,
+    HpkeKemId, HpkePublicKey, Role, TaskId, Time as JanusTime,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use url::Url;
@@ -41,38 +46,26 @@ impl From<Vdaf> for VdafInstance {
     }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-#[repr(u8)]
-pub enum Role {
-    Collector = 0,
-    Client = 1,
-    Leader = 2,
-    Helper = 3,
-}
-
-impl Role {
-    pub fn is_leader(&self) -> bool {
-        matches!(self, Self::Leader)
+impl TryFrom<task::HpkeConfig> for HpkeConfig {
+    type Error = Box<dyn std::error::Error + Send + Sync>;
+    fn try_from(value: task::HpkeConfig) -> Result<Self, Self::Error> {
+        Ok(Self::new(
+            value.id.unwrap().into(),
+            value.kem_id.unwrap().try_into()?,
+            value.kdf_id.unwrap().try_into()?,
+            value.aead_id.unwrap().try_into()?,
+            value.public_key.unwrap().into_bytes().into(),
+        ))
     }
 }
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct HpkeConfig {
-    pub id: u8,
-    pub kem_id: u8,
-    pub kdf_id: u8,
-    pub aead_id: u8,
-    pub public_key: Vec<u8>,
-}
-
-impl From<task::HpkeConfig> for HpkeConfig {
-    fn from(value: task::HpkeConfig) -> Self {
+impl From<HpkeConfig> for task::HpkeConfig {
+    fn from(hpke_config: HpkeConfig) -> Self {
         Self {
-            id: value.id.unwrap(),
-            kem_id: value.kem_id.unwrap(),
-            kdf_id: value.kdf_id.unwrap(),
-            aead_id: value.aead_id.unwrap(),
-            public_key: value.public_key.unwrap().into_bytes(),
+            id: Some((*hpke_config.id()).into()),
+            kem_id: Some((*hpke_config.kem_id()) as u16),
+            kdf_id: Some((*hpke_config.kdf_id()) as u16),
+            aead_id: Some((*hpke_config.aead_id()) as u16),
+            public_key: Some(URL_SAFE_NO_PAD.encode(hpke_config.public_key())),
         }
     }
 }
@@ -118,53 +111,54 @@ pub struct TaskCreate {
     pub query_type: QueryType,
     pub vdaf: VdafInstance,
     pub role: Role,
-    pub max_batch_query_count: i64,
+    pub max_batch_query_count: u64,
     pub task_expiration: u64,
-    pub min_batch_size: i64,
-    pub time_precision: i32,
+    pub min_batch_size: u64,
+    pub time_precision: u64,
     pub collector_hpke_config: HpkeConfig,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TaskResponse {
-    pub task_id: String,
+    pub task_id: TaskId,
     pub aggregator_endpoints: Vec<Url>,
     pub query_type: QueryType,
     pub vdaf: VdafInstance,
     pub role: Role,
     pub vdaf_verify_keys: Vec<String>,
-    pub max_batch_query_count: i64,
-    pub task_expiration: u64,
-    pub report_expiry_age: Option<i64>,
-    pub min_batch_size: i64,
-    pub time_precision: i32,
-    pub tolerable_clock_skew: i64,
+    pub max_batch_query_count: u64,
+    pub task_expiration: JanusTime,
+    pub report_expiry_age: Option<JanusDuration>,
+    pub min_batch_size: u64,
+    pub time_precision: JanusDuration,
+    pub tolerable_clock_skew: JanusDuration,
     pub collector_hpke_config: HpkeConfig,
     pub aggregator_auth_tokens: Vec<String>,
     pub collector_auth_tokens: Vec<String>,
-    pub aggregator_hpke_configs: HashMap<u8, HpkeConfig>,
+    pub aggregator_hpke_configs: HashMap<HpkeConfigId, HpkeConfig>,
 }
 
-impl From<NewTask> for TaskCreate {
-    fn from(value: NewTask) -> Self {
-        Self {
+impl TryFrom<NewTask> for TaskCreate {
+    type Error = Box<dyn std::error::Error + Send + Sync>;
+    fn try_from(new_task: NewTask) -> Result<Self, Self::Error> {
+        Ok(Self {
             aggregator_endpoints: vec![],
-            query_type: value.max_batch_size.into(),
-            vdaf: value.vdaf.unwrap().into(),
-            role: if value.is_leader.unwrap() {
+            query_type: new_task.max_batch_size.into(),
+            vdaf: new_task.vdaf.unwrap().into(),
+            role: if new_task.is_leader.unwrap() {
                 Role::Leader
             } else {
                 Role::Helper
             },
             max_batch_query_count: 1,
-            task_expiration: value
+            task_expiration: new_task
                 .expiration
                 .map(|task| task.unix_timestamp().try_into().unwrap())
                 .unwrap_or(u64::MAX),
-            min_batch_size: value.min_batch_size.unwrap(),
-            time_precision: value.time_precision_seconds.unwrap(),
-            collector_hpke_config: value.hpke_config.unwrap().into(),
-        }
+            min_batch_size: new_task.min_batch_size.unwrap(),
+            time_precision: new_task.time_precision_seconds.unwrap(),
+            collector_hpke_config: new_task.hpke_config.unwrap().try_into()?,
+        })
     }
 }
 

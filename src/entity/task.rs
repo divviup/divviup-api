@@ -1,5 +1,5 @@
 use crate::{
-    clients::aggregator_client::api_types::TaskResponse,
+    clients::aggregator_client::api_types::{Role, TaskResponse},
     entity::{account, membership, Account},
     handler::Error,
 };
@@ -74,10 +74,10 @@ pub struct NewTask {
     pub vdaf: Option<Vdaf>,
 
     #[validate(required, range(min = 100))]
-    pub min_batch_size: Option<i64>,
+    pub min_batch_size: Option<u64>,
 
     #[validate(range(min = 0))]
-    pub max_batch_size: Option<i64>,
+    pub max_batch_size: Option<u64>,
 
     #[validate(required)]
     pub is_leader: Option<bool>,
@@ -94,7 +94,7 @@ pub struct NewTask {
             message = "must be between 1 minute and 4 weeks"
         )
     )]
-    pub time_precision_seconds: Option<i32>,
+    pub time_precision_seconds: Option<u64>,
 
     #[validate(required_nested)]
     pub hpke_config: Option<HpkeConfig>,
@@ -106,13 +106,13 @@ pub struct HpkeConfig {
     pub id: Option<u8>,
 
     #[validate(required)]
-    pub kem_id: Option<u8>,
+    pub kem_id: Option<u16>,
 
     #[validate(required)]
-    pub kdf_id: Option<u8>,
+    pub kdf_id: Option<u16>,
 
     #[validate(required)]
-    pub aead_id: Option<u8>,
+    pub aead_id: Option<u16>,
 
     #[validate(required)]
     pub public_key: Option<String>,
@@ -206,17 +206,17 @@ impl UpdateTask {
 
 pub fn build_task(mut task: NewTask, api_response: TaskResponse, account: &Account) -> ActiveModel {
     ActiveModel {
-        id: Set(api_response.task_id),
+        id: Set(api_response.task_id.to_string()),
         account_id: Set(account.id),
         name: Set(task.name.take().unwrap()),
         partner: Set(task.partner.take().unwrap()),
         vdaf: Set(serde_json::to_value(Vdaf::from(api_response.vdaf)).unwrap()),
-        min_batch_size: Set(api_response.min_batch_size),
+        min_batch_size: Set(api_response.min_batch_size.try_into().unwrap()),
         max_batch_size: Set(api_response.query_type.into()),
-        is_leader: Set(api_response.role.is_leader()),
+        is_leader: Set(matches!(api_response.role, Role::Leader)),
         created_at: Set(OffsetDateTime::now_utc()),
         updated_at: Set(OffsetDateTime::now_utc()),
-        time_precision_seconds: Set(api_response.time_precision),
+        time_precision_seconds: Set(api_response.time_precision.as_seconds().try_into().unwrap()),
         report_count: Set(0),
         aggregate_collection_count: Set(0),
         expiration: Set(task.expiration.take()),

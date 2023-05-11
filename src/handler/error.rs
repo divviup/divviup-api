@@ -64,6 +64,14 @@ pub enum Error {
     Validation(#[from] ValidationErrors),
     #[error(transparent)]
     Client(#[from] Arc<ClientError>),
+    #[error(transparent)]
+    Other(#[from] Arc<dyn std::error::Error + Send + Sync>),
+}
+
+impl From<Box<dyn std::error::Error + Send + Sync>> for Error {
+    fn from(value: Box<dyn std::error::Error + Send + Sync>) -> Self {
+        Self::Other(Arc::from(value))
+    }
 }
 
 impl From<DbErr> for Error {
