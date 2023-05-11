@@ -26,13 +26,13 @@ opentelemetry-prometheus = { version = "0.12.0", features = [
     "prometheus-encoding",
 ] }
 querystrong = "0.3.0"
-serde = { version = "1.0.162", features = ["derive"] }
+serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"
 serde_path_to_error = "0.1.11"
 test-harness = "0.1.1"
 thiserror = "1.0.40"
 time = { version = "0.3.21", features = ["serde", "serde-well-known"] }
-tokio = { version = "1.28.0", features = ["full"] }
+tokio = { version = "1.28.1", features = ["full"] }
 trillium = "0.2.9"
 trillium-api = { version = "0.2.0-rc.3", default-features = false }
 trillium-caching-headers = "0.2.1"
@@ -48,9 +48,9 @@ trillium-prometheus = "0.1.0"
 trillium-redirect = "0.1.0"
 trillium-router = "0.3.5"
 trillium-rustls = "0.4.0"
-trillium-sessions = "0.4.1"
+trillium-sessions = "0.4.2"
 trillium-static-compiled = "0.5.0"
-trillium-tokio = "0.3.0"
+trillium-tokio = "0.3.1"
 url = "2.3.1"
 uuid = { version = "1.3.2", features = ["v4", "fast-rng", "serde"] }
 validator = { version = "0.16.0", features = ["derive"] }
