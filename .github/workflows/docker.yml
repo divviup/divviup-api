@@ -24,7 +24,6 @@ jobs:
         with:
           driver: docker-container
           use: true
-          buildkitd-flags: --debug
       - name: Build
         uses: docker/build-push-action@v4
         with:
