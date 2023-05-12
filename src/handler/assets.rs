@@ -13,7 +13,7 @@ const ONE_YEAR: Duration = Duration::from_secs(60 * 60 * 24 * 365);
 
 pub fn static_assets(config: &ApiConfig) -> impl Handler {
     ReactApp {
-        handler: static_compiled!("$OUT_DIR").with_index_file("index.html"),
+        handler: static_compiled!("$ASSET_DIR").with_index_file("index.html"),
         api_url: config.api_url.clone(),
     }
 }
