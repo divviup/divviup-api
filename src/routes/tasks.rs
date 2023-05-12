@@ -54,7 +54,7 @@ pub async fn create(
     (account, Json(task), api_client, db): (Account, Json<NewTask>, AggregatorClient, Db),
 ) -> Result<impl Handler, Error> {
     task.validate()?;
-    let api_response = api_client.create_task(task.clone()).await?;
+    let api_response = api_client.create_task(task.clone().try_into()?).await?;
     let task = build_task(task, api_response, &account).insert(&db).await?;
     Ok((Status::Created, Json(task)))
 }

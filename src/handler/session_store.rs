@@ -5,7 +5,8 @@ use async_session::{
     serde_json, Session,
 };
 use sea_orm::{
-    sea_query::OnConflict, ColumnTrait, Condition, EntityTrait, IntoActiveModel, QueryFilter,
+    sea_query::{self, any, OnConflict},
+    ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter,
 };
 use serde_json::json;
 use time::OffsetDateTime;
@@ -59,11 +60,10 @@ impl async_session::SessionStore for SessionStore {
     async fn load_session(&self, cookie_value: String) -> async_session::Result<Option<Session>> {
         let id = Session::id_from_cookie_value(&cookie_value)?;
         Ok(session::Entity::find_by_id(id)
-            .filter(
-                Condition::any()
-                    .add(session::Column::Expiry.is_null())
-                    .add(session::Column::Expiry.gt(OffsetDateTime::now_utc())),
-            )
+            .filter(any![
+                session::Column::Expiry.is_null(),
+                session::Column::Expiry.gt(OffsetDateTime::now_utc())
+            ])
             .one(&self.db)
             .await?
             .map(Session::try_from)

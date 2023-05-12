@@ -1,8 +1,10 @@
 use crate::clients::aggregator_client::api_types::{
-    HpkeConfig, TaskCreate, TaskIds, TaskMetrics, TaskResponse,
+    HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, JanusTime,
+    TaskCreate, TaskIds, TaskMetrics, TaskResponse,
 };
 use fastrand::alphanumeric;
 use querystrong::QueryStrong;
+use rand::random;
 use std::iter::repeat_with;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Json};
@@ -34,40 +36,36 @@ async fn post_task(_: &mut Conn, Json(task_create): Json<TaskCreate>) -> Json<Ta
 
 pub fn task_response(task_create: TaskCreate) -> TaskResponse {
     TaskResponse {
-        task_id: repeat_with(alphanumeric).take(10).collect(),
+        task_id: random(),
         aggregator_endpoints: task_create.aggregator_endpoints,
         query_type: task_create.query_type,
         vdaf: task_create.vdaf,
         role: task_create.role,
         vdaf_verify_keys: vec![repeat_with(alphanumeric).take(10).collect()],
         max_batch_query_count: task_create.max_batch_query_count,
-        task_expiration: task_create.task_expiration,
+        task_expiration: JanusTime::from_seconds_since_epoch(task_create.task_expiration),
         report_expiry_age: None,
         min_batch_size: task_create.min_batch_size,
-        time_precision: task_create.time_precision,
-        tolerable_clock_skew: 60,
-        collector_hpke_config: HpkeConfig {
-            id: 1,
-            kem_id: 1,
-            kdf_id: 1,
-            aead_id: 1,
-            public_key: b"this is a public key".to_vec(),
-        },
+        time_precision: JanusDuration::from_seconds(task_create.time_precision),
+        tolerable_clock_skew: JanusDuration::from_seconds(60),
+        collector_hpke_config: random_hpke_config(),
         aggregator_auth_tokens: vec![],
         collector_auth_tokens: vec![],
-        aggregator_hpke_configs: [(
-            1,
-            HpkeConfig {
-                id: 1,
-                kem_id: 1,
-                kdf_id: 1,
-                aead_id: 1,
-                public_key: b"this is a public key".to_vec(),
-            },
-        )]
-        .into_iter()
-        .collect(),
+        aggregator_hpke_configs: std::iter::repeat_with(random_hpke_config)
+            .take(5)
+            .map(|config| (*config.id(), config))
+            .collect(),
     }
+}
+
+pub fn random_hpke_config() -> HpkeConfig {
+    HpkeConfig::new(
+        random(),
+        HpkeKemId::P256HkdfSha256,
+        HpkeKdfId::HkdfSha512,
+        HpkeAeadId::Aes256Gcm,
+        HpkePublicKey::from(Vec::new()),
+    )
 }
 
 async fn task_ids(conn: &mut Conn, (): ()) -> Result<Json<TaskIds>, Status> {

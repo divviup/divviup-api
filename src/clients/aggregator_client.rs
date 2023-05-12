@@ -1,6 +1,5 @@
 use crate::{
     clients::{ClientConnExt, ClientError},
-    entity::NewTask,
     ApiConfig,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -62,8 +61,8 @@ impl AggregatorClient {
         self.delete(&format!("/tasks/{task_id}")).await
     }
 
-    pub async fn create_task(&self, task: NewTask) -> Result<TaskResponse, ClientError> {
-        self.post("/tasks", &TaskCreate::from(task)).await
+    pub async fn create_task(&self, task_create: TaskCreate) -> Result<TaskResponse, ClientError> {
+        self.post("/tasks", &task_create).await
     }
 
     // private below here

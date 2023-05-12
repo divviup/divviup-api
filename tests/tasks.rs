@@ -84,6 +84,8 @@ mod index {
 }
 
 mod create {
+    use divviup_api::{aggregator_api_mock::random_hpke_config, entity::task::HpkeConfig};
+
     use super::{test, *};
 
     fn valid_task_json() -> Value {
@@ -94,13 +96,7 @@ mod create {
             "min_batch_size": 500,
             "is_leader": true,
             "time_precision_seconds": 60,
-            "hpke_config": {
-                "id": 1,
-                "kem_id": 1,
-                "kdf_id": 1,
-                "aead_id": 1,
-                "public_key": "key"
-            }
+            "hpke_config": HpkeConfig::from(random_hpke_config())
         })
     }
 

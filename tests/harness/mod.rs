@@ -1,6 +1,8 @@
 #![allow(dead_code)] // because different tests use different parts of this
 use divviup_api::{
-    aggregator_api_mock::aggregator_api, clients::auth0_client::Token, ApiConfig, Db,
+    aggregator_api_mock::{aggregator_api, random_hpke_config},
+    clients::auth0_client::Token,
+    ApiConfig, Db,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::future::Future;
@@ -117,7 +119,7 @@ where
 }
 
 pub mod fixtures {
-    use divviup_api::{aggregator_api_mock, entity::task::HpkeConfig};
+    use divviup_api::aggregator_api_mock;
     use validator::Validate;
 
     use super::*;
@@ -189,16 +191,10 @@ pub mod fixtures {
             is_leader: Some(true),
             expiration: None,
             time_precision_seconds: Some(60 * 60),
-            hpke_config: Some(HpkeConfig {
-                id: Some(1),
-                kem_id: Some(1),
-                kdf_id: Some(1),
-                aead_id: Some(1),
-                public_key: Some("stuff".into()),
-            }),
+            hpke_config: Some(random_hpke_config().into()),
         };
         new_task.validate().unwrap();
-        let api_response = aggregator_api_mock::task_response(new_task.clone().into());
+        let api_response = aggregator_api_mock::task_response(new_task.clone().try_into().unwrap());
         task::build_task(new_task, api_response, account)
             .insert(app.db())
             .await
