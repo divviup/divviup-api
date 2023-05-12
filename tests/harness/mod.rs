@@ -1,10 +1,5 @@
 #![allow(dead_code)] // because different tests use different parts of this
-use divviup_api::{
-    aggregator_api_mock::{aggregator_api, random_hpke_config},
-    clients::auth0_client::Token,
-    entity::queue,
-    ApiConfig, Db,
-};
+use divviup_api::{entity::queue, ApiConfig, Db};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, future::Future};
 use trillium::Handler;
@@ -94,6 +89,7 @@ where
     F: FnOnce(DivviupApi) -> Fut,
     Fut: Future<Output = Result<(), Box<dyn Error>>> + Send + 'static,
 {
+    std::env::remove_var("SKIP_APP_COMPILATION");
     block_on(async move {
         let (app, _) = build_test_app().await;
         f(app).await.unwrap();
