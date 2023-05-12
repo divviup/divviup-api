@@ -28,7 +28,7 @@ impl AggregatorClient {
     pub fn new(config: &ApiConfig) -> Self {
         Self {
             client: config.client.clone(),
-            base_url: config.aggregator_url.clone(),
+            base_url: config.aggregator_api_url.clone(),
             auth_header: HeaderValue::from(format!("Bearer {}", config.aggregator_secret.clone())),
         }
     }

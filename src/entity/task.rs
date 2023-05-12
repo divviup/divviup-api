@@ -9,6 +9,9 @@ use std::collections::HashSet;
 use time::OffsetDateTime;
 use validator::{Validate, ValidationError, ValidationErrors};
 
+mod url;
+use self::url::Url;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "task")]
 pub struct Model {
@@ -16,7 +19,8 @@ pub struct Model {
     pub id: String,
     pub account_id: Uuid,
     pub name: String,
-    pub partner: String,
+    pub leader_url: Url,
+    pub helper_url: Url,
     pub vdaf: Json,
     pub min_batch_size: i64,
     pub max_batch_size: Option<i64>,
@@ -67,8 +71,8 @@ pub struct NewTask {
     #[validate(required, length(min = 1))]
     pub name: Option<String>,
 
-    #[validate(required)]
-    pub partner: Option<String>,
+    #[validate(required, url)]
+    pub partner_url: Option<String>,
 
     #[validate(required_nested)]
     pub vdaf: Option<Vdaf>,
@@ -209,7 +213,8 @@ pub fn build_task(mut task: NewTask, api_response: TaskResponse, account: &Accou
         id: Set(api_response.task_id.to_string()),
         account_id: Set(account.id),
         name: Set(task.name.take().unwrap()),
-        partner: Set(task.partner.take().unwrap()),
+        leader_url: Set(api_response.aggregator_endpoints[0].clone().into()),
+        helper_url: Set(api_response.aggregator_endpoints[1].clone().into()),
         vdaf: Set(serde_json::to_value(Vdaf::from(api_response.vdaf)).unwrap()),
         min_batch_size: Set(api_response.min_batch_size.try_into().unwrap()),
         max_batch_size: Set(api_response.query_type.into()),

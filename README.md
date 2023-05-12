@@ -34,7 +34,8 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 * `AUTH_AUDIENCE` -- This is not currently used for anything important and probably will go away, but for now you should set it to `https://api.divviup.org`
 * `APP_URL` -- The public-facing url for the associated browser client application
 * `DATABASE_URL` -- A [libpq-compatible postgres uri](https://www.postgresql.org/docs/current/libpq-connect.html#id-1.7.3.8.3.6)
-* `AGGREGATOR_URL` -- A url for the [janus](https://github.com/divviup/janus/) server aggregator-api.
+* `AGGREGATOR_API_URL` -- A url for the [janus](https://github.com/divviup/janus/) server aggregator-api.
+* `AGGREGATOR_DAP_URL` -- A url for the public DAP endpoint that tasks will be configured to use
 * `AGGREGATOR_SECRET` -- A bearer token that will be sent in an Authorization header with all api requests. When running in development/api mock mode, this is ignored
 * `POSTMARK_TOKEN` -- the token from the transactional stream from a [postmark](https://postmarkapp.com) account
 * `EMAIL_ADDRESS` -- the address this deployment should send from

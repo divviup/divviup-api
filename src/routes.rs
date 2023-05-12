@@ -47,11 +47,11 @@ pub fn routes(config: &ApiConfig) -> impl Handler {
         .any(
             &[Get, Post, Delete, Patch],
             "/api/*",
-            (state(auth0_client), api_routes()),
+            (state(auth0_client), api_routes(config)),
         )
 }
 
-fn api_routes() -> impl Handler {
+fn api_routes(config: &ApiConfig) -> impl Handler {
     (
         ReplaceMimeTypes,
         api(user_required),
@@ -65,17 +65,17 @@ fn api_routes() -> impl Handler {
             .any(
                 &[Patch, Get, Post],
                 "/accounts/:account_id/*",
-                accounts_routes(),
+                accounts_routes(config),
             ),
     )
 }
 
-fn accounts_routes() -> impl Handler {
+fn accounts_routes(config: &ApiConfig) -> impl Handler {
     router()
         .patch("/", api(accounts::update))
         .get("/", api(accounts::show))
         .get("/memberships", api(memberships::index))
         .post("/memberships", api(memberships::create))
         .get("/tasks", api(tasks::index))
-        .post("/tasks", api(tasks::create))
+        .post("/tasks", (state(config.clone()), api(tasks::create)))
 }

@@ -6,6 +6,7 @@ mod m20230211_233835_create_accounts;
 mod m20230217_211422_create_memberships;
 mod m20230322_223043_add_fields_to_task;
 mod m20230512_200213_make_task_max_batch_size_a_big_integer;
+mod m20230512_202411_add_two_urls_to_every_task;
 
 pub struct Migrator;
 
@@ -19,6 +20,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230217_211422_create_memberships::Migration),
             Box::new(m20230322_223043_add_fields_to_task::Migration),
             Box::new(m20230512_200213_make_task_max_batch_size_a_big_integer::Migration),
+            Box::new(m20230512_202411_add_two_urls_to_every_task::Migration),
         ]
     }
 }

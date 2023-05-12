@@ -66,6 +66,8 @@ pub enum Error {
     Client(#[from] Arc<ClientError>),
     #[error(transparent)]
     Other(#[from] Arc<dyn std::error::Error + Send + Sync>),
+    #[error(transparent)]
+    UrlParse(#[from] url::ParseError),
 }
 
 impl From<Box<dyn std::error::Error + Send + Sync>> for Error {
