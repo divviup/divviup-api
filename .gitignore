@@ -1,2 +1,3 @@
 /target
 **/.envrc
+app/public/api_url
