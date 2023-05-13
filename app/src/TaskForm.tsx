@@ -69,14 +69,14 @@ export default function TaskForm() {
             initialValues={
               {
                 min_batch_size: 100,
-                partner: "https://divviup.cloudflare.com",
+                partner_url: "https://divviup.cloudflare.com",
                 name: "",
                 time_precision_seconds: 3600,
                 expiration: null,
                 is_leader: true,
                 hpke_config: {
                   id: 1,
-                  kem_id: 1,
+                  kem_id: 16,
                   kdf_id: 1,
                   aead_id: 1,
                   public_key: "public_key",
@@ -196,7 +196,7 @@ function QueryType({
 }
 
 function HpkeConfig({ values }: FormikProps<NewTask>) {
-///temporary
+  ///temporary
   return (
     <>
       <input
@@ -522,13 +522,13 @@ function Expiration(props: FormikProps<NewTask>) {
           value={
             expiration
               ? DateTime.fromISO(expiration)
-                  .toLocal()
-                  .set({ second: 0, millisecond: 0 })
-                  .toISO({
-                    includeOffset: false,
-                    suppressSeconds: true,
-                    suppressMilliseconds: true,
-                  })
+                .toLocal()
+                .set({ second: 0, millisecond: 0 })
+                .toISO({
+                  includeOffset: false,
+                  suppressSeconds: true,
+                  suppressMilliseconds: true,
+                })
               : ""
           }
           onChange={handleChange}

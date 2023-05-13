@@ -36,7 +36,8 @@ type VdafDefinition =
 export interface Task {
   id: string;
   name: string;
-  partner: string;
+  leader_url: string;
+  helper_url: string;
   vdaf: VdafDefinition;
   min_batch_size: number;
   time_precision_seconds: number;
@@ -60,6 +61,7 @@ export type NewTask = Omit<
   | "updated_at"
 > & {
   hpke_config: HpkeConfig;
+  partner_url: string;
 };
 
 export interface HpkeConfig {
@@ -292,8 +294,8 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-    ? ValidationErrorsFor<T[K]>
-    : ValidationError[];
+  ? ValidationErrorsFor<T[K]>
+  : ValidationError[];
 };
 
 export interface ValidationError {

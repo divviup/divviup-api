@@ -172,7 +172,6 @@ export default function TaskDetail() {
                       </Card.Title>
                     </Card.Body>
                     <ListGroup variant="flush">
-                      <ListGroup.Item>Partner: {task.partner}</ListGroup.Item>
                       <ListGroup.Item>
                         Time Precision:{" "}
                         {humanizeDuration(1000 * task.time_precision_seconds)}
@@ -191,9 +190,19 @@ export default function TaskDetail() {
                         Expires:{" "}
                         {task.expiration
                           ? DateTime.fromISO(task.expiration)
-                              .toLocal()
-                              .toLocaleString(DateTime.DATETIME_SHORT)
+                            .toLocal()
+                            .toLocaleString(DateTime.DATETIME_SHORT)
                           : "never"}
+                      </ListGroup.Item>
+                      <ListGroup.Item>
+                        Leader: <code>{task.leader_url}</code>
+                      </ListGroup.Item>
+                      <ListGroup.Item>
+                        Helper: <code>{task.helper_url}</code>
+                      </ListGroup.Item>
+                      <ListGroup.Item>
+                        Aggregate Collection Count:{" "}
+                        {task.aggregate_collection_count || 0}
                       </ListGroup.Item>
 
                       <ListGroup.Item>
