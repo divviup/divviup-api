@@ -43,7 +43,7 @@ impl SendInvitationEmail {
                     "account_name": &account.name,
                     "action_url": self.action_url
                 }),
-                Some(format!("{}@divviup.org", self.message_id)),
+                Some(self.message_id.to_string()),
             )
             .await?;
 

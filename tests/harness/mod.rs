@@ -68,7 +68,7 @@ pub fn config(api_mocks: impl Handler) -> ApiConfig {
         prometheus_host: "localhost".into(),
         prometheus_port: 9464,
         postmark_token: "-".into(),
-        email_address: "test@example.test".into(),
+        email_address: "test@example.test".parse().unwrap(),
         postmark_url: POSTMARK_URL.parse().unwrap(),
         client: Client::new(trillium_testing::connector(api_mocks)),
     }

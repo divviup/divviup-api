@@ -1,4 +1,5 @@
 use crate::handler::oauth2::Oauth2Config;
+use email_address::EmailAddress;
 use std::{env::VarError, str::FromStr};
 use thiserror::Error;
 use trillium_client::Client;
@@ -22,7 +23,7 @@ pub struct ApiConfig {
     pub prometheus_host: String,
     pub prometheus_port: u16,
     pub postmark_token: String,
-    pub email_address: String,
+    pub email_address: EmailAddress,
     pub postmark_url: Url,
     pub client: Client,
 }
@@ -91,7 +92,7 @@ impl ApiConfig {
                 "16-bit number",
             )?,
             postmark_token: var("POSTMARK_TOKEN", "string")?,
-            email_address: var("EMAIL_ADDRESS", "string")?,
+            email_address: var("EMAIL_ADDRESS", "email")?,
             postmark_url: Url::parse("https://api.postmarkapp.com").unwrap(),
             client: Client::new(RustlsConfig::default().with_tcp_config(ClientConfig::default()))
                 .with_default_pool(),
