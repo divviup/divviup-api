@@ -91,7 +91,7 @@ mod create {
     fn valid_task_json() -> Value {
         json!({
             "name": "my task name",
-            "partner": "partner",
+            "partner_url": "https://dap.partner.url",
             "vdaf": { "type": "count" },
             "min_batch_size": 500,
             "is_leader": true,
@@ -112,7 +112,8 @@ mod create {
             .await;
         assert_response!(conn, 201);
         let task: Task = conn.response_json().await;
-        assert_eq!(task.partner, "partner");
+        assert_eq!(task.helper_url, "https://dap.partner.url/");
+        assert_eq!(task.leader_url, "https://dap.divviup.test/");
         assert_eq!(task.vdaf, json!({"type": "count"}));
         assert_eq!(task.min_batch_size, 500);
         assert!(task.is_leader);

@@ -1,5 +1,5 @@
 use crate::{
-    clients::AggregatorClient,
+    clients::{aggregator_client::TaskCreate, AggregatorClient},
     entity::{
         task::build_task, Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask,
     },
@@ -49,12 +49,15 @@ impl FromConn for Task {
     }
 }
 
+type CreateArgs = (Account, Json<NewTask>, AggregatorClient, Db);
 pub async fn create(
-    _: &mut Conn,
-    (account, Json(task), api_client, db): (Account, Json<NewTask>, AggregatorClient, Db),
+    conn: &mut Conn,
+    (account, Json(task), api_client, db): CreateArgs,
 ) -> Result<impl Handler, Error> {
     task.validate()?;
-    let api_response = api_client.create_task(task.clone().try_into()?).await?;
+    let config = conn.state().ok_or(Error::NotFound)?;
+    let task_create = TaskCreate::build(task.clone(), config)?;
+    let api_response = api_client.create_task(task_create).await?;
     let task = build_task(task, api_response, &account).insert(&db).await?;
     Ok((Status::Created, Json(task)))
 }

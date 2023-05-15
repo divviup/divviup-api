@@ -26,7 +26,7 @@ pub use url::Url;
 pub type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 const POSTMARK_URL: &str = "https://postmark.example";
-const AGGREGATOR_URL: &str = "https://aggregator.example";
+const AGGREGATOR_API_URL: &str = "https://aggregator.example";
 const AUTH0_URL: &str = "https://auth.example";
 
 async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
@@ -74,7 +74,7 @@ fn auth0_mock() -> impl Handler {
 fn api_mocks() -> impl Handler {
     divviup_api::handler::origin_router()
         .with_handler(POSTMARK_URL, postmark_mock())
-        .with_handler(AGGREGATOR_URL, aggregator_api())
+        .with_handler(AGGREGATOR_API_URL, aggregator_api())
         .with_handler(AUTH0_URL, auth0_mock())
 }
 
@@ -88,13 +88,14 @@ pub fn config() -> ApiConfig {
         auth_client_id: "client id".into(),
         auth_client_secret: "client secret".into(),
         auth_audience: "aud".into(),
-        aggregator_url: AGGREGATOR_URL.parse().unwrap(),
+        aggregator_dap_url: "https://dap.divviup.test".parse().unwrap(),
+        aggregator_api_url: AGGREGATOR_API_URL.parse().unwrap(),
         aggregator_secret: "unused".into(),
         prometheus_host: "localhost".into(),
         prometheus_port: 9464,
-        postmark_url: POSTMARK_URL.parse().unwrap(),
         postmark_token: "-".into(),
         email_address: "test@example.test".into(),
+        postmark_url: POSTMARK_URL.parse().unwrap(),
         client: Client::new(trillium_testing::connector(api_mocks())),
     }
 }
@@ -119,7 +120,7 @@ where
 }
 
 pub mod fixtures {
-    use divviup_api::aggregator_api_mock;
+    use divviup_api::{aggregator_api_mock, clients::aggregator_client::TaskCreate};
     use validator::Validate;
 
     use super::*;
@@ -184,7 +185,7 @@ pub mod fixtures {
     pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         let new_task = NewTask {
             name: Some(random_name()),
-            partner: Some(random_name()),
+            partner_url: Some("https://dap.clodflair.test".into()),
             vdaf: Some(task::Vdaf::Count),
             min_batch_size: Some(500),
             max_batch_size: Some(10000),
@@ -194,7 +195,8 @@ pub mod fixtures {
             hpke_config: Some(random_hpke_config().into()),
         };
         new_task.validate().unwrap();
-        let api_response = aggregator_api_mock::task_response(new_task.clone().try_into().unwrap());
+        let task_create = TaskCreate::build(new_task.clone(), app.config()).unwrap();
+        let api_response = aggregator_api_mock::task_response(task_create);
         task::build_task(new_task, api_response, account)
             .insert(app.db())
             .await

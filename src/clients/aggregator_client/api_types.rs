@@ -1,6 +1,10 @@
-use crate::entity::{
-    task::{self, Histogram, Sum, Vdaf},
-    NewTask,
+use crate::{
+    entity::{
+        task::{self, Histogram, Sum, Vdaf},
+        NewTask,
+    },
+    handler::Error,
+    ApiConfig,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 pub use janus_messages::{
@@ -118,6 +122,39 @@ pub struct TaskCreate {
     pub collector_hpke_config: HpkeConfig,
 }
 
+impl TaskCreate {
+    pub fn build(new_task: NewTask, config: &ApiConfig) -> Result<Self, Error> {
+        Ok(Self {
+            aggregator_endpoints: if new_task.is_leader.unwrap() {
+                vec![
+                    config.aggregator_dap_url.clone(),
+                    new_task.partner_url.unwrap().parse()?,
+                ]
+            } else {
+                vec![
+                    new_task.partner_url.unwrap().parse()?,
+                    config.aggregator_dap_url.clone(),
+                ]
+            },
+            query_type: new_task.max_batch_size.into(),
+            vdaf: new_task.vdaf.unwrap().into(),
+            role: if new_task.is_leader.unwrap() {
+                Role::Leader
+            } else {
+                Role::Helper
+            },
+            max_batch_query_count: 1,
+            task_expiration: new_task
+                .expiration
+                .map(|task| task.unix_timestamp().try_into().unwrap())
+                .unwrap_or(u64::MAX),
+            min_batch_size: new_task.min_batch_size.unwrap(),
+            time_precision: new_task.time_precision_seconds.unwrap(),
+            collector_hpke_config: new_task.hpke_config.unwrap().try_into()?,
+        })
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TaskResponse {
     pub task_id: TaskId,
@@ -136,30 +173,6 @@ pub struct TaskResponse {
     pub aggregator_auth_tokens: Vec<String>,
     pub collector_auth_tokens: Vec<String>,
     pub aggregator_hpke_configs: HashMap<HpkeConfigId, HpkeConfig>,
-}
-
-impl TryFrom<NewTask> for TaskCreate {
-    type Error = Box<dyn std::error::Error + Send + Sync>;
-    fn try_from(new_task: NewTask) -> Result<Self, Self::Error> {
-        Ok(Self {
-            aggregator_endpoints: vec![],
-            query_type: new_task.max_batch_size.into(),
-            vdaf: new_task.vdaf.unwrap().into(),
-            role: if new_task.is_leader.unwrap() {
-                Role::Leader
-            } else {
-                Role::Helper
-            },
-            max_batch_query_count: 1,
-            task_expiration: new_task
-                .expiration
-                .map(|task| task.unix_timestamp().try_into().unwrap())
-                .unwrap_or(u64::MAX),
-            min_batch_size: new_task.min_batch_size.unwrap(),
-            time_precision: new_task.time_precision_seconds.unwrap(),
-            collector_hpke_config: new_task.hpke_config.unwrap().try_into()?,
-        })
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

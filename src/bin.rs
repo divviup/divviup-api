@@ -18,7 +18,7 @@ async fn main() {
     .expect("Error setting up metrics");
 
     #[cfg(all(debug_assertions, feature = "aggregator-api-mock"))]
-    if let Some(port) = config.aggregator_url.port() {
+    if let Some(port) = config.aggregator_api_url.port() {
         tokio::task::spawn(
             trillium_tokio::config()
                 .without_signals()
