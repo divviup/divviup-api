@@ -7,7 +7,10 @@ use trillium_tokio::CloneCounterObserver;
 async fn main() {
     env_logger::init();
 
-    let config = ApiConfig::from_env().expect("Missing config");
+    let config = match ApiConfig::from_env() {
+        Ok(config) => config,
+        Err(e) => panic!("{e}"),
+    };
     let stopper = Stopper::new();
     let observer = CloneCounterObserver::default();
 

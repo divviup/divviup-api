@@ -40,7 +40,8 @@ pub enum ApiConfigError {
     InvalidUrl(#[from] url::ParseError),
 }
 
-fn var<T: FromStr>(name: &'static str, format: &'static str) -> Result<T, ApiConfigError> {
+fn var<T: FromStr>(name: &'static str) -> Result<T, ApiConfigError> {
+    let format = std::any::type_name::<T>();
     std::env::var(name)
         .map_err(|error| match error {
             VarError::NotPresent => ApiConfigError::MissingEnvVar(name),
@@ -56,8 +57,8 @@ fn var<T: FromStr>(name: &'static str, format: &'static str) -> Result<T, ApiCon
 fn var_optional<T: FromStr + 'static>(
     name: &'static str,
     default: &'static str,
-    format: &'static str,
 ) -> Result<T, ApiConfigError> {
+    let format = std::any::type_name::<T>();
     let input_res = std::env::var(name);
     let input = match &input_res {
         Ok(value) => value,
@@ -74,25 +75,21 @@ fn var_optional<T: FromStr + 'static>(
 impl ApiConfig {
     pub fn from_env() -> Result<Self, ApiConfigError> {
         Ok(Self {
-            database_url: var("DATABASE_URL", "url")?,
-            session_secret: var("SESSION_SECRET", "string")?,
-            api_url: var("API_URL", "url")?,
-            auth_client_id: var("AUTH_CLIENT_ID", "string")?,
-            auth_client_secret: var("AUTH_CLIENT_SECRET", "string")?,
-            auth_audience: var("AUTH_AUDIENCE", "string")?,
-            app_url: var("APP_URL", "url")?,
-            auth_url: var("AUTH_URL", "url")?,
-            aggregator_dap_url: var("AGGREGATOR_DAP_URL", "url")?,
-            aggregator_api_url: var("AGGREGATOR_API_URL", "url")?,
-            aggregator_secret: var("AGGREGATOR_SECRET", "string")?,
-            prometheus_host: var_optional("OTEL_EXPORTER_PROMETHEUS_HOST", "localhost", "string")?,
-            prometheus_port: var_optional(
-                "OTEL_EXPORTER_PROMETHEUS_PORT",
-                "9464",
-                "16-bit number",
-            )?,
-            postmark_token: var("POSTMARK_TOKEN", "string")?,
-            email_address: var("EMAIL_ADDRESS", "email")?,
+            database_url: var("DATABASE_URL")?,
+            session_secret: var("SESSION_SECRET")?,
+            api_url: var("API_URL")?,
+            auth_client_id: var("AUTH_CLIENT_ID")?,
+            auth_client_secret: var("AUTH_CLIENT_SECRET")?,
+            auth_audience: var("AUTH_AUDIENCE")?,
+            app_url: var("APP_URL")?,
+            auth_url: var("AUTH_URL")?,
+            aggregator_dap_url: var("AGGREGATOR_DAP_URL")?,
+            aggregator_api_url: var("AGGREGATOR_API_URL")?,
+            aggregator_secret: var("AGGREGATOR_SECRET")?,
+            prometheus_host: var_optional("OTEL_EXPORTER_PROMETHEUS_HOST", "localhost")?,
+            prometheus_port: var_optional("OTEL_EXPORTER_PROMETHEUS_PORT", "9464")?,
+            postmark_token: var("POSTMARK_TOKEN")?,
+            email_address: var("EMAIL_ADDRESS")?,
             postmark_url: Url::parse("https://api.postmarkapp.com").unwrap(),
             client: Client::new(RustlsConfig::default().with_tcp_config(ClientConfig::default()))
                 .with_default_pool(),
