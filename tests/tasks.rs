@@ -86,7 +86,7 @@ mod index {
 mod create {
     use divviup_api::{
         aggregator_api_mock::random_hpke_config,
-        entity::task::{HpkeConfig, Vdaf},
+        entity::task::{vdaf::Vdaf, HpkeConfig},
     };
 
     use super::{test, *};
