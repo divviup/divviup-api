@@ -77,7 +77,7 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
     let new_task = NewTask {
         name: Some(random_name()),
         partner_url: Some("https://dap.clodflair.test".into()),
-        vdaf: Some(task::Vdaf::Count),
+        vdaf: Some(task::vdaf::Vdaf::Count),
         min_batch_size: Some(500),
         max_batch_size: Some(10000),
         is_leader: Some(true),

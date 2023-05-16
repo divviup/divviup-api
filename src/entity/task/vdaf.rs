@@ -5,10 +5,10 @@ use validator::{Validate, ValidationError, ValidationErrors};
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq)]
 pub struct Histogram {
     #[validate(required, custom = "strictly_increasing")]
-    pub buckets: Option<Vec<i32>>,
+    pub buckets: Option<Vec<u64>>,
 }
 
-fn strictly_increasing(buckets: &Vec<i32>) -> Result<(), ValidationError> {
+fn strictly_increasing(buckets: &Vec<u64>) -> Result<(), ValidationError> {
     let mut last_bucket = None;
     for bucket in buckets {
         let bucket = *bucket;
@@ -35,6 +35,21 @@ pub struct Sum {
     pub bits: Option<u8>,
 }
 
+#[derive(Serialize, Deserialize, Validate, Debug, Clone, Copy, Eq, PartialEq)]
+pub struct CountVec {
+    #[validate(required)]
+    pub length: Option<u64>,
+}
+
+#[derive(Serialize, Deserialize, Validate, Debug, Clone, Copy, Eq, PartialEq)]
+pub struct SumVec {
+    #[validate(required)]
+    pub bits: Option<u8>,
+
+    #[validate(required)]
+    pub length: Option<u64>,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum Vdaf {
@@ -45,7 +60,13 @@ pub enum Vdaf {
     Histogram(Histogram),
 
     #[serde(rename = "sum")]
-    Sum(Sum), // 128 is ceiling
+    Sum(Sum),
+
+    #[serde(rename = "count_vec")]
+    CountVec(CountVec),
+
+    #[serde(rename = "sum_vec")]
+    SumVec(SumVec),
 
     #[serde(other)]
     Unrecognized,
@@ -59,6 +80,8 @@ impl Validate for Vdaf {
             Vdaf::Count => Ok(()),
             Vdaf::Histogram(h) => h.validate(),
             Vdaf::Sum(s) => s.validate(),
+            Vdaf::SumVec(sv) => sv.validate(),
+            Vdaf::CountVec(cv) => cv.validate(),
             Vdaf::Unrecognized => {
                 let mut errors = ValidationErrors::new();
                 errors.add("type", ValidationError::new("unknown"));

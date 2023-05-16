@@ -8,9 +8,8 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use validator::{Validate, ValidationError};
 
-mod vdaf;
-pub use vdaf::{Histogram, Sum, Vdaf};
-
+pub mod vdaf;
+use vdaf::Vdaf;
 mod url;
 use self::url::Url;
 
@@ -152,8 +151,8 @@ pub fn build_task(mut task: NewTask, api_response: TaskResponse, account: &Accou
         id: Set(api_response.task_id.to_string()),
         account_id: Set(account.id),
         name: Set(task.name.take().unwrap()),
-        leader_url: Set(api_response.aggregator_endpoints[0].clone().into()),
-        helper_url: Set(api_response.aggregator_endpoints[1].clone().into()),
+        leader_url: Set(api_response.leader_endpoint.clone().into()),
+        helper_url: Set(api_response.helper_endpoint.clone().into()),
         vdaf: Set(Vdaf::from(api_response.vdaf)),
         min_batch_size: Set(api_response.min_batch_size.try_into().unwrap()),
         max_batch_size: Set(api_response.query_type.into()),

@@ -1,5 +1,5 @@
 use crate::clients::aggregator_client::api_types::{
-    HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, JanusTime,
+    HpkeAeadId, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, JanusHpkeConfig, JanusTime,
     TaskCreate, TaskIds, TaskMetrics, TaskResponse,
 };
 use fastrand::alphanumeric;
@@ -37,7 +37,8 @@ async fn post_task(_: &mut Conn, Json(task_create): Json<TaskCreate>) -> Json<Ta
 pub fn task_response(task_create: TaskCreate) -> TaskResponse {
     TaskResponse {
         task_id: random(),
-        aggregator_endpoints: task_create.aggregator_endpoints,
+        leader_endpoint: task_create.leader_endpoint,
+        helper_endpoint: task_create.helper_endpoint,
         query_type: task_create.query_type,
         vdaf: task_create.vdaf,
         role: task_create.role,
@@ -51,15 +52,12 @@ pub fn task_response(task_create: TaskCreate) -> TaskResponse {
         collector_hpke_config: random_hpke_config(),
         aggregator_auth_tokens: vec![],
         collector_auth_tokens: vec![],
-        aggregator_hpke_configs: std::iter::repeat_with(random_hpke_config)
-            .take(5)
-            .map(|config| (*config.id(), config))
-            .collect(),
+        aggregator_hpke_configs: std::iter::repeat_with(random_hpke_config).take(5).collect(),
     }
 }
 
-pub fn random_hpke_config() -> HpkeConfig {
-    HpkeConfig::new(
+pub fn random_hpke_config() -> JanusHpkeConfig {
+    JanusHpkeConfig::new(
         random(),
         HpkeKemId::P256HkdfSha256,
         HpkeKdfId::HkdfSha512,
