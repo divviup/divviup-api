@@ -1,30 +1,32 @@
 use crate::json_newtype;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq)]
 pub struct Histogram {
-    #[validate(required, custom = "sorted", custom = "unique")]
+    #[validate(required, custom = "strictly_increasing")]
     pub buckets: Option<Vec<i32>>,
 }
 
-fn sorted(buckets: &Vec<i32>) -> Result<(), ValidationError> {
-    let mut buckets_cloned = buckets.clone();
-    buckets_cloned.sort_unstable();
-    if &buckets_cloned == buckets {
-        Ok(())
-    } else {
-        Err(ValidationError::new("sorted"))
-    }
-}
+fn strictly_increasing(buckets: &Vec<i32>) -> Result<(), ValidationError> {
+    let mut last_bucket = None;
+    for bucket in buckets {
+        let bucket = *bucket;
+        match last_bucket {
+            Some(last_bucket) if last_bucket == bucket => {
+                return Err(ValidationError::new("unique"));
+            }
 
-fn unique(buckets: &Vec<i32>) -> Result<(), ValidationError> {
-    if buckets.iter().collect::<HashSet<_>>().len() == buckets.len() {
-        Ok(())
-    } else {
-        Err(ValidationError::new("unique"))
+            Some(last_bucket) if last_bucket > bucket => {
+                return Err(ValidationError::new("sorted"));
+            }
+
+            _ => {
+                last_bucket = Some(bucket);
+            }
+        }
     }
+    Ok(())
 }
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Copy, Eq, PartialEq)]
@@ -63,5 +65,31 @@ impl Validate for Vdaf {
                 Err(errors)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_histogram() {
+        assert!(Histogram {
+            buckets: Some(vec![0, 1, 2])
+        }
+        .validate()
+        .is_ok());
+
+        assert!(Histogram {
+            buckets: Some(vec![0, 2, 1])
+        }
+        .validate()
+        .is_err());
+
+        assert!(Histogram {
+            buckets: Some(vec![0, 0, 2])
+        }
+        .validate()
+        .is_err());
     }
 }
