@@ -12,7 +12,7 @@ use url::Url;
 const ONE_YEAR: Duration = Duration::from_secs(60 * 60 * 24 * 365);
 
 pub fn static_assets(config: &ApiConfig) -> impl Handler {
-    if std::env::var("SKIP_APP_COMPILATION").is_ok() {
+    if config.skip_app_compilation {
         None
     } else {
         Some(origin_router().with_handler(

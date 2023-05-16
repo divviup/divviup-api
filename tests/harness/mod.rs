@@ -71,6 +71,7 @@ pub fn config(api_mocks: impl Handler) -> ApiConfig {
         email_address: "test@example.test".parse().unwrap(),
         postmark_url: POSTMARK_URL.parse().unwrap(),
         client: Client::new(trillium_testing::connector(api_mocks)),
+        skip_app_compilation: false,
     }
 }
 
@@ -89,7 +90,6 @@ where
     F: FnOnce(DivviupApi) -> Fut,
     Fut: Future<Output = Result<(), Box<dyn Error>>> + Send + 'static,
 {
-    std::env::remove_var("SKIP_APP_COMPILATION");
     block_on(async move {
         let (app, _) = build_test_app().await;
         f(app).await.unwrap();

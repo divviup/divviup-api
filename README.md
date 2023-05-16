@@ -47,7 +47,7 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 * `LISTEN_FD` -- if supplied on unix-like systems, if this is set to an open file descriptor number, the server will listen to that fd
 * `OTEL_EXPORTER_PROMETHEUS_HOST` -- default `"localhost"`
 * `OTEL_EXPORTER_PROMETHEUS_PORT` -- default `9464`
-* `SKIP_APP_COMPILATION` -- we currently build the react app in a build script. To avoid this behavior, set this environment variable.
+* `SKIP_APP_COMPILATION` -- we currently build the react app in a build script. To avoid this behavior, set this environment variable to `true`.
 * `ASSET_DIR` -- set this to skip building the react app and include react app assets from a different directory
 
 ## Initial setup
@@ -136,7 +136,7 @@ $ cargo run --features aggregator-api-mock
 By default, building the rust server will also build the react app. To skip this (for example, when running a development server), set `SKIP_APP_COMPIILATION=1`
 
 ```bash
-$ SKIP_APP_COMPILATION=1 cargo run --features aggregator-api-mock
+$ SKIP_APP_COMPILATION=true cargo run --features aggregator-api-mock
 ```
 
 ### Running the React development server
