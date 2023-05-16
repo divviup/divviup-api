@@ -7,11 +7,15 @@ pub use auth0_client::Auth0Client;
 pub use postmark_client::PostmarkClient;
 use trillium::{async_trait, Status};
 use trillium_client::{ClientSerdeError, Conn};
+use trillium_http::Method;
+use url::Url;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {
-    #[error("unexpected api client http status {status:?}: {body}")]
+    #[error("unexpected http status {method} {url} {status:?}: {body}")]
     HttpStatusNotSuccess {
+        method: Method,
+        url: Url,
         status: Option<Status>,
         body: String,
     },
@@ -37,8 +41,15 @@ impl ClientConnExt for Conn {
             Ok(conn) => Ok(conn),
             Err(mut error) => {
                 let status = error.status();
+                let url = error.url().clone();
+                let method = error.method();
                 let body = error.response_body().await?;
-                Err(ClientError::HttpStatusNotSuccess { status, body })
+                Err(ClientError::HttpStatusNotSuccess {
+                    method,
+                    url,
+                    status,
+                    body,
+                })
             }
         }
     }

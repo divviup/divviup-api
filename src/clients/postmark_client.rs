@@ -2,6 +2,7 @@ use crate::{
     clients::{ClientConnExt, ClientError},
     ApiConfig,
 };
+use email_address::EmailAddress;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 use trillium::{async_trait, Conn, KnownHeaderName};
@@ -13,7 +14,7 @@ use url::Url;
 pub struct PostmarkClient {
     token: String,
     client: Client,
-    email: String,
+    email: EmailAddress,
     base_url: Url,
 }
 
@@ -39,7 +40,7 @@ impl PostmarkClient {
         email
             .as_object_mut()
             .unwrap()
-            .insert("From".into(), self.email.clone().into());
+            .insert("From".into(), self.email.to_string().into());
         self.post("/email", &email).await
     }
 
@@ -48,14 +49,24 @@ impl PostmarkClient {
         to: &str,
         template_name: &str,
         model: &impl Serialize,
+        message_id: Option<String>,
     ) -> Result<Value, ClientError> {
+        let headers = match message_id {
+            Some(m) => json!([{
+                "Name": "Message-ID",
+                "Value": format!("<{m}@{}>", self.email.domain())
+            }]),
+            None => json!([]),
+        };
+
         self.post(
             "/email/withTemplate",
             &json!({
                 "To": to,
                 "From": self.email,
                 "TemplateAlias": template_name,
-                "TemplateModel": model
+                "TemplateModel": model,
+                "Headers": headers
             }),
         )
         .await

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use git_version::git_version;
 use opentelemetry::{
     global,
@@ -10,16 +8,12 @@ use opentelemetry::{
     },
     Context, KeyValue,
 };
-use tokio::{spawn, task::JoinHandle};
-use trillium_http::Stopper;
+use std::sync::Arc;
 
-/// Install a Prometheus metrics provider and exporter. The OpenTelemetry global API can be used to
-/// create and update instruments, and they will be sent through this exporter.
-pub fn install_metrics_exporter(
-    host: &str,
-    port: u16,
-    stopper: Stopper,
-) -> Result<JoinHandle<()>, MetricsError> {
+/// Install a Prometheus metrics provider and exporter. The
+/// OpenTelemetry global API can be used to create and update
+/// instruments, and they will be sent through this exporter.
+pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricsError> {
     let exporter = Arc::new(
         opentelemetry_prometheus::exporter(
             controllers::basic(processors::factory(
@@ -55,14 +49,7 @@ pub fn install_metrics_exporter(
         ],
     );
 
-    let router = trillium_prometheus::text_format_handler(exporter.registry().clone());
-
-    Ok(spawn(
-        trillium_tokio::config()
-            .with_host(host)
-            .with_port(port)
-            .without_signals()
-            .with_stopper(stopper)
-            .run_async(router),
+    Ok(trillium_prometheus::text_format_handler(
+        exporter.registry().clone(),
     ))
 }

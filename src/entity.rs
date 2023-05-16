@@ -1,7 +1,11 @@
 pub mod account;
 pub mod membership;
+pub mod queue;
 pub mod session;
 pub mod task;
+
+#[macro_use]
+pub mod macros;
 
 pub use account::{
     Column as AccountColumn, Entity as Accounts, Model as Account, NewAccount, UpdateAccount,

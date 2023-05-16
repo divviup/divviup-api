@@ -1,11 +1,11 @@
 use crate::{
-    clients::Auth0Client,
     entity::{Account, Accounts, CreateMembership, MembershipColumn, Memberships},
     handler::Error,
+    queue::Job,
     user::User,
     Db,
 };
-use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait};
+use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait, TransactionTrait};
 use trillium::{Conn, Handler, Status};
 use trillium_api::Json;
 use trillium_caching_headers::CachingHeadersExt;
@@ -25,20 +25,24 @@ pub async fn index(conn: &mut Conn, (account, db): (Account, Db)) -> Result<impl
 
 pub async fn create(
     _: &mut Conn,
-    (account, Json(membership), db, client): (Account, Json<CreateMembership>, Db, Auth0Client),
+    (account, Json(membership), db): (Account, Json<CreateMembership>, Db),
 ) -> Result<impl Handler, Error> {
     let membership = membership.build(&account)?;
+    let tx = db.begin().await?;
+
     let first_membership_for_this_email = Memberships::find()
         .filter(MembershipColumn::UserEmail.eq(membership.user_email.as_ref()))
-        .one(&db)
+        .one(&tx)
         .await?
         .is_none();
 
-    let membership = membership.insert(&db).await?;
+    let membership = membership.insert(&tx).await?;
 
     if first_membership_for_this_email && !cfg!(feature = "integration-testing") {
-        client.invite(&membership.user_email, &account.name).await?;
+        Job::new_invitation_flow(&membership).insert(&tx).await?;
     }
+
+    tx.commit().await?;
 
     Ok((Json(membership), Status::Created))
 }

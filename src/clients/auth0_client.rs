@@ -1,11 +1,12 @@
 use async_lock::RwLock;
+use rand::distributions::{Alphanumeric, DistString};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use std::{
     sync::Arc,
     time::{Duration, SystemTime},
 };
-use tokio::task::spawn;
+
 use trillium::{
     Conn,
     KnownHeaderName::{Accept, Authorization, ContentType},
@@ -16,7 +17,6 @@ use url::Url;
 
 use crate::{
     clients::{ClientConnExt, ClientError, PostmarkClient},
-    entity::{Account, Membership},
     ApiConfig,
 };
 
@@ -37,6 +37,10 @@ impl FromConn for Auth0Client {
     }
 }
 
+fn generate_password() -> String {
+    Alphanumeric.sample_string(&mut rand::thread_rng(), 60)
+}
+
 impl Auth0Client {
     pub fn new(config: &ApiConfig) -> Self {
         Self {
@@ -49,15 +53,13 @@ impl Auth0Client {
         }
     }
 
-    pub async fn invite(&self, email: &str, account_name: &str) -> Result<(), ClientError> {
-        let user = self.create_user(email).await?;
-        let user_id = user
-            .get("user_id")
-            .ok_or_else(|| ClientError::Other("expected user_id".into()))?
-            .as_str()
-            .unwrap();
-        let reset = self.password_reset(user_id).await?;
-
+    pub async fn invite(
+        &self,
+        email: &str,
+        account_name: &str,
+    ) -> Result<(String, Url), ClientError> {
+        let user_id = self.create_user(email).await?;
+        let reset = self.password_reset(&user_id).await?;
         self.postmark_client
             .send_email_template(
                 email,
@@ -67,9 +69,11 @@ impl Auth0Client {
                     "account_name": account_name,
                     "action_url": reset
                 }),
+                None,
             )
             .await?;
-        Ok(())
+
+        Ok((user_id.to_string(), reset))
     }
 
     pub async fn password_reset(&self, user_id: &str) -> Result<Url, ClientError> {
@@ -84,30 +88,28 @@ impl Auth0Client {
         .ok_or(ClientError::Other("password reset".to_string()))
     }
 
-    pub async fn create_user(&self, email: &str) -> Result<Value, ClientError> {
-        self.post("/api/v2/users", &json!({
-            "connection": "Username-Password-Authentication",
-            "email": email,
-            "password": std::iter::repeat_with(fastrand::alphanumeric).take(60).collect::<String>(),
-            "verify_email": false
-        })).await
+    pub async fn create_user(&self, email: &str) -> Result<String, ClientError> {
+        let user: serde_json::Value = self
+            .post(
+                "/api/v2/users",
+                &json!({
+                    "connection": "Username-Password-Authentication",
+                    "email": email,
+                    "password": generate_password(),
+                    "verify_email": false
+                }),
+            )
+            .await?;
+
+        user.get("user_id")
+            .ok_or_else(|| ClientError::Other("expected user_id".into()))?
+            .as_str()
+            .ok_or_else(|| ClientError::Other("expected user_id to be a string".into()))
+            .map(String::from)
     }
 
     pub async fn users(&self) -> Result<Vec<Value>, ClientError> {
         self.get("/api/v2/users").await
-    }
-
-    pub fn spawn_invitation_task(&self, membership: Membership, account: Account) {
-        let client = self.clone();
-        spawn(async move {
-            match client.invite(&membership.user_email, &account.name).await {
-                Ok(()) => log::info!("sent email regarding {membership:?}"),
-
-                Err(e) => log::error!(
-                    "error while sending email regarding membership {membership:?}: \n\n{e}"
-                ),
-            }
-        });
     }
 
     // private below here

@@ -42,3 +42,13 @@ pub async fn user_required(_: &mut Conn, user: Option<User>) -> impl Handler {
         None
     }
 }
+
+pub async fn admin_required(_: &mut Conn, user: Option<User>) -> impl Handler {
+    if matches!(user, Some(user) if user.is_admin()) {
+        None
+    } else {
+        // we return not found instead of forbidden so as to not
+        // reveal what admin endpoints exist
+        Some((Status::NotFound, Halt))
+    }
+}

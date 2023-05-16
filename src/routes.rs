@@ -1,4 +1,5 @@
 mod accounts;
+mod admin;
 mod health_check;
 mod memberships;
 mod tasks;
@@ -66,7 +67,8 @@ fn api_routes(config: &ApiConfig) -> impl Handler {
                 &[Patch, Get, Post],
                 "/accounts/:account_id/*",
                 accounts_routes(config),
-            ),
+            )
+            .all("/admin/*", admin::routes()),
     )
 }
 

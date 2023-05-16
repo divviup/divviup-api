@@ -2,6 +2,8 @@ mod harness;
 use harness::*;
 
 mod create {
+    use divviup_api::{entity::queue, queue::CreateUser};
+
     use super::{test, *};
 
     #[test(harness = set_up)]
@@ -19,12 +21,18 @@ mod create {
         let membership: Membership = conn.response_json().await;
         assert_eq!(membership.user_email, "someone.else@example.com");
         assert_eq!(membership.account_id, account.id);
+        let membership_id = membership.id;
 
-        assert!(Memberships::find_by_id(membership.id)
+        assert!(Memberships::find_by_id(membership_id)
             .one(app.db())
             .await?
             .is_some());
 
+        let queue = queue::Entity::find().all(app.db()).await?;
+        assert_eq!(queue.len(), 1);
+        let queue_job = &queue[0];
+        assert_eq!(queue_job.job, CreateUser { membership_id });
+        // the rest of the invitation process is tested elsewhere
         Ok(())
     }
 

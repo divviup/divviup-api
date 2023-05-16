@@ -6,6 +6,8 @@ import { Suspense } from "react";
 import NavDropdown from "react-bootstrap/NavDropdown";
 import logo from "./logo/color/svg/cropped.svg";
 import { LinkContainer } from "react-router-bootstrap";
+import { Nav } from "react-bootstrap";
+
 function HeaderPlaceholder() {
   return (
     <Navbar bg="light">
@@ -30,6 +32,15 @@ function LoggedInHeader() {
         <Navbar.Brand as={Link} to="/accounts">
           <img src={logo} alt="DivviUp" width="100" />
         </Navbar.Brand>
+
+        {user.admin ? (
+          <Nav className="me-auto">
+            <LinkContainer to="/admin/queue">
+              <Nav.Link>Queue</Nav.Link>
+            </LinkContainer>
+          </Nav>
+        ) : null}
+
         <NavDropdown title={user.name}>
           <LinkContainer to="/logout">
             <NavDropdown.Item>Log Out</NavDropdown.Item>

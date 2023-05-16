@@ -1,41 +1,47 @@
-use std::panic;
+use divviup_api::{ApiConfig, DivviupApi, Queue};
 
-use divviup_api::{telemetry::install_metrics_exporter, ApiConfig, DivviupApi};
 use trillium_http::Stopper;
+use trillium_tokio::CloneCounterObserver;
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
 
-    let config = ApiConfig::from_env().expect("Missing config");
+    let config = match ApiConfig::from_env() {
+        Ok(config) => config,
+        Err(e) => panic!("{e}"),
+    };
     let stopper = Stopper::new();
+    let observer = CloneCounterObserver::default();
 
-    let metrics_task_handle = install_metrics_exporter(
-        &config.prometheus_host,
-        config.prometheus_port,
-        stopper.clone(),
-    )
-    .expect("Error setting up metrics");
+    trillium_tokio::config()
+        .without_signals()
+        .with_port(config.prometheus_port)
+        .with_host(&config.prometheus_host)
+        .with_observer(observer.clone())
+        .with_stopper(stopper.clone())
+        .spawn(divviup_api::telemetry::metrics_exporter().unwrap());
 
     #[cfg(all(debug_assertions, feature = "aggregator-api-mock"))]
     if let Some(port) = config.aggregator_api_url.port() {
-        tokio::task::spawn(
-            trillium_tokio::config()
-                .without_signals()
-                .with_port(port)
-                .with_stopper(stopper.clone())
-                .run_async(divviup_api::aggregator_api_mock::aggregator_api()),
-        );
+        trillium_tokio::config()
+            .without_signals()
+            .with_port(port)
+            .with_observer(observer.clone())
+            .with_stopper(stopper.clone())
+            .spawn(divviup_api::aggregator_api_mock::aggregator_api());
     }
+
+    let app = DivviupApi::new(config).await;
+
+    Queue::new(app.db(), app.config())
+        .with_observer(observer.clone())
+        .with_stopper(stopper.clone())
+        .spawn_workers();
 
     trillium_tokio::config()
         .with_stopper(stopper)
-        .run_async(DivviupApi::new(config).await)
+        .with_observer(observer)
+        .spawn(app)
         .await;
-
-    if let Err(e) = metrics_task_handle.await {
-        if let Ok(reason) = e.try_into_panic() {
-            panic::resume_unwind(reason);
-        }
-    }
 }
