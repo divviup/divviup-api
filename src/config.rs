@@ -26,6 +26,7 @@ pub struct ApiConfig {
     pub email_address: EmailAddress,
     pub postmark_url: Url,
     pub client: Client,
+    pub skip_app_compilation: bool,
 }
 
 #[derive(Debug, Error, Clone, Copy)]
@@ -54,22 +55,11 @@ fn var<T: FromStr>(name: &'static str) -> Result<T, ApiConfigError> {
         })
 }
 
-fn var_optional<T: FromStr + 'static>(
-    name: &'static str,
-    default: &'static str,
-) -> Result<T, ApiConfigError> {
-    let format = std::any::type_name::<T>();
-    let input_res = std::env::var(name);
-    let input = match &input_res {
-        Ok(value) => value,
-        Err(VarError::NotPresent) => default,
-        Err(VarError::NotUnicode(_)) => {
-            return Err(ApiConfigError::InvalidEnvVarFormat(name, format))
-        }
-    };
-    input
-        .parse()
-        .map_err(|_| ApiConfigError::InvalidEnvVarFormat(name, format))
+fn var_optional<T: FromStr>(name: &'static str, default: T) -> Result<T, ApiConfigError> {
+    match var(name) {
+        Err(ApiConfigError::MissingEnvVar(_)) => Ok(default),
+        other => other,
+    }
 }
 
 impl ApiConfig {
@@ -86,11 +76,12 @@ impl ApiConfig {
             aggregator_dap_url: var("AGGREGATOR_DAP_URL")?,
             aggregator_api_url: var("AGGREGATOR_API_URL")?,
             aggregator_secret: var("AGGREGATOR_SECRET")?,
-            prometheus_host: var_optional("OTEL_EXPORTER_PROMETHEUS_HOST", "localhost")?,
-            prometheus_port: var_optional("OTEL_EXPORTER_PROMETHEUS_PORT", "9464")?,
+            prometheus_host: var_optional("OTEL_EXPORTER_PROMETHEUS_HOST", "localhost".into())?,
+            prometheus_port: var_optional("OTEL_EXPORTER_PROMETHEUS_PORT", 9464)?,
             postmark_token: var("POSTMARK_TOKEN")?,
             email_address: var("EMAIL_ADDRESS")?,
             postmark_url: Url::parse("https://api.postmarkapp.com").unwrap(),
+            skip_app_compilation: var_optional("SKIP_APP_COMPILATION", false)?,
             client: Client::new(RustlsConfig::default().with_tcp_config(ClientConfig::default()))
                 .with_default_pool(),
         })
