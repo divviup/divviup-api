@@ -119,6 +119,9 @@ pub fn build_task(mut task: NewTask, api_response: TaskResponse, account: &Accou
         time_precision_seconds: Set(api_response.time_precision.as_seconds().try_into().unwrap()),
         report_count: Set(0),
         aggregate_collection_count: Set(0),
-        expiration: Set(task.expiration.take()),
+        expiration: Set(api_response.task_expiration.map(|t| {
+            OffsetDateTime::from_unix_timestamp(t.as_seconds_since_epoch().try_into().unwrap())
+                .unwrap()
+        })),
     }
 }
