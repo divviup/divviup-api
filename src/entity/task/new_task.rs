@@ -6,7 +6,7 @@ const URL_SAFE_BASE64_CHARS: &[u8] =
 fn url_safe_base64(data: &str) -> Result<(), ValidationError> {
     if data
         .chars()
-        .all(|c| URL_SAFE_BASE64_CHARS.contains(&(c as u8)))
+        .all(|c| u8::try_from(c).map_or(false, |c| URL_SAFE_BASE64_CHARS.contains(&c)))
     {
         Ok(())
     } else {
@@ -95,6 +95,15 @@ mod tests {
         assert_errors(
             NewTask {
                 id: Some("🦀".into()),
+                ..Default::default()
+            },
+            "id",
+            &["length", "base64"],
+        );
+
+        assert_errors(
+            NewTask {
+                id: Some("\u{205f}".into()),
                 ..Default::default()
             },
             "id",
