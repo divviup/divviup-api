@@ -84,6 +84,10 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         expiration: None,
         time_precision_seconds: Some(60 * 60),
         hpke_config: Some(random_hpke_config().into()),
+        id: None,
+        vdaf_verify_key: None,
+        aggregator_auth_token: None,
+        collector_auth_token: None,
     };
     new_task.validate().unwrap();
     let task_create = TaskCreate::build(new_task.clone(), app.config()).unwrap();

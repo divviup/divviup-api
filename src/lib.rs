@@ -25,3 +25,6 @@ pub use handler::DivviupApi;
 pub use queue::Queue;
 pub use routes::routes;
 pub use user::{User, USER_SESSION_KEY};
+
+#[cfg(test)]
+pub mod test;

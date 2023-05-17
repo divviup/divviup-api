@@ -36,7 +36,10 @@ async fn post_task(_: &mut Conn, Json(task_create): Json<TaskCreate>) -> Json<Ta
 
 pub fn task_response(task_create: TaskCreate) -> TaskResponse {
     TaskResponse {
-        task_id: random(),
+        task_id: task_create
+            .task_id
+            .and_then(|t| t.parse().ok())
+            .unwrap_or_else(random),
         leader_endpoint: task_create.leader_endpoint,
         helper_endpoint: task_create.helper_endpoint,
         query_type: task_create.query_type,

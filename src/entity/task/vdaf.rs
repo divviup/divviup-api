@@ -94,6 +94,7 @@ impl Validate for Vdaf {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test::assert_errors;
 
     #[test]
     fn validate_histogram() {
@@ -103,16 +104,20 @@ mod tests {
         .validate()
         .is_ok());
 
-        assert!(Histogram {
-            buckets: Some(vec![0, 2, 1])
-        }
-        .validate()
-        .is_err());
+        assert_errors(
+            Histogram {
+                buckets: Some(vec![0, 2, 1]),
+            },
+            "buckets",
+            &["sorted"],
+        );
 
-        assert!(Histogram {
-            buckets: Some(vec![0, 0, 2])
-        }
-        .validate()
-        .is_err());
+        assert_errors(
+            Histogram {
+                buckets: Some(vec![0, 0, 2]),
+            },
+            "buckets",
+            &["unique"],
+        );
     }
 }
