@@ -27,7 +27,7 @@ pub struct NewTask {
     #[validate(length(equal = 43), custom = "url_safe_base64")] // 32 bytes after base64 decode
     pub id: Option<String>,
 
-    #[validate(length(equal = 86), custom = "url_safe_base64")] // 64 bytes after base64 decode
+    #[validate(length(equal = 22), custom = "url_safe_base64")] // 16 bytes after base64 decode
     pub vdaf_verify_key: Option<String>,
 
     #[validate(length(min = 1))]
