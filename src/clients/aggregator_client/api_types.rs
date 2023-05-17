@@ -129,6 +129,14 @@ impl From<Option<i64>> for QueryType {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskCreate {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub vdaf_verify_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aggregator_auth_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub collector_auth_token: Option<String>,
     pub leader_endpoint: Url,
     pub helper_endpoint: Url,
     pub query_type: QueryType,
@@ -169,6 +177,10 @@ impl TaskCreate {
             min_batch_size: new_task.min_batch_size.unwrap(),
             time_precision: new_task.time_precision_seconds.unwrap(),
             collector_hpke_config: new_task.hpke_config.unwrap().try_into()?,
+            task_id: new_task.id,
+            vdaf_verify_key: new_task.vdaf_verify_key,
+            aggregator_auth_token: new_task.aggregator_auth_token,
+            collector_auth_token: new_task.collector_auth_token,
         })
     }
 }

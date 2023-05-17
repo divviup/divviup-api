@@ -10,6 +10,8 @@ use validator::{Validate, ValidationError};
 
 pub mod vdaf;
 use vdaf::Vdaf;
+mod new_task;
+pub use new_task::NewTask;
 mod url;
 use self::url::Url;
 
@@ -67,44 +69,6 @@ impl Related<membership::Entity> for Entity {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-#[derive(Deserialize, Validate, Debug, Clone)]
-pub struct NewTask {
-    #[validate(required, length(min = 1))]
-    pub name: Option<String>,
-
-    #[validate(required, url)]
-    pub partner_url: Option<String>,
-
-    #[validate(required_nested)]
-    pub vdaf: Option<Vdaf>,
-
-    #[validate(required, range(min = 100))]
-    pub min_batch_size: Option<u64>,
-
-    #[validate(range(min = 0))]
-    pub max_batch_size: Option<u64>,
-
-    #[validate(required)]
-    pub is_leader: Option<bool>,
-
-    #[validate(custom = "in_the_future")]
-    #[serde(default, with = "time::serde::iso8601::option")]
-    pub expiration: Option<TimeDateTimeWithTimeZone>,
-
-    #[validate(
-        required,
-        range(
-            min = 60,
-            max = 2592000,
-            message = "must be between 1 minute and 4 weeks"
-        )
-    )]
-    pub time_precision_seconds: Option<u64>,
-
-    #[validate(required_nested)]
-    pub hpke_config: Option<HpkeConfig>,
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Validate)]
 pub struct HpkeConfig {
     #[validate(required)]
@@ -123,19 +87,12 @@ pub struct HpkeConfig {
     pub public_key: Option<String>,
 }
 
-fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError> {
-    if time < &TimeDateTimeWithTimeZone::now_utc() {
-        Err(ValidationError::new("past"))
-    } else {
-        Ok(())
-    }
-}
-
 #[derive(Deserialize, Validate, Debug)]
 pub struct UpdateTask {
     #[validate(required, length(min = 1))]
     pub name: Option<String>,
 }
+
 impl UpdateTask {
     pub fn build(self, model: Model) -> Result<ActiveModel, Error> {
         self.validate()?;
