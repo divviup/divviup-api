@@ -124,7 +124,7 @@ mod tests {
         assert_errors(
             NewTask {
                 vdaf_verify_key: Some(
-                    URL_SAFE_NO_PAD.encode(repeat_with(random::<u8>).take(64).collect::<Vec<_>>()),
+                    URL_SAFE_NO_PAD.encode(repeat_with(random::<u8>).take(16).collect::<Vec<_>>()),
                 ),
                 ..Default::default()
             },
