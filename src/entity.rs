@@ -16,3 +16,17 @@ pub use membership::{
 pub use task::{Column as TaskColumn, Entity as Tasks, Model as Task, NewTask, UpdateTask};
 
 pub use session::{Entity as Sessions, Model as Session};
+
+const URL_SAFE_BASE64_CHARS: &[u8] =
+    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+fn url_safe_base64(data: &str) -> Result<(), validator::ValidationError> {
+    if data
+        .chars()
+        .all(|c| u8::try_from(c).map_or(false, |c| URL_SAFE_BASE64_CHARS.contains(&c)))
+    {
+        Ok(())
+    } else {
+        Err(validator::ValidationError::new("base64"))
+    }
+}

@@ -220,7 +220,10 @@ pub struct TaskMetrics {
 
 #[cfg(test)]
 mod test {
-    use super::{TaskCreate, TaskResponse};
+    use super::{JanusHpkeConfig, TaskCreate, TaskResponse};
+    use crate::{aggregator_api_mock::random_hpke_config, entity::task::HpkeConfig};
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+    use validator::Validate;
 
     const TASK_CREATE: &str = r#"{
   "leader_endpoint": "https://example.com/",
@@ -311,8 +314,28 @@ mod test {
         let task_response: TaskResponse = serde_json::from_str(TASK_RESPONSE).unwrap();
 
         assert_eq!(
+            task_response.collector_hpke_config.public_key().as_ref(),
+            vec![0; 32]
+        );
+
+        assert_eq!(
             serde_json::to_string_pretty(&task_response).unwrap(),
             TASK_RESPONSE
+        );
+    }
+
+    #[test]
+    fn hpke_config_conversion() {
+        let janus_hpke_config = random_hpke_config();
+        let hpke_config: HpkeConfig = janus_hpke_config.clone().try_into().unwrap();
+        assert!(hpke_config.validate().is_ok());
+        assert_eq!(
+            hpke_config.public_key.as_deref().unwrap(),
+            URL_SAFE_NO_PAD.encode(janus_hpke_config.public_key())
+        );
+        assert_eq!(
+            janus_hpke_config,
+            JanusHpkeConfig::try_from(hpke_config).unwrap()
         );
     }
 }
