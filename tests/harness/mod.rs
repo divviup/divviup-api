@@ -64,7 +64,7 @@ pub fn config(api_mocks: impl Handler) -> ApiConfig {
         auth_audience: "aud".into(),
         aggregator_dap_url: "https://dap.divviup.test".parse().unwrap(),
         aggregator_api_url: AGGREGATOR_API_URL.parse().unwrap(),
-        aggregator_secret: "unused".into(),
+        aggregator_secret: "ZG9lc25vdG1hdHRlcg==".parse().unwrap(),
         prometheus_host: "localhost".into(),
         prometheus_port: 9464,
         postmark_token: "-".into(),
