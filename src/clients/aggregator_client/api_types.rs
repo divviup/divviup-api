@@ -76,7 +76,7 @@ impl TryFrom<HpkeConfig> for JanusHpkeConfig {
             value.kem_id.unwrap().try_into()?,
             value.kdf_id.unwrap().try_into()?,
             value.aead_id.unwrap().try_into()?,
-            value.public_key.unwrap().into_bytes().into(),
+            URL_SAFE_NO_PAD.decode(value.public_key.unwrap())?.into(),
         ))
     }
 }
