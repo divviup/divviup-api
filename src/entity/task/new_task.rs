@@ -1,19 +1,5 @@
 use super::*;
 
-const URL_SAFE_BASE64_CHARS: &[u8] =
-    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-
-fn url_safe_base64(data: &str) -> Result<(), ValidationError> {
-    if data
-        .chars()
-        .all(|c| u8::try_from(c).map_or(false, |c| URL_SAFE_BASE64_CHARS.contains(&c)))
-    {
-        Ok(())
-    } else {
-        Err(ValidationError::new("base64"))
-    }
-}
-
 fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError> {
     if time < &TimeDateTimeWithTimeZone::now_utc() {
         Err(ValidationError::new("past"))

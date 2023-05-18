@@ -55,7 +55,7 @@ pub fn task_response(task_create: TaskCreate) -> TaskResponse {
         collector_hpke_config: random_hpke_config(),
         aggregator_auth_tokens: vec![],
         collector_auth_tokens: vec![],
-        aggregator_hpke_configs: std::iter::repeat_with(random_hpke_config).take(5).collect(),
+        aggregator_hpke_configs: repeat_with(random_hpke_config).take(5).collect(),
     }
 }
 
@@ -65,7 +65,7 @@ pub fn random_hpke_config() -> JanusHpkeConfig {
         HpkeKemId::P256HkdfSha256,
         HpkeKdfId::HkdfSha512,
         HpkeAeadId::Aes256Gcm,
-        HpkePublicKey::from(Vec::new()),
+        HpkePublicKey::from(repeat_with(random::<u8>).take(32).collect::<Vec<_>>()),
     )
 }
 
@@ -73,23 +73,21 @@ async fn task_ids(conn: &mut Conn, (): ()) -> Result<Json<TaskIds>, Status> {
     let query = QueryStrong::parse(conn.querystring()).map_err(|_| Status::InternalServerError)?;
     match query.get_str("pagination_token") {
         None => Ok(Json(TaskIds {
-            task_ids: std::iter::repeat_with(|| Uuid::new_v4().to_string())
+            task_ids: repeat_with(|| Uuid::new_v4().to_string())
                 .take(10)
                 .collect(),
             pagination_token: Some("second".into()),
         })),
 
         Some("second") => Ok(Json(TaskIds {
-            task_ids: std::iter::repeat_with(|| Uuid::new_v4().to_string())
+            task_ids: repeat_with(|| Uuid::new_v4().to_string())
                 .take(10)
                 .collect(),
             pagination_token: Some("last".into()),
         })),
 
         _ => Ok(Json(TaskIds {
-            task_ids: std::iter::repeat_with(|| Uuid::new_v4().to_string())
-                .take(5)
-                .collect(),
+            task_ids: repeat_with(|| Uuid::new_v4().to_string()).take(5).collect(),
             pagination_token: None,
         })),
     }

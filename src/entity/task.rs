@@ -1,6 +1,6 @@
 use crate::{
     clients::aggregator_client::api_types::{Role, TaskResponse},
-    entity::{account, membership, Account},
+    entity::{account, membership, url_safe_base64, Account},
     handler::Error,
 };
 use sea_orm::{entity::prelude::*, ActiveValue::Set, IntoActiveModel};
@@ -83,7 +83,7 @@ pub struct HpkeConfig {
     #[validate(required)]
     pub aead_id: Option<u16>,
 
-    #[validate(required)]
+    #[validate(required, custom = "url_safe_base64", length(min = 1))]
     pub public_key: Option<String>,
 }
 
