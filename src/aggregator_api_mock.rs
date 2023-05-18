@@ -1,6 +1,6 @@
 use crate::clients::aggregator_client::api_types::{
-    HpkeAeadId, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, JanusHpkeConfig, JanusTime,
-    TaskCreate, TaskIds, TaskMetrics, TaskResponse,
+    HpkeAeadId, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, JanusHpkeConfig, TaskCreate,
+    TaskIds, TaskMetrics, TaskResponse,
 };
 use fastrand::alphanumeric;
 use querystrong::QueryStrong;
@@ -47,7 +47,7 @@ pub fn task_response(task_create: TaskCreate) -> TaskResponse {
         role: task_create.role,
         vdaf_verify_keys: vec![repeat_with(alphanumeric).take(10).collect()],
         max_batch_query_count: task_create.max_batch_query_count,
-        task_expiration: JanusTime::from_seconds_since_epoch(task_create.task_expiration),
+        task_expiration: task_create.task_expiration,
         report_expiry_age: None,
         min_batch_size: task_create.min_batch_size,
         time_precision: JanusDuration::from_seconds(task_create.time_precision),

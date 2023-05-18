@@ -143,7 +143,7 @@ pub struct TaskCreate {
     pub vdaf: VdafInstance,
     pub role: Role,
     pub max_batch_query_count: u64,
-    pub task_expiration: u64,
+    pub task_expiration: Option<JanusTime>,
     pub min_batch_size: u64,
     pub time_precision: u64,
     pub collector_hpke_config: JanusHpkeConfig,
@@ -170,10 +170,9 @@ impl TaskCreate {
                 Role::Helper
             },
             max_batch_query_count: 1,
-            task_expiration: new_task
-                .expiration
-                .map(|task| task.unix_timestamp().try_into().unwrap())
-                .unwrap_or(u64::MAX),
+            task_expiration: new_task.expiration.map(|task| {
+                JanusTime::from_seconds_since_epoch(task.unix_timestamp().try_into().unwrap())
+            }),
             min_batch_size: new_task.min_batch_size.unwrap(),
             time_precision: new_task.time_precision_seconds.unwrap(),
             collector_hpke_config: new_task.hpke_config.unwrap().try_into()?,
@@ -195,7 +194,7 @@ pub struct TaskResponse {
     pub role: Role,
     pub vdaf_verify_keys: Vec<String>,
     pub max_batch_query_count: u64,
-    pub task_expiration: JanusTime,
+    pub task_expiration: Option<JanusTime>,
     pub report_expiry_age: Option<JanusDuration>,
     pub min_batch_size: u64,
     pub time_precision: JanusDuration,
