@@ -1,5 +1,7 @@
-#![allow(dead_code)] // because different tests use different parts of this
+#![allow(dead_code)]
+// because different tests use different parts of this
 use divviup_api::{entity::queue, ApiConfig, Db};
+use janus_messages::HpkeConfig;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, future::Future};
 use trillium::Handler;
@@ -35,6 +37,14 @@ pub use api_mocks::ApiMocks;
 const POSTMARK_URL: &str = "https://postmark.example";
 const AGGREGATOR_API_URL: &str = "https://aggregator.example";
 const AUTH0_URL: &str = "https://auth.example";
+
+pub fn encode_hpke_config(hpke_config: HpkeConfig) -> String {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    use prio::codec::Encode;
+    let mut vec = Vec::new();
+    hpke_config.encode(&mut vec);
+    STANDARD.encode(vec)
+}
 
 async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
     let backend = db.get_database_backend();

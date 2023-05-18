@@ -84,12 +84,8 @@ mod index {
 }
 
 mod create {
-    use divviup_api::{
-        aggregator_api_mock::random_hpke_config,
-        entity::task::{vdaf::Vdaf, HpkeConfig},
-    };
-
     use super::{test, *};
+    use divviup_api::{aggregator_api_mock::random_hpke_config, entity::task::vdaf::Vdaf};
 
     fn valid_task_json() -> Value {
         json!({
@@ -99,7 +95,7 @@ mod create {
             "min_batch_size": 500,
             "is_leader": true,
             "time_precision_seconds": 60,
-            "hpke_config": HpkeConfig::from(random_hpke_config())
+            "hpke_config": encode_hpke_config(random_hpke_config())
         })
     }
 
@@ -139,13 +135,7 @@ mod create {
                 "vdaf": { "type": "poplar1" },
                 "min_batch_size": 50,
                 "time_precision_seconds": 1,
-                "hpke_config": {
-                    "id": 1,
-                    "kem_id": 1,
-                    "kdf_id": 1,
-                    "aead_id": 1,
-                    "public_key": "key"
-                }
+                "hpke_config": ""
             }))
             .run_async(&app)
             .await;

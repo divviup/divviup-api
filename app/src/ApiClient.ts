@@ -78,17 +78,9 @@ export type NewTask = Omit<
   | "created_at"
   | "updated_at"
 > & {
-  hpke_config: HpkeConfig;
+  hpke_config: string;
   partner_url: string;
 };
-
-export interface HpkeConfig {
-  id: number;
-  kem_id: number;
-  kdf_id: number;
-  aead_id: number;
-  public_key: string;
-}
 
 export interface UpdateTask {
   name: string;
@@ -321,8 +313,8 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-    ? ValidationErrorsFor<T[K]>
-    : ValidationError[];
+  ? ValidationErrorsFor<T[K]>
+  : ValidationError[];
 };
 
 export interface ValidationError {

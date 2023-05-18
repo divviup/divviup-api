@@ -69,24 +69,6 @@ impl Related<membership::Entity> for Entity {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Validate)]
-pub struct HpkeConfig {
-    #[validate(required)]
-    pub id: Option<u8>,
-
-    #[validate(required)]
-    pub kem_id: Option<u16>,
-
-    #[validate(required)]
-    pub kdf_id: Option<u16>,
-
-    #[validate(required)]
-    pub aead_id: Option<u16>,
-
-    #[validate(required, custom = "url_safe_base64", length(min = 1))]
-    pub public_key: Option<String>,
-}
-
 #[derive(Deserialize, Validate, Debug)]
 pub struct UpdateTask {
     #[validate(required, length(min = 1))]

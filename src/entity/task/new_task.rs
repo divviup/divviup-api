@@ -1,3 +1,6 @@
+use janus_messages::HpkeConfig;
+use validator::ValidationErrors;
+
 use super::*;
 
 fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError> {
@@ -54,8 +57,41 @@ pub struct NewTask {
     )]
     pub time_precision_seconds: Option<u64>,
 
-    #[validate(required_nested)]
-    pub hpke_config: Option<HpkeConfig>,
+    #[validate(required, custom = "valid_hpke_config")]
+    pub hpke_config: Option<String>,
+}
+
+fn hpke_config(base64: &str) -> Result<HpkeConfig, ValidationError> {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    use prio::codec::Decode;
+    use std::io::Cursor;
+
+    let bytes = STANDARD
+        .decode(base64)
+        .map_err(|_| ValidationError::new("base64"))?;
+    let mut cursor = Cursor::new(bytes.as_slice());
+    let hpke_config = HpkeConfig::decode(&mut cursor).map_err(|e| ValidationError {
+        code: "hpke_config".into(),
+        message: Some(e.to_string().into()),
+        params: Default::default(),
+    })?;
+
+    Ok(hpke_config)
+}
+
+fn valid_hpke_config(base64: &str) -> Result<(), ValidationError> {
+    hpke_config(base64)?;
+    Ok(())
+}
+
+impl NewTask {
+    pub fn hpke_config(&self) -> Result<HpkeConfig, ValidationErrors> {
+        hpke_config(self.hpke_config.as_deref().unwrap()).map_err(|e| {
+            let mut errors = ValidationErrors::new();
+            errors.add("hpke_config", e);
+            errors
+        })
+    }
 }
 
 #[cfg(test)]
