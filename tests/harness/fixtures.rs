@@ -1,10 +1,9 @@
+use super::*;
 use divviup_api::{
     aggregator_api_mock::{self, random_hpke_config},
     clients::aggregator_client::TaskCreate,
 };
 use validator::Validate;
-
-use super::*;
 
 pub fn user() -> User {
     User {
@@ -83,7 +82,7 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         is_leader: Some(true),
         expiration: None,
         time_precision_seconds: Some(60 * 60),
-        hpke_config: Some(random_hpke_config().into()),
+        hpke_config: Some(encode_hpke_config(random_hpke_config())),
         id: None,
         vdaf_verify_key: None,
         aggregator_auth_token: None,

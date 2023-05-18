@@ -687,6 +687,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmac"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8543454e3c3f5126effff9cd44d562af4e31fb8ce1cc0d3dcd8f084515dbc1aa"
+dependencies = [
+ "cipher",
+ "dbl",
+ "digest 0.10.6",
+]
+
+[[package]]
 name = "colored"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -857,6 +868,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dbl"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd2735a791158376708f9347fe8faba9667589d82427ef3aed6794a8981de3d9"
+dependencies = [
+ "generic-array",
+]
+
+[[package]]
 name = "derivative"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -923,6 +943,7 @@ dependencies = [
  "oauth2",
  "opentelemetry",
  "opentelemetry-prometheus",
+ "prio",
  "querystrong",
  "rand",
  "regex",
@@ -2057,8 +2078,11 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3675d093a7713f2b861f77b16c3c33fadd6de0a69bf7203014d938b9d5daa6f7"
 dependencies = [
+ "aes",
  "base64 0.21.0",
  "byteorder",
+ "cmac",
+ "ctr",
  "getrandom",
  "serde",
  "sha3",

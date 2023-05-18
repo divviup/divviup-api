@@ -1,5 +1,5 @@
 use crate::clients::aggregator_client::api_types::{
-    HpkeAeadId, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, JanusHpkeConfig, TaskCreate,
+    HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, TaskCreate,
     TaskIds, TaskMetrics, TaskResponse,
 };
 use fastrand::alphanumeric;
@@ -59,8 +59,8 @@ pub fn task_response(task_create: TaskCreate) -> TaskResponse {
     }
 }
 
-pub fn random_hpke_config() -> JanusHpkeConfig {
-    JanusHpkeConfig::new(
+pub fn random_hpke_config() -> HpkeConfig {
+    HpkeConfig::new(
         random(),
         HpkeKemId::P256HkdfSha256,
         HpkeKdfId::HkdfSha512,

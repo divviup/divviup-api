@@ -1,18 +1,15 @@
 use crate::{
     entity::{
-        task::{
-            vdaf::{CountVec, Histogram, Sum, SumVec, Vdaf},
-            HpkeConfig,
-        },
+        task::vdaf::{CountVec, Histogram, Sum, SumVec, Vdaf},
         NewTask,
     },
     handler::Error,
     ApiConfig,
 };
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+
 pub use janus_messages::{
-    Duration as JanusDuration, HpkeAeadId, HpkeConfig as JanusHpkeConfig, HpkeConfigId,
-    HpkeConfigList, HpkeKdfId, HpkeKemId, HpkePublicKey, Role, TaskId, Time as JanusTime,
+    Duration as JanusDuration, HpkeAeadId, HpkeConfig, HpkeConfigId, HpkeConfigList, HpkeKdfId,
+    HpkeKemId, HpkePublicKey, Role, TaskId, Time as JanusTime,
 };
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -64,30 +61,6 @@ impl From<Vdaf> for VdafInstance {
                 length: length.unwrap(),
             },
             Vdaf::Unrecognized => unreachable!(),
-        }
-    }
-}
-
-impl TryFrom<HpkeConfig> for JanusHpkeConfig {
-    type Error = Box<dyn std::error::Error + Send + Sync>;
-    fn try_from(value: HpkeConfig) -> Result<Self, Self::Error> {
-        Ok(Self::new(
-            value.id.unwrap().into(),
-            value.kem_id.unwrap().try_into()?,
-            value.kdf_id.unwrap().try_into()?,
-            value.aead_id.unwrap().try_into()?,
-            URL_SAFE_NO_PAD.decode(value.public_key.unwrap())?.into(),
-        ))
-    }
-}
-impl From<JanusHpkeConfig> for HpkeConfig {
-    fn from(hpke_config: JanusHpkeConfig) -> Self {
-        Self {
-            id: Some((*hpke_config.id()).into()),
-            kem_id: Some((*hpke_config.kem_id()) as u16),
-            kdf_id: Some((*hpke_config.kdf_id()) as u16),
-            aead_id: Some((*hpke_config.aead_id()) as u16),
-            public_key: Some(URL_SAFE_NO_PAD.encode(hpke_config.public_key())),
         }
     }
 }
@@ -146,11 +119,11 @@ pub struct TaskCreate {
     pub task_expiration: Option<JanusTime>,
     pub min_batch_size: u64,
     pub time_precision: u64,
-    pub collector_hpke_config: JanusHpkeConfig,
+    pub collector_hpke_config: HpkeConfig,
 }
 
 impl TaskCreate {
-    pub fn build(new_task: NewTask, config: &ApiConfig) -> Result<Self, Error> {
+    pub fn build(mut new_task: NewTask, config: &ApiConfig) -> Result<Self, Error> {
         Ok(Self {
             leader_endpoint: if new_task.is_leader.unwrap() {
                 config.aggregator_dap_url.clone()
@@ -163,7 +136,7 @@ impl TaskCreate {
                 config.aggregator_dap_url.clone()
             },
             query_type: new_task.max_batch_size.into(),
-            vdaf: new_task.vdaf.unwrap().into(),
+            vdaf: new_task.vdaf.take().unwrap().into(),
             role: if new_task.is_leader.unwrap() {
                 Role::Leader
             } else {
@@ -175,7 +148,7 @@ impl TaskCreate {
             }),
             min_batch_size: new_task.min_batch_size.unwrap(),
             time_precision: new_task.time_precision_seconds.unwrap(),
-            collector_hpke_config: new_task.hpke_config.unwrap().try_into()?,
+            collector_hpke_config: new_task.hpke_config()?,
             task_id: new_task.id,
             vdaf_verify_key: new_task.vdaf_verify_key,
             aggregator_auth_token: new_task.aggregator_auth_token,
@@ -199,10 +172,10 @@ pub struct TaskResponse {
     pub min_batch_size: u64,
     pub time_precision: JanusDuration,
     pub tolerable_clock_skew: JanusDuration,
-    pub collector_hpke_config: JanusHpkeConfig,
+    pub collector_hpke_config: HpkeConfig,
     pub aggregator_auth_tokens: Vec<String>,
     pub collector_auth_tokens: Vec<String>,
-    pub aggregator_hpke_configs: Vec<JanusHpkeConfig>,
+    pub aggregator_hpke_configs: Vec<HpkeConfig>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -219,10 +192,7 @@ pub struct TaskMetrics {
 
 #[cfg(test)]
 mod test {
-    use super::{JanusHpkeConfig, TaskCreate, TaskResponse};
-    use crate::{aggregator_api_mock::random_hpke_config, entity::task::HpkeConfig};
-    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-    use validator::Validate;
+    use super::{TaskCreate, TaskResponse};
 
     const TASK_CREATE: &str = r#"{
   "leader_endpoint": "https://example.com/",
@@ -320,21 +290,6 @@ mod test {
         assert_eq!(
             serde_json::to_string_pretty(&task_response).unwrap(),
             TASK_RESPONSE
-        );
-    }
-
-    #[test]
-    fn hpke_config_conversion() {
-        let janus_hpke_config = random_hpke_config();
-        let hpke_config: HpkeConfig = janus_hpke_config.clone().try_into().unwrap();
-        assert!(hpke_config.validate().is_ok());
-        assert_eq!(
-            hpke_config.public_key.as_deref().unwrap(),
-            URL_SAFE_NO_PAD.encode(janus_hpke_config.public_key())
-        );
-        assert_eq!(
-            janus_hpke_config,
-            JanusHpkeConfig::try_from(hpke_config).unwrap()
         );
     }
 }

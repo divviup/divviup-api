@@ -14,7 +14,7 @@ import FormControl from "react-bootstrap/FormControl";
 import FormGroup from "react-bootstrap/FormGroup";
 import FormLabel from "react-bootstrap/FormLabel";
 import FormSelect from "react-bootstrap/FormSelect";
-import React, { ChangeEvent } from "react";
+import React, { ChangeEvent, ChangeEventHandler } from "react";
 import Row from "react-bootstrap/Row";
 import { ApiClientContext } from "./ApiClientContext";
 import { LinkContainer } from "react-router-bootstrap";
@@ -74,13 +74,7 @@ export default function TaskForm() {
                 time_precision_seconds: 3600,
                 expiration: null,
                 is_leader: true,
-                hpke_config: {
-                  id: 1,
-                  kem_id: 16,
-                  kdf_id: 1,
-                  aead_id: 1,
-                  public_key: "public_key",
-                },
+                hpke_config: "",
               } as NewTask
             }
             onSubmit={handleSubmit}
@@ -195,40 +189,33 @@ function QueryType({
   );
 }
 
-function HpkeConfig({ values }: FormikProps<NewTask>) {
-  ///temporary
+function HpkeConfig({ setFieldValue }: FormikProps<NewTask>) {
+  let reader = React.useMemo(() => {
+    let reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") {
+        console.log(reader.result);
+        console.log(reader.result.split(",")[1]);
+        setFieldValue("hpke_config", reader.result.split(",")[1]);
+      }
+    });
+    return reader;
+  }, [setFieldValue]);
+  let onChange: ChangeEventHandler<HTMLInputElement> = React.useCallback(
+    (event) => {
+      let files = event.target.files;
+      if (files && files[0]) {
+        reader.readAsDataURL(files[0]);
+      }
+    },
+    [reader]
+  );
+
   return (
-    <>
-      <input
-        type="hidden"
-        name="hpke_config.id"
-        value={values.hpke_config.id}
-      />
-
-      <input
-        type="hidden"
-        name="hpke_config.kem_id"
-        value={values.hpke_config.kem_id}
-      />
-
-      <input
-        type="hidden"
-        name="hpke_config.kdf_id"
-        value={values.hpke_config.kdf_id}
-      />
-
-      <input
-        type="hidden"
-        name="hpke_config.aead_id"
-        value={values.hpke_config.aead_id}
-      />
-
-      <input
-        type="hidden"
-        name="hpke_config.public_key"
-        value={values.hpke_config.public_key}
-      />
-    </>
+    <FormGroup className="mb-3">
+      <FormLabel>DAP-encoded HPKE file</FormLabel>
+      <FormControl type="file" onChange={onChange} />
+    </FormGroup>
   );
 }
 
