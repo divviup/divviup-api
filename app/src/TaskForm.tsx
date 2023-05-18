@@ -194,8 +194,6 @@ function HpkeConfig({ setFieldValue }: FormikProps<NewTask>) {
     let reader = new FileReader();
     reader.addEventListener("load", () => {
       if (typeof reader.result === "string") {
-        console.log(reader.result);
-        console.log(reader.result.split(",")[1]);
         setFieldValue("hpke_config", reader.result.split(",")[1]);
       }
     });
