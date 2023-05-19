@@ -13,7 +13,7 @@ impl Handler for HealthCheck {
         if self.0.execute_unprepared("select 1").await.is_err() {
             return conn.halt().with_status(500);
         }
-        conn.halt().with_status(Status::NoContent)
+        conn.halt().with_status(Status::Ok)
     }
 }
 
