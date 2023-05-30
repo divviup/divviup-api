@@ -36,7 +36,7 @@ serde_path_to_error = "0.1.11"
 test-harness = "0.1.1"
 thiserror = "1.0.40"
 time = { version = "0.3.21", features = ["serde", "serde-well-known"] }
-tokio = { version = "1.28.1", features = ["full"] }
+tokio = { version = "1.28.2", features = ["full"] }
 tracing = "0.1.37"
 trillium = "0.2.9"
 trillium-api = { version = "0.2.0-rc.3", default-features = false }
