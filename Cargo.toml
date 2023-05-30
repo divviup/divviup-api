@@ -78,7 +78,7 @@ features = [
 [dev-dependencies]
 trillium-testing = { version = "0.5.0", features = ["tokio"] }
 sea-orm = { version = "0.11.3", features = ["sqlx-sqlite"] }
-regex = "1.8.1"
+regex = "1.8.3"
 
 [build-dependencies]
 rustc_version = "0.4.0"
