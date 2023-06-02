@@ -464,7 +464,7 @@ function SumBits(props: FormikProps<NewTask>) {
 
   return (
     <FormGroup className="mb-3" controlId="vdaf.bits">
-      <FormLabel>Maximum Sum Value</FormLabel>
+      <FormLabel>Measurement Range</FormLabel>
       <FormSelect
         value={props.values.vdaf?.bits}
         name="vdaf.bits"
@@ -473,7 +473,8 @@ function SumBits(props: FormikProps<NewTask>) {
       >
         {[8, 16, 32, 64].map((i) => (
           <option value={i} key={i}>
-            {i}-bit integer (max value: {Math.pow(2, i).toLocaleString()})
+            Unsigned {i}-bit integer (0 to{" "}
+            {(Math.pow(2, i) - 1).toLocaleString()})
           </option>
         ))}
       </FormSelect>
