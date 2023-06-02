@@ -189,7 +189,7 @@ function QueryType({
   );
 }
 
-function HpkeConfig({ setFieldValue }: FormikProps<NewTask>) {
+function HpkeConfig({ setFieldValue, errors }: FormikProps<NewTask>) {
   let reader = React.useMemo(() => {
     let reader = new FileReader();
     reader.addEventListener("load", () => {
@@ -212,7 +212,14 @@ function HpkeConfig({ setFieldValue }: FormikProps<NewTask>) {
   return (
     <FormGroup className="mb-3">
       <FormLabel>DAP-encoded HPKE file</FormLabel>
-      <FormControl type="file" onChange={onChange} />
+      <FormControl
+        type="file"
+        onChange={onChange}
+        isInvalid={!!errors.hpke_config}
+      />
+      <FormControl.Feedback type="invalid">
+        {errors.hpke_config}
+      </FormControl.Feedback>
     </FormGroup>
   );
 }
