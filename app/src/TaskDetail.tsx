@@ -12,7 +12,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import Row from "react-bootstrap/Row";
 import { LinkContainer } from "react-router-bootstrap";
 import { Task, Account } from "./ApiClient";
-import { Button, Card, ListGroup, Spinner } from "react-bootstrap";
 import humanizeDuration from "humanize-duration";
 import {
   FileEarmarkBarGraph,
@@ -24,9 +23,15 @@ import {
   Pencil,
   PencilFill,
 } from "react-bootstrap-icons";
+import Button from "react-bootstrap/Button";
+import Card from "react-bootstrap/Card";
+import ListGroup from "react-bootstrap/ListGroup";
+import Spinner from "react-bootstrap/Spinner";
 import FormControl from "react-bootstrap/FormControl";
 import InputGroup from "react-bootstrap/InputGroup";
 import { DateTime } from "luxon";
+import Highlight from "react-highlight";
+import "highlight.js/styles/googlecode.css";
 
 function TaskTitle({ task }: { task: Task }) {
   let [isEditingName, setIsEditingName] = useState(false);
@@ -173,8 +178,18 @@ export default function TaskDetail() {
                     </Card.Body>
                     <ListGroup variant="flush">
                       <ListGroup.Item>
+                        Task Id: <code>{task.id}</code>
+                      </ListGroup.Item>
+
+                      <ListGroup.Item>
                         Time Precision:{" "}
                         {humanizeDuration(1000 * task.time_precision_seconds)}
+                      </ListGroup.Item>
+                      <ListGroup.Item>
+                        Query Type:{" "}
+                        {typeof task.max_batch_size === "number"
+                          ? `Fixed maximum batch size ${task.max_batch_size}`
+                          : "Time Interval"}
                       </ListGroup.Item>
                       <ListGroup.Item>
                         Minimum Batch Size: {task.min_batch_size}
@@ -190,8 +205,8 @@ export default function TaskDetail() {
                         Expires:{" "}
                         {task.expiration
                           ? DateTime.fromISO(task.expiration)
-                            .toLocal()
-                            .toLocaleString(DateTime.DATETIME_SHORT)
+                              .toLocal()
+                              .toLocaleString(DateTime.DATETIME_SHORT)
                           : "never"}
                       </ListGroup.Item>
                       <ListGroup.Item>
@@ -201,11 +216,6 @@ export default function TaskDetail() {
                         Helper: <code>{task.helper_url}</code>
                       </ListGroup.Item>
                       <ListGroup.Item>
-                        Aggregate Collection Count:{" "}
-                        {task.aggregate_collection_count || 0}
-                      </ListGroup.Item>
-
-                      <ListGroup.Item>
                         Created:{" "}
                         {DateTime.fromISO(task.created_at)
                           .toLocal()
@@ -214,6 +224,7 @@ export default function TaskDetail() {
                       <Vdaf task={task} />
                     </ListGroup>
                   </Card>
+                  <DapClientJSON task={task} />
                 </>
               )}
             </Await>
@@ -221,5 +232,32 @@ export default function TaskDetail() {
         </Col>
       </Row>
     </>
+  );
+}
+
+function DapClientJSON({ task }: { task: Task }) {
+  const json = {
+    ...task.vdaf,
+    taskId: task.id,
+    leader: task.leader_url,
+    helper: task.helper_url,
+    timePrecisionSeconds: task.time_precision_seconds,
+  };
+
+  return (
+    <Card className="my-3">
+      <Card.Body>
+        Copy and paste this code to use{" "}
+        <a href="https://github.com/divviup/divviup-ts">divviup-ts</a>
+        <Highlight className="js">
+          <pre>
+            <code className="my-3">
+              import DAPClient from "@divviup/dap";{"\n"}const client = new
+              DAPClient({JSON.stringify(json, null, 2)});
+            </code>
+          </pre>
+        </Highlight>
+      </Card.Body>
+    </Card>
   );
 }
