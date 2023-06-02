@@ -471,9 +471,9 @@ function SumBits(props: FormikProps<NewTask>) {
         onChange={handleChange}
         onBlur={props.handleBlur}
       >
-        {[...new Array(128)].map((_, i) => (
+        {[8, 16, 32, 64].map((i) => (
           <option value={i} key={i}>
-            {Math.pow(2, i)}
+            {i}-bit integer (max value: {Math.pow(2, i).toLocaleString()})
           </option>
         ))}
       </FormSelect>
