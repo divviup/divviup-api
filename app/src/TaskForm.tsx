@@ -89,12 +89,12 @@ export default function TaskForm() {
                 <TaskName {...props} />
                 <VdafType {...props} />
                 <VdafDetails {...props} />
+                <QueryType {...props} />
                 <MinBatchSize {...props} />
                 <HpkeConfig {...props} />
                 <IsLeader {...props} />
                 <TimePrecisionSeconds {...props} />
                 <Expiration {...props} />
-                <QueryType {...props} />
                 <Button
                   variant="primary"
                   type="submit"
@@ -123,33 +123,26 @@ function IsLeader({ handleChange, values }: FormikProps<NewTask>) {
   );
 }
 
-function QueryType({
-  values,
-  setFieldValue,
-  errors,
-  handleBlur,
-}: FormikProps<NewTask>) {
-  let { max_batch_size } = values;
-  const [fixedSize, setFixedSize] = React.useState(false);
+function QueryType(props: FormikProps<NewTask>) {
+  const {
+    setFieldValue,
+    values: { max_batch_size, min_batch_size },
+  } = props;
+  const timeInterval = typeof max_batch_size !== "number";
 
   const checkboxChange = React.useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      let checked = event.target.value === "fixed";
-      setFixedSize(checked);
-      if (!checked) setFieldValue("max_batch_size", null);
+      setFieldValue(
+        "max_batch_size",
+        event.target.value === "fixed"
+          ? min_batch_size * 2
+          : /*jbr: I have no idea what a good
+             * default is, but it needs to be
+             * greater than min*/
+            null
+      );
     },
-    [setFixedSize, setFieldValue]
-  );
-
-  const handleChange = React.useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      if (event.target.value) {
-        setFieldValue("max_batch_size", event.target.valueAsNumber);
-      } else {
-        setFieldValue("max_batch_size", null);
-      }
-    },
-    [setFieldValue]
+    [setFieldValue, min_batch_size]
   );
 
   return (
@@ -157,7 +150,7 @@ function QueryType({
       <FormCheck
         type="radio"
         name="query-type"
-        checked={!fixedSize}
+        checked={timeInterval}
         onChange={checkboxChange}
         label="Time Interval"
         value="time"
@@ -165,23 +158,43 @@ function QueryType({
       <FormCheck
         type="radio"
         name="query-type"
-        checked={fixedSize}
+        checked={!timeInterval}
         onChange={checkboxChange}
         label="Fixed Size"
         value="fixed"
       />
-      {fixedSize ? (
-        <FormControl
-          type="number"
-          name="max_batch_size"
-          value={max_batch_size || 1}
-          onChange={handleChange}
-          step={1}
-          onBlur={handleBlur}
-          min={1}
-          isInvalid={!!errors.max_batch_size}
-        />
-      ) : null}
+      <MaxBatchSize {...props} />
+    </FormGroup>
+  );
+}
+
+function MaxBatchSize(props: FormikProps<NewTask>) {
+  const { values, setFieldValue, errors, handleBlur } = props;
+  const { max_batch_size, min_batch_size } = values;
+
+  const handleChange = React.useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      if (event.target.value) {
+        setFieldValue("max_batch_size", event.target.valueAsNumber);
+      }
+    },
+    [setFieldValue]
+  );
+
+  if (typeof max_batch_size !== "number") return null;
+  return (
+    <FormGroup>
+      <FormLabel>Maximum Batch Size</FormLabel>
+      <FormControl
+        type="number"
+        name="max_batch_size"
+        value={max_batch_size}
+        onChange={handleChange}
+        step={1}
+        onBlur={handleBlur}
+        min={min_batch_size}
+        isInvalid={!!errors.max_batch_size}
+      />
       <FormControl.Feedback type="invalid">
         {errors.max_batch_size}
       </FormControl.Feedback>
@@ -266,11 +279,15 @@ const seconds = {
 type Unit = keyof typeof seconds;
 function TimePrecisionSeconds(props: FormikProps<NewTask>) {
   let { setFieldValue } = props;
-  const [count, setCount] = React.useState(1);
+  const [count, setCount] = React.useState<number | undefined>(undefined);
   const [unit, setUnit] = React.useState<Unit>("minute");
 
   React.useEffect(() => {
-    setFieldValue("time_precision_seconds", seconds[unit] * count);
+    if (typeof count === "number" && unit in seconds) {
+      setFieldValue("time_precision_seconds", seconds[unit] * count);
+    } else {
+      setFieldValue("time_precision_seconds", undefined);
+    }
   }, [count, unit, setFieldValue]);
 
   const changeUnit = React.useCallback(
@@ -282,7 +299,7 @@ function TimePrecisionSeconds(props: FormikProps<NewTask>) {
 
   const changeCount = React.useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      setCount(parseInt(event.target.value, 10));
+      setCount(event.target.valueAsNumber);
     },
     [setCount]
   );
@@ -294,7 +311,7 @@ function TimePrecisionSeconds(props: FormikProps<NewTask>) {
         <Col xs="2">
           <FormControl
             type="number"
-            value={count}
+            value={count || ""}
             onChange={changeCount}
             isInvalid={!!props.errors.time_precision_seconds}
           />
@@ -492,6 +509,17 @@ function Expiration(props: FormikProps<NewTask>) {
     []
   );
 
+  const formValue = expiration
+    ? DateTime.fromISO(expiration)
+        .toLocal()
+        .set({ second: 0, millisecond: 0 })
+        .toISO({
+          includeOffset: false,
+          suppressSeconds: true,
+          suppressMilliseconds: true,
+        }) || ""
+    : "";
+
   return (
     <FormGroup className="mb-3" controlId="expiration">
       <FormCheck
@@ -504,18 +532,7 @@ function Expiration(props: FormikProps<NewTask>) {
         <FormControl
           type="datetime-local"
           name="expiration"
-          value={
-            expiration
-              ? DateTime.fromISO(expiration)
-                .toLocal()
-                .set({ second: 0, millisecond: 0 })
-                .toISO({
-                  includeOffset: false,
-                  suppressSeconds: true,
-                  suppressMilliseconds: true,
-                }) || undefined
-              : ""
-          }
+          value={formValue}
           onChange={handleChange}
           onBlur={props.handleBlur}
           step={60}
