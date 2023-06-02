@@ -65,7 +65,9 @@ fn hpke_config(base64: &str) -> Result<HpkeConfig, ValidationError> {
     use base64::{engine::general_purpose::STANDARD, Engine};
     use prio::codec::Decode;
     use std::io::Cursor;
-
+    if base64.is_empty() {
+        return Err(ValidationError::new("required"));
+    }
     let bytes = STANDARD
         .decode(base64)
         .map_err(|_| ValidationError::new("base64"))?;
