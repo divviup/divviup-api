@@ -10,11 +10,12 @@ import {
   Form,
   useSubmit,
 } from "react-router-dom";
-import React, { Suspense } from "react";
+import React, { Suspense, useState } from "react";
 import { Account, Membership, User } from "./ApiClient";
 import { LinkContainer } from "react-router-bootstrap";
 import { Button, FormControl, Spinner } from "react-bootstrap";
 import { PersonSlash, PersonAdd, People } from "react-bootstrap-icons";
+import Modal from "react-bootstrap/Modal";
 
 export default function Memberships() {
   let { account } = useRouteLoaderData("account") as {
@@ -73,22 +74,51 @@ function MembershipsFull() {
 
 function DeleteMembershipButton({ membership }: { membership: Membership }) {
   let submit = useSubmit();
-  let callback = React.useCallback(() => {
-    if (window.confirm(`Really remove ${membership.user_email}?`)) {
-      submit({ membershipId: membership.id }, { method: "delete" });
-    }
+  const [show, setShow] = useState(false);
+  const close = React.useCallback(() => setShow(false), []);
+  const open = React.useCallback(() => setShow(true), []);
+
+  let deleteMembership = React.useCallback(() => {
+    submit({ membershipId: membership.id }, { method: "delete" });
   }, [membership, submit]);
+
   return (
-    <Button variant="outline-danger" className="ml-auto" onClick={callback}>
-      <PersonSlash />
-    </Button>
+    <>
+      <Button variant="outline-danger" className="ml-auto" onClick={open}>
+        <PersonSlash />
+      </Button>
+      <Modal show={show} onHide={close}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Membership Removal</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          This user will no longer be able to view or create tasks on this
+          account
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={close}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={deleteMembership}>
+            Remove {membership.user_email}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 }
 
 function AddMembershipForm() {
   let [email, setEmail] = React.useState("");
+
   return (
-    <Form action="." method="post">
+    <Form
+      action="."
+      method="post"
+      onSubmit={React.useCallback(() => {
+        setEmail("");
+      }, [setEmail])}
+    >
       <Row className="my-3">
         <Col xs="11">
           <FormControl
@@ -96,6 +126,7 @@ function AddMembershipForm() {
             name="user_email"
             id="user_email"
             value={email}
+            autoComplete="off"
             onChange={React.useCallback(
               (event: React.ChangeEvent<HTMLInputElement>) =>
                 setEmail(event.target.value),

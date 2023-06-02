@@ -1,5 +1,10 @@
 import React from "react";
-import { createBrowserRouter, RouterProvider, defer } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  defer,
+  redirect,
+} from "react-router-dom";
 import { ApiClientContext } from "./ApiClientContext";
 import { ApiClient, PartialAccount } from "./ApiClient";
 import AccountForm from "./AccountForm";
@@ -41,6 +46,9 @@ function buildRouter(apiClient: ApiClient) {
           }
         }),
       }),
+      shouldRevalidate(_) {
+        return false;
+      },
 
       errorElement: <ErrorPage apiClient={apiClient} />,
 
@@ -109,13 +117,23 @@ function buildRouter(apiClient: ApiClient) {
                 let data = Object.fromEntries(await request.formData());
                 switch (request.method) {
                   case "PATCH":
-                    return await apiClient.updateAccount(
-                      params.account_id as string,
-                      data as unknown as PartialAccount
-                    );
+                    return {
+                      account: await apiClient.updateAccount(
+                        params.account_id as string,
+                        data as unknown as PartialAccount
+                      ),
+                    };
                   default:
                     throw new Error(`unexpected method ${request.method}`);
                 }
+              },
+
+              shouldRevalidate(args) {
+                return (
+                  typeof args.actionResult === "object" &&
+                  args.actionResult !== null &&
+                  "account" in args.actionResult
+                );
               },
 
               children: [
@@ -133,13 +151,15 @@ function buildRouter(apiClient: ApiClient) {
                       ),
                     });
                   },
+
                   async action({ params, request }) {
                     let data = Object.fromEntries(await request.formData());
                     switch (request.method) {
                       case "DELETE":
-                        return await apiClient.deleteMembership(
+                        await apiClient.deleteMembership(
                           data.membershipId as string
                         );
+                        return { deleted: data.membershipId };
                       case "POST":
                         return await apiClient.createMembership(
                           params.account_id as string,
@@ -192,7 +212,19 @@ function buildRouter(apiClient: ApiClient) {
             },
             {
               path: "new",
-              element: <AccountForm apiClient={apiClient} />,
+              element: <AccountForm />,
+              async action({ request }) {
+                let data = Object.fromEntries(await request.formData());
+                switch (request.method) {
+                  case "POST":
+                    const account = await apiClient.createAccount(
+                      data as unknown as PartialAccount
+                    );
+                    return redirect(`/accounts/${account.id}`);
+                  default:
+                    throw new Error(`unexpected method ${request.method}`);
+                }
+              },
             },
           ],
         },
