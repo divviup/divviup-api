@@ -118,6 +118,7 @@ function IsLeader({ handleChange, values }: FormikProps<NewTask>) {
       checked={values.is_leader}
       onChange={handleChange}
       name="is_leader"
+      id="is_leader"
       label="Leader"
     />
   );
@@ -150,6 +151,7 @@ function QueryType(props: FormikProps<NewTask>) {
       <FormCheck
         type="radio"
         name="query-type"
+        id="query=type-time"
         checked={timeInterval}
         onChange={checkboxChange}
         label="Time Interval"
@@ -158,6 +160,7 @@ function QueryType(props: FormikProps<NewTask>) {
       <FormCheck
         type="radio"
         name="query-type"
+        id="query-type-fixed"
         checked={!timeInterval}
         onChange={checkboxChange}
         label="Fixed Size"
@@ -223,7 +226,7 @@ function HpkeConfig({ setFieldValue, errors }: FormikProps<NewTask>) {
   );
 
   return (
-    <FormGroup className="mb-3">
+    <FormGroup className="mb-3" controlId="hpke_config">
       <FormLabel>DAP-encoded HPKE file</FormLabel>
       <FormControl
         type="file"
@@ -244,6 +247,7 @@ function TaskName(props: FormikProps<NewTask>) {
       <FormControl
         type="text"
         name="name"
+        autoComplete="off"
         placeholder="Task Name"
         onChange={props.handleChange}
         onBlur={props.handleBlur}
@@ -312,13 +316,16 @@ function TimePrecisionSeconds(props: FormikProps<NewTask>) {
   );
 
   return (
-    <FormGroup className="mb-3" controlId="time_precision_seconds">
-      <FormLabel column>Time Precision</FormLabel>
+    <FormGroup className="mb-3">
+      <FormLabel column htmlFor="time-precision-number">
+        Time Precision
+      </FormLabel>
       <Row>
         <Col xs="2">
           <FormControl
             type="number"
             value={count || ""}
+            id="time-precision-number"
             onChange={changeCount}
             isInvalid={!!props.errors.time_precision_seconds}
           />
@@ -328,6 +335,7 @@ function TimePrecisionSeconds(props: FormikProps<NewTask>) {
             value={unit}
             onChange={changeUnit}
             isInvalid={!!props.errors.time_precision_seconds}
+            id="time-precision-unit"
           >
             {Object.keys(seconds).map((unit) => (
               <option key={unit} value={unit}>
