@@ -114,7 +114,6 @@ export function VdafIcon({
   task: Task;
   fill?: boolean;
 }) {
-  console.log(task.vdaf.type);
   switch (task.vdaf.type.toLowerCase()) {
     case "sum":
       return fill ? <FileEarmarkPlusFill /> : <FileEarmarkPlus />;

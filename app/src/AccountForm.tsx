@@ -1,42 +1,35 @@
 import { useState, useCallback, ChangeEvent } from "react";
 import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
-import ApiClient from "./ApiClient";
-import { useNavigate, Form as RRForm } from "react-router-dom";
+import FormGroup from "react-bootstrap/FormGroup";
+import FormLabel from "react-bootstrap/FormLabel";
+import FormControl from "react-bootstrap/FormControl";
+import { Form } from "react-router-dom";
 import { BuildingAdd } from "react-bootstrap-icons";
 
-export default function AccountForm({ apiClient }: { apiClient: ApiClient }) {
+export default function AccountForm() {
   let [name, setName] = useState<string>("");
-  let navigate = useNavigate();
-  let create = useCallback(() => {
-    if (name) {
-      apiClient
-        .createAccount({ name })
-        .then((account) => navigate(`/accounts/${account.id}`));
-    }
-  }, [name, apiClient, navigate]);
-
-  let updateName = useCallback(
-    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setName(event.target.value as string);
+  const updateName = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setName(event.target.value);
     },
     [setName]
   );
 
   return (
-    <RRForm onSubmit={create}>
-      <Form.Group className="mb-3" controlId="Account">
-        <Form.Label>Account Name</Form.Label>
-        <Form.Control
+    <Form action="." method="POST">
+      <FormGroup className="mb-3" controlId="Account">
+        <FormLabel>Account Name</FormLabel>
+        <FormControl
+          name="name"
           type="text"
           placeholder="Account Name"
           value={name}
           onChange={updateName}
         />
-      </Form.Group>
+      </FormGroup>
       <Button variant="primary" type="submit">
         <BuildingAdd /> Create Account
       </Button>
-    </RRForm>
+    </Form>
   );
 }
