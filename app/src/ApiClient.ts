@@ -45,6 +45,10 @@ export interface QueueJob {
   child_id: string | null;
   parent_id: string | null;
 }
+export interface TaskMetrics {
+  reports: number;
+  report_aggregations: number;
+}
 
 type VdafDefinition =
   | { type: "sum"; bits: number }
@@ -59,8 +63,6 @@ export interface Task {
   vdaf: VdafDefinition;
   min_batch_size: number;
   time_precision_seconds: number;
-  report_count?: number;
-  aggregate_collection_count?: number;
   account_id: string;
   created_at: string;
   updated_at: string;
@@ -213,6 +215,11 @@ export class ApiClient {
     return res.data as Task;
   }
 
+  async taskMetrics(taskId: string): Promise<TaskMetrics> {
+    const res = await this.get(`/api/tasks/${taskId}/metrics`);
+    return res.data as TaskMetrics;
+  }
+
   async deleteMembership(membershipId: string): Promise<null> {
     await this.delete(`/api/memberships/${membershipId}`);
     return null;
@@ -313,8 +320,8 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-  ? ValidationErrorsFor<T[K]>
-  : ValidationError[];
+    ? ValidationErrorsFor<T[K]>
+    : ValidationError[];
 };
 
 export interface ValidationError {

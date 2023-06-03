@@ -1,5 +1,8 @@
 use crate::{
-    clients::{aggregator_client::TaskCreate, AggregatorClient},
+    clients::{
+        aggregator_client::{TaskCreate, TaskMetrics},
+        AggregatorClient,
+    },
     entity::{
         task::build_task, Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask,
     },
@@ -65,6 +68,17 @@ pub async fn create(
 pub async fn show(conn: &mut Conn, task: Task) -> Json<Task> {
     conn.set_last_modified(task.updated_at.into());
     Json(task)
+}
+
+pub async fn metrics(
+    _: &mut Conn,
+    (task, client): (Task, AggregatorClient),
+) -> Result<Json<TaskMetrics>, Error> {
+    client
+        .get_task_metrics(&task.id)
+        .await
+        .map(Json)
+        .map_err(Into::into)
 }
 
 pub async fn update(
