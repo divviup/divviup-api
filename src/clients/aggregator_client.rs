@@ -34,7 +34,7 @@ impl AggregatorClient {
             base_url: config.aggregator_api_url.clone(),
             auth_header: HeaderValue::from(format!("Bearer {}", config.aggregator_secret.clone())),
             metrics_cache: Cache::builder()
-                .time_to_live(Duration::from_secs(30 * 60))
+                .time_to_live(Duration::from_secs(5 * 60))
                 .build(),
         }
     }
