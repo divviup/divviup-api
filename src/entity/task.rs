@@ -1,5 +1,8 @@
 use crate::{
-    clients::aggregator_client::api_types::{Role, TaskResponse},
+    clients::aggregator_client::{
+        api_types::{Role, TaskResponse},
+        TaskMetrics,
+    },
     entity::{account, membership, url_safe_base64, Account},
     handler::Error,
 };
@@ -37,6 +40,21 @@ pub struct Model {
     pub aggregate_collection_count: i32,
     #[serde(default, with = "time::serde::iso8601::option")]
     pub expiration: Option<OffsetDateTime>,
+}
+
+impl Model {
+    pub async fn update_metrics(
+        self,
+        metrics: TaskMetrics,
+        db: impl ConnectionTrait,
+    ) -> Result<Self, DbErr> {
+        let mut task = self.into_active_model();
+        task.report_count = Set(metrics.reports.try_into().unwrap_or(i32::MAX));
+        task.aggregate_collection_count =
+            Set(metrics.report_aggregations.try_into().unwrap_or(i32::MAX));
+        task.updated_at = Set(OffsetDateTime::now_utc());
+        task.update(&db).await
+    }
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

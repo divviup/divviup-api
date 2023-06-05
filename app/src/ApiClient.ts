@@ -45,10 +45,6 @@ export interface QueueJob {
   child_id: string | null;
   parent_id: string | null;
 }
-export interface TaskMetrics {
-  reports: number;
-  report_aggregations: number;
-}
 
 type VdafDefinition =
   | { type: "sum"; bits: number }
@@ -69,6 +65,8 @@ export interface Task {
   expiration: string | null;
   is_leader: boolean;
   max_batch_size: number | null;
+  report_count: number;
+  aggregate_collection_count: number;
 }
 
 export type NewTask = Omit<
@@ -213,11 +211,6 @@ export class ApiClient {
   async task(taskId: string): Promise<Task> {
     const res = await this.get(`/api/tasks/${taskId}`);
     return res.data as Task;
-  }
-
-  async taskMetrics(taskId: string): Promise<TaskMetrics> {
-    const res = await this.get(`/api/tasks/${taskId}/metrics`);
-    return res.data as TaskMetrics;
   }
 
   async deleteMembership(membershipId: string): Promise<null> {

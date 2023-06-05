@@ -2,9 +2,7 @@ use crate::{
     clients::{ClientConnExt, ClientError},
     ApiConfig,
 };
-use mini_moka::sync::Cache;
 use serde::{de::DeserializeOwned, Serialize};
-use std::time::Duration;
 use trillium::{HeaderValue, KnownHeaderName, Method};
 use trillium_api::FromConn;
 use trillium_client::{Client, Conn};
@@ -17,7 +15,6 @@ pub struct AggregatorClient {
     client: Client,
     base_url: Url,
     auth_header: HeaderValue,
-    metrics_cache: Cache<String, TaskMetrics>,
 }
 
 #[trillium::async_trait]
@@ -33,9 +30,6 @@ impl AggregatorClient {
             client: config.client.clone(),
             base_url: config.aggregator_api_url.clone(),
             auth_header: HeaderValue::from(format!("Bearer {}", config.aggregator_secret.clone())),
-            metrics_cache: Cache::builder()
-                .time_to_live(Duration::from_secs(5 * 60))
-                .build(),
         }
     }
 
@@ -60,14 +54,7 @@ impl AggregatorClient {
     }
 
     pub async fn get_task_metrics(&self, task_id: &str) -> Result<TaskMetrics, ClientError> {
-        let task_id = task_id.to_string();
-        if let Some(metrics) = self.metrics_cache.get(&task_id) {
-            log::trace!("using metrict from cache for {task_id}");
-            return Ok(metrics);
-        }
-        let metrics: TaskMetrics = self.get(&format!("/tasks/{task_id}/metrics")).await?;
-        self.metrics_cache.insert(task_id, metrics);
-        Ok(metrics)
+        self.get(&format!("/tasks/{task_id}/metrics")).await
     }
 
     pub async fn delete_task(&self, task_id: &str) -> Result<(), ClientError> {

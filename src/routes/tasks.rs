@@ -1,8 +1,7 @@
+use std::time::Duration;
+
 use crate::{
-    clients::{
-        aggregator_client::{TaskCreate, TaskMetrics},
-        AggregatorClient,
-    },
+    clients::{aggregator_client::TaskCreate, AggregatorClient},
     entity::{
         task::build_task, Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask,
     },
@@ -11,6 +10,7 @@ use crate::{
     Db,
 };
 use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait};
+use time::OffsetDateTime;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
 use trillium_caching_headers::CachingHeadersExt;
@@ -65,20 +65,26 @@ pub async fn create(
     Ok((Status::Created, Json(task)))
 }
 
-pub async fn show(conn: &mut Conn, task: Task) -> Json<Task> {
-    conn.set_last_modified(task.updated_at.into());
-    Json(task)
+async fn refresh_metrics_if_needed(
+    task: Task,
+    db: Db,
+    client: AggregatorClient,
+) -> Result<Task, Error> {
+    if OffsetDateTime::now_utc() - task.updated_at > Duration::from_secs(5 * 60) {
+        let metrics = client.get_task_metrics(&task.id).await?;
+        task.update_metrics(metrics, db).await.map_err(Into::into)
+    } else {
+        Ok(task)
+    }
 }
 
-pub async fn metrics(
-    _: &mut Conn,
-    (task, client): (Task, AggregatorClient),
-) -> Result<Json<TaskMetrics>, Error> {
-    client
-        .get_task_metrics(&task.id)
-        .await
-        .map(Json)
-        .map_err(Into::into)
+pub async fn show(
+    conn: &mut Conn,
+    (task, db, client): (Task, Db, AggregatorClient),
+) -> Result<Json<Task>, Error> {
+    let task = refresh_metrics_if_needed(task, db, client).await?;
+    conn.set_last_modified(task.updated_at.into());
+    Ok(Json(task))
 }
 
 pub async fn update(

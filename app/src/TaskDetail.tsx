@@ -11,7 +11,7 @@ import Col from "react-bootstrap/Col";
 import React, { useCallback, useEffect, useState } from "react";
 import Row from "react-bootstrap/Row";
 import { LinkContainer } from "react-router-bootstrap";
-import { Task, Account, TaskMetrics } from "./ApiClient";
+import { Task, Account } from "./ApiClient";
 import humanizeDuration from "humanize-duration";
 import {
   FileEarmarkBarGraph,
@@ -32,6 +32,7 @@ import InputGroup from "react-bootstrap/InputGroup";
 import { DateTime } from "luxon";
 import Highlight from "react-highlight";
 import "highlight.js/styles/googlecode.css";
+import "@github/relative-time-element";
 
 function TaskTitle() {
   let { task } = useLoaderData() as {
@@ -263,25 +264,35 @@ export default function TaskDetail() {
 }
 
 function Metrics() {
-  let { metrics } = useLoaderData() as {
-    metrics: Promise<TaskMetrics>;
+  let { task } = useLoaderData() as {
+    task: Promise<Task>;
   };
 
   return (
     <React.Suspense>
-      <Await resolve={metrics}>
-        {(metrics: TaskMetrics) => (
+      <Await resolve={task}>
+        {(task: Task) => (
           <Col>
             <Card className="my-3">
               <Card.Body>
                 <Card.Title>Metrics</Card.Title>
               </Card.Body>
               <ListGroup variant="flush">
-                <ListGroup.Item>Report Count: {metrics.reports}</ListGroup.Item>
                 <ListGroup.Item>
-                  Aggregate Collection Count: {metrics.report_aggregations}
+                  Report Count: {task.report_count}
+                </ListGroup.Item>
+                <ListGroup.Item>
+                  Aggregate Collection Count: {task.aggregate_collection_count}
                 </ListGroup.Item>
               </ListGroup>
+              <Card.Footer className="text-muted">
+                Last updated{" "}
+                <relative-time datetime={task.updated_at} format="relative">
+                  {DateTime.fromISO(task.updated_at)
+                    .toLocal()
+                    .toLocaleString(DateTime.DATETIME_SHORT)}
+                </relative-time>
+              </Card.Footer>
             </Card>
           </Col>
         )}

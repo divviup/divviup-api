@@ -186,7 +186,6 @@ function buildRouter(apiClient: ApiClient) {
                   element: <TaskDetail />,
                   loader({ params }) {
                     return defer({
-                      metrics: apiClient.taskMetrics(params.task_id as string),
                       task: apiClient.task(params.task_id as string),
                     });
                   },

@@ -62,7 +62,6 @@ fn api_routes(config: &ApiConfig) -> impl Handler {
             .post("/accounts", api(accounts::create))
             .delete("/memberships/:membership_id", api(memberships::delete))
             .get("/tasks/:task_id", api(tasks::show))
-            .get("/tasks/:task_id/metrics", api(tasks::metrics))
             .patch("/tasks/:task_id", api(tasks::update))
             .any(
                 &[Patch, Get, Post],
