@@ -68,6 +68,8 @@ pub enum Error {
     Other(#[from] Arc<dyn std::error::Error + Send + Sync>),
     #[error(transparent)]
     UrlParse(#[from] url::ParseError),
+    #[error(transparent)]
+    NumericConversion(#[from] std::num::TryFromIntError),
 }
 
 impl From<Box<dyn std::error::Error + Send + Sync>> for Error {

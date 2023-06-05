@@ -59,14 +59,14 @@ export interface Task {
   vdaf: VdafDefinition;
   min_batch_size: number;
   time_precision_seconds: number;
-  report_count?: number;
-  aggregate_collection_count?: number;
   account_id: string;
   created_at: string;
   updated_at: string;
   expiration: string | null;
   is_leader: boolean;
   max_batch_size: number | null;
+  report_count: number;
+  aggregate_collection_count: number;
 }
 
 export type NewTask = Omit<
@@ -313,8 +313,8 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-  ? ValidationErrorsFor<T[K]>
-  : ValidationError[];
+    ? ValidationErrorsFor<T[K]>
+    : ValidationError[];
 };
 
 export interface ValidationError {

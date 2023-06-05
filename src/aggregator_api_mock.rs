@@ -25,8 +25,8 @@ pub fn aggregator_api() -> impl Handler {
 
 async fn get_task_metrics(_: &mut Conn, (): ()) -> Json<TaskMetrics> {
     Json(TaskMetrics {
-        reports: fastrand::u64(..),
-        report_aggregations: fastrand::u64(..),
+        reports: fastrand::u64(..1000),
+        report_aggregations: fastrand::u64(..1000),
     })
 }
 
