@@ -7,7 +7,7 @@
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
     "axios": "^1.4.0",
-    "bootstrap": "^5.2.3",
+    "bootstrap": "^5.3.0",
     "formik": "^2.4.1",
     "highlight.js": "^11.8.0",
     "humanize-duration": "^3.28.0",
