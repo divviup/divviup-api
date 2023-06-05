@@ -16,7 +16,7 @@ pub use divviup_api::{
 pub use querystrong::QueryStrong;
 pub use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait,
-    PaginatorTrait, QueryFilter, Schema,
+    IntoActiveModel, PaginatorTrait, QueryFilter, Schema, Set,
 };
 pub use serde_json::{json, Value};
 pub use test_harness::test;

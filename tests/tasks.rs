@@ -220,6 +220,44 @@ mod show {
     }
 
     #[test(harness = set_up)]
+    async fn metrics_caching(app: DivviupApi) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut task = task.into_active_model();
+        task.updated_at =
+            Set(time::OffsetDateTime::now_utc() - std::time::Duration::from_secs(10 * 60));
+        let task = task.update(app.db()).await?;
+
+        let mut conn = get(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_state(user.clone())
+            .run_async(&app)
+            .await;
+        let response_task: Task = conn.response_json().await;
+        assert!(response_task.report_count != task.report_count);
+        assert!(response_task.aggregate_collection_count != task.aggregate_collection_count);
+        assert!(response_task.updated_at > task.updated_at);
+
+        let mut conn = get(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_state(user)
+            .run_async(&app)
+            .await;
+        let second_response_task: Task = conn.response_json().await;
+        assert_eq!(
+            second_response_task.report_count,
+            response_task.report_count
+        );
+        assert_eq!(
+            second_response_task.aggregate_collection_count,
+            response_task.aggregate_collection_count
+        );
+        assert_eq!(second_response_task.updated_at, response_task.updated_at);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
     async fn not_member(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let account = fixtures::account(&app).await;
