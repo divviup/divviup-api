@@ -3,7 +3,6 @@ use divviup_api::{
     aggregator_api_mock::{self, random_hpke_config},
     clients::aggregator_client::TaskCreate,
 };
-use validator::Validate;
 
 pub fn user() -> User {
     User {

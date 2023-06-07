@@ -87,6 +87,21 @@ fn valid_hpke_config(base64: &str) -> Result<(), ValidationError> {
 }
 
 impl NewTask {
+    pub fn validate(&self) -> Result<(), ValidationErrors> {
+        let result = Validate::validate(self);
+        let min = self.min_batch_size;
+        let max = self.max_batch_size;
+        if matches!((min, max), (Some(min), Some(max)) if min > max) {
+            let mut errors = result.err().unwrap_or_default();
+            let error = ValidationError::new("min_greater_than_max");
+            errors.add("min_batch_size", error.clone());
+            errors.add("max_batch_size", error);
+            Err(errors)
+        } else {
+            result
+        }
+    }
+
     pub fn hpke_config(&self) -> Result<HpkeConfig, ValidationErrors> {
         hpke_config(self.hpke_config.as_deref().unwrap()).map_err(|e| {
             let mut errors = ValidationErrors::new();
@@ -104,7 +119,21 @@ mod tests {
     use rand::random;
 
     use super::*;
-    use crate::test::assert_errors;
+
+    #[track_caller]
+    pub fn assert_errors(new_task: NewTask, field: &str, codes: &[&str]) {
+        assert_eq!(
+            new_task
+                .validate()
+                .unwrap_err()
+                .field_errors()
+                .get(field)
+                .map(|c| c.iter().map(|error| &error.code).collect::<Vec<_>>())
+                .unwrap_or_default(),
+            codes
+        );
+    }
+
     #[test]
     fn validation() {
         assert_errors(
@@ -163,6 +192,26 @@ mod tests {
             },
             "vdaf_verify_key",
             &[],
+        );
+
+        assert_errors(
+            NewTask {
+                min_batch_size: Some(100),
+                max_batch_size: Some(50),
+                ..Default::default()
+            },
+            "min_batch_size",
+            &["min_greater_than_max"],
+        );
+
+        assert_errors(
+            NewTask {
+                min_batch_size: Some(100),
+                max_batch_size: Some(50),
+                ..Default::default()
+            },
+            "max_batch_size",
+            &["min_greater_than_max"],
         );
     }
 }
