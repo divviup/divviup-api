@@ -15,7 +15,6 @@ use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
 use trillium_caching_headers::CachingHeadersExt;
 use trillium_router::RouterConnExt;
-use validator::Validate;
 
 pub async fn index(conn: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
     let tasks = account.find_related(Tasks).all(&db).await?;
