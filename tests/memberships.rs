@@ -51,7 +51,7 @@ mod create {
             .run_async(&app)
             .await;
 
-        assert_response!(conn, 201);
+        assert_response!(conn, 200);
 
         assert_eq!(
             membership_count_before,

@@ -40,7 +40,7 @@ pub async fn create(
         .one(&db)
         .await?
     {
-        return Ok((Json(membership), Status::Created));
+        return Ok((Json(membership), Status::Ok));
     }
 
     let tx = db.begin().await?;
