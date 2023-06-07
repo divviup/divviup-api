@@ -37,6 +37,41 @@ mod create {
     }
 
     #[test(harness = set_up)]
+    async fn duplicate(app: DivviupApi) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let other_user = fixtures::user();
+        let _ = fixtures::membership(&app, &account, &other_user).await;
+
+        let membership_count_before = Memberships::find().count(app.db()).await?;
+
+        let mut conn = post(format!("/api/accounts/{}/memberships", account.id))
+            .with_api_headers()
+            .with_request_json(json!({ "user_email": other_user.email }))
+            .with_state(user)
+            .run_async(&app)
+            .await;
+
+        assert_response!(conn, 201);
+
+        assert_eq!(
+            membership_count_before,
+            Memberships::find().count(app.db()).await?
+        );
+
+        let membership: Membership = conn.response_json().await;
+        assert_eq!(membership.user_email, other_user.email);
+        assert_eq!(membership.account_id, account.id);
+        let membership_id = membership.id;
+
+        assert!(Memberships::find_by_id(membership_id)
+            .one(app.db())
+            .await?
+            .is_some());
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
     async fn invalid(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let membership_count_before = Memberships::find().count(app.db()).await?;
