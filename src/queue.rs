@@ -75,7 +75,7 @@ impl Queue {
     pub async fn schedule_recurring_tasks_if_needed(&self) -> Result<(), DbErr> {
         let tx = self.db.begin().await?;
 
-        let jobs = Entity::find()
+        let session_cleanup_jobs = Entity::find()
             .filter(all![
                 Expr::cust_with_expr("job->>'type' = $1", "SessionCleanup"),
                 Column::ScheduledAt.gt(OffsetDateTime::now_utc()),
@@ -83,12 +83,25 @@ impl Queue {
             .count(&tx)
             .await?;
 
-        if jobs == 0 {
-            ActiveModel::from(Job::from(SessionCleanup))
-                .insert(&tx)
-                .await?;
-            tx.commit().await?;
+        if session_cleanup_jobs == 0 {
+            Job::from(SessionCleanup).insert(&tx).await?;
         }
+        tx.commit().await?;
+
+        let tx = self.db.begin().await?;
+        let queue_cleanup_jobs = Entity::find()
+            .filter(all![
+                Expr::cust_with_expr("job->>'type' = $1", "QueueCleanup"),
+                Column::ScheduledAt.gt(OffsetDateTime::now_utc()),
+            ])
+            .count(&tx)
+            .await?;
+
+        if queue_cleanup_jobs == 0 {
+            Job::from(QueueCleanup).insert(&tx).await?;
+        }
+        tx.commit().await?;
+
         Ok(())
     }
 

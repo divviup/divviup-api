@@ -1,4 +1,5 @@
 mod create_user;
+mod queue_cleanup;
 mod reset_password;
 mod send_invitation_email;
 mod session_cleanup;
@@ -10,6 +11,7 @@ use sea_orm::ConnectionTrait;
 use serde::{Deserialize, Serialize};
 
 pub use create_user::CreateUser;
+pub use queue_cleanup::QueueCleanup;
 pub use reset_password::ResetPassword;
 pub use send_invitation_email::SendInvitationEmail;
 pub use session_cleanup::SessionCleanup;
@@ -21,6 +23,7 @@ pub enum V1 {
     CreateUser(CreateUser),
     ResetPassword(ResetPassword),
     SessionCleanup(SessionCleanup),
+    QueueCleanup(QueueCleanup),
 }
 
 impl V1 {
@@ -34,6 +37,7 @@ impl V1 {
             V1::CreateUser(job) => job.perform(job_state, db).await,
             V1::ResetPassword(job) => job.perform(job_state, db).await,
             V1::SessionCleanup(job) => job.perform(job_state, db).await,
+            V1::QueueCleanup(job) => job.perform(job_state, db).await,
         }
     }
 }
