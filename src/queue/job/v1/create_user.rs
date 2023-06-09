@@ -2,7 +2,7 @@ use crate::{
     entity::*,
     queue::job::{
         v1::{reset_password::ResetPassword, V1},
-        Job, JobError, SharedJobState,
+        EnqueueJob, Job, JobError, SharedJobState,
     },
 };
 use sea_orm::{ConnectionTrait, EntityTrait};
@@ -19,7 +19,7 @@ impl CreateUser {
         &mut self,
         job_state: &SharedJobState,
         db: &impl ConnectionTrait,
-    ) -> Result<Option<Job>, JobError> {
+    ) -> Result<Option<EnqueueJob>, JobError> {
         let membership = Memberships::find_by_id(self.membership_id)
             .one(db)
             .await?
@@ -31,7 +31,7 @@ impl CreateUser {
             .auth0_client
             .create_user(&membership.user_email)
             .await?;
-        Ok(Some(Job::from(ResetPassword {
+        Ok(Some(EnqueueJob::from(ResetPassword {
             membership_id: self.membership_id,
             user_id,
         })))

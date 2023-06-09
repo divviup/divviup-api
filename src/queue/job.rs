@@ -6,11 +6,12 @@ use crate::{
 use sea_orm::{ActiveModelTrait, ConnectionTrait, DbErr};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use time::{Duration, OffsetDateTime};
 use trillium::{Method, Status};
 use url::Url;
 
 mod v1;
-pub use v1::{CreateUser, ResetPassword, SendInvitationEmail, V1};
+pub use v1::{CreateUser, ResetPassword, SendInvitationEmail, SessionCleanup, V1};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(tag = "version")]
@@ -86,6 +87,32 @@ impl From<&ApiConfig> for SharedJobState {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct EnqueueJob {
+    pub job: Job,
+    pub scheduled: Option<OffsetDateTime>,
+}
+
+impl EnqueueJob {
+    pub fn scheduled_at(mut self, scheduled: OffsetDateTime) -> Self {
+        self.scheduled = Some(scheduled);
+        self
+    }
+
+    pub fn scheduled_in(self, duration: Duration) -> Self {
+        self.scheduled_at(OffsetDateTime::now_utc() + duration)
+    }
+}
+
+impl<T: Into<Job>> From<T> for EnqueueJob {
+    fn from(value: T) -> Self {
+        EnqueueJob {
+            job: value.into(),
+            scheduled: None,
+        }
+    }
+}
+
 impl Job {
     pub fn new_invitation_flow(membership: &Membership) -> Self {
         Self::from(CreateUser {
@@ -97,7 +124,7 @@ impl Job {
         &mut self,
         job_state: &SharedJobState,
         db: &impl ConnectionTrait,
-    ) -> Result<Option<Job>, JobError> {
+    ) -> Result<Option<EnqueueJob>, JobError> {
         match self {
             Job::V1(job) => job.perform(job_state, db).await,
         }

@@ -1,4 +1,4 @@
-use crate::queue::{Job, JobError, SendInvitationEmail, SharedJobState, V1};
+use crate::queue::{EnqueueJob, Job, JobError, SendInvitationEmail, SharedJobState, V1};
 use sea_orm::ConnectionTrait;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -14,9 +14,9 @@ impl ResetPassword {
         &mut self,
         job_state: &SharedJobState,
         _db: &impl ConnectionTrait,
-    ) -> Result<Option<Job>, JobError> {
+    ) -> Result<Option<EnqueueJob>, JobError> {
         let action_url = job_state.auth0_client.password_reset(&self.user_id).await?;
-        Ok(Some(Job::from(SendInvitationEmail {
+        Ok(Some(EnqueueJob::from(SendInvitationEmail {
             membership_id: self.membership_id,
             action_url,
             message_id: Uuid::new_v4(),
