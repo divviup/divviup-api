@@ -152,6 +152,10 @@ function buildRouter(apiClient: ApiClient) {
                     });
                   },
 
+                  shouldRevalidate(_) {
+                    return true;
+                  },
+
                   async action({ params, request }) {
                     let data = Object.fromEntries(await request.formData());
                     switch (request.method) {
