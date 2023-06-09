@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  DOCKER_BUILDKIT: 1
-
 jobs:
   build:
     strategy:
