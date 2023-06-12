@@ -1,6 +1,6 @@
 use crate::{
     entity::*,
-    queue::{Job, JobError, SharedJobState, V1},
+    queue::{EnqueueJob, Job, JobError, SharedJobState, V1},
 };
 use sea_orm::{ConnectionTrait, EntityTrait};
 use serde::{Deserialize, Serialize};
@@ -20,7 +20,7 @@ impl SendInvitationEmail {
         &mut self,
         job_state: &SharedJobState,
         db: &impl ConnectionTrait,
-    ) -> Result<Option<Job>, JobError> {
+    ) -> Result<Option<EnqueueJob>, JobError> {
         let (membership, account) = Memberships::find_by_id(self.membership_id)
             .find_also_related(Accounts)
             .one(db)

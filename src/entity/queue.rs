@@ -1,6 +1,6 @@
 use crate::{
     json_newtype,
-    queue::{Job, JobError},
+    queue::{EnqueueJob, Job, JobError},
 };
 use sea_orm::{
     entity::prelude::*,
@@ -63,6 +63,14 @@ impl From<Job> for ActiveModel {
             parent_id: Set(None),
             child_id: Set(None),
         }
+    }
+}
+
+impl From<EnqueueJob> for ActiveModel {
+    fn from(EnqueueJob { job, scheduled }: EnqueueJob) -> Self {
+        let mut am = Self::from(job);
+        am.scheduled_at = Set(scheduled);
+        am
     }
 }
 

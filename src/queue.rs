@@ -3,10 +3,14 @@ pub use crate::entity::queue::JobStatus;
 pub use job::*;
 
 use crate::{
-    entity::queue::{ActiveModel, Entity, Model},
+    entity::queue::{ActiveModel, Column, Entity, Model},
     ApiConfig, Db, DivviupApi,
 };
-use sea_orm::{ActiveModelTrait, DbErr, IntoActiveModel, Set, TransactionTrait};
+use sea_orm::{
+    sea_query::{self, all, Expr},
+    ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, IntoActiveModel, PaginatorTrait,
+    QueryFilter, Set, TransactionTrait,
+};
 use std::{ops::Range, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 use tokio::{
@@ -66,6 +70,39 @@ impl Queue {
     pub fn with_stopper(mut self, stopper: Stopper) -> Self {
         self.stopper = stopper;
         self
+    }
+
+    pub async fn schedule_recurring_tasks_if_needed(&self) -> Result<(), DbErr> {
+        let tx = self.db.begin().await?;
+
+        let session_cleanup_jobs = Entity::find()
+            .filter(all![
+                Expr::cust_with_expr("job->>'type' = $1", "SessionCleanup"),
+                Column::ScheduledAt.gt(OffsetDateTime::now_utc()),
+            ])
+            .count(&tx)
+            .await?;
+
+        if session_cleanup_jobs == 0 {
+            Job::from(SessionCleanup).insert(&tx).await?;
+        }
+        tx.commit().await?;
+
+        let tx = self.db.begin().await?;
+        let queue_cleanup_jobs = Entity::find()
+            .filter(all![
+                Expr::cust_with_expr("job->>'type' = $1", "QueueCleanup"),
+                Column::ScheduledAt.gt(OffsetDateTime::now_utc()),
+            ])
+            .count(&tx)
+            .await?;
+
+        if queue_cleanup_jobs == 0 {
+            Job::from(QueueCleanup).insert(&tx).await?;
+        }
+        tx.commit().await?;
+
+        Ok(())
     }
 
     pub async fn perform_one_queue_job(&self) -> Result<Option<Model>, DbErr> {
@@ -152,6 +189,7 @@ impl Queue {
     }
 
     async fn supervise_workers(self) {
+        self.schedule_recurring_tasks_if_needed().await.unwrap();
         let mut join_set = JoinSet::new();
         for _ in 0..QUEUE_WORKER_COUNT {
             self.clone().spawn_worker(&mut join_set);

@@ -15,7 +15,7 @@ pub use membership::{
 };
 pub use task::{Column as TaskColumn, Entity as Tasks, Model as Task, NewTask, UpdateTask};
 
-pub use session::{Entity as Sessions, Model as Session};
+pub use session::{Column as SessionColumn, Entity as Sessions, Model as Session};
 
 const URL_SAFE_BASE64_CHARS: &[u8] =
     b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
