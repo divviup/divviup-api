@@ -39,3 +39,21 @@
     ```sh
     cargo run -- status
     ```
+
+# Running extended migrator CLI
+
+There is a CLI at `bin/migrate_to.rs` that covers some gaps in the standard SeaORM
+migrator CLI. It's most useful for running in automation.
+
+- To apply all migrations up to the given migration
+    ```sh
+    cargo run --bin migrate_to -- up MIGRATION_NAME
+    ```
+- To dry-run all migrations up to the given migration
+    ```sh
+    cargo run --bin migrate_to -- --dry-run up MIGRATION_NAME
+    ```
+- To downgrade migrations down to the given migration
+    ```sh
+    cargo run --bin migrate_to -- down MIGRATION_NAME
+    ```
