@@ -381,4 +381,13 @@ mod tests {
         .unwrap();
         assert_eq!(applied_migrations(&db).await, all_migrations()[..4]);
     }
+
+    #[test]
+    fn ensure_migrations_are_sorted() {
+        // Migrations in migration::Migrator must be in lexicographic order, otherwise
+        // this CLI will not work correctly.
+        assert!(migration::Migrator::migrations()
+            .windows(2)
+            .all(|window| window[0].name() <= window[1].name()))
+    }
 }
