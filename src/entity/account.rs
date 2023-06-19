@@ -26,11 +26,19 @@ pub enum Relation {
     Membership,
     #[sea_orm(has_many = "super::task::Entity")]
     Task,
+    #[sea_orm(has_many = "super::aggregator::Entity")]
+    Aggregator,
 }
 
 impl Related<super::membership::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Membership.def()
+    }
+}
+
+impl Related<super::aggregator::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Aggregator.def()
     }
 }
 

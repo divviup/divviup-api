@@ -1,8 +1,10 @@
 pub mod account;
+pub mod aggregator;
 pub mod membership;
 pub mod queue;
 pub mod session;
 pub mod task;
+mod url;
 
 #[macro_use]
 pub mod macros;
@@ -16,6 +18,11 @@ pub use membership::{
 pub use task::{Column as TaskColumn, Entity as Tasks, Model as Task, NewTask, UpdateTask};
 
 pub use session::{Column as SessionColumn, Entity as Sessions, Model as Session};
+
+pub use aggregator::{
+    Column as AggregatorColumn, Entity as Aggregators, Model as Aggregator, NewAggregator,
+    UpdateAggregator,
+};
 
 const URL_SAFE_BASE64_CHARS: &[u8] =
     b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";

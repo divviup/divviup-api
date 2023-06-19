@@ -2,6 +2,7 @@ use super::*;
 use divviup_api::{
     aggregator_api_mock::{self, random_hpke_config},
     clients::aggregator_client::TaskCreate,
+    entity::aggregator::Role,
 };
 
 pub fn user() -> User {
@@ -91,6 +92,25 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
     let task_create = TaskCreate::build(new_task.clone(), app.config()).unwrap();
     let api_response = aggregator_api_mock::task_response(task_create);
     task::build_task(new_task, api_response, account)
+        .insert(app.db())
+        .await
+        .unwrap()
+}
+
+pub fn new_aggregator() -> NewAggregator {
+    NewAggregator {
+        role: Some(Role::Either.as_ref().to_string()),
+        name: Some(format!("{}-aggregator", random_name())),
+        api_url: Some(format!("https://api.{}.divviup.test", random_name())),
+        dap_url: Some(format!("https://dap.{}.divviup.test", random_name())),
+        bearer_token: Some(random_name()),
+    }
+}
+
+pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregator {
+    new_aggregator()
+        .build(account)
+        .unwrap()
         .insert(app.db())
         .await
         .unwrap()
