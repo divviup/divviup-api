@@ -27,10 +27,11 @@ pub struct Model {
     #[serde(default, with = "time::serde::iso8601::option")]
     pub deleted_at: Option<OffsetDateTime>,
     pub role: Role,
-    pub bearer_token: String,
     pub name: String,
-    pub api_url: Url,
     pub dap_url: Url,
+    // the absence of an api_url indicates that this is an externally provisioned Aggregator
+    pub api_url: Option<Url>,
+    pub bearer_token: Option<String>,
 }
 
 impl Model {

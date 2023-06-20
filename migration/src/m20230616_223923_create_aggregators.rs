@@ -17,8 +17,8 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(Aggregator::Name).string().not_null())
-                    .col(ColumnDef::new(Aggregator::ApiUrl).string().not_null())
-                    .col(ColumnDef::new(Aggregator::BearerToken).string().not_null())
+                    .col(ColumnDef::new(Aggregator::ApiUrl).string().null())
+                    .col(ColumnDef::new(Aggregator::BearerToken).string().null())
                     .col(ColumnDef::new(Aggregator::DapUrl).string().not_null())
                     .col(ColumnDef::new(Aggregator::Role).integer().not_null())
                     .col(ColumnDef::new(Aggregator::AccountId).uuid().null())

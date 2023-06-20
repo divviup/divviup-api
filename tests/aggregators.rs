@@ -166,13 +166,13 @@ mod create {
             Url::parse(&new_aggregator.dap_url.unwrap()).unwrap()
         );
         assert_eq!(
-            aggregator.api_url,
-            Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
+            &**aggregator.api_url.as_ref().unwrap(),
+            &Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
         );
         assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
         assert_eq!(
-            aggregator.bearer_token,
-            new_aggregator.bearer_token.unwrap()
+            aggregator.bearer_token.as_ref().unwrap(),
+            &new_aggregator.bearer_token.unwrap()
         );
         assert_eq!(
             Aggregators::find_by_id(aggregator.id)
