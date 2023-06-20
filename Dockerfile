@@ -38,7 +38,6 @@ ARG GIT_REVISION=unknown
 LABEL revision ${GIT_REVISION}
 EXPOSE 8080
 ENV HOST=0.0.0.0
-COPY --from=builder /src/target/release/migration /migration
 COPY --from=builder /src/target/release/migrate_to /migrate_to
 COPY --from=builder /src/target/release/divviup_api_bin /divviup_api_bin
 ENTRYPOINT ["/divviup_api_bin"]
