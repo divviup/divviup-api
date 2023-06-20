@@ -220,90 +220,90 @@ mod tests {
     }
 
     #[async_std::test]
+    async fn migrate_to_up_latest() {
+        let db = test_database().await;
+
+        // To latest
+        migrate_to::<TestMigrator>(
+            &db,
+            false,
+            Direction::Up,
+            "m20230501_000000_test_migration_5",
+        )
+        .await
+        .unwrap();
+        assert_eq!(applied_migrations(&db).await, all_migrations());
+
+        // Ensure no-op
+        migrate_to::<TestMigrator>(
+            &db,
+            false,
+            Direction::Up,
+            "m20230501_000000_test_migration_5",
+        )
+        .await
+        .unwrap();
+        assert_eq!(applied_migrations(&db).await, all_migrations());
+    }
+
+    #[async_std::test]
     async fn migrate_to_up() {
-        {
-            let db = test_database().await;
+        let db = test_database().await;
 
-            // To latest
-            migrate_to::<TestMigrator>(
-                &db,
-                false,
-                Direction::Up,
-                "m20230501_000000_test_migration_5",
-            )
-            .await
-            .unwrap();
-            assert_eq!(applied_migrations(&db).await, all_migrations());
+        // To first
+        migrate_to::<TestMigrator>(
+            &db,
+            false,
+            Direction::Up,
+            "m20230101_000000_test_migration_1",
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            applied_migrations(&db).await,
+            vec!["m20230101_000000_test_migration_1"]
+        );
 
-            // Ensure no-op
-            migrate_to::<TestMigrator>(
-                &db,
-                false,
-                Direction::Up,
-                "m20230501_000000_test_migration_5",
-            )
-            .await
-            .unwrap();
-            assert_eq!(applied_migrations(&db).await, all_migrations());
-        }
-        {
-            let db = test_database().await;
+        // Dry run
+        migrate_to::<TestMigrator>(
+            &db,
+            true,
+            Direction::Up,
+            "m20230101_000000_test_migration_1",
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            applied_migrations(&db).await,
+            vec!["m20230101_000000_test_migration_1"]
+        );
 
-            // To first
-            migrate_to::<TestMigrator>(
-                &db,
-                false,
-                Direction::Up,
-                "m20230101_000000_test_migration_1",
-            )
-            .await
-            .unwrap();
-            assert_eq!(
-                applied_migrations(&db).await,
-                vec!["m20230101_000000_test_migration_1"]
-            );
+        // To third
+        migrate_to::<TestMigrator>(
+            &db,
+            false,
+            Direction::Up,
+            "m20230301_000000_test_migration_3",
+        )
+        .await
+        .unwrap();
+        assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
 
-            // Dry run
-            migrate_to::<TestMigrator>(
-                &db,
-                true,
-                Direction::Up,
-                "m20230101_000000_test_migration_1",
-            )
-            .await
-            .unwrap();
-            assert_eq!(
-                applied_migrations(&db).await,
-                vec!["m20230101_000000_test_migration_1"]
-            );
+        // To non-existent
+        let result = migrate_to::<TestMigrator>(&db, false, Direction::Up, "foobar").await;
+        assert!(matches!(result, Err(Error::MigrationNotFound(_))));
+        assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
 
-            // To third
-            migrate_to::<TestMigrator>(
-                &db,
-                false,
-                Direction::Up,
-                "m20230301_000000_test_migration_3",
-            )
-            .await
-            .unwrap();
-            assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
-
-            // To non-existent
-            let result = migrate_to::<TestMigrator>(&db, false, Direction::Up, "foobar").await;
-            assert!(matches!(result, Err(Error::MigrationNotFound(_))));
-            assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
-
-            // To old version
-            let result = migrate_to::<TestMigrator>(
-                &db,
-                false,
-                Direction::Up,
-                "m20230101_000000_test_migration_1",
-            )
-            .await;
-            assert!(matches!(result, Err(Error::VersionTooOld(_))));
-            assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
-        }
+        // To old version
+        let result = migrate_to::<TestMigrator>(
+            &db,
+            false,
+            Direction::Up,
+            "m20230101_000000_test_migration_1",
+        )
+        .await;
+        assert!(matches!(result, Err(Error::VersionTooOld(_))));
+        assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
     }
 
     #[async_std::test]
