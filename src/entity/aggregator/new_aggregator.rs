@@ -52,7 +52,18 @@ impl NewAggregator {
 
     pub fn build(self, account: Option<&Account>) -> Result<ActiveModel, Error> {
         self.validate()?;
-
+        // unwrap safety: the below unwraps will never panic, because
+        // the above call to `NewAggregator::validate` will
+        // early-return if any of the required `Option`s is `None`.
+        //
+        // This is an unfortunate consequence of the combination of
+        // `serde` and `validate`, and would be resolved by a
+        // potential deserializer-and-validator library that
+        // accumulates errors instead of bailing on the first
+        // error. As this deserialize-and-validate behavior is outside
+        // of the scope of this repository, we work around this by
+        // double-checking these Options -- once in validate, and
+        // again in the conversion to non-optional fields.
         Ok(ActiveModel {
             role: Set(self.role.unwrap().parse().unwrap()),
             name: Set(self.name.unwrap()),
