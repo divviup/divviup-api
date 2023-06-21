@@ -4,7 +4,8 @@ use migration::{
     MigratorTrait,
 };
 use sea_orm_migration::{prelude::*, seaql_migrations};
-use tracing::{info, Level};
+use tracing::info;
+use tracing_subscriber::EnvFilter;
 
 #[derive(Copy, Clone, ValueEnum, Debug)]
 enum Direction {
@@ -32,7 +33,7 @@ struct Args {
 async fn main() -> Result<(), Error> {
     let args = Args::parse();
     tracing_subscriber::fmt()
-        .with_max_level(Level::DEBUG)
+        .with_env_filter(EnvFilter::from_default_env())
         .init();
 
     let db = Database::connect(ConnectOptions::new(args.database_url)).await?;
