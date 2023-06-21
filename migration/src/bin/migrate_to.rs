@@ -4,7 +4,7 @@ use sea_orm_migration::{
     seaql_migrations, MigratorTrait, SchemaManager,
 };
 use std::cmp::Ordering;
-use tracing::info;
+use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
 
 use migration::Migrator;
@@ -39,10 +39,45 @@ async fn main() -> Result<(), Error> {
         .init();
 
     let db = Database::connect(ConnectOptions::new(args.database_url)).await?;
+    check_database_is_compatible::<Migrator>(&db).await?;
     match args.direction {
         Direction::Up => migrate_up::<Migrator>(&db, args.dry_run, &args.target_version).await?,
         Direction::Down => {
             migrate_down::<Migrator>(&db, args.dry_run, &args.target_version).await?
+        }
+    }
+    Ok(())
+}
+
+// Applied migrations must be a subset of the migrations available by the
+// MigratorTrait for this CLI to be operated safely.
+async fn check_database_is_compatible<M: MigratorTrait>(
+    db: &DatabaseConnection,
+) -> Result<(), Error> {
+    // If the database is uninitialized, we can continue. The migrator will
+    // initialize the database for us.
+    if !has_migrations_table(db).await? {
+        return Ok(());
+    }
+
+    let migrations: Vec<String> = M::migrations().iter().map(|m| m.name().into()).collect();
+    let applied_migrations = applied_migrations(db).await?;
+
+    let print_error = || {
+        error!("expected migrations: {:?}", migrations);
+        error!("present migrations: {:?}", applied_migrations);
+    };
+    for (i, applied) in applied_migrations.iter().enumerate() {
+        match migrations.get(i) {
+            Some(migration) if migration != applied => {
+                print_error();
+                return Err(Error::DbNotCompatible);
+            }
+            None => {
+                print_error();
+                return Err(Error::DbNotCompatible);
+            }
+            _ => {}
         }
     }
     Ok(())
@@ -137,9 +172,12 @@ fn migration_index<M: MigratorTrait>(version: &str) -> Option<usize> {
     M::migrations().iter().position(|m| m.name() == version)
 }
 
+async fn has_migrations_table(db: &DatabaseConnection) -> Result<bool, Error> {
+    Ok(SchemaManager::new(db).has_table("seaql_migrations").await?)
+}
+
 async fn latest_applied_migration(db: &DatabaseConnection) -> Result<String, Error> {
-    if !SchemaManager::new(db).has_table("seaql_migrations").await? {
-        // The migrations table has not been created.
+    if !has_migrations_table(db).await? {
         return Err(Error::DbNotInitialized);
     }
     Ok(seaql_migrations::Entity::find()
@@ -149,6 +187,16 @@ async fn latest_applied_migration(db: &DatabaseConnection) -> Result<String, Err
         // The migrations table exists, but no migrations have been applied.
         .ok_or(Error::DbNotInitialized)?
         .version)
+}
+
+async fn applied_migrations(db: &DatabaseConnection) -> Result<Vec<String>, Error> {
+    Ok(seaql_migrations::Entity::find()
+        .order_by_asc(seaql_migrations::Column::Version)
+        .all(db)
+        .await?
+        .into_iter()
+        .map(|m| m.version)
+        .collect())
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -167,6 +215,8 @@ enum Error {
     VersionTooNew(String),
     #[error("error calculating number of migrations, too many migrations?: {0}")]
     OverflowError(#[from] std::num::TryFromIntError),
+    #[error("applied migrations do not match migrations present in this tool")]
+    DbNotCompatible,
 }
 
 fn available_migrations() -> PossibleValuesParser {
@@ -260,36 +310,25 @@ mod tests {
             .unwrap()
     }
 
-    async fn applied_migrations(db: &DatabaseConnection) -> Vec<String> {
-        seaql_migrations::Entity::find()
-            .order_by_asc(seaql_migrations::Column::Version)
-            .all(db)
-            .await
-            .unwrap()
-            .into_iter()
-            .map(|m| m.version)
-            .collect()
-    }
-
     #[async_std::test]
-    async fn migrate_to_up_latest() {
+    async fn migrate_up_latest() {
         let db = test_database().await;
 
         // To latest
         migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
             .await
             .unwrap();
-        assert_eq!(applied_migrations(&db).await, all_migrations());
+        assert_eq!(applied_migrations(&db).await.unwrap(), all_migrations());
 
         // Ensure no-op
         migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
             .await
             .unwrap();
-        assert_eq!(applied_migrations(&db).await, all_migrations());
+        assert_eq!(applied_migrations(&db).await.unwrap(), all_migrations());
     }
 
     #[async_std::test]
-    async fn migrate_to_up() {
+    async fn migrate_up_works() {
         let db = test_database().await;
 
         // To first
@@ -297,7 +336,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            applied_migrations(&db).await,
+            applied_migrations(&db).await.unwrap(),
             vec!["m20230101_000000_test_migration_1"]
         );
 
@@ -306,7 +345,7 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            applied_migrations(&db).await,
+            applied_migrations(&db).await.unwrap(),
             vec!["m20230101_000000_test_migration_1"]
         );
 
@@ -314,64 +353,186 @@ mod tests {
         migrate_up::<TestMigrator>(&db, false, "m20230301_000000_test_migration_3")
             .await
             .unwrap();
-        assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
+        assert_eq!(
+            applied_migrations(&db).await.unwrap(),
+            all_migrations()[..3]
+        );
 
         // To non-existent
         let result = migrate_up::<TestMigrator>(&db, false, "foobar").await;
         assert!(matches!(result, Err(Error::MigrationNotFound(_))));
-        assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
+        assert_eq!(
+            applied_migrations(&db).await.unwrap(),
+            all_migrations()[..3]
+        );
 
         // To old version
         let result =
             migrate_up::<TestMigrator>(&db, false, "m20230101_000000_test_migration_1").await;
         assert!(matches!(result, Err(Error::VersionTooOld(_))));
-        assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
+        assert_eq!(
+            applied_migrations(&db).await.unwrap(),
+            all_migrations()[..3]
+        );
     }
 
     #[async_std::test]
-    async fn migrate_to_down() {
+    async fn migrate_down_works() {
         let db = test_database().await;
 
         // To latest
         migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
             .await
             .unwrap();
-        assert_eq!(applied_migrations(&db).await, all_migrations());
+        assert_eq!(applied_migrations(&db).await.unwrap(), all_migrations());
 
         // Ensure no-op
         migrate_down::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
             .await
             .unwrap();
-        assert_eq!(applied_migrations(&db).await, all_migrations());
+        assert_eq!(applied_migrations(&db).await.unwrap(), all_migrations());
 
         // Dry-run
         migrate_down::<TestMigrator>(&db, true, "m20230301_000000_test_migration_3")
             .await
             .unwrap();
-        assert_eq!(applied_migrations(&db).await, all_migrations());
+        assert_eq!(applied_migrations(&db).await.unwrap(), all_migrations());
 
         // To third
         migrate_down::<TestMigrator>(&db, false, "m20230301_000000_test_migration_3")
             .await
             .unwrap();
-        assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
+        assert_eq!(
+            applied_migrations(&db).await.unwrap(),
+            all_migrations()[..3]
+        );
 
         // To newer version
         let result =
             migrate_down::<TestMigrator>(&db, false, "m20230401_000000_test_migration_4").await;
         assert!(matches!(result, Err(Error::VersionTooNew(_))));
-        assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
+        assert_eq!(
+            applied_migrations(&db).await.unwrap(),
+            all_migrations()[..3]
+        );
 
         // To non-existent version
         let result = migrate_down::<TestMigrator>(&db, false, "foobar").await;
         assert!(matches!(result, Err(Error::MigrationNotFound(_))));
-        assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
+        assert_eq!(
+            applied_migrations(&db).await.unwrap(),
+            all_migrations()[..3]
+        );
 
         // Upgrade back to fourth, ensure we can still upgrade again.
         migrate_up::<TestMigrator>(&db, false, "m20230401_000000_test_migration_4")
             .await
             .unwrap();
-        assert_eq!(applied_migrations(&db).await, all_migrations()[..4]);
+        assert_eq!(
+            applied_migrations(&db).await.unwrap(),
+            all_migrations()[..4]
+        );
+    }
+
+    #[async_std::test]
+    async fn accept_compatible_db() {
+        let db = test_database().await;
+        check_database_is_compatible::<TestMigrator>(&db)
+            .await
+            .unwrap();
+
+        // To third
+        migrate_up::<TestMigrator>(&db, false, "m20230301_000000_test_migration_3")
+            .await
+            .unwrap();
+        assert_eq!(
+            applied_migrations(&db).await.unwrap(),
+            all_migrations()[..3]
+        );
+        check_database_is_compatible::<TestMigrator>(&db)
+            .await
+            .unwrap();
+
+        // To latest
+        migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
+            .await
+            .unwrap();
+        assert_eq!(applied_migrations(&db).await.unwrap(), all_migrations());
+        check_database_is_compatible::<TestMigrator>(&db)
+            .await
+            .unwrap();
+    }
+
+    #[async_std::test]
+    async fn reject_incompatible_db_using_wrong_migrator() {
+        struct AnotherTestMigrator;
+        test_migration!(m20240101_000000_test_migration_1, AnotherTestTable1);
+        test_migration!(m20240201_000000_test_migration_2, AnotherTestTable2);
+        #[async_trait::async_trait]
+        impl MigratorTrait for AnotherTestMigrator {
+            fn migrations() -> Vec<Box<dyn MigrationTrait>> {
+                vec![
+                    Box::new(m20240101_000000_test_migration_1),
+                    Box::new(m20240201_000000_test_migration_2),
+                ]
+            }
+        }
+
+        // DB brought up with AnotherTestMigrator. Simulates database brought
+        // up on an entirely different schema.
+        {
+            let db = test_database().await;
+            migrate_up::<AnotherTestMigrator>(&db, false, "m20240201_000000_test_migration_2")
+                .await
+                .unwrap();
+            assert_eq!(
+                applied_migrations(&db).await.unwrap(),
+                vec![
+                    "m20240101_000000_test_migration_1",
+                    "m20240201_000000_test_migration_2",
+                ]
+            );
+
+            // Use wrong TestMigrator, result should be incompatible.
+            assert!(matches!(
+                check_database_is_compatible::<TestMigrator>(&db).await,
+                Err(Error::DbNotCompatible),
+            ));
+        }
+        {
+            let db = test_database().await;
+            migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
+                .await
+                .unwrap();
+            assert_eq!(applied_migrations(&db).await.unwrap(), all_migrations());
+
+            // Use wrong TestMigrator, result should be incompatible.
+            assert!(matches!(
+                check_database_is_compatible::<AnotherTestMigrator>(&db).await,
+                Err(Error::DbNotCompatible),
+            ));
+        }
+    }
+
+    #[async_std::test]
+    async fn reject_incompatible_db_tampered() {
+        let db = test_database().await;
+
+        // To latest
+        migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
+            .await
+            .unwrap();
+        assert_eq!(applied_migrations(&db).await.unwrap(), all_migrations());
+
+        // Tamper with schema table.
+        seaql_migrations::Entity::delete_by_id("m20230301_000000_test_migration_3")
+            .exec(&db)
+            .await
+            .unwrap();
+        assert!(matches!(
+            check_database_is_compatible::<TestMigrator>(&db).await,
+            Err(Error::DbNotCompatible),
+        ));
     }
 
     #[test]
