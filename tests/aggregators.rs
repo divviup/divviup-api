@@ -161,6 +161,7 @@ mod create {
             .await;
         assert_response!(conn, 201);
         let aggregator: Aggregator = conn.response_json().await;
+        assert_eq!(aggregator.account_id.unwrap(), account.id);
         assert_eq!(
             aggregator.dap_url,
             Url::parse(&new_aggregator.dap_url.unwrap()).unwrap()
@@ -763,6 +764,68 @@ mod delete {
             .await;
         assert_status!(conn, 204);
         assert!(aggregator.reload(app.db()).await?.unwrap().is_tombstoned());
+
+        Ok(())
+    }
+}
+
+mod shared_create {
+    use super::{test, *};
+
+    #[test(harness = set_up)]
+    async fn as_admin(app: DivviupApi) -> TestResult {
+        let (admin, ..) = fixtures::admin(&app).await;
+        let new_aggregator = fixtures::new_aggregator();
+        let mut conn = post("/api/aggregators")
+            .with_request_json(&new_aggregator)
+            .with_api_headers()
+            .with_state(admin)
+            .run_async(&app)
+            .await;
+
+        assert_response!(conn, 201);
+        let aggregator: Aggregator = conn.response_json().await;
+        assert_eq!(
+            aggregator.dap_url,
+            Url::parse(&new_aggregator.dap_url.unwrap()).unwrap()
+        );
+        assert_eq!(
+            &**aggregator.api_url.as_ref().unwrap(),
+            &Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
+        );
+        assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
+        assert_eq!(
+            aggregator.bearer_token.as_ref().unwrap(),
+            &new_aggregator.bearer_token.unwrap()
+        );
+        assert!(aggregator.account_id.is_none());
+        assert_eq!(
+            Aggregators::find_by_id(aggregator.id)
+                .one(app.db())
+                .await?
+                .unwrap(),
+            aggregator
+        );
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn as_nonadmin(app: DivviupApi) -> TestResult {
+        let (admin, ..) = fixtures::member(&app).await;
+        let new_aggregator = fixtures::new_aggregator();
+        let aggregator_count_before = Aggregators::find().count(app.db()).await?;
+
+        let mut conn = post("/api/aggregators")
+            .with_request_json(&new_aggregator)
+            .with_api_headers()
+            .with_state(admin)
+            .run_async(&app)
+            .await;
+
+        assert_not_found!(conn);
+        let aggregator_count_after = Aggregators::find().count(app.db()).await?;
+        assert_eq!(aggregator_count_before, aggregator_count_after);
 
         Ok(())
     }

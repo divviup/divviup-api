@@ -116,11 +116,11 @@ pub async fn update(
 pub async fn admin_create(
     _: &mut Conn,
     (db, Json(new_aggregator)): (Db, Json<NewAggregator>),
-) -> Result<Json<Aggregator>, Error> {
+) -> Result<impl Handler, Error> {
     new_aggregator
         .build(None)?
         .insert(&db)
         .await
         .map_err(Error::from)
-        .map(Json)
+        .map(|agg| (Json(agg), Status::Created))
 }
