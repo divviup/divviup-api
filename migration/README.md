@@ -1,4 +1,12 @@
-# Running Migrator CLI
+There are two commands in this crate which assist with running database migrations.
+
+All commands require that you either export `DATABASE_URL` or provide a `--database-url`
+flag, containing a valid [PostgreSQL connection string](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+(e.g. `postgres://username:password@hostname:port/database`).
+
+## Running Migrator CLI
+
+This is the standard migrator CLI that comes with SeaORM.
 
 - Generate a new migration file
     ```sh
@@ -40,7 +48,7 @@
     cargo run -- status
     ```
 
-# Running extended migrator CLI
+## Running extended migrator CLI
 
 There is a CLI at `bin/migrate_to.rs` that covers some gaps in the standard SeaORM
 migrator CLI. It's most useful for running in automation.
