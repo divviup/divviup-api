@@ -24,16 +24,31 @@ pub use aggregator::{
     UpdateAggregator,
 };
 
-const URL_SAFE_BASE64_CHARS: &[u8] =
-    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+mod validators {
+    const URL_SAFE_BASE64_CHARS: &[u8] =
+        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-fn url_safe_base64(data: &str) -> Result<(), validator::ValidationError> {
-    if data
-        .chars()
-        .all(|c| u8::try_from(c).map_or(false, |c| URL_SAFE_BASE64_CHARS.contains(&c)))
-    {
-        Ok(())
-    } else {
-        Err(validator::ValidationError::new("base64"))
+    const BASE64_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    pub(super) fn url_safe_base64(data: &str) -> Result<(), validator::ValidationError> {
+        if data
+            .chars()
+            .all(|c| u8::try_from(c).map_or(false, |c| URL_SAFE_BASE64_CHARS.contains(&c)))
+        {
+            Ok(())
+        } else {
+            Err(validator::ValidationError::new("base64"))
+        }
+    }
+
+    pub(super) fn base64(data: &str) -> Result<(), validator::ValidationError> {
+        if data
+            .chars()
+            .all(|c| u8::try_from(c).map_or(false, |c| BASE64_CHARS.contains(&c)))
+        {
+            Ok(())
+        } else {
+            Err(validator::ValidationError::new("base64"))
+        }
     }
 }

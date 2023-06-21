@@ -1,10 +1,9 @@
-use super::url::Url;
 use crate::{
     clients::aggregator_client::{
         api_types::{Role, TaskResponse},
         TaskMetrics,
     },
-    entity::{account, membership, url_safe_base64, Account},
+    entity::{account, membership, url::Url, Account},
 };
 use sea_orm::{entity::prelude::*, ActiveValue::Set, IntoActiveModel};
 use serde::{Deserialize, Serialize};

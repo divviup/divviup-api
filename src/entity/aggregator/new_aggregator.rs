@@ -1,5 +1,5 @@
 use crate::{
-    entity::{url_safe_base64, Account},
+    entity::{validators::base64, Account},
     handler::Error,
 };
 use sea_orm::Set;
@@ -21,7 +21,7 @@ pub struct NewAggregator {
     pub api_url: Option<String>,
     #[validate(required, url)]
     pub dap_url: Option<String>,
-    #[validate(custom = "url_safe_base64")]
+    #[validate(custom = "base64")]
     pub bearer_token: Option<String>,
 }
 
