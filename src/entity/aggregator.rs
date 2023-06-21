@@ -66,6 +66,7 @@ impl AsRef<str> for Role {
         }
     }
 }
+
 #[derive(Debug)]
 pub struct UnrecognizedRole(String);
 impl Display for UnrecognizedRole {
@@ -77,10 +78,10 @@ impl Error for UnrecognizedRole {}
 impl FromStr for Role {
     type Err = UnrecognizedRole;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "LEADER" | "Leader" | "leader" => Ok(Self::Leader),
-            "HELPER" | "Helper" | "helper" => Ok(Self::Helper),
-            "EITHER" | "Either" | "either" => Ok(Self::Either),
+        match &*s.to_lowercase() {
+            "leader" => Ok(Self::Leader),
+            "helper" => Ok(Self::Helper),
+            "either" => Ok(Self::Either),
             unrecognized => Err(UnrecognizedRole(unrecognized.to_string())),
         }
     }
