@@ -232,7 +232,10 @@ fn available_migrations() -> PossibleValuesParser {
 
 #[cfg(test)]
 mod tests {
+    use std::{sync::Once, time::SystemTime};
+
     use super::*;
+    use sea_orm::{ActiveModelTrait, ActiveValue};
     use sea_orm_migration::prelude::*;
 
     macro_rules! test_migration {
@@ -312,6 +315,7 @@ mod tests {
 
     #[async_std::test]
     async fn migrate_up_latest() {
+        install_tracing_subscriber();
         let db = test_database().await;
 
         // To latest
@@ -329,6 +333,7 @@ mod tests {
 
     #[async_std::test]
     async fn migrate_up_works() {
+        install_tracing_subscriber();
         let db = test_database().await;
 
         // To first
@@ -378,7 +383,13 @@ mod tests {
 
     #[async_std::test]
     async fn migrate_down_works() {
+        install_tracing_subscriber();
         let db = test_database().await;
+        let result =
+            migrate_down::<TestMigrator>(&db, false, "m20230401_000000_test_migration_4").await;
+        assert!(matches!(result, Err(Error::DbNotInitialized)));
+
+        // Fail if DB not initialized
 
         // To latest
         migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
@@ -436,6 +447,7 @@ mod tests {
 
     #[async_std::test]
     async fn accept_compatible_db() {
+        install_tracing_subscriber();
         let db = test_database().await;
         check_database_is_compatible::<TestMigrator>(&db)
             .await
@@ -465,6 +477,8 @@ mod tests {
 
     #[async_std::test]
     async fn reject_incompatible_db_using_wrong_migrator() {
+        install_tracing_subscriber();
+
         struct AnotherTestMigrator;
         test_migration!(m20240101_000000_test_migration_1, AnotherTestTable1);
         test_migration!(m20240201_000000_test_migration_2, AnotherTestTable2);
@@ -515,7 +529,41 @@ mod tests {
     }
 
     #[async_std::test]
+    async fn reject_incompatible_db_using_outdated_migrator() {
+        install_tracing_subscriber();
+
+        // To latest
+        let db = test_database().await;
+        migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
+            .await
+            .unwrap();
+        assert_eq!(applied_migrations(&db).await.unwrap(), all_migrations());
+
+        // Insert an additional fake migration, to simulate the database having
+        // a newer schema than this tool supports.
+        seaql_migrations::ActiveModel {
+            version: ActiveValue::Set("m20230601_000000_test_migration_6".to_owned()),
+            applied_at: ActiveValue::Set(
+                SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs() as i64,
+            ),
+        }
+        .insert(&db)
+        .await
+        .unwrap();
+
+        assert!(matches!(
+            check_database_is_compatible::<TestMigrator>(&db).await,
+            Err(Error::DbNotCompatible),
+        ));
+    }
+
+    #[async_std::test]
     async fn reject_incompatible_db_tampered() {
+        install_tracing_subscriber();
+
         let db = test_database().await;
 
         // To latest
@@ -542,5 +590,15 @@ mod tests {
         assert!(Migrator::migrations()
             .windows(2)
             .all(|window| window[0].name() <= window[1].name()))
+    }
+
+    fn install_tracing_subscriber() {
+        static INSTALL_TRACE_SUBSCRIBER: Once = Once::new();
+        INSTALL_TRACE_SUBSCRIBER.call_once(|| {
+            tracing_subscriber::fmt()
+                .with_env_filter(EnvFilter::from_default_env())
+                .with_test_writer()
+                .init();
+        });
     }
 }
