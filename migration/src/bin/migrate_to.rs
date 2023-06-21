@@ -1,8 +1,7 @@
 use clap::{builder::PossibleValuesParser, command, Parser, ValueEnum};
 use sea_orm_migration::{
-    prelude::*,
-    sea_orm::{ConnectOptions, Database, DatabaseConnection, EntityTrait, QueryOrder},
-    seaql_migrations, MigratorTrait,
+    sea_orm::{ConnectOptions, Database, DatabaseConnection, DbErr, EntityTrait, QueryOrder},
+    seaql_migrations, MigratorTrait, SchemaManager,
 };
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -39,67 +38,94 @@ async fn main() -> Result<(), Error> {
         .init();
 
     let db = Database::connect(ConnectOptions::new(args.database_url)).await?;
-    migrate_to::<Migrator>(&db, args.dry_run, args.direction, &args.target_version).await?;
+    match args.direction {
+        Direction::Up => migrate_up::<Migrator>(&db, args.dry_run, &args.target_version).await?,
+        Direction::Down => {
+            migrate_down::<Migrator>(&db, args.dry_run, &args.target_version).await?
+        }
+    }
     Ok(())
 }
 
-async fn migrate_to<M: MigratorTrait>(
+async fn migrate_up<M: MigratorTrait>(
     db: &DatabaseConnection,
     dry_run: bool,
-    direction: Direction,
     target: &str,
 ) -> Result<(), Error> {
-    let latest_index = match latest_applied_migration(db).await {
-        Ok(m) => migration_index::<M>(&m).ok_or(Error::DBMigrationNotFound)?,
-        Err(_) => -1, // Empty database.
-    };
     let target_index =
         migration_index::<M>(target).ok_or(Error::MigrationNotFound(target.to_string()))?;
-    if target_index == latest_index {
-        info!("no action taken, already at desired version");
-        return Ok(());
-    }
 
-    match direction {
-        Direction::Up => match target_index - latest_index {
-            num_migrations if num_migrations > 0 => {
-                info!("executing {num_migrations} migration(s) to {target}");
-                if !dry_run {
-                    M::up(db, Some(num_migrations as u32))
-                        .await
-                        .map_err(Error::from)?
-                }
-                Ok(())
+    let num_migrations = match latest_applied_migration(db).await {
+        Ok(latest_migration) => {
+            let latest_index =
+                migration_index::<M>(&latest_migration).ok_or(Error::DbMigrationNotFound)?;
+            if target_index == latest_index {
+                info!("no action taken, already at desired version");
+                return Ok(());
+            } else if target_index < latest_index {
+                return Err(Error::VersionTooOld(target.to_string()));
             }
-            _ => Err(Error::VersionTooOld(target.to_string())),
-        },
-        Direction::Down => match latest_index - target_index {
-            num_migrations if num_migrations > 0 => {
-                info!("executing {num_migrations} migration(s) to {target}");
-                if !dry_run {
-                    M::down(db, Some(num_migrations as u32))
-                        .await
-                        .map_err(Error::from)?
-                }
-                Ok(())
-            }
-            _ => Err(Error::VersionTooNew(target.to_string())),
-        },
+            target_index - latest_index
+        }
+        Err(err) if matches!(err, Error::DbNotInitialized) => target_index + 1,
+        Err(err) => return Err(err),
+    };
+
+    info!("executing {num_migrations} migration(s) to {target}");
+    if !dry_run {
+        M::up(db, Some(num_migrations)).await.map_err(Error::from)?
     }
+    Ok(())
 }
 
-fn migration_index<M: MigratorTrait>(version: &str) -> Option<i64> {
+async fn migrate_down<M: MigratorTrait>(
+    db: &DatabaseConnection,
+    dry_run: bool,
+    target: &str,
+) -> Result<(), Error> {
+    let latest_index = migration_index::<M>(&latest_applied_migration(db).await?)
+        .ok_or(Error::DbMigrationNotFound)?;
+    let target_index =
+        migration_index::<M>(target).ok_or(Error::MigrationNotFound(target.to_string()))?;
+
+    let num_migrations = if latest_index == target_index {
+        info!("no action taken, already at desired version");
+        return Ok(());
+    } else if latest_index < target_index {
+        return Err(Error::VersionTooNew(target.to_string()));
+    } else {
+        latest_index - target_index
+    };
+
+    info!("executing {num_migrations} migration(s) to {target}");
+    if !dry_run {
+        M::down(db, Some(num_migrations))
+            .await
+            .map_err(Error::from)?
+    }
+    Ok(())
+}
+
+fn migration_index<M: MigratorTrait>(version: &str) -> Option<u32> {
     M::migrations()
         .iter()
         .position(|m| m.name() == version)
-        .map(|i| i as i64)
+        .map(|m| {
+            // We don't expect someone to have 2^32 migrations.
+            u32::try_from(m).expect("overflow when finding migrations")
+        })
 }
 
 async fn latest_applied_migration(db: &DatabaseConnection) -> Result<String, Error> {
+    if !SchemaManager::new(db).has_table("seaql_migrations").await? {
+        // The migrations table has not been created.
+        return Err(Error::DbNotInitialized);
+    }
     Ok(seaql_migrations::Entity::find()
         .order_by_desc(seaql_migrations::Column::Version)
         .one(db)
         .await?
+        // The migrations table exists, but no migrations have been applied.
         .ok_or(Error::DbNotInitialized)?
         .version)
 }
@@ -107,11 +133,11 @@ async fn latest_applied_migration(db: &DatabaseConnection) -> Result<String, Err
 #[derive(Debug, thiserror::Error)]
 enum Error {
     #[error("DB error: {0}")]
-    Db(#[from] sea_orm::DbErr),
+    Db(#[from] DbErr),
     #[error("DB is not initialized with migrations table")]
     DbNotInitialized,
     #[error("migration applied to DB is not found in available migrations")]
-    DBMigrationNotFound,
+    DbMigrationNotFound,
     #[error("migration version {0} not found in avaliable migrations")]
     MigrationNotFound(String),
     #[error("migration version {0} is older than the latest applied migration")]
@@ -134,6 +160,7 @@ fn available_migrations() -> PossibleValuesParser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sea_orm_migration::prelude::*;
 
     macro_rules! test_migration {
         ($name:ident, $table_name:ident) => {
@@ -226,25 +253,15 @@ mod tests {
         let db = test_database().await;
 
         // To latest
-        migrate_to::<TestMigrator>(
-            &db,
-            false,
-            Direction::Up,
-            "m20230501_000000_test_migration_5",
-        )
-        .await
-        .unwrap();
+        migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
+            .await
+            .unwrap();
         assert_eq!(applied_migrations(&db).await, all_migrations());
 
         // Ensure no-op
-        migrate_to::<TestMigrator>(
-            &db,
-            false,
-            Direction::Up,
-            "m20230501_000000_test_migration_5",
-        )
-        .await
-        .unwrap();
+        migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
+            .await
+            .unwrap();
         assert_eq!(applied_migrations(&db).await, all_migrations());
     }
 
@@ -253,57 +270,37 @@ mod tests {
         let db = test_database().await;
 
         // To first
-        migrate_to::<TestMigrator>(
-            &db,
-            false,
-            Direction::Up,
-            "m20230101_000000_test_migration_1",
-        )
-        .await
-        .unwrap();
+        migrate_up::<TestMigrator>(&db, false, "m20230101_000000_test_migration_1")
+            .await
+            .unwrap();
         assert_eq!(
             applied_migrations(&db).await,
             vec!["m20230101_000000_test_migration_1"]
         );
 
         // Dry run
-        migrate_to::<TestMigrator>(
-            &db,
-            true,
-            Direction::Up,
-            "m20230101_000000_test_migration_1",
-        )
-        .await
-        .unwrap();
+        migrate_up::<TestMigrator>(&db, true, "m20230101_000000_test_migration_1")
+            .await
+            .unwrap();
         assert_eq!(
             applied_migrations(&db).await,
             vec!["m20230101_000000_test_migration_1"]
         );
 
         // To third
-        migrate_to::<TestMigrator>(
-            &db,
-            false,
-            Direction::Up,
-            "m20230301_000000_test_migration_3",
-        )
-        .await
-        .unwrap();
+        migrate_up::<TestMigrator>(&db, false, "m20230301_000000_test_migration_3")
+            .await
+            .unwrap();
         assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
 
         // To non-existent
-        let result = migrate_to::<TestMigrator>(&db, false, Direction::Up, "foobar").await;
+        let result = migrate_up::<TestMigrator>(&db, false, "foobar").await;
         assert!(matches!(result, Err(Error::MigrationNotFound(_))));
         assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
 
         // To old version
-        let result = migrate_to::<TestMigrator>(
-            &db,
-            false,
-            Direction::Up,
-            "m20230101_000000_test_migration_1",
-        )
-        .await;
+        let result =
+            migrate_up::<TestMigrator>(&db, false, "m20230101_000000_test_migration_1").await;
         assert!(matches!(result, Err(Error::VersionTooOld(_))));
         assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
     }
@@ -313,74 +310,44 @@ mod tests {
         let db = test_database().await;
 
         // To latest
-        migrate_to::<TestMigrator>(
-            &db,
-            false,
-            Direction::Up,
-            "m20230501_000000_test_migration_5",
-        )
-        .await
-        .unwrap();
+        migrate_up::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
+            .await
+            .unwrap();
         assert_eq!(applied_migrations(&db).await, all_migrations());
 
         // Ensure no-op
-        migrate_to::<TestMigrator>(
-            &db,
-            false,
-            Direction::Down,
-            "m20230501_000000_test_migration_5",
-        )
-        .await
-        .unwrap();
+        migrate_down::<TestMigrator>(&db, false, "m20230501_000000_test_migration_5")
+            .await
+            .unwrap();
         assert_eq!(applied_migrations(&db).await, all_migrations());
 
         // Dry-run
-        migrate_to::<TestMigrator>(
-            &db,
-            true,
-            Direction::Down,
-            "m20230301_000000_test_migration_3",
-        )
-        .await
-        .unwrap();
+        migrate_down::<TestMigrator>(&db, true, "m20230301_000000_test_migration_3")
+            .await
+            .unwrap();
         assert_eq!(applied_migrations(&db).await, all_migrations());
 
         // To third
-        migrate_to::<TestMigrator>(
-            &db,
-            false,
-            Direction::Down,
-            "m20230301_000000_test_migration_3",
-        )
-        .await
-        .unwrap();
+        migrate_down::<TestMigrator>(&db, false, "m20230301_000000_test_migration_3")
+            .await
+            .unwrap();
         assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
 
         // To newer version
-        let result = migrate_to::<TestMigrator>(
-            &db,
-            false,
-            Direction::Down,
-            "m20230401_000000_test_migration_4",
-        )
-        .await;
+        let result =
+            migrate_down::<TestMigrator>(&db, false, "m20230401_000000_test_migration_4").await;
         assert!(matches!(result, Err(Error::VersionTooNew(_))));
         assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
 
         // To non-existent version
-        let result = migrate_to::<TestMigrator>(&db, false, Direction::Down, "foobar").await;
+        let result = migrate_down::<TestMigrator>(&db, false, "foobar").await;
         assert!(matches!(result, Err(Error::MigrationNotFound(_))));
         assert_eq!(applied_migrations(&db).await, all_migrations()[..3]);
 
         // Upgrade back to fourth, ensure we can still upgrade again.
-        migrate_to::<TestMigrator>(
-            &db,
-            false,
-            Direction::Up,
-            "m20230401_000000_test_migration_4",
-        )
-        .await
-        .unwrap();
+        migrate_up::<TestMigrator>(&db, false, "m20230401_000000_test_migration_4")
+            .await
+            .unwrap();
         assert_eq!(applied_migrations(&db).await, all_migrations()[..4]);
     }
 
