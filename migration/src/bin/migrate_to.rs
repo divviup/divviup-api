@@ -68,13 +68,13 @@ async fn migrate_up<M: MigratorTrait>(
                     return Ok(());
                 }
                 Ordering::Greater => {
-                    migrations_range = (latest_index + 1) as usize..=target_index as usize;
+                    migrations_range = (latest_index + 1)..=target_index;
                     target_index - latest_index
                 }
             }
         }
         Err(err) if matches!(err, Error::DbNotInitialized) => {
-            migrations_range = 0usize..=target_index as usize;
+            migrations_range = 0usize..=target_index;
             // The migration API takes "number of migrations to apply". If we have an
             // uninitialized database, and we want to apply the first migration (index 0),
             // then we still have to apply at least one migration.
@@ -91,7 +91,9 @@ async fn migrate_up<M: MigratorTrait>(
             .collect::<Vec<_>>()
     );
     if !dry_run {
-        M::up(db, Some(num_migrations)).await.map_err(Error::from)?
+        M::up(db, Some(u32::try_from(num_migrations)?))
+            .await
+            .map_err(Error::from)?
     }
     Ok(())
 }
@@ -117,28 +119,22 @@ async fn migrate_down<M: MigratorTrait>(
 
     info!(
         "executing {num_migrations} down migration(s) to reach {target}: {:?}",
-        Migrator::migrations()[(target_index as usize + 1)..=(latest_index as usize)]
+        Migrator::migrations()[(target_index + 1)..=(latest_index)]
             .iter()
             .rev()
             .map(|m| m.name())
             .collect::<Vec<_>>()
     );
     if !dry_run {
-        M::down(db, Some(num_migrations))
+        M::down(db, Some(u32::try_from(num_migrations)?))
             .await
             .map_err(Error::from)?
     }
     Ok(())
 }
 
-fn migration_index<M: MigratorTrait>(version: &str) -> Option<u32> {
-    M::migrations()
-        .iter()
-        .position(|m| m.name() == version)
-        .map(|m| {
-            // We don't expect someone to have 2^32 migrations.
-            u32::try_from(m).expect("overflow when finding migrations")
-        })
+fn migration_index<M: MigratorTrait>(version: &str) -> Option<usize> {
+    M::migrations().iter().position(|m| m.name() == version)
 }
 
 async fn latest_applied_migration(db: &DatabaseConnection) -> Result<String, Error> {
@@ -169,6 +165,8 @@ enum Error {
     VersionTooOld(String),
     #[error("migration version {0} is newer than the latest applied migration")]
     VersionTooNew(String),
+    #[error("error calculating number of migrations, too many migrations?: {0}")]
+    OverflowError(#[from] std::num::TryFromIntError),
 }
 
 fn available_migrations() -> PossibleValuesParser {
