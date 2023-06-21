@@ -70,6 +70,12 @@ pub enum Error {
     UrlParse(#[from] url::ParseError),
     #[error(transparent)]
     NumericConversion(#[from] std::num::TryFromIntError),
+    #[error(transparent)]
+    TimeComponentRange(#[from] time::error::ComponentRange),
+    #[error(transparent)]
+    TaskProvisioning(#[from] crate::entity::task::TaskProvisioningError),
+    #[error(transparent)]
+    Uuid(#[from] uuid::Error),
 }
 
 impl From<Box<dyn std::error::Error + Send + Sync>> for Error {

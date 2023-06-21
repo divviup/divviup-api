@@ -1,9 +1,8 @@
 use super::*;
-use divviup_api::{
-    aggregator_api_mock::{self, random_hpke_config},
-    clients::aggregator_client::TaskCreate,
-    entity::aggregator::Role,
-};
+use divviup_api::entity::aggregator::Role;
+use janus_messages::TaskId;
+use rand::random;
+use time::OffsetDateTime;
 
 pub fn user() -> User {
     User {
@@ -73,38 +72,46 @@ pub async fn member(app: &DivviupApi) -> (User, Account, Membership) {
 }
 
 pub async fn task(app: &DivviupApi, account: &Account) -> Task {
-    let new_task = NewTask {
-        name: Some(random_name()),
-        partner_url: Some("https://dap.clodflair.test".into()),
-        vdaf: Some(task::vdaf::Vdaf::Count),
-        min_batch_size: Some(500),
-        max_batch_size: Some(10000),
-        is_leader: Some(true),
+    let leader_aggregator = aggregator(app, Some(account)).await;
+    let helper_aggregator = aggregator(app, None).await;
+
+    Task {
+        id: random::<TaskId>().to_string(),
+        account_id: account.id,
+        name: random_name(),
+        vdaf: task::vdaf::Vdaf::Count,
+        min_batch_size: 100,
+        max_batch_size: Some(200),
+        created_at: OffsetDateTime::now_utc(),
+        updated_at: OffsetDateTime::now_utc(),
+        time_precision_seconds: 60,
+        report_count: 0,
+        aggregate_collection_count: 0,
         expiration: None,
-        time_precision_seconds: Some(60 * 60),
-        hpke_config: Some(encode_hpke_config(random_hpke_config())),
-        id: None,
-        vdaf_verify_key: None,
-        aggregator_auth_token: None,
-        collector_auth_token: None,
-    };
-    new_task.validate().unwrap();
-    let task_create = TaskCreate::build(new_task.clone(), app.config()).unwrap();
-    let api_response = aggregator_api_mock::task_response(task_create);
-    task::build_task(new_task, api_response, account)
-        .insert(app.db())
-        .await
-        .unwrap()
+        leader_aggregator_id: leader_aggregator.id,
+        helper_aggregator_id: helper_aggregator.id,
+    }
+    .into_active_model()
+    .insert(app.db())
+    .await
+    .unwrap()
 }
 
 pub fn new_aggregator() -> NewAggregator {
     NewAggregator {
         role: Some(Role::Either.as_ref().to_string()),
         name: Some(format!("{}-aggregator", random_name())),
-        api_url: Some(format!("https://api.{}.divviup.test", random_name())),
-        dap_url: Some(format!("https://dap.{}.divviup.test", random_name())),
+        api_url: Some(format!("https://api.{}.divviup.org", random_name())),
+        dap_url: Some(format!("https://dap.{}.divviup.org", random_name())),
         bearer_token: Some(random_name()),
     }
+}
+
+pub async fn aggregator_pair(app: &DivviupApi, account: &Account) -> (Aggregator, Aggregator) {
+    (
+        aggregator(app, Some(account)).await,
+        aggregator(app, None).await,
+    )
 }
 
 pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregator {

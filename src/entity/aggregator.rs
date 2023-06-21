@@ -1,3 +1,5 @@
+use crate::clients::AggregatorClient;
+
 use super::{account, membership, url::Url};
 use sea_orm::{entity::prelude::*, IntoActiveModel, Set};
 use serde::{Deserialize, Serialize};
@@ -47,6 +49,15 @@ impl Model {
 
     pub fn is_tombstoned(&self) -> bool {
         self.deleted_at.is_some()
+    }
+
+    pub fn is_first_party(&self) -> bool {
+        // probably temporary
+        matches!(self.dap_url.domain(), Some(domain) if domain.ends_with("divviup.org"))
+    }
+
+    pub fn client(&self, http_client: trillium_client::Client) -> Option<AggregatorClient> {
+        AggregatorClient::for_aggregator(http_client, self.clone())
     }
 }
 

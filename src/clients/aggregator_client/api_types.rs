@@ -1,17 +1,18 @@
 use crate::{
     entity::{
         task::vdaf::{CountVec, Histogram, Sum, SumVec, Vdaf},
-        NewTask,
+        Aggregator, ProvisionableTask,
     },
     handler::Error,
-    ApiConfig,
 };
 
 pub use janus_messages::{
+    codec::{Decode, Encode},
     Duration as JanusDuration, HpkeAeadId, HpkeConfig, HpkeConfigId, HpkeConfigList, HpkeKdfId,
     HpkeKemId, HpkePublicKey, Role, TaskId, Time as JanusTime,
 };
 use serde::{Deserialize, Serialize};
+use time::{error::ComponentRange, OffsetDateTime};
 use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,7 +66,7 @@ impl From<Vdaf> for VdafInstance {
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum QueryType {
     TimeInterval,
     FixedSize { max_batch_size: u64 },
@@ -105,8 +106,6 @@ pub struct TaskCreate {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub vdaf_verify_key: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub aggregator_auth_token: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub collector_auth_token: Option<String>,
@@ -120,39 +119,35 @@ pub struct TaskCreate {
     pub min_batch_size: u64,
     pub time_precision: u64,
     pub collector_hpke_config: HpkeConfig,
+    pub vdaf_verify_key: String,
 }
 
 impl TaskCreate {
-    pub fn build(mut new_task: NewTask, config: &ApiConfig) -> Result<Self, Error> {
+    pub fn build(
+        target_aggregator: &Aggregator,
+        new_task: &ProvisionableTask,
+    ) -> Result<Self, Error> {
         Ok(Self {
-            leader_endpoint: if new_task.is_leader.unwrap() {
-                config.aggregator_dap_url.clone()
-            } else {
-                new_task.partner_url.as_deref().unwrap().parse()?
-            },
-            helper_endpoint: if new_task.is_leader.unwrap() {
-                new_task.partner_url.as_deref().unwrap().parse()?
-            } else {
-                config.aggregator_dap_url.clone()
-            },
+            leader_endpoint: new_task.leader_aggregator.dap_url.clone().into(),
+            helper_endpoint: new_task.helper_aggregator.dap_url.clone().into(),
             query_type: new_task.max_batch_size.into(),
-            vdaf: new_task.vdaf.take().unwrap().into(),
-            role: if new_task.is_leader.unwrap() {
+            vdaf: new_task.vdaf.clone().into(),
+            role: if new_task.leader_aggregator.id == target_aggregator.id {
                 Role::Leader
             } else {
                 Role::Helper
             },
             max_batch_query_count: 1,
-            task_expiration: new_task.expiration.map(|task| {
-                JanusTime::from_seconds_since_epoch(task.unix_timestamp().try_into().unwrap())
+            task_expiration: new_task.expiration.map(|expiration| {
+                JanusTime::from_seconds_since_epoch(expiration.unix_timestamp().try_into().unwrap())
             }),
-            min_batch_size: new_task.min_batch_size.unwrap(),
-            time_precision: new_task.time_precision_seconds.unwrap(),
-            collector_hpke_config: new_task.hpke_config()?,
-            task_id: new_task.id,
-            vdaf_verify_key: new_task.vdaf_verify_key,
-            aggregator_auth_token: new_task.aggregator_auth_token,
-            collector_auth_token: new_task.collector_auth_token,
+            min_batch_size: new_task.min_batch_size,
+            time_precision: new_task.time_precision_seconds,
+            collector_hpke_config: new_task.hpke_config.clone(),
+            task_id: new_task.id.clone(),
+            vdaf_verify_key: new_task.vdaf_verify_key.clone(),
+            aggregator_auth_token: new_task.aggregator_auth_token.clone(),
+            collector_auth_token: new_task.collector_auth_token.clone(),
         })
     }
 }
@@ -176,6 +171,16 @@ pub struct TaskResponse {
     pub aggregator_auth_tokens: Vec<String>,
     pub collector_auth_tokens: Vec<String>,
     pub aggregator_hpke_configs: Vec<HpkeConfig>,
+}
+
+impl TaskResponse {
+    pub fn task_expiration(&self) -> Result<Option<OffsetDateTime>, ComponentRange> {
+        self.task_expiration
+            .map(|t| {
+                OffsetDateTime::from_unix_timestamp(t.as_seconds_since_epoch().try_into().unwrap())
+            })
+            .transpose()
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -218,7 +223,8 @@ mod test {
     "kdf_id": "HkdfSha256",
     "aead_id": "Aes128Gcm",
     "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-  }
+  },
+  "vdaf_verify_key": "dmRhZiB2ZXJpZnkga2V5IQ"
 }"#;
 
     #[test]

@@ -8,7 +8,7 @@ pub(crate) mod oauth2;
 pub(crate) mod origin_router;
 pub(crate) mod session_store;
 
-use crate::{clients::AggregatorClient, routes, ApiConfig, Db};
+use crate::{routes, ApiConfig, Db};
 
 use assets::static_assets;
 use cors::cors_headers;
@@ -80,8 +80,13 @@ impl DivviupApi {
     }
 }
 
+impl AsRef<Db> for DivviupApi {
+    fn as_ref(&self) -> &Db {
+        &self.db
+    }
+}
+
 fn api(db: &Db, config: &ApiConfig) -> impl Handler {
-    let aggregator_client = AggregatorClient::new(config);
     (
         compression(),
         #[cfg(feature = "integration-testing")]
@@ -89,7 +94,7 @@ fn api(db: &Db, config: &ApiConfig) -> impl Handler {
         cookies(),
         sessions(SessionStore::new(db.clone()), config.session_secret.clone())
             .with_cookie_name("divviup.sid"),
-        state(aggregator_client),
+        state(config.client.clone()),
         cors_headers(config),
         cache_control([Private, MustRevalidate]),
         db.clone(),

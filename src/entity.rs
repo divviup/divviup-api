@@ -15,7 +15,9 @@ pub use account::{
 pub use membership::{
     Column as MembershipColumn, CreateMembership, Entity as Memberships, Model as Membership,
 };
-pub use task::{Column as TaskColumn, Entity as Tasks, Model as Task, NewTask, UpdateTask};
+pub use task::{
+    Column as TaskColumn, Entity as Tasks, Model as Task, NewTask, ProvisionableTask, UpdateTask,
+};
 
 pub use session::{Column as SessionColumn, Entity as Sessions, Model as Session};
 

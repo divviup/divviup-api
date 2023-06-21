@@ -1,32 +1,11 @@
 use crate::handler::oauth2::Oauth2Config;
 use email_address::EmailAddress;
-use std::{
-    env::VarError,
-    fmt::{self, Display, Formatter},
-    str::FromStr,
-};
+use std::{env::VarError, str::FromStr};
 use thiserror::Error;
 use trillium_client::Client;
 use trillium_rustls::RustlsConfig;
 use trillium_tokio::ClientConfig;
 use url::Url;
-
-#[derive(Clone, Debug)]
-pub struct Base64String(String);
-impl FromStr for Base64String {
-    type Err = base64::DecodeError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use base64::{engine::general_purpose::STANDARD, Engine};
-        STANDARD.decode(s)?;
-        Ok(Self(s.into()))
-    }
-}
-impl Display for Base64String {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.0, f)
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct ApiConfig {
@@ -38,9 +17,6 @@ pub struct ApiConfig {
     pub auth_client_id: String,
     pub auth_client_secret: String,
     pub auth_audience: String,
-    pub aggregator_dap_url: Url,
-    pub aggregator_api_url: Url,
-    pub aggregator_secret: Base64String,
     pub prometheus_host: String,
     pub prometheus_port: u16,
     pub postmark_token: String,
@@ -94,9 +70,6 @@ impl ApiConfig {
             auth_audience: var("AUTH_AUDIENCE")?,
             app_url: var("APP_URL")?,
             auth_url: var("AUTH_URL")?,
-            aggregator_dap_url: var("AGGREGATOR_DAP_URL")?,
-            aggregator_api_url: var("AGGREGATOR_API_URL")?,
-            aggregator_secret: var("AGGREGATOR_SECRET")?,
             prometheus_host: var_optional("OTEL_EXPORTER_PROMETHEUS_HOST", "localhost".into())?,
             prometheus_port: var_optional("OTEL_EXPORTER_PROMETHEUS_PORT", 9464)?,
             postmark_token: var("POSTMARK_TOKEN")?,
@@ -119,5 +92,11 @@ impl ApiConfig {
             audience: self.auth_audience.clone(),
             http_client: self.client.clone(),
         }
+    }
+}
+
+impl AsRef<Client> for ApiConfig {
+    fn as_ref(&self) -> &Client {
+        &self.client
     }
 }
