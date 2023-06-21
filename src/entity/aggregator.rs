@@ -31,6 +31,7 @@ pub struct Model {
     pub dap_url: Url,
     // the absence of an api_url indicates that this is an externally provisioned Aggregator
     pub api_url: Option<Url>,
+    #[serde(skip)]
     pub bearer_token: Option<String>,
 }
 

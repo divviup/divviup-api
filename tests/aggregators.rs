@@ -8,6 +8,14 @@ impl Reload for Aggregator {
     }
 }
 
+#[track_caller]
+fn assert_same_json_representation<T: serde::Serialize>(actual: &T, expected: &T) {
+    assert_eq!(
+        serde_json::to_value(actual).unwrap(),
+        serde_json::to_value(expected).unwrap()
+    );
+}
+
 mod index {
     use super::{test, *};
 
@@ -29,9 +37,9 @@ mod index {
 
         assert_ok!(conn);
         let aggregators: Vec<Aggregator> = conn.response_json().await;
-        assert_eq!(
-            vec![shared_aggregator, aggregator1, aggregator2],
-            aggregators
+        assert_same_json_representation(
+            &aggregators,
+            &vec![shared_aggregator, aggregator1, aggregator2],
         );
         Ok(())
     }
@@ -54,7 +62,7 @@ mod index {
 
         assert_ok!(conn);
         let aggregators: Vec<Aggregator> = conn.response_json().await;
-        assert_eq!(vec![aggregator2], aggregators);
+        assert_same_json_representation(&aggregators, &vec![aggregator2]);
         Ok(())
     }
 
@@ -76,7 +84,7 @@ mod index {
 
         assert_ok!(conn);
         let aggregators: Vec<Aggregator> = conn.response_json().await;
-        assert_eq!(vec![aggregator2], aggregators);
+        assert_same_json_representation(&vec![aggregator2], &aggregators);
         Ok(())
     }
 
@@ -137,9 +145,9 @@ mod index {
 
         assert_ok!(conn);
         let aggregators: Vec<Aggregator> = conn.response_json().await;
-        assert_eq!(
-            vec![shared_aggregator, aggregator1, aggregator2],
-            aggregators
+        assert_same_json_representation(
+            &aggregators,
+            &vec![shared_aggregator, aggregator1, aggregator2],
         );
         Ok(())
     }
@@ -171,17 +179,13 @@ mod create {
             &Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
         );
         assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
-        assert_eq!(
-            aggregator.bearer_token.as_ref().unwrap(),
-            &new_aggregator.bearer_token.unwrap()
-        );
-        assert_eq!(
-            Aggregators::find_by_id(aggregator.id)
-                .one(app.db())
-                .await?
-                .unwrap(),
-            aggregator
-        );
+
+        let aggregator_from_db = Aggregators::find_by_id(aggregator.id)
+            .one(app.db())
+            .await?
+            .unwrap();
+
+        assert_same_json_representation(&aggregator, &aggregator_from_db);
 
         Ok(())
     }
@@ -264,13 +268,13 @@ mod create {
 
         assert_response!(conn, 201);
         let aggregator: Aggregator = conn.response_json().await;
-        assert_eq!(
-            Aggregators::find_by_id(aggregator.id)
-                .one(app.db())
-                .await?
-                .unwrap(),
-            aggregator
-        );
+
+        let aggregator_from_db = Aggregators::find_by_id(aggregator.id)
+            .one(app.db())
+            .await?
+            .unwrap();
+        assert_same_json_representation(&aggregator, &aggregator_from_db);
+
         Ok(())
     }
 }
@@ -289,7 +293,7 @@ mod show {
             .await;
         assert_ok!(conn);
         let response_aggregator: Aggregator = conn.response_json().await;
-        assert_eq!(response_aggregator, aggregator);
+        assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
 
@@ -304,7 +308,7 @@ mod show {
             .await;
         assert_ok!(conn);
         let response_aggregator: Aggregator = conn.response_json().await;
-        assert_eq!(response_aggregator, aggregator);
+        assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
 
@@ -334,7 +338,7 @@ mod show {
             .await;
         assert_ok!(conn);
         let response_aggregator: Aggregator = conn.response_json().await;
-        assert_eq!(response_aggregator, aggregator);
+        assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
 
@@ -794,18 +798,12 @@ mod shared_create {
             &Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
         );
         assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
-        assert_eq!(
-            aggregator.bearer_token.as_ref().unwrap(),
-            &new_aggregator.bearer_token.unwrap()
-        );
         assert!(aggregator.account_id.is_none());
-        assert_eq!(
-            Aggregators::find_by_id(aggregator.id)
-                .one(app.db())
-                .await?
-                .unwrap(),
-            aggregator
-        );
+        let aggregator_from_db = Aggregators::find_by_id(aggregator.id)
+            .one(app.db())
+            .await?
+            .unwrap();
+        assert_same_json_representation(&aggregator, &aggregator_from_db);
 
         Ok(())
     }
