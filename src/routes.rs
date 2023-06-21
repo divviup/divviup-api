@@ -1,5 +1,6 @@
 mod accounts;
 mod admin;
+mod aggregators;
 mod health_check;
 mod memberships;
 mod tasks;
@@ -8,7 +9,7 @@ mod users;
 use crate::{
     clients::Auth0Client,
     handler::{
-        destroy_session, logout_from_auth0,
+        admin_required, destroy_session, logout_from_auth0,
         oauth2::{self, OauthClient},
         redirect_if_logged_in, user_required, ReplaceMimeTypes,
     },
@@ -63,6 +64,13 @@ fn api_routes(config: &ApiConfig) -> impl Handler {
             .delete("/memberships/:membership_id", api(memberships::delete))
             .get("/tasks/:task_id", api(tasks::show))
             .patch("/tasks/:task_id", api(tasks::update))
+            .patch("/aggregators/:aggregator_id", api(aggregators::update))
+            .get("/aggregators/:aggregator_id", api(aggregators::show))
+            .delete("/aggregators/:aggregator_id", api(aggregators::delete))
+            .post(
+                "/aggregators",
+                (api(admin_required), api(aggregators::admin_create)),
+            )
             .any(
                 &[Patch, Get, Post],
                 "/accounts/:account_id/*",
@@ -80,4 +88,6 @@ fn accounts_routes(config: &ApiConfig) -> impl Handler {
         .post("/memberships", api(memberships::create))
         .get("/tasks", api(tasks::index))
         .post("/tasks", (state(config.clone()), api(tasks::create)))
+        .post("/aggregators", api(aggregators::create))
+        .get("/aggregators", api(aggregators::index))
 }

@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     fmt::{self, Display, Formatter},
     ops::{Deref, DerefMut},
+    str::FromStr,
 };
 #[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(transparent)]
@@ -53,6 +54,12 @@ impl PartialEq<&str> for Url {
 impl PartialEq<url::Url> for Url {
     fn eq(&self, other: &url::Url) -> bool {
         self.0 == *other
+    }
+}
+impl FromStr for Url {
+    type Err = url::ParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        url::Url::from_str(s).map(Self)
     }
 }
 

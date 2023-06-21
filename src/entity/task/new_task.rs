@@ -2,6 +2,7 @@ use janus_messages::HpkeConfig;
 use validator::ValidationErrors;
 
 use super::*;
+use crate::entity::validators::url_safe_base64;
 
 fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError> {
     if time < &TimeDateTimeWithTimeZone::now_utc() {

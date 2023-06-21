@@ -3,8 +3,7 @@ use crate::{
         api_types::{Role, TaskResponse},
         TaskMetrics,
     },
-    entity::{account, membership, url_safe_base64, Account},
-    handler::Error,
+    entity::{account, membership, url::Url, Account},
 };
 use sea_orm::{entity::prelude::*, ActiveValue::Set, IntoActiveModel};
 use serde::{Deserialize, Serialize};
@@ -15,8 +14,8 @@ pub mod vdaf;
 use vdaf::Vdaf;
 mod new_task;
 pub use new_task::NewTask;
-mod url;
-use self::url::Url;
+mod update_task;
+pub use update_task::UpdateTask;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "task")]
@@ -86,22 +85,6 @@ impl Related<membership::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-
-#[derive(Deserialize, Validate, Debug)]
-pub struct UpdateTask {
-    #[validate(required, length(min = 1))]
-    pub name: Option<String>,
-}
-
-impl UpdateTask {
-    pub fn build(self, model: Model) -> Result<ActiveModel, Error> {
-        self.validate()?;
-        let mut am = model.into_active_model();
-        am.name = Set(self.name.unwrap());
-        am.updated_at = Set(TimeDateTimeWithTimeZone::now_utc());
-        Ok(am)
-    }
-}
 
 pub fn build_task(mut task: NewTask, api_response: TaskResponse, account: &Account) -> ActiveModel {
     ActiveModel {

@@ -15,7 +15,7 @@ pub use divviup_api::{
 };
 pub use querystrong::QueryStrong;
 pub use sea_orm::{
-    ActiveModelTrait, ActiveValue, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait,
+    ActiveModelTrait, ActiveValue, ColumnTrait, ConnectionTrait, DbBackend, DbErr, EntityTrait,
     IntoActiveModel, PaginatorTrait, QueryFilter, Schema, Set,
 };
 pub use serde_json::{json, Value};
@@ -60,6 +60,7 @@ async fn set_up_schema(db: &Db) {
     set_up_schema_for(&schema, db, Memberships).await;
     set_up_schema_for(&schema, db, Tasks).await;
     set_up_schema_for(&schema, db, queue::Entity).await;
+    set_up_schema_for(&schema, db, Aggregators).await;
 }
 
 pub fn config(api_mocks: impl Handler) -> ApiConfig {
@@ -184,4 +185,9 @@ impl TestExt for TestConn {
         .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
         .with_api_host()
     }
+}
+
+#[trillium::async_trait]
+pub trait Reload: Sized {
+    async fn reload(self, db: &impl ConnectionTrait) -> Result<Option<Self>, DbErr>;
 }
