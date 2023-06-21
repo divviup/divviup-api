@@ -45,7 +45,7 @@ async fn main() -> Result<(), Error> {
 async fn migrate_to<M: MigratorTrait>(
     db: &DatabaseConnection,
     dry_run: bool,
-    dir: Direction,
+    direction: Direction,
     target: &str,
 ) -> Result<(), Error> {
     let latest_index = match latest_applied_migration(db).await {
@@ -59,7 +59,7 @@ async fn migrate_to<M: MigratorTrait>(
         return Ok(());
     }
 
-    match dir {
+    match direction {
         Direction::Up => match target_index - latest_index {
             num_migrations if num_migrations > 0 => {
                 info!("executing {num_migrations} migration(s) to {target}");
