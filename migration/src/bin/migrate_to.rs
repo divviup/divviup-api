@@ -3,6 +3,7 @@ use sea_orm_migration::{
     sea_orm::{ConnectOptions, Database, DatabaseConnection, DbErr, EntityTrait, QueryOrder},
     seaql_migrations, MigratorTrait, SchemaManager,
 };
+use std::cmp::Ordering;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
@@ -55,23 +56,40 @@ async fn migrate_up<M: MigratorTrait>(
     let target_index =
         migration_index::<M>(target).ok_or(Error::MigrationNotFound(target.to_string()))?;
 
+    let migrations_range;
     let num_migrations = match latest_applied_migration(db).await {
         Ok(latest_migration) => {
             let latest_index =
                 migration_index::<M>(&latest_migration).ok_or(Error::DbMigrationNotFound)?;
-            if target_index == latest_index {
-                info!("no action taken, already at desired version");
-                return Ok(());
-            } else if target_index < latest_index {
-                return Err(Error::VersionTooOld(target.to_string()));
+            match target_index.cmp(&latest_index) {
+                Ordering::Less => return Err(Error::VersionTooOld(target.to_string())),
+                Ordering::Equal => {
+                    info!("no action taken, already at desired version");
+                    return Ok(());
+                }
+                Ordering::Greater => {
+                    migrations_range = (latest_index + 1) as usize..=target_index as usize;
+                    target_index - latest_index
+                }
             }
-            target_index - latest_index
         }
-        Err(err) if matches!(err, Error::DbNotInitialized) => target_index + 1,
+        Err(err) if matches!(err, Error::DbNotInitialized) => {
+            migrations_range = 0usize..=target_index as usize;
+            // The migration API takes "number of migrations to apply". If we have an
+            // uninitialized database, and we want to apply the first migration (index 0),
+            // then we still have to apply at least one migration.
+            target_index + 1
+        }
         Err(err) => return Err(err),
     };
 
-    info!("executing {num_migrations} migration(s) to {target}");
+    info!(
+        "executing {num_migrations} up migration(s) to reach {target}: {:?}",
+        Migrator::migrations()[migrations_range]
+            .iter()
+            .map(|m| m.name())
+            .collect::<Vec<_>>()
+    );
     if !dry_run {
         M::up(db, Some(num_migrations)).await.map_err(Error::from)?
     }
@@ -88,16 +106,23 @@ async fn migrate_down<M: MigratorTrait>(
     let target_index =
         migration_index::<M>(target).ok_or(Error::MigrationNotFound(target.to_string()))?;
 
-    let num_migrations = if latest_index == target_index {
-        info!("no action taken, already at desired version");
-        return Ok(());
-    } else if latest_index < target_index {
-        return Err(Error::VersionTooNew(target.to_string()));
-    } else {
-        latest_index - target_index
+    let num_migrations = match latest_index.cmp(&target_index) {
+        Ordering::Less => return Err(Error::VersionTooNew(target.to_string())),
+        Ordering::Equal => {
+            info!("no action taken, already at desired version");
+            return Ok(());
+        }
+        Ordering::Greater => latest_index - target_index,
     };
 
-    info!("executing {num_migrations} migration(s) to {target}");
+    info!(
+        "executing {num_migrations} down migration(s) to reach {target}: {:?}",
+        Migrator::migrations()[(target_index as usize + 1)..=(latest_index as usize)]
+            .iter()
+            .rev()
+            .map(|m| m.name())
+            .collect::<Vec<_>>()
+    );
     if !dry_run {
         M::down(db, Some(num_migrations))
             .await
