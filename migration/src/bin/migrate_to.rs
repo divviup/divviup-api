@@ -1,11 +1,13 @@
 use clap::{builder::PossibleValuesParser, command, Parser, ValueEnum};
-use migration::{
+use sea_orm_migration::{
+    prelude::*,
     sea_orm::{ConnectOptions, Database, DatabaseConnection, EntityTrait, QueryOrder},
-    MigratorTrait,
+    seaql_migrations, MigratorTrait,
 };
-use sea_orm_migration::{prelude::*, seaql_migrations};
 use tracing::info;
 use tracing_subscriber::EnvFilter;
+
+use migration::Migrator;
 
 #[derive(Copy, Clone, ValueEnum, Debug)]
 enum Direction {
@@ -37,8 +39,7 @@ async fn main() -> Result<(), Error> {
         .init();
 
     let db = Database::connect(ConnectOptions::new(args.database_url)).await?;
-    migrate_to::<migration::Migrator>(&db, args.dry_run, args.direction, &args.target_version)
-        .await?;
+    migrate_to::<Migrator>(&db, args.dry_run, args.direction, &args.target_version).await?;
     Ok(())
 }
 
@@ -123,7 +124,7 @@ fn available_migrations() -> PossibleValuesParser {
     PossibleValuesParser::new(
         // Leak memory to give migration names 'static lifetime, so clap can
         // use them.
-        migration::Migrator::migrations()
+        Migrator::migrations()
             .into_iter()
             .map(|m| Box::leak(Box::new(m.name().to_owned())) as &'static str)
             .collect::<Vec<_>>(),
@@ -385,9 +386,9 @@ mod tests {
 
     #[test]
     fn ensure_migrations_are_sorted() {
-        // Migrations in migration::Migrator must be in lexicographic order, otherwise
+        // Migrations in Migrator must be in lexicographic order, otherwise
         // this CLI will not work correctly.
-        assert!(migration::Migrator::migrations()
+        assert!(Migrator::migrations()
             .windows(2)
             .all(|window| window[0].name() <= window[1].name()))
     }
