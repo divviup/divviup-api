@@ -92,8 +92,7 @@ async fn migrate_up<M: MigratorTrait>(
     let target_index =
         migration_index::<M>(target).ok_or(Error::MigrationNotFound(target.to_string()))?;
 
-    let migrations_range;
-    let num_migrations = match latest_applied_migration(db).await {
+    let (migrations_range, num_migrations) = match latest_applied_migration(db).await {
         Ok(latest_migration) => {
             let latest_index =
                 migration_index::<M>(&latest_migration).ok_or(Error::DbMigrationNotFound)?;
@@ -103,19 +102,19 @@ async fn migrate_up<M: MigratorTrait>(
                     info!("no action taken, already at desired version");
                     return Ok(());
                 }
-                Ordering::Greater => {
-                    migrations_range = (latest_index + 1)..=target_index;
-                    target_index - latest_index
-                }
+                Ordering::Greater => (
+                    (latest_index + 1)..=target_index,
+                    target_index - latest_index,
+                ),
             }
         }
-        Err(err) if matches!(err, Error::DbNotInitialized) => {
-            migrations_range = 0usize..=target_index;
+        Err(err) if matches!(err, Error::DbNotInitialized) => (
+            0usize..=target_index,
             // The migration API takes "number of migrations to apply". If we have an
             // uninitialized database, and we want to apply the first migration (index 0),
             // then we still have to apply at least one migration.
-            target_index + 1
-        }
+            target_index + 1,
+        ),
         Err(err) => return Err(err),
     };
 
