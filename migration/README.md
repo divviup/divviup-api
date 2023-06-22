@@ -1,9 +1,10 @@
 There are two commands in this crate which assist with running database migrations.
 
 All commands require that you either export `DATABASE_URL` or provide a `--database-url`
-flag, containing a valid [PostgreSQL connection string](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+flag, containing a valid [PostgreSQL connection string][pgsql-conn-str]
 (e.g. `postgres://username:password@hostname:port/database`).
 
+[pgsql-conn-str]: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
 ## Running Migrator CLI
 
 This is the standard migrator CLI that comes with SeaORM.
