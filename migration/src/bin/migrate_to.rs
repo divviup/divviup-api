@@ -49,8 +49,9 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-// Applied migrations must be a subset of the migrations available by the
-// MigratorTrait for this CLI to be operated safely.
+/// Checks that the database is compatible with the given migrator. Applied
+/// migrations must be a subset of the migrations available by the MigratorTrait
+/// for this CLI to be operated safely.
 async fn check_database_is_compatible<M: MigratorTrait>(
     db: &DatabaseConnection,
 ) -> Result<(), Error> {
