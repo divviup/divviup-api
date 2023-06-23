@@ -50,7 +50,12 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_foreign_key(ForeignKey::drop().name("fkey-task-account-id").to_owned())
+            .drop_foreign_key(
+                ForeignKey::drop()
+                    .name("fkey-task-account-id")
+                    .table(Task::Table)
+                    .to_owned(),
+            )
             .await?;
         manager
             .drop_table(Table::drop().table(Account::Table).to_owned())
