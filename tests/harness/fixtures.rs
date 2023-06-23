@@ -46,7 +46,7 @@ pub async fn membership(app: &DivviupApi, account: &Account, user: &User) -> Mem
 }
 
 pub async fn build_membership(app: &DivviupApi) -> Membership {
-    let account = account(&app).await;
+    let account = account(app).await;
     let email = format!("test-{}@example.test", random_name());
     Membership::build(email, &account)
         .unwrap()

@@ -97,7 +97,7 @@ fn generate_vdaf_verify_key_and_expected_task_id() -> (String, String) {
     rand::thread_rng().fill(&mut verify_key);
     (
         URL_SAFE_NO_PAD.encode(verify_key),
-        URL_SAFE_NO_PAD.encode(Sha256::digest(&verify_key)),
+        URL_SAFE_NO_PAD.encode(Sha256::digest(verify_key)),
     )
 }
 
