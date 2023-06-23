@@ -17,10 +17,8 @@ pub enum TaskProvisioningError {
 #[derive(Clone, Debug)]
 pub struct ProvisionableTask {
     pub account: Account,
-    pub id: Option<String>,
+    pub id: String,
     pub vdaf_verify_key: String,
-    pub aggregator_auth_token: Option<String>,
-    pub collector_auth_token: Option<String>,
     pub name: String,
     pub leader_aggregator: Aggregator,
     pub helper_aggregator: Aggregator,
@@ -46,12 +44,11 @@ fn assert_same<T: Eq>(
 
 impl ProvisionableTask {
     async fn provision_aggregator(
-        &mut self,
+        &self,
         http_client: Client,
         aggregator: Aggregator,
     ) -> Result<Option<TaskResponse>, Error> {
-        let Some(client) = aggregator.client(http_client) else { return Ok(None) };
-        let response = client.create_task(self).await?;
+        let response = aggregator.client(http_client).create_task(self).await?;
 
         assert_same(&self.vdaf, &response.vdaf.clone().into(), "vdaf")?;
         assert_same(
@@ -72,29 +69,25 @@ impl ProvisionableTask {
         assert_same(
             self.time_precision_seconds,
             response.time_precision.as_seconds(),
-            "time_precision_seconds",
+            "time_precision",
         )?;
 
-        if let Some(id) = self.id.as_deref() {
-            assert_same(id, &*response.task_id.to_string(), "task_id")?;
-        } else {
-            self.id = Some(response.task_id.to_string());
-        }
+        assert_same(&*self.id, &*response.task_id.to_string(), "task_id")?;
 
         // there are likely some more validations needed
         Ok(Some(response))
     }
 
-    pub async fn provision(mut self, client: Client) -> Result<ActiveModel, Error> {
+    pub async fn provision(self, client: Client) -> Result<ActiveModel, Error> {
+        let _helper = self
+            .provision_aggregator(client.clone(), self.helper_aggregator.clone())
+            .await?;
         let _leader = self
             .provision_aggregator(client.clone(), self.leader_aggregator.clone())
             .await?;
-        let _helper = self
-            .provision_aggregator(client, self.helper_aggregator.clone())
-            .await?;
 
         Ok(super::Model {
-            id: self.id.ok_or(TaskProvisioningError::MissingTaskId)?,
+            id: self.id,
             account_id: self.account.id,
             name: self.name,
             vdaf: self.vdaf,

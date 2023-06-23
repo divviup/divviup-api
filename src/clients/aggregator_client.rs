@@ -25,16 +25,13 @@ impl AsRef<Client> for AggregatorClient {
 }
 
 impl AggregatorClient {
-    pub fn for_aggregator(client: Client, aggregator: Aggregator) -> Option<Self> {
-        Some(Self {
+    pub fn new(client: Client, aggregator: Aggregator) -> Self {
+        Self {
             client,
-            base_url: aggregator.api_url.as_ref()?.clone().into(),
-            auth_header: HeaderValue::from(format!(
-                "Bearer {}",
-                aggregator.bearer_token.as_deref()?
-            )),
+            base_url: aggregator.api_url.clone().into(),
+            auth_header: HeaderValue::from(format!("Bearer {}", &aggregator.bearer_token)),
             aggregator,
-        })
+        }
     }
 
     pub async fn get_task_ids(&self) -> Result<Vec<String>, ClientError> {

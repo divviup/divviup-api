@@ -104,13 +104,10 @@ impl From<Option<i64>> for QueryType {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskCreate {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub task_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub aggregator_auth_token: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub collector_auth_token: Option<String>,
-    pub leader_endpoint: Url,
-    pub helper_endpoint: Url,
+    pub peer_aggregator_endpoint: Url,
     pub query_type: QueryType,
     pub vdaf: VdafInstance,
     pub role: Role,
@@ -127,16 +124,20 @@ impl TaskCreate {
         target_aggregator: &Aggregator,
         new_task: &ProvisionableTask,
     ) -> Result<Self, Error> {
+        let role = if new_task.leader_aggregator.id == target_aggregator.id {
+            Role::Leader
+        } else {
+            Role::Helper
+        };
         Ok(Self {
-            leader_endpoint: new_task.leader_aggregator.dap_url.clone().into(),
-            helper_endpoint: new_task.helper_aggregator.dap_url.clone().into(),
+            peer_aggregator_endpoint: if role == Role::Leader {
+                new_task.helper_aggregator.dap_url.clone().into()
+            } else {
+                new_task.leader_aggregator.dap_url.clone().into()
+            },
             query_type: new_task.max_batch_size.into(),
             vdaf: new_task.vdaf.clone().into(),
-            role: if new_task.leader_aggregator.id == target_aggregator.id {
-                Role::Leader
-            } else {
-                Role::Helper
-            },
+            role,
             max_batch_query_count: 1,
             task_expiration: new_task.expiration.map(|expiration| {
                 JanusTime::from_seconds_since_epoch(expiration.unix_timestamp().try_into().unwrap())
@@ -144,10 +145,9 @@ impl TaskCreate {
             min_batch_size: new_task.min_batch_size,
             time_precision: new_task.time_precision_seconds,
             collector_hpke_config: new_task.hpke_config.clone(),
-            task_id: new_task.id.clone(),
             vdaf_verify_key: new_task.vdaf_verify_key.clone(),
-            aggregator_auth_token: new_task.aggregator_auth_token.clone(),
-            collector_auth_token: new_task.collector_auth_token.clone(),
+            aggregator_auth_token: None,
+            collector_auth_token: None,
         })
     }
 }
@@ -155,8 +155,7 @@ impl TaskCreate {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TaskResponse {
     pub task_id: TaskId,
-    pub leader_endpoint: Url,
-    pub helper_endpoint: Url,
+    pub peer_aggregator_endpoint: Url,
     pub query_type: QueryType,
     pub vdaf: VdafInstance,
     pub role: Role,
@@ -200,8 +199,7 @@ mod test {
     use super::{TaskCreate, TaskResponse};
 
     const TASK_CREATE: &str = r#"{
-  "leader_endpoint": "https://example.com/",
-  "helper_endpoint": "https://example.net/",
+  "peer_aggregator_endpoint": "https://example.com/",
   "query_type": {
     "FixedSize": {
       "max_batch_size": 999
@@ -238,8 +236,7 @@ mod test {
 
     const TASK_RESPONSE: &str = r#"{
   "task_id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-  "leader_endpoint": "https://example.com/",
-  "helper_endpoint": "https://example.net/",
+  "peer_aggregator_endpoint": "https://example.com/",
   "query_type": {
     "FixedSize": {
       "max_batch_size": 999

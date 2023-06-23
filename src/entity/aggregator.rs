@@ -31,12 +31,10 @@ pub struct Model {
     pub role: Role,
     pub name: String,
     pub dap_url: Url,
-    // the absence of an api_url indicates that this is an externally provisioned Aggregator
-    pub api_url: Option<Url>,
+    pub api_url: Url,
     pub is_first_party: bool,
-
     #[serde(skip)]
-    pub bearer_token: Option<String>,
+    pub bearer_token: String,
 }
 
 impl Model {
@@ -56,8 +54,8 @@ impl Model {
         matches!(self.dap_url.domain(), Some(domain) if domain.ends_with("divviup.org"))
     }
 
-    pub fn client(&self, http_client: trillium_client::Client) -> Option<AggregatorClient> {
-        AggregatorClient::for_aggregator(http_client, self.clone())
+    pub fn client(&self, http_client: trillium_client::Client) -> AggregatorClient {
+        AggregatorClient::new(http_client, self.clone())
     }
 }
 

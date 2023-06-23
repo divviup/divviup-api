@@ -1,14 +1,15 @@
 use super::*;
 use crate::{
     clients::aggregator_client::api_types::{Decode, HpkeConfig},
-    entity::{validators::url_safe_base64, Account, Aggregator, Aggregators},
+    entity::{Account, Aggregator, Aggregators},
     handler::Error,
 };
 use base64::{
-    engine::general_purpose::{STANDARD, STANDARD_NO_PAD},
+    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
     Engine,
 };
 use rand::Rng;
+use sha2::{Digest, Sha256};
 use std::io::Cursor;
 use validator::ValidationErrors;
 
@@ -22,18 +23,6 @@ fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError>
 
 #[derive(Deserialize, Validate, Debug, Clone, Default)]
 pub struct NewTask {
-    #[validate(length(equal = 43), custom = "url_safe_base64")] // 32 bytes after base64 decode
-    pub id: Option<String>,
-
-    #[validate(length(equal = 22), custom = "url_safe_base64")] // 16 bytes after base64 decode
-    pub vdaf_verify_key: Option<String>,
-
-    #[validate(length(min = 1))]
-    pub aggregator_auth_token: Option<String>,
-
-    #[validate(length(min = 1))]
-    pub collector_auth_token: Option<String>,
-
     #[validate(required, length(min = 1))]
     pub name: Option<String>,
 
@@ -103,10 +92,13 @@ async fn load_aggregator(
 }
 
 const VDAF_BYTES: usize = 16;
-fn generate_vdaf_verify_key(_: &Vdaf) -> String {
+fn generate_vdaf_verify_key_and_expected_task_id() -> (String, String) {
     let mut verify_key = [0; VDAF_BYTES];
     rand::thread_rng().fill(&mut verify_key);
-    STANDARD_NO_PAD.encode(verify_key)
+    (
+        URL_SAFE_NO_PAD.encode(verify_key),
+        URL_SAFE_NO_PAD.encode(Sha256::digest(&verify_key)),
+    )
 }
 
 impl NewTask {
@@ -128,12 +120,6 @@ impl NewTask {
                 None
             }
         }
-    }
-
-    fn vdaf_verify_key(&self) -> String {
-        self.vdaf_verify_key
-            .clone()
-            .unwrap_or_else(|| generate_vdaf_verify_key(self.vdaf.as_ref().unwrap()))
     }
 
     async fn validate_aggregators(
@@ -202,12 +188,12 @@ impl NewTask {
             // the first error.
             let (leader_aggregator, helper_aggregator) = aggregators.unwrap();
 
+            let (vdaf_verify_key, id) = generate_vdaf_verify_key_and_expected_task_id();
+
             Ok(ProvisionableTask {
                 account,
-                id: self.id.clone(),
-                vdaf_verify_key: self.vdaf_verify_key(),
-                aggregator_auth_token: self.aggregator_auth_token.clone(),
-                collector_auth_token: self.collector_auth_token.clone(),
+                id,
+                vdaf_verify_key,
                 name: self.name.clone().unwrap(),
                 leader_aggregator,
                 helper_aggregator,

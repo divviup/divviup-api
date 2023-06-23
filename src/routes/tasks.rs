@@ -68,12 +68,8 @@ async fn refresh_metrics_if_needed(task: Task, db: Db, client: Client) -> Result
     if OffsetDateTime::now_utc() - task.updated_at <= Duration::from_secs(5 * 60) {
         return Ok(task);
     }
-    if let Some(client) = task
-        .first_party_aggregator(&db)
-        .await?
-        .and_then(|a| a.client(client))
-    {
-        let metrics = client.get_task_metrics(&task.id).await?;
+    if let Some(aggregator) = task.first_party_aggregator(&db).await? {
+        let metrics = aggregator.client(client).get_task_metrics(&task.id).await?;
         task.update_metrics(metrics, db).await.map_err(Into::into)
     } else {
         Ok(task)

@@ -175,8 +175,8 @@ mod create {
             Url::parse(&new_aggregator.dap_url.unwrap()).unwrap()
         );
         assert_eq!(
-            &**aggregator.api_url.as_ref().unwrap(),
-            &Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
+            aggregator.api_url,
+            Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
         );
         assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
         assert!(!aggregator.is_first_party);
@@ -796,8 +796,8 @@ mod shared_create {
             Url::parse(&new_aggregator.dap_url.unwrap()).unwrap()
         );
         assert_eq!(
-            &**aggregator.api_url.as_ref().unwrap(),
-            &Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
+            aggregator.api_url,
+            Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
         );
         assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
         assert!(aggregator.account_id.is_none());
