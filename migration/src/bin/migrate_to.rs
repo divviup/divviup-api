@@ -36,6 +36,7 @@ async fn main() -> Result<(), Error> {
     let args = Args::parse();
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
+        .with_ansi(false)
         .init();
 
     let db = Database::connect(ConnectOptions::new(args.database_url)).await?;
