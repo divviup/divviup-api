@@ -203,6 +203,7 @@ impl NewTask {
                 expiration: self.expiration,
                 time_precision_seconds: self.time_precision_seconds.unwrap(),
                 hpke_config: hpke_config.unwrap(),
+                aggregator_auth_token: None,
             })
         } else {
             Err(errors)

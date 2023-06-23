@@ -146,7 +146,7 @@ impl TaskCreate {
             time_precision: new_task.time_precision_seconds,
             collector_hpke_config: new_task.hpke_config.clone(),
             vdaf_verify_key: new_task.vdaf_verify_key.clone(),
-            aggregator_auth_token: None,
+            aggregator_auth_token: new_task.aggregator_auth_token.clone(),
             collector_auth_token: None,
         })
     }
@@ -167,8 +167,8 @@ pub struct TaskResponse {
     pub time_precision: JanusDuration,
     pub tolerable_clock_skew: JanusDuration,
     pub collector_hpke_config: HpkeConfig,
-    pub aggregator_auth_tokens: Vec<String>,
-    pub collector_auth_tokens: Vec<String>,
+    pub aggregator_auth_token: String,
+    pub collector_auth_token: String,
     pub aggregator_hpke_configs: Vec<HpkeConfig>,
 }
 
@@ -264,12 +264,8 @@ mod test {
     "aead_id": "Aes128Gcm",
     "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   },
-  "aggregator_auth_tokens": [
-    "YWdncmVnYXRvci0xMjM0NTY3OA"
-  ],
-  "collector_auth_tokens": [
-    "Y29sbGVjdG9yLWFiY2RlZjAw"
-  ],
+  "aggregator_auth_token": "YWdncmVnYXRvci0xMjM0NTY3OA",
+  "collector_auth_token": "Y29sbGVjdG9yLWFiY2RlZjAw",
   "aggregator_hpke_configs": [
     {
       "id": 13,

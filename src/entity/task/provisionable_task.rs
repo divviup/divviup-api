@@ -28,6 +28,7 @@ pub struct ProvisionableTask {
     pub expiration: Option<OffsetDateTime>,
     pub time_precision_seconds: u64,
     pub hpke_config: HpkeConfig,
+    pub aggregator_auth_token: Option<String>,
 }
 
 fn assert_same<T: Eq>(
@@ -47,7 +48,7 @@ impl ProvisionableTask {
         &self,
         http_client: Client,
         aggregator: Aggregator,
-    ) -> Result<Option<TaskResponse>, Error> {
+    ) -> Result<TaskResponse, Error> {
         let response = aggregator.client(http_client).create_task(self).await?;
 
         assert_same(&self.vdaf, &response.vdaf.clone().into(), "vdaf")?;
@@ -75,15 +76,18 @@ impl ProvisionableTask {
         assert_same(&*self.id, &*response.task_id.to_string(), "task_id")?;
 
         // there are likely some more validations needed
-        Ok(Some(response))
+        Ok(response)
     }
 
-    pub async fn provision(self, client: Client) -> Result<ActiveModel, Error> {
-        let _helper = self
+    pub async fn provision(mut self, client: Client) -> Result<ActiveModel, Error> {
+        let helper = self
             .provision_aggregator(client.clone(), self.helper_aggregator.clone())
             .await?;
+
+        self.aggregator_auth_token = Some(helper.aggregator_auth_token);
+
         let _leader = self
-            .provision_aggregator(client.clone(), self.leader_aggregator.clone())
+            .provision_aggregator(client, self.leader_aggregator.clone())
             .await?;
 
         Ok(super::Model {

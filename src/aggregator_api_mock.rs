@@ -55,8 +55,8 @@ pub fn task_response(task_create: TaskCreate) -> TaskResponse {
         time_precision: JanusDuration::from_seconds(task_create.time_precision),
         tolerable_clock_skew: JanusDuration::from_seconds(60),
         collector_hpke_config: random_hpke_config(),
-        aggregator_auth_tokens: vec![],
-        collector_auth_tokens: vec![],
+        aggregator_auth_token: repeat_with(fastrand::alphanumeric).take(32).collect(),
+        collector_auth_token: repeat_with(fastrand::alphanumeric).take(32).collect(),
         aggregator_hpke_configs: repeat_with(random_hpke_config).take(5).collect(),
     }
 }
