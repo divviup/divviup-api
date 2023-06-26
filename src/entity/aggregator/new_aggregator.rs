@@ -75,6 +75,7 @@ impl NewAggregator {
             created_at: Set(OffsetDateTime::now_utc()),
             updated_at: Set(OffsetDateTime::now_utc()),
             deleted_at: Set(None),
+            is_first_party: Set(account.is_none()),
         })
     }
 }
