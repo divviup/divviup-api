@@ -1,5 +1,5 @@
-use crate::entity::{account, task};
-use sea_orm::{entity::prelude::*, ActiveValue};
+use crate::entity::{Account, AccountColumn, AccountRelation, Accounts, Aggregators, Tasks};
+use sea_orm::{prelude::*, IntoActiveModel};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use validator::{Validate, ValidationErrors};
@@ -18,33 +18,43 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::account::Entity",
+        belongs_to = "Accounts",
         from = "Column::AccountId",
-        to = "super::account::Column::Id",
+        to = "AccountColumn::Id",
         on_update = "Cascade",
         on_delete = "Cascade"
     )]
     Account,
 }
 
-impl Related<account::Entity> for Entity {
+impl Related<Accounts> for Entity {
     fn to() -> RelationDef {
         Relation::Account.def()
     }
 }
 
-impl Related<task::Entity> for Entity {
+impl Related<Tasks> for Entity {
     fn to() -> RelationDef {
-        account::Relation::Task.def()
+        AccountRelation::Tasks.def()
     }
 
     fn via() -> Option<RelationDef> {
-        Some(account::Relation::Membership.def().rev())
+        Some(AccountRelation::Memberships.def().rev())
+    }
+}
+
+impl Related<Aggregators> for Entity {
+    fn to() -> RelationDef {
+        AccountRelation::Aggregators.def()
+    }
+
+    fn via() -> Option<RelationDef> {
+        Some(AccountRelation::Memberships.def().rev())
     }
 }
 
 impl Model {
-    pub fn build(email: String, account: &account::Model) -> Result<ActiveModel, ValidationErrors> {
+    pub fn build(email: String, account: &Account) -> Result<ActiveModel, ValidationErrors> {
         CreateMembership {
             user_email: Some(email),
         }
@@ -59,14 +69,15 @@ pub struct CreateMembership {
 }
 
 impl CreateMembership {
-    pub fn build(self, account: &account::Model) -> Result<ActiveModel, ValidationErrors> {
+    pub fn build(self, account: &Account) -> Result<ActiveModel, ValidationErrors> {
         self.validate()?;
-        Ok(ActiveModel {
-            id: ActiveValue::Set(Uuid::new_v4()),
-            account_id: ActiveValue::Set(account.id),
-            user_email: ActiveValue::Set(self.user_email.unwrap()),
-            created_at: ActiveValue::Set(TimeDateTimeWithTimeZone::now_utc()),
-        })
+        Ok(Model {
+            id: Uuid::new_v4(),
+            account_id: account.id,
+            user_email: self.user_email.unwrap(),
+            created_at: TimeDateTimeWithTimeZone::now_utc(),
+        }
+        .into_active_model())
     }
 }
 

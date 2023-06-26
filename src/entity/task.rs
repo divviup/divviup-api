@@ -125,11 +125,11 @@ impl Related<account::Entity> for Entity {
 
 impl Related<membership::Entity> for Entity {
     fn to() -> RelationDef {
-        account::Relation::Membership.def()
+        account::Relation::Memberships.def()
     }
 
     fn via() -> Option<RelationDef> {
-        Some(account::Relation::Task.def().rev())
+        Some(account::Relation::Tasks.def().rev())
     }
 }
 

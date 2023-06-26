@@ -70,11 +70,11 @@ impl User {
 #[async_trait]
 impl FromConn for User {
     async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let db = Db::from_conn(conn).await?;
         let mut user: Self = conn
             .take_state()
             .or_else(|| conn.session().get(USER_SESSION_KEY))?;
-        user.populate_admin(&db).await;
+        let db: &Db = conn.state()?;
+        user.populate_admin(db).await;
         conn.set_state(user.clone());
         Some(user)
     }

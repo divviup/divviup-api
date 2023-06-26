@@ -64,6 +64,7 @@ async fn set_up_schema(db: &Db) {
     set_up_schema_for(&schema, db, Tasks).await;
     set_up_schema_for(&schema, db, queue::Entity).await;
     set_up_schema_for(&schema, db, Aggregators).await;
+    set_up_schema_for(&schema, db, ApiTokens).await;
 }
 
 pub fn config(api_mocks: impl Handler) -> ApiConfig {
@@ -202,4 +203,12 @@ impl TestExt for TestConn {
 #[trillium::async_trait]
 pub trait Reload: Sized {
     async fn reload(self, db: &impl ConnectionTrait) -> Result<Option<Self>, DbErr>;
+}
+
+#[track_caller]
+pub fn assert_same_json_representation<T: serde::Serialize>(actual: &T, expected: &T) {
+    assert_eq!(
+        serde_json::to_value(actual).unwrap(),
+        serde_json::to_value(expected).unwrap()
+    );
 }
