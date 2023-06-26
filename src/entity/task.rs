@@ -1,6 +1,8 @@
 use crate::{
     clients::aggregator_client::{api_types::TaskResponse, TaskMetrics},
-    entity::{account, membership},
+    entity::{
+        account, membership, AccountColumn, Accounts, Aggregator, AggregatorColumn, Aggregators,
+    },
 };
 use sea_orm::{entity::prelude::*, ActiveValue::Set, IntoActiveModel};
 use serde::{Deserialize, Serialize};
@@ -64,21 +66,15 @@ impl Model {
             .ok_or(DbErr::Custom("expected leader aggregator".into()))?
     }
 
-    pub async fn helper_aggregator(
-        &self,
-        db: &impl ConnectionTrait,
-    ) -> Result<super::Aggregator, DbErr> {
-        super::Aggregators::find_by_id(self.leader_aggregator_id)
+    pub async fn helper_aggregator(&self, db: &impl ConnectionTrait) -> Result<Aggregator, DbErr> {
+        Aggregators::find_by_id(self.helper_aggregator_id)
             .one(db)
             .await
             .transpose()
             .ok_or(DbErr::Custom("expected helper aggregator".into()))?
     }
 
-    pub async fn aggregators(
-        &self,
-        db: &impl ConnectionTrait,
-    ) -> Result<[super::Aggregator; 2], DbErr> {
+    pub async fn aggregators(&self, db: &impl ConnectionTrait) -> Result<[Aggregator; 2], DbErr> {
         let (leader, helper) =
             futures_lite::future::try_zip(self.leader_aggregator(db), self.helper_aggregator(db))
                 .await?;
@@ -88,35 +84,35 @@ impl Model {
     pub async fn first_party_aggregator(
         &self,
         db: &impl ConnectionTrait,
-    ) -> Result<Option<super::Aggregator>, DbErr> {
+    ) -> Result<Option<Aggregator>, DbErr> {
         Ok(self
             .aggregators(db)
             .await?
             .into_iter()
-            .find(|agg| agg.is_first_party()))
+            .find(|agg| agg.is_first_party))
     }
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::Accounts",
+        belongs_to = "Accounts",
         from = "Column::AccountId",
-        to = "super::account::Column::Id"
+        to = "AccountColumn::Id"
     )]
     Account,
 
     #[sea_orm(
-        belongs_to = "super::Aggregators",
+        belongs_to = "Aggregators",
         from = "Column::HelperAggregatorId",
-        to = "super::AggregatorColumn::Id"
+        to = "AggregatorColumn::Id"
     )]
     HelperAggregator,
 
     #[sea_orm(
-        belongs_to = "super::Aggregators",
+        belongs_to = "Aggregators",
         from = "Column::LeaderAggregatorId",
-        to = "super::AggregatorColumn::Id"
+        to = "AggregatorColumn::Id"
     )]
     LeaderAggregator,
 }
