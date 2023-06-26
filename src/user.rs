@@ -37,7 +37,7 @@ impl User {
             picture: None,
             sub: "".into(),
             updated_at: OffsetDateTime::now_utc() - Duration::from_secs(24 * 60 * 60),
-            admin: Some(false),
+            admin: Some(true),
         }
     }
 
