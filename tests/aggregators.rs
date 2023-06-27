@@ -791,6 +791,7 @@ mod shared_create {
 
         assert_response!(conn, 201);
         let aggregator: Aggregator = conn.response_json().await;
+        assert!(aggregator.is_first_party);
         assert_eq!(
             aggregator.dap_url,
             Url::parse(&new_aggregator.dap_url.unwrap()).unwrap()
@@ -802,11 +803,13 @@ mod shared_create {
         assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
         assert!(aggregator.account_id.is_none());
         assert!(aggregator.is_first_party);
+
         let aggregator_from_db = Aggregators::find_by_id(aggregator.id)
             .one(app.db())
             .await?
             .unwrap();
 
+        assert!(aggregator_from_db.is_first_party);
         assert_same_json_representation(&aggregator, &aggregator_from_db);
 
         Ok(())

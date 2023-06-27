@@ -54,6 +54,10 @@ impl AggregatorClient {
         }
     }
 
+    pub async fn get_task(&self, task_id: &str) -> Result<TaskResponse, ClientError> {
+        self.get(&format!("/tasks/{task_id}")).await
+    }
+
     pub async fn get_task_metrics(&self, task_id: &str) -> Result<TaskMetrics, ClientError> {
         self.get(&format!("/tasks/{task_id}/metrics")).await
     }

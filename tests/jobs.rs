@@ -17,7 +17,7 @@ async fn create_account(app: DivviupApi, client_logs: ClientLogs) -> TestResult 
         create_user_request.url,
         app.config().auth_url.join("/api/v2/users").unwrap()
     );
-    let user_id = create_user_request.response_json()["user_id"]
+    let user_id = create_user_request.response_json::<Value>()["user_id"]
         .as_str()
         .unwrap()
         .to_string();
@@ -50,7 +50,7 @@ async fn reset_password(app: DivviupApi, client_logs: ClientLogs) -> TestResult 
             .join("/api/v2/tickets/password-change")
             .unwrap()
     );
-    let action_url = reset_request.response_json()["ticket"]
+    let action_url = reset_request.response_json::<Value>()["ticket"]
         .as_str()
         .unwrap()
         .parse()

@@ -92,3 +92,16 @@ pub async fn update(
     let task = update.build(task)?.update(&db).await?;
     Ok(Json(task))
 }
+
+pub mod collector_auth_tokens {
+    use super::*;
+    pub async fn index(
+        _: &mut Conn,
+        (task, db, State(client)): (Task, Db, State<Client>),
+    ) -> Result<impl Handler, Error> {
+        let leader = task.leader_aggregator(&db).await?;
+        let client = leader.client(client);
+        let task_response = client.get_task(&task.id).await?;
+        Ok(Json([task_response.collector_auth_token]))
+    }
+}

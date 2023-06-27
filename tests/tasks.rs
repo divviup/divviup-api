@@ -1,4 +1,5 @@
 mod harness;
+use divviup_api::clients::aggregator_client::*;
 use harness::*;
 
 mod index {
@@ -208,6 +209,7 @@ mod create {
 
 mod show {
     use super::{assert_eq, test, *};
+    use time::Duration;
 
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
@@ -224,23 +226,40 @@ mod show {
         Ok(())
     }
 
-    #[test(harness = set_up)]
-    async fn metrics_caching(app: DivviupApi) -> TestResult {
+    #[test(harness = with_client_logs)]
+    async fn metrics_caching(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let task = fixtures::task(&app, &account).await;
         let mut task = task.into_active_model();
-        task.updated_at =
-            Set(time::OffsetDateTime::now_utc() - std::time::Duration::from_secs(10 * 60));
+        task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc() - Duration::minutes(10));
         let task = task.update(app.db()).await?;
+
+        let first_party_aggregator = task.first_party_aggregator(app.db()).await?.unwrap();
 
         let mut conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_state(user.clone())
             .run_async(&app)
             .await;
+        assert_ok!(conn);
+
+        let aggregator_api_request = client_logs.last();
+        assert_eq!(
+            aggregator_api_request.url,
+            first_party_aggregator
+                .api_url
+                .join(&format!("/tasks/{}/metrics", task.id))
+                .unwrap()
+        );
+        let metrics: TaskMetrics = aggregator_api_request.response_json();
+
         let response_task: Task = conn.response_json().await;
-        assert!(response_task.report_count != task.report_count);
-        assert!(response_task.aggregate_collection_count != task.aggregate_collection_count);
+
+        assert_eq!(response_task.report_count, metrics.reports as i32);
+        assert_eq!(
+            response_task.aggregate_collection_count,
+            metrics.report_aggregations as i32
+        );
         assert!(response_task.updated_at > task.updated_at);
 
         let mut conn = get(format!("/api/tasks/{}", task.id))
@@ -425,6 +444,69 @@ mod update {
             .run_async(&app)
             .await;
         assert_not_found!(conn);
+        Ok(())
+    }
+}
+
+mod collector_auth_tokens {
+    use super::{assert_eq, test, *};
+
+    #[test(harness = with_client_logs)]
+    async fn as_member(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
+            .with_api_headers()
+            .with_state(user)
+            .run_async(&app)
+            .await;
+
+        let auth_token = client_logs
+            .last()
+            .response_json::<TaskResponse>()
+            .collector_auth_token
+            .unwrap();
+
+        assert_ok!(conn);
+        let body: Vec<String> = conn.response_json().await;
+        assert_eq!(vec![auth_token], body);
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn as_rando(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let user = fixtures::user();
+        let account = fixtures::account(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
+            .with_api_headers()
+            .with_state(user)
+            .run_async(&app)
+            .await;
+        assert!(client_logs.logs().is_empty());
+        assert_not_found!(conn);
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn as_admin(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let (admin, ..) = fixtures::admin(&app).await;
+        let account = fixtures::account(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
+            .with_api_headers()
+            .with_state(admin)
+            .run_async(&app)
+            .await;
+        let auth_token = client_logs
+            .last()
+            .response_json::<TaskResponse>()
+            .collector_auth_token
+            .unwrap();
+
+        assert_ok!(conn);
+        let body: Vec<String> = conn.response_json().await;
+        assert_eq!(vec![auth_token], body);
         Ok(())
     }
 }

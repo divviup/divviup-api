@@ -49,11 +49,6 @@ impl Model {
         self.deleted_at.is_some()
     }
 
-    pub fn is_first_party(&self) -> bool {
-        // probably temporary
-        matches!(self.dap_url.domain(), Some(domain) if domain.ends_with("divviup.org"))
-    }
-
     pub fn client(&self, http_client: trillium_client::Client) -> AggregatorClient {
         AggregatorClient::new(http_client, self.clone())
     }

@@ -1,4 +1,4 @@
-use serde_json::Value;
+use serde::Deserialize;
 use std::{
     fmt::{Display, Formatter, Result},
     sync::{Arc, RwLock},
@@ -17,8 +17,8 @@ pub struct LoggedConn {
 }
 
 impl LoggedConn {
-    pub fn response_json(&self) -> Value {
-        serde_json::from_str(self.response_body.as_ref().unwrap()).unwrap()
+    pub fn response_json<'a: 'de, 'de, T: Deserialize<'de>>(&'a self) -> T {
+        serde_json::from_str(self.response_body.as_ref().unwrap()).expect("deserialization error")
     }
 }
 

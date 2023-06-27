@@ -1,6 +1,6 @@
 use crate::clients::aggregator_client::api_types::{
-    HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, TaskCreate, TaskId,
-    TaskIds, TaskMetrics, TaskResponse,
+    HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, QueryType, Role,
+    TaskCreate, TaskId, TaskIds, TaskMetrics, TaskResponse, VdafInstance,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use fastrand::alphanumeric;
@@ -11,7 +11,7 @@ use std::iter::repeat_with;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Json};
 use trillium_logger::{dev_formatter, logger};
-use trillium_router::router;
+use trillium_router::{router, RouterConnExt};
 use uuid::Uuid;
 
 pub fn aggregator_api() -> impl Handler {
@@ -19,6 +19,7 @@ pub fn aggregator_api() -> impl Handler {
         logger().with_formatter(("[aggregator mock] ", dev_formatter)),
         router()
             .post("/tasks", api(post_task))
+            .get("/tasks/:task_id", api(get_task))
             .get("/task_ids", api(task_ids))
             .delete("/tasks/:task_id", Status::Ok)
             .get("/tasks/:task_id/metrics", api(get_task_metrics)),
@@ -29,6 +30,28 @@ async fn get_task_metrics(_: &mut Conn, (): ()) -> Json<TaskMetrics> {
     Json(TaskMetrics {
         reports: fastrand::u64(..1000),
         report_aggregations: fastrand::u64(..1000),
+    })
+}
+
+async fn get_task(conn: &mut Conn, (): ()) -> Json<TaskResponse> {
+    let task_id = conn.param("task_id").unwrap();
+    Json(TaskResponse {
+        task_id: task_id.parse().unwrap(),
+        peer_aggregator_endpoint: "https://_".parse().unwrap(),
+        query_type: QueryType::TimeInterval,
+        vdaf: VdafInstance::Prio3Count,
+        role: Role::Leader,
+        vdaf_verify_keys: vec![repeat_with(alphanumeric).take(10).collect()],
+        max_batch_query_count: 100,
+        task_expiration: None,
+        report_expiry_age: None,
+        min_batch_size: 1000,
+        time_precision: JanusDuration::from_seconds(60),
+        tolerable_clock_skew: JanusDuration::from_seconds(60),
+        collector_hpke_config: random_hpke_config(),
+        aggregator_auth_token: Some(repeat_with(fastrand::alphanumeric).take(32).collect()),
+        collector_auth_token: Some(repeat_with(fastrand::alphanumeric).take(32).collect()),
+        aggregator_hpke_configs: repeat_with(random_hpke_config).take(5).collect(),
     })
 }
 

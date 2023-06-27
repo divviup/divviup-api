@@ -151,7 +151,7 @@ impl NewTask {
             errors.add("helper_aggregator_id", ValidationError::new("same"));
         }
 
-        if !leader.is_first_party() && !helper.is_first_party() {
+        if !leader.is_first_party && !helper.is_first_party {
             errors.add(
                 "leader_aggregator_id",
                 ValidationError::new("no-first-party"),
