@@ -2,9 +2,13 @@ use crate::{
     entity::{AccountColumn, Accounts, MembershipColumn, Memberships},
     Db,
 };
-use sea_orm::prelude::*;
+use sea_orm::{
+    prelude::*,
+    sea_query::{self, all},
+    QuerySelect,
+};
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 use trillium::{async_trait, Conn};
 use trillium_api::FromConn;
 use trillium_sessions::SessionConnExt;
@@ -25,10 +29,7 @@ pub struct User {
 }
 
 impl User {
-    #[cfg(feature = "integration-testing")]
     pub fn for_integration_testing() -> Self {
-        use std::time::Duration;
-
         Self {
             email: "integration@test.example".into(),
             email_verified: true,
@@ -36,22 +37,29 @@ impl User {
             nickname: "test".into(),
             picture: None,
             sub: "".into(),
-            updated_at: OffsetDateTime::now_utc() - Duration::from_secs(24 * 60 * 60),
+            updated_at: OffsetDateTime::now_utc() - Duration::days(1),
             admin: Some(true),
         }
     }
 
-    async fn populate_admin(&mut self, db: &Db) {
-        let membership = Memberships::find()
+    async fn fetch_admin(&self, db: &Db) -> bool {
+        Memberships::find()
             .inner_join(Accounts)
-            .filter(MembershipColumn::UserEmail.eq(String::from(&self.email)))
-            .filter(AccountColumn::Admin.eq(true))
-            .one(db)
+            .filter(all![
+                MembershipColumn::UserEmail.eq(self.email.clone()),
+                AccountColumn::Admin.eq(true)
+            ])
+            .limit(1)
+            .count(db)
             .await
             .ok()
-            .flatten();
+            .map_or(false, |n| n > 0)
+    }
 
-        self.admin = Some(membership.is_some());
+    async fn populate_admin(&mut self, db: &Db) {
+        if self.admin.is_none() {
+            self.admin = Some(self.fetch_admin(db).await);
+        }
     }
 
     pub fn is_admin(&self) -> bool {

@@ -13,7 +13,7 @@ pub fn user() -> User {
         picture: None,
         sub: "".into(),
         updated_at: time::OffsetDateTime::now_utc(),
-        admin: Some(false),
+        admin: None,
     }
 }
 
