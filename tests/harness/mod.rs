@@ -1,7 +1,11 @@
 #![allow(dead_code)]
 // because different tests use different parts of this
-use divviup_api::{entity::queue, ApiConfig, Db};
-use janus_messages::HpkeConfig;
+use base64::{engine::general_purpose::STANDARD, Engine};
+use divviup_api::{
+    clients::aggregator_client::api_types::{Encode, HpkeConfig},
+    entity::queue,
+    ApiConfig, Db,
+};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, future::Future};
 use trillium::Handler;
@@ -35,12 +39,9 @@ mod api_mocks;
 pub use api_mocks::ApiMocks;
 
 const POSTMARK_URL: &str = "https://postmark.example";
-const AGGREGATOR_API_URL: &str = "https://aggregator.example";
 const AUTH0_URL: &str = "https://auth.example";
 
 pub fn encode_hpke_config(hpke_config: HpkeConfig) -> String {
-    use base64::{engine::general_purpose::STANDARD, Engine};
-    use prio::codec::Encode;
     let mut vec = Vec::new();
     hpke_config.encode(&mut vec);
     STANDARD.encode(vec)
@@ -73,9 +74,6 @@ pub fn config(api_mocks: impl Handler) -> ApiConfig {
         auth_client_id: "client id".into(),
         auth_client_secret: "client secret".into(),
         auth_audience: "aud".into(),
-        aggregator_dap_url: "https://dap.divviup.test".parse().unwrap(),
-        aggregator_api_url: AGGREGATOR_API_URL.parse().unwrap(),
-        aggregator_secret: "ZG9lc25vdG1hdHRlcg==".parse().unwrap(),
         prometheus_host: "localhost".into(),
         prometheus_port: 9464,
         postmark_token: "-".into(),
@@ -84,6 +82,18 @@ pub fn config(api_mocks: impl Handler) -> ApiConfig {
         client: Client::new(trillium_testing::connector(api_mocks)),
         skip_app_compilation: false,
     }
+}
+
+pub async fn with_db<F, Fut>(f: F)
+where
+    F: FnOnce(Db) -> Fut,
+    Fut: Future<Output = TestResult>,
+{
+    block_on(async move {
+        let db = Db::connect("sqlite::memory").await;
+        set_up_schema(&db).await;
+        f(db).await.unwrap();
+    })
 }
 
 pub async fn build_test_app() -> (DivviupApi, ClientLogs) {

@@ -1,10 +1,10 @@
 use crate::{
     clients::{ClientConnExt, ClientError},
-    ApiConfig,
+    entity::{task::ProvisionableTask, Aggregator},
+    handler::Error,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use trillium::{HeaderValue, KnownHeaderName, Method};
-use trillium_api::FromConn;
 use trillium_client::{Client, Conn};
 use url::Url;
 pub mod api_types;
@@ -15,21 +15,22 @@ pub struct AggregatorClient {
     client: Client,
     base_url: Url,
     auth_header: HeaderValue,
+    aggregator: Aggregator,
 }
 
-#[trillium::async_trait]
-impl FromConn for AggregatorClient {
-    async fn from_conn(conn: &mut trillium::Conn) -> Option<Self> {
-        conn.state().cloned()
+impl AsRef<Client> for AggregatorClient {
+    fn as_ref(&self) -> &Client {
+        &self.client
     }
 }
 
 impl AggregatorClient {
-    pub fn new(config: &ApiConfig) -> Self {
+    pub fn new(client: Client, aggregator: Aggregator) -> Self {
         Self {
-            client: config.client.clone(),
-            base_url: config.aggregator_api_url.clone(),
-            auth_header: HeaderValue::from(format!("Bearer {}", config.aggregator_secret.clone())),
+            client,
+            base_url: aggregator.api_url.clone().into(),
+            auth_header: HeaderValue::from(format!("Bearer {}", &aggregator.bearer_token)),
+            aggregator,
         }
     }
 
@@ -61,8 +62,9 @@ impl AggregatorClient {
         self.delete(&format!("/tasks/{task_id}")).await
     }
 
-    pub async fn create_task(&self, task_create: TaskCreate) -> Result<TaskResponse, ClientError> {
-        self.post("/tasks", &task_create).await
+    pub async fn create_task(&self, task: &ProvisionableTask) -> Result<TaskResponse, Error> {
+        let task_create = TaskCreate::build(&self.aggregator, task)?;
+        self.post("/tasks", &task_create).await.map_err(Into::into)
     }
 
     // private below here

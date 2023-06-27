@@ -1,17 +1,18 @@
 use crate::{
     entity::{
         task::vdaf::{CountVec, Histogram, Sum, SumVec, Vdaf},
-        NewTask,
+        Aggregator, ProvisionableTask,
     },
     handler::Error,
-    ApiConfig,
 };
 
 pub use janus_messages::{
+    codec::{Decode, Encode},
     Duration as JanusDuration, HpkeAeadId, HpkeConfig, HpkeConfigId, HpkeConfigList, HpkeKdfId,
     HpkeKemId, HpkePublicKey, Role, TaskId, Time as JanusTime,
 };
 use serde::{Deserialize, Serialize};
+use time::{error::ComponentRange, OffsetDateTime};
 use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,7 +66,7 @@ impl From<Vdaf> for VdafInstance {
     }
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum QueryType {
     TimeInterval,
     FixedSize { max_batch_size: u64 },
@@ -103,15 +104,10 @@ impl From<Option<i64>> for QueryType {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskCreate {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub task_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub vdaf_verify_key: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub aggregator_auth_token: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub collector_auth_token: Option<String>,
-    pub leader_endpoint: Url,
-    pub helper_endpoint: Url,
+    pub peer_aggregator_endpoint: Url,
     pub query_type: QueryType,
     pub vdaf: VdafInstance,
     pub role: Role,
@@ -120,39 +116,38 @@ pub struct TaskCreate {
     pub min_batch_size: u64,
     pub time_precision: u64,
     pub collector_hpke_config: HpkeConfig,
+    pub vdaf_verify_key: String,
 }
 
 impl TaskCreate {
-    pub fn build(mut new_task: NewTask, config: &ApiConfig) -> Result<Self, Error> {
+    pub fn build(
+        target_aggregator: &Aggregator,
+        new_task: &ProvisionableTask,
+    ) -> Result<Self, Error> {
+        let role = if new_task.leader_aggregator.id == target_aggregator.id {
+            Role::Leader
+        } else {
+            Role::Helper
+        };
         Ok(Self {
-            leader_endpoint: if new_task.is_leader.unwrap() {
-                config.aggregator_dap_url.clone()
+            peer_aggregator_endpoint: if role == Role::Leader {
+                new_task.helper_aggregator.dap_url.clone().into()
             } else {
-                new_task.partner_url.as_deref().unwrap().parse()?
-            },
-            helper_endpoint: if new_task.is_leader.unwrap() {
-                new_task.partner_url.as_deref().unwrap().parse()?
-            } else {
-                config.aggregator_dap_url.clone()
+                new_task.leader_aggregator.dap_url.clone().into()
             },
             query_type: new_task.max_batch_size.into(),
-            vdaf: new_task.vdaf.take().unwrap().into(),
-            role: if new_task.is_leader.unwrap() {
-                Role::Leader
-            } else {
-                Role::Helper
-            },
+            vdaf: new_task.vdaf.clone().into(),
+            role,
             max_batch_query_count: 1,
-            task_expiration: new_task.expiration.map(|task| {
-                JanusTime::from_seconds_since_epoch(task.unix_timestamp().try_into().unwrap())
+            task_expiration: new_task.expiration.map(|expiration| {
+                JanusTime::from_seconds_since_epoch(expiration.unix_timestamp().try_into().unwrap())
             }),
-            min_batch_size: new_task.min_batch_size.unwrap(),
-            time_precision: new_task.time_precision_seconds.unwrap(),
-            collector_hpke_config: new_task.hpke_config()?,
-            task_id: new_task.id,
-            vdaf_verify_key: new_task.vdaf_verify_key,
-            aggregator_auth_token: new_task.aggregator_auth_token,
-            collector_auth_token: new_task.collector_auth_token,
+            min_batch_size: new_task.min_batch_size,
+            time_precision: new_task.time_precision_seconds,
+            collector_hpke_config: new_task.hpke_config.clone(),
+            vdaf_verify_key: new_task.vdaf_verify_key.clone(),
+            aggregator_auth_token: new_task.aggregator_auth_token.clone(),
+            collector_auth_token: None,
         })
     }
 }
@@ -160,8 +155,7 @@ impl TaskCreate {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TaskResponse {
     pub task_id: TaskId,
-    pub leader_endpoint: Url,
-    pub helper_endpoint: Url,
+    pub peer_aggregator_endpoint: Url,
     pub query_type: QueryType,
     pub vdaf: VdafInstance,
     pub role: Role,
@@ -173,9 +167,19 @@ pub struct TaskResponse {
     pub time_precision: JanusDuration,
     pub tolerable_clock_skew: JanusDuration,
     pub collector_hpke_config: HpkeConfig,
-    pub aggregator_auth_tokens: Vec<String>,
-    pub collector_auth_tokens: Vec<String>,
+    pub aggregator_auth_token: Option<String>,
+    pub collector_auth_token: Option<String>,
     pub aggregator_hpke_configs: Vec<HpkeConfig>,
+}
+
+impl TaskResponse {
+    pub fn task_expiration(&self) -> Result<Option<OffsetDateTime>, ComponentRange> {
+        self.task_expiration
+            .map(|t| {
+                OffsetDateTime::from_unix_timestamp(t.as_seconds_since_epoch().try_into().unwrap())
+            })
+            .transpose()
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -195,8 +199,7 @@ mod test {
     use super::{TaskCreate, TaskResponse};
 
     const TASK_CREATE: &str = r#"{
-  "leader_endpoint": "https://example.com/",
-  "helper_endpoint": "https://example.net/",
+  "peer_aggregator_endpoint": "https://example.com/",
   "query_type": {
     "FixedSize": {
       "max_batch_size": 999
@@ -218,7 +221,8 @@ mod test {
     "kdf_id": "HkdfSha256",
     "aead_id": "Aes128Gcm",
     "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-  }
+  },
+  "vdaf_verify_key": "dmRhZiB2ZXJpZnkga2V5IQ"
 }"#;
 
     #[test]
@@ -232,8 +236,7 @@ mod test {
 
     const TASK_RESPONSE: &str = r#"{
   "task_id": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-  "leader_endpoint": "https://example.com/",
-  "helper_endpoint": "https://example.net/",
+  "peer_aggregator_endpoint": "https://example.com/",
   "query_type": {
     "FixedSize": {
       "max_batch_size": 999
@@ -261,12 +264,8 @@ mod test {
     "aead_id": "Aes128Gcm",
     "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   },
-  "aggregator_auth_tokens": [
-    "YWdncmVnYXRvci0xMjM0NTY3OA"
-  ],
-  "collector_auth_tokens": [
-    "Y29sbGVjdG9yLWFiY2RlZjAw"
-  ],
+  "aggregator_auth_token": "YWdncmVnYXRvci0xMjM0NTY3OA",
+  "collector_auth_token": "Y29sbGVjdG9yLWFiY2RlZjAw",
   "aggregator_hpke_configs": [
     {
       "id": 13,

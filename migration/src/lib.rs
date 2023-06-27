@@ -9,6 +9,8 @@ mod m20230427_221953_create_queue;
 mod m20230512_200213_make_task_max_batch_size_a_big_integer;
 mod m20230512_202411_add_two_urls_to_every_task;
 mod m20230616_223923_create_aggregators;
+mod m20230620_195535_add_aggregators_to_tasks;
+mod m20230622_232534_make_aggregator_api_url_mandatory;
 mod m20230626_183248_add_is_first_party_to_aggregators;
 
 pub struct Migrator;
@@ -27,6 +29,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20230512_202411_add_two_urls_to_every_task::Migration),
             Box::new(m20230616_223923_create_aggregators::Migration),
             Box::new(m20230626_183248_add_is_first_party_to_aggregators::Migration),
+            Box::new(m20230620_195535_add_aggregators_to_tasks::Migration),
+            Box::new(m20230622_232534_make_aggregator_api_url_mandatory::Migration),
         ]
     }
 }

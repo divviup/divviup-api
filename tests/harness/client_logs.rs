@@ -18,7 +18,7 @@ pub struct LoggedConn {
 
 impl LoggedConn {
     pub fn response_json(&self) -> Value {
-        serde_json::from_str(&self.response_body.as_ref().unwrap()).unwrap()
+        serde_json::from_str(self.response_body.as_ref().unwrap()).unwrap()
     }
 }
 
@@ -79,7 +79,7 @@ impl ClientLogs {
             .read()
             .unwrap()
             .iter()
-            .filter(|lc| (**lc).url == url)
+            .filter(|lc| lc.url == url)
             .cloned()
             .collect()
     }

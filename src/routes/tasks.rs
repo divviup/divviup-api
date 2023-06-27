@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-    clients::{aggregator_client::TaskCreate, AggregatorClient},
-    entity::{
-        task::build_task, Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask,
-    },
+    entity::{Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask},
     handler::Error,
     user::User,
     Db,
@@ -12,8 +9,9 @@ use crate::{
 use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait};
 use time::OffsetDateTime;
 use trillium::{Conn, Handler, Status};
-use trillium_api::{FromConn, Json};
+use trillium_api::{FromConn, Json, State};
 use trillium_caching_headers::CachingHeadersExt;
+use trillium_client::Client;
 use trillium_router::RouterConnExt;
 
 pub async fn index(conn: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
@@ -51,26 +49,27 @@ impl FromConn for Task {
     }
 }
 
-type CreateArgs = (Account, Json<NewTask>, AggregatorClient, Db);
+type CreateArgs = (Account, Json<NewTask>, State<Client>, Db);
 pub async fn create(
-    conn: &mut Conn,
-    (account, Json(task), api_client, db): CreateArgs,
+    _: &mut Conn,
+    (account, task, State(client), db): CreateArgs,
 ) -> Result<impl Handler, Error> {
-    task.validate()?;
-    let config = conn.state().ok_or(Error::NotFound)?;
-    let task_create = TaskCreate::build(task.clone(), config)?;
-    let api_response = api_client.create_task(task_create).await?;
-    let task = build_task(task, api_response, &account).insert(&db).await?;
-    Ok((Status::Created, Json(task)))
+    task.validate(account, &db)
+        .await?
+        .provision(client)
+        .await?
+        .insert(&db)
+        .await
+        .map_err(Into::into)
+        .map(|task| (Status::Created, Json(task)))
 }
 
-async fn refresh_metrics_if_needed(
-    task: Task,
-    db: Db,
-    client: AggregatorClient,
-) -> Result<Task, Error> {
-    if OffsetDateTime::now_utc() - task.updated_at > Duration::from_secs(5 * 60) {
-        let metrics = client.get_task_metrics(&task.id).await?;
+async fn refresh_metrics_if_needed(task: Task, db: Db, client: Client) -> Result<Task, Error> {
+    if OffsetDateTime::now_utc() - task.updated_at <= Duration::from_secs(5 * 60) {
+        return Ok(task);
+    }
+    if let Some(aggregator) = task.first_party_aggregator(&db).await? {
+        let metrics = aggregator.client(client).get_task_metrics(&task.id).await?;
         task.update_metrics(metrics, db).await.map_err(Into::into)
     } else {
         Ok(task)
@@ -79,7 +78,7 @@ async fn refresh_metrics_if_needed(
 
 pub async fn show(
     conn: &mut Conn,
-    (task, db, client): (Task, Db, AggregatorClient),
+    (task, db, State(client)): (Task, Db, State<Client>),
 ) -> Result<Json<Task>, Error> {
     let task = refresh_metrics_if_needed(task, db, client).await?;
     conn.set_last_modified(task.updated_at.into());

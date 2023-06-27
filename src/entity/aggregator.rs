@@ -1,3 +1,5 @@
+use crate::clients::AggregatorClient;
+
 use super::{account, membership, url::Url};
 use sea_orm::{entity::prelude::*, IntoActiveModel, Set};
 use serde::{Deserialize, Serialize};
@@ -29,12 +31,10 @@ pub struct Model {
     pub role: Role,
     pub name: String,
     pub dap_url: Url,
-    // the absence of an api_url indicates that this is an externally provisioned Aggregator
-    pub api_url: Option<Url>,
+    pub api_url: Url,
     pub is_first_party: bool,
-
     #[serde(skip)]
-    pub bearer_token: Option<String>,
+    pub bearer_token: String,
 }
 
 impl Model {
@@ -47,6 +47,15 @@ impl Model {
 
     pub fn is_tombstoned(&self) -> bool {
         self.deleted_at.is_some()
+    }
+
+    pub fn is_first_party(&self) -> bool {
+        // probably temporary
+        matches!(self.dap_url.domain(), Some(domain) if domain.ends_with("divviup.org"))
+    }
+
+    pub fn client(&self, http_client: trillium_client::Client) -> AggregatorClient {
+        AggregatorClient::new(http_client, self.clone())
     }
 }
 

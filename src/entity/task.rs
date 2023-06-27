@@ -1,9 +1,6 @@
 use crate::{
-    clients::aggregator_client::{
-        api_types::{Role, TaskResponse},
-        TaskMetrics,
-    },
-    entity::{account, membership, url::Url, Account},
+    clients::aggregator_client::{api_types::TaskResponse, TaskMetrics},
+    entity::{account, membership},
 };
 use sea_orm::{entity::prelude::*, ActiveValue::Set, IntoActiveModel};
 use serde::{Deserialize, Serialize};
@@ -16,6 +13,8 @@ mod new_task;
 pub use new_task::NewTask;
 mod update_task;
 pub use update_task::UpdateTask;
+mod provisionable_task;
+pub use provisionable_task::{ProvisionableTask, TaskProvisioningError};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "task")]
@@ -24,12 +23,9 @@ pub struct Model {
     pub id: String,
     pub account_id: Uuid,
     pub name: String,
-    pub leader_url: Url,
-    pub helper_url: Url,
     pub vdaf: Vdaf,
     pub min_batch_size: i64,
     pub max_batch_size: Option<i64>,
-    pub is_leader: bool,
     #[serde(with = "time::serde::iso8601")]
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::iso8601")]
@@ -39,6 +35,8 @@ pub struct Model {
     pub aggregate_collection_count: i32,
     #[serde(default, with = "time::serde::iso8601::option")]
     pub expiration: Option<OffsetDateTime>,
+    pub leader_aggregator_id: Uuid,
+    pub helper_aggregator_id: Uuid,
 }
 
 impl Model {
@@ -54,18 +52,73 @@ impl Model {
         task.updated_at = Set(OffsetDateTime::now_utc());
         task.update(&db).await
     }
+
+    pub async fn leader_aggregator(
+        &self,
+        db: &impl ConnectionTrait,
+    ) -> Result<super::Aggregator, DbErr> {
+        super::Aggregators::find_by_id(self.leader_aggregator_id)
+            .one(db)
+            .await
+            .transpose()
+            .ok_or(DbErr::Custom("expected leader aggregator".into()))?
+    }
+
+    pub async fn helper_aggregator(
+        &self,
+        db: &impl ConnectionTrait,
+    ) -> Result<super::Aggregator, DbErr> {
+        super::Aggregators::find_by_id(self.leader_aggregator_id)
+            .one(db)
+            .await
+            .transpose()
+            .ok_or(DbErr::Custom("expected helper aggregator".into()))?
+    }
+
+    pub async fn aggregators(
+        &self,
+        db: &impl ConnectionTrait,
+    ) -> Result<[super::Aggregator; 2], DbErr> {
+        let (leader, helper) =
+            futures_lite::future::try_zip(self.leader_aggregator(db), self.helper_aggregator(db))
+                .await?;
+        Ok([leader, helper])
+    }
+
+    pub async fn first_party_aggregator(
+        &self,
+        db: &impl ConnectionTrait,
+    ) -> Result<Option<super::Aggregator>, DbErr> {
+        Ok(self
+            .aggregators(db)
+            .await?
+            .into_iter()
+            .find(|agg| agg.is_first_party()))
+    }
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::account::Entity",
+        belongs_to = "super::Accounts",
         from = "Column::AccountId",
-        to = "super::account::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+        to = "super::account::Column::Id"
     )]
     Account,
+
+    #[sea_orm(
+        belongs_to = "super::Aggregators",
+        from = "Column::HelperAggregatorId",
+        to = "super::AggregatorColumn::Id"
+    )]
+    HelperAggregator,
+
+    #[sea_orm(
+        belongs_to = "super::Aggregators",
+        from = "Column::LeaderAggregatorId",
+        to = "super::AggregatorColumn::Id"
+    )]
+    LeaderAggregator,
 }
 
 impl Related<account::Entity> for Entity {
@@ -85,26 +138,3 @@ impl Related<membership::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-
-pub fn build_task(mut task: NewTask, api_response: TaskResponse, account: &Account) -> ActiveModel {
-    ActiveModel {
-        id: Set(api_response.task_id.to_string()),
-        account_id: Set(account.id),
-        name: Set(task.name.take().unwrap()),
-        leader_url: Set(api_response.leader_endpoint.clone().into()),
-        helper_url: Set(api_response.helper_endpoint.clone().into()),
-        vdaf: Set(Vdaf::from(api_response.vdaf)),
-        min_batch_size: Set(api_response.min_batch_size.try_into().unwrap()),
-        max_batch_size: Set(api_response.query_type.into()),
-        is_leader: Set(matches!(api_response.role, Role::Leader)),
-        created_at: Set(OffsetDateTime::now_utc()),
-        updated_at: Set(OffsetDateTime::now_utc()),
-        time_precision_seconds: Set(api_response.time_precision.as_seconds().try_into().unwrap()),
-        report_count: Set(0),
-        aggregate_collection_count: Set(0),
-        expiration: Set(api_response.task_expiration.map(|t| {
-            OffsetDateTime::from_unix_timestamp(t.as_seconds_since_epoch().try_into().unwrap())
-                .unwrap()
-        })),
-    }
-}

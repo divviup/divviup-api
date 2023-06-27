@@ -87,13 +87,13 @@ mod create {
     use super::{test, *};
     use divviup_api::{aggregator_api_mock::random_hpke_config, entity::task::vdaf::Vdaf};
 
-    fn valid_task_json() -> Value {
+    fn valid_task_json(leader_aggregator: &Aggregator, helper_aggregator: &Aggregator) -> Value {
         json!({
             "name": "my task name",
-            "partner_url": "https://dap.partner.url",
+            "leader_aggregator_id": leader_aggregator.id,
+            "helper_aggregator_id": helper_aggregator.id,
             "vdaf": { "type": "count" },
             "min_batch_size": 500,
-            "is_leader": true,
             "time_precision_seconds": 60,
             "hpke_config": encode_hpke_config(random_hpke_config())
         })
@@ -102,20 +102,22 @@ mod create {
     #[test(harness = set_up)]
     async fn success(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
+        let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
 
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
-            .with_request_json(valid_task_json())
+            .with_request_json(valid_task_json(&leader, &helper))
             .run_async(&app)
             .await;
+
         assert_response!(conn, 201);
         let task: Task = conn.response_json().await;
-        assert_eq!(task.helper_url, "https://dap.partner.url/");
-        assert_eq!(task.leader_url, "https://dap.divviup.test/");
+
+        assert_eq!(task.leader_aggregator_id, leader.id);
+        assert_eq!(task.helper_aggregator_id, helper.id);
         assert_eq!(task.vdaf, Vdaf::Count);
         assert_eq!(task.min_batch_size, 500);
-        assert!(task.is_leader);
         assert_eq!(task.time_precision_seconds, 60);
         assert!(Tasks::find_by_id(task.id).one(app.db()).await?.is_some());
 
@@ -131,7 +133,6 @@ mod create {
             .with_state(user)
             .with_request_json(json!({
                 "name": "my task name",
-                "partner": "partner",
                 "vdaf": { "type": "poplar1" },
                 "min_batch_size": 50,
                 "time_precision_seconds": 1,
@@ -145,7 +146,6 @@ mod create {
         assert!(error.get("vdaf").is_some());
         assert!(error.get("min_batch_size").is_some());
         assert!(error.get("time_precision_seconds").is_some());
-        assert!(error.get("is_leader").is_some());
 
         Ok(())
     }
@@ -154,11 +154,12 @@ mod create {
     async fn not_member(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let account = fixtures::account(&app).await; // no membership
+        let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
 
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
-            .with_request_json(valid_task_json())
+            .with_request_json(valid_task_json(&leader, &helper))
             .run_async(&app)
             .await;
 
@@ -170,11 +171,13 @@ mod create {
     #[test(harness = set_up)]
     async fn nonexistant_account(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
+        let account = fixtures::account(&app).await;
+        let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
 
         let mut conn = post("/api/accounts/does-not-exist/tasks")
             .with_api_headers()
             .with_state(user)
-            .with_request_json(valid_task_json())
+            .with_request_json(valid_task_json(&leader, &helper))
             .run_async(&app)
             .await;
 
@@ -187,10 +190,12 @@ mod create {
     async fn admin_not_member(app: DivviupApi) -> TestResult {
         let (admin, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
+        let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(admin)
-            .with_request_json(valid_task_json())
+            .with_request_json(valid_task_json(&leader, &helper))
             .run_async(&app)
             .await;
 

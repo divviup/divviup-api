@@ -1,10 +1,12 @@
 use crate::clients::aggregator_client::api_types::{
-    HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, TaskCreate,
+    HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, TaskCreate, TaskId,
     TaskIds, TaskMetrics, TaskResponse,
 };
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use fastrand::alphanumeric;
 use querystrong::QueryStrong;
 use rand::random;
+use sha2::{Digest, Sha256};
 use std::iter::repeat_with;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Json};
@@ -35,13 +37,13 @@ async fn post_task(_: &mut Conn, Json(task_create): Json<TaskCreate>) -> Json<Ta
 }
 
 pub fn task_response(task_create: TaskCreate) -> TaskResponse {
+    let task_id = TaskId::try_from(
+        Sha256::digest(URL_SAFE_NO_PAD.decode(task_create.vdaf_verify_key).unwrap()).as_slice(),
+    )
+    .unwrap();
     TaskResponse {
-        task_id: task_create
-            .task_id
-            .and_then(|t| t.parse().ok())
-            .unwrap_or_else(random),
-        leader_endpoint: task_create.leader_endpoint,
-        helper_endpoint: task_create.helper_endpoint,
+        task_id,
+        peer_aggregator_endpoint: task_create.peer_aggregator_endpoint,
         query_type: task_create.query_type,
         vdaf: task_create.vdaf,
         role: task_create.role,
@@ -53,8 +55,8 @@ pub fn task_response(task_create: TaskCreate) -> TaskResponse {
         time_precision: JanusDuration::from_seconds(task_create.time_precision),
         tolerable_clock_skew: JanusDuration::from_seconds(60),
         collector_hpke_config: random_hpke_config(),
-        aggregator_auth_tokens: vec![],
-        collector_auth_tokens: vec![],
+        aggregator_auth_token: Some(repeat_with(fastrand::alphanumeric).take(32).collect()),
+        collector_auth_token: Some(repeat_with(fastrand::alphanumeric).take(32).collect()),
         aggregator_hpke_configs: repeat_with(random_hpke_config).take(5).collect(),
     }
 }

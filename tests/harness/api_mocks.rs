@@ -1,4 +1,4 @@
-use super::{fixtures, ClientLogs, LoggedConn, AGGREGATOR_API_URL, AUTH0_URL, POSTMARK_URL};
+use super::{fixtures, ClientLogs, LoggedConn, AUTH0_URL, POSTMARK_URL};
 use divviup_api::{aggregator_api_mock::aggregator_api, clients::auth0_client::Token};
 use serde_json::json;
 use trillium::{async_trait, Conn, Handler};
@@ -49,8 +49,8 @@ impl ApiMocks {
                 client_logs.clone(),
                 divviup_api::handler::origin_router()
                     .with_handler(POSTMARK_URL, postmark_mock())
-                    .with_handler(AGGREGATOR_API_URL, aggregator_api())
                     .with_handler(AUTH0_URL, auth0_mock()),
+                aggregator_api(),
             )),
             client_logs,
         }

@@ -2,7 +2,7 @@ use crate::{
     entity::{validators::base64, Account},
     handler::Error,
 };
-use sea_orm::Set;
+use sea_orm::IntoActiveModel;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use time::OffsetDateTime;
@@ -17,11 +17,11 @@ pub struct NewAggregator {
     pub role: Option<String>,
     #[validate(required, length(min = 1))]
     pub name: Option<String>,
-    #[validate(url)]
+    #[validate(required, url)]
     pub api_url: Option<String>,
     #[validate(required, url)]
     pub dap_url: Option<String>,
-    #[validate(custom = "base64")]
+    #[validate(required, custom = "base64")]
     pub bearer_token: Option<String>,
 }
 
@@ -64,18 +64,19 @@ impl NewAggregator {
         // of the scope of this repository, we work around this by
         // double-checking these Options -- once in validate, and
         // again in the conversion to non-optional fields.
-        Ok(ActiveModel {
-            role: Set(self.role.unwrap().parse().unwrap()),
-            name: Set(self.name.unwrap()),
-            api_url: Set(self.api_url.map(|u| u.parse()).transpose()?),
-            dap_url: Set(self.dap_url.unwrap().parse()?),
-            bearer_token: Set(self.bearer_token),
-            id: Set(Uuid::new_v4()),
-            account_id: Set(account.map(|account| account.id)),
-            created_at: Set(OffsetDateTime::now_utc()),
-            updated_at: Set(OffsetDateTime::now_utc()),
-            deleted_at: Set(None),
-            is_first_party: Set(account.is_none()),
-        })
+        Ok(super::Model {
+            role: self.role.unwrap().parse().unwrap(),
+            name: self.name.unwrap(),
+            api_url: self.api_url.unwrap().parse()?,
+            dap_url: self.dap_url.unwrap().parse()?,
+            bearer_token: self.bearer_token.unwrap(),
+            id: Uuid::new_v4(),
+            account_id: account.map(|account| account.id),
+            created_at: OffsetDateTime::now_utc(),
+            updated_at: OffsetDateTime::now_utc(),
+            deleted_at: None,
+            is_first_party: account.is_none(),
+        }
+        .into_active_model())
     }
 }

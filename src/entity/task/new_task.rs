@@ -1,8 +1,17 @@
-use janus_messages::HpkeConfig;
-use validator::ValidationErrors;
-
 use super::*;
-use crate::entity::validators::url_safe_base64;
+use crate::{
+    clients::aggregator_client::api_types::{Decode, HpkeConfig},
+    entity::{Account, Aggregator, Aggregators},
+    handler::Error,
+};
+use base64::{
+    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
+    Engine,
+};
+use rand::Rng;
+use sha2::{Digest, Sha256};
+use std::io::Cursor;
+use validator::ValidationErrors;
 
 fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError> {
     if time < &TimeDateTimeWithTimeZone::now_utc() {
@@ -14,23 +23,14 @@ fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError>
 
 #[derive(Deserialize, Validate, Debug, Clone, Default)]
 pub struct NewTask {
-    #[validate(length(equal = 43), custom = "url_safe_base64")] // 32 bytes after base64 decode
-    pub id: Option<String>,
-
-    #[validate(length(equal = 22), custom = "url_safe_base64")] // 16 bytes after base64 decode
-    pub vdaf_verify_key: Option<String>,
-
-    #[validate(length(min = 1))]
-    pub aggregator_auth_token: Option<String>,
-
-    #[validate(length(min = 1))]
-    pub collector_auth_token: Option<String>,
-
     #[validate(required, length(min = 1))]
     pub name: Option<String>,
 
-    #[validate(required, url)]
-    pub partner_url: Option<String>,
+    #[validate(required)]
+    pub leader_aggregator_id: Option<String>,
+
+    #[validate(required)]
+    pub helper_aggregator_id: Option<String>,
 
     #[validate(required_nested)]
     pub vdaf: Option<Vdaf>,
@@ -40,9 +40,6 @@ pub struct NewTask {
 
     #[validate(range(min = 0))]
     pub max_batch_size: Option<u64>,
-
-    #[validate(required)]
-    pub is_leader: Option<bool>,
 
     #[validate(custom = "in_the_future")]
     #[serde(default, with = "time::serde::iso8601::option")]
@@ -58,14 +55,11 @@ pub struct NewTask {
     )]
     pub time_precision_seconds: Option<u64>,
 
-    #[validate(required, custom = "valid_hpke_config")]
+    #[validate(required)]
     pub hpke_config: Option<String>,
 }
 
 fn hpke_config(base64: &str) -> Result<HpkeConfig, ValidationError> {
-    use base64::{engine::general_purpose::STANDARD, Engine};
-    use prio::codec::Decode;
-    use std::io::Cursor;
     if base64.is_empty() {
         return Err(ValidationError::new("required"));
     }
@@ -82,137 +76,137 @@ fn hpke_config(base64: &str) -> Result<HpkeConfig, ValidationError> {
     Ok(hpke_config)
 }
 
-fn valid_hpke_config(base64: &str) -> Result<(), ValidationError> {
-    hpke_config(base64)?;
-    Ok(())
+async fn load_aggregator(
+    account: &Account,
+    id: Option<&str>,
+    db: &impl ConnectionTrait,
+) -> Result<Option<Aggregator>, Error> {
+    let Some(id) = id.map(Uuid::parse_str).transpose()? else { return Ok(None) };
+    let Some(aggregator) = Aggregators::find_by_id(id).one(db).await? else { return Ok(None) };
+
+    if aggregator.account_id.is_none() || aggregator.account_id == Some(account.id) {
+        Ok(Some(aggregator))
+    } else {
+        Ok(None)
+    }
+}
+
+const VDAF_BYTES: usize = 16;
+fn generate_vdaf_verify_key_and_expected_task_id() -> (String, String) {
+    let mut verify_key = [0; VDAF_BYTES];
+    rand::thread_rng().fill(&mut verify_key);
+    (
+        URL_SAFE_NO_PAD.encode(verify_key),
+        URL_SAFE_NO_PAD.encode(Sha256::digest(verify_key)),
+    )
 }
 
 impl NewTask {
-    pub fn validate(&self) -> Result<(), ValidationErrors> {
-        let result = Validate::validate(self);
+    fn validate_min_lte_max(&self, errors: &mut ValidationErrors) {
         let min = self.min_batch_size;
         let max = self.max_batch_size;
         if matches!((min, max), (Some(min), Some(max)) if min > max) {
-            let mut errors = result.err().unwrap_or_default();
             let error = ValidationError::new("min_greater_than_max");
             errors.add("min_batch_size", error.clone());
             errors.add("max_batch_size", error);
-            Err(errors)
-        } else {
-            result
         }
     }
 
-    pub fn hpke_config(&self) -> Result<HpkeConfig, ValidationErrors> {
-        hpke_config(self.hpke_config.as_deref().unwrap()).map_err(|e| {
-            let mut errors = ValidationErrors::new();
-            errors.add("hpke_config", e);
-            errors
-        })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::iter::repeat_with;
-
-    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-    use rand::random;
-
-    use super::*;
-
-    #[track_caller]
-    pub fn assert_errors(new_task: NewTask, field: &str, codes: &[&str]) {
-        assert_eq!(
-            new_task
-                .validate()
-                .unwrap_err()
-                .field_errors()
-                .get(field)
-                .map(|c| c.iter().map(|error| &error.code).collect::<Vec<_>>())
-                .unwrap_or_default(),
-            codes
-        );
+    fn validate_hpke_config(&self, errors: &mut ValidationErrors) -> Option<HpkeConfig> {
+        match hpke_config(self.hpke_config.as_ref()?) {
+            Ok(hpke_config) => Some(hpke_config),
+            Err(e) => {
+                errors.add("hpke_config", e);
+                None
+            }
+        }
     }
 
-    #[test]
-    fn validation() {
-        assert_errors(
-            NewTask {
-                id: Some("tooshort".into()),
-                ..Default::default()
-            },
-            "id",
-            &["length"],
-        );
+    async fn validate_aggregators(
+        &self,
+        account: &Account,
+        db: &impl ConnectionTrait,
+        errors: &mut ValidationErrors,
+    ) -> Option<(Aggregator, Aggregator)> {
+        let leader = load_aggregator(account, self.leader_aggregator_id.as_deref(), db)
+            .await
+            .ok()
+            .flatten();
+        if leader.is_none() {
+            errors.add("leader_aggregator_id", ValidationError::new("missing"));
+        }
 
-        assert_errors(
-            NewTask {
-                id: Some("🦀".into()),
-                ..Default::default()
-            },
-            "id",
-            &["length", "base64"],
-        );
+        let helper = load_aggregator(account, self.helper_aggregator_id.as_deref(), db)
+            .await
+            .ok()
+            .flatten();
+        if helper.is_none() {
+            errors.add("helper_aggregator_id", ValidationError::new("missing"));
+        }
 
-        assert_errors(
-            NewTask {
-                id: Some("\u{205f}".into()),
-                ..Default::default()
-            },
-            "id",
-            &["length", "base64"],
-        );
+        let (Some(leader), Some(helper)) = (leader, helper) else { return None };
 
-        assert_errors(
-            NewTask {
-                id: Some(std::iter::repeat(' ').take(43).collect()),
-                ..Default::default()
-            },
-            "id",
-            &["base64"],
-        );
+        if leader == helper {
+            errors.add("leader_aggregator_id", ValidationError::new("same"));
+            errors.add("helper_aggregator_id", ValidationError::new("same"));
+        }
 
-        assert_errors(
-            NewTask {
-                id: Some(
-                    URL_SAFE_NO_PAD.encode(repeat_with(random::<u8>).take(32).collect::<Vec<_>>()),
-                ),
-                ..Default::default()
-            },
-            "id",
-            &[],
-        );
+        if !leader.is_first_party() && !helper.is_first_party() {
+            errors.add(
+                "leader_aggregator_id",
+                ValidationError::new("no-first-party"),
+            );
+            errors.add(
+                "helper_aggregator_id",
+                ValidationError::new("no-first-party"),
+            );
+        }
 
-        assert_errors(
-            NewTask {
-                vdaf_verify_key: Some(
-                    URL_SAFE_NO_PAD.encode(repeat_with(random::<u8>).take(16).collect::<Vec<_>>()),
-                ),
-                ..Default::default()
-            },
-            "vdaf_verify_key",
-            &[],
-        );
+        if errors.is_empty() {
+            Some((leader, helper))
+        } else {
+            None
+        }
+    }
 
-        assert_errors(
-            NewTask {
-                min_batch_size: Some(100),
-                max_batch_size: Some(50),
-                ..Default::default()
-            },
-            "min_batch_size",
-            &["min_greater_than_max"],
-        );
+    pub async fn validate(
+        &self,
+        account: Account,
+        db: &impl ConnectionTrait,
+    ) -> Result<ProvisionableTask, ValidationErrors> {
+        let mut errors = Validate::validate(self).err().unwrap_or_default();
+        self.validate_min_lte_max(&mut errors);
+        let hpke_config = self.validate_hpke_config(&mut errors);
+        let aggregators = self.validate_aggregators(&account, db, &mut errors).await;
 
-        assert_errors(
-            NewTask {
-                min_batch_size: Some(100),
-                max_batch_size: Some(50),
-                ..Default::default()
-            },
-            "max_batch_size",
-            &["min_greater_than_max"],
-        );
+        if errors.is_empty() {
+            // Unwrap safety: All of these unwraps below have previously
+            // been checked by the above validations. The fact that we
+            // have to check them twice is a consequence of the
+            // disharmonious combination of Validate and the fact that we
+            // need to use options for all fields so serde doesn't bail on
+            // the first error.
+            let (leader_aggregator, helper_aggregator) = aggregators.unwrap();
+
+            let (vdaf_verify_key, id) = generate_vdaf_verify_key_and_expected_task_id();
+
+            Ok(ProvisionableTask {
+                account,
+                id,
+                vdaf_verify_key,
+                name: self.name.clone().unwrap(),
+                leader_aggregator,
+                helper_aggregator,
+                vdaf: self.vdaf.clone().unwrap(),
+                min_batch_size: self.min_batch_size.unwrap(),
+                max_batch_size: self.max_batch_size,
+                expiration: self.expiration,
+                time_precision_seconds: self.time_precision_seconds.unwrap(),
+                hpke_config: hpke_config.unwrap(),
+                aggregator_auth_token: None,
+            })
+        } else {
+            Err(errors)
+        }
     }
 }

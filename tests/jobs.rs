@@ -123,7 +123,7 @@ async fn all_together(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
 fn json_representations() {
     let membership_id = Uuid::new_v4();
     assert_eq!(
-        serde_json::to_value(&Job::from(CreateUser { membership_id })).unwrap(),
+        serde_json::to_value(Job::from(CreateUser { membership_id })).unwrap(),
         json!({
             "version": "V1",
             "type": "CreateUser",
@@ -135,7 +135,7 @@ fn json_representations() {
     let action_url: Url = "https://action.url".parse().unwrap();
 
     assert_eq!(
-        serde_json::to_value(&Job::from(SendInvitationEmail {
+        serde_json::to_value(Job::from(SendInvitationEmail {
             membership_id,
             action_url: action_url.clone(),
             message_id
@@ -152,7 +152,7 @@ fn json_representations() {
 
     let user_id: String = "user-id".into();
     assert_eq!(
-        serde_json::to_value(&Job::from(ResetPassword {
+        serde_json::to_value(Job::from(ResetPassword {
             membership_id,
             user_id: user_id.clone()
         }))
