@@ -1,5 +1,5 @@
 mod harness;
-use harness::*;
+use harness::{assert_eq, *};
 
 #[trillium::async_trait]
 impl Reload for Aggregator {
@@ -17,7 +17,7 @@ fn assert_same_json_representation<T: serde::Serialize>(actual: &T, expected: &T
 }
 
 mod index {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
@@ -154,7 +154,7 @@ mod index {
 }
 
 mod create {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn success(app: DivviupApi) -> TestResult {
@@ -282,7 +282,7 @@ mod create {
 }
 
 mod show {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
@@ -429,7 +429,7 @@ mod show {
 }
 
 mod update {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn valid(app: DivviupApi) -> TestResult {
@@ -682,7 +682,7 @@ mod update {
 mod delete {
     use uuid::Uuid;
 
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     #[ignore]
@@ -776,7 +776,7 @@ mod delete {
 }
 
 mod shared_create {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn as_admin(app: DivviupApi) -> TestResult {

@@ -17,6 +17,7 @@ pub use divviup_api::{
     queue::{Job, Queue},
     DivviupApi, User,
 };
+pub use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 pub use querystrong::QueryStrong;
 pub use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, ConnectionTrait, DbBackend, DbErr, EntityTrait,

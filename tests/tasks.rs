@@ -2,7 +2,7 @@ mod harness;
 use harness::*;
 
 mod index {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
@@ -84,7 +84,7 @@ mod index {
 }
 
 mod create {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
     use divviup_api::{aggregator_api_mock::random_hpke_config, entity::task::vdaf::Vdaf};
 
     fn valid_task_json(leader_aggregator: &Aggregator, helper_aggregator: &Aggregator) -> Value {
@@ -207,7 +207,7 @@ mod create {
 }
 
 mod show {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
@@ -306,7 +306,7 @@ mod show {
 }
 
 mod update {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn valid(app: DivviupApi) -> TestResult {

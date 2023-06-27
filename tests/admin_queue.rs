@@ -1,8 +1,8 @@
 mod harness;
-use harness::{test, *};
+use harness::{assert_eq, test, *};
 
 mod index {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
     use divviup_api::entity::queue::{JobStatus, Model as QueueItem};
 
     #[test(harness = set_up)]

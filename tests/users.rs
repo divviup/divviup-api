@@ -2,7 +2,7 @@ mod harness;
 use harness::*;
 
 mod get_users_me {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn as_a_logged_in_user(app: DivviupApi) -> TestResult {
