@@ -1,5 +1,5 @@
 mod harness;
-use harness::{test, *};
+use harness::{assert_eq, test, *};
 
 pub async fn assert_errors(app: &DivviupApi, new_task: NewTask, field: &str, codes: &[&str]) {
     let account = fixtures::account(app).await;

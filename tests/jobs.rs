@@ -3,7 +3,7 @@ use divviup_api::{
     entity::queue::Entity,
     queue::{CreateUser, Job, JobStatus, Queue, ResetPassword, SendInvitationEmail, V1},
 };
-use harness::{test, *};
+use harness::{assert_eq, test, *};
 use uuid::Uuid;
 
 #[test(harness = with_client_logs)]

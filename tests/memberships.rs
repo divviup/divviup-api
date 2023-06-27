@@ -4,7 +4,7 @@ use harness::*;
 mod create {
     use divviup_api::{entity::queue, queue::CreateUser};
 
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn success(app: DivviupApi) -> TestResult {
@@ -149,7 +149,7 @@ mod create {
 }
 
 mod index {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
 
@@ -216,7 +216,7 @@ mod index {
 }
 
 mod delete {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {

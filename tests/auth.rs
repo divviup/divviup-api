@@ -1,10 +1,10 @@
 use divviup_api::USER_SESSION_KEY;
 mod harness;
-use harness::{test, *};
+use harness::{assert_eq, test, *};
 use trillium_sessions::{Session, SessionConnExt};
 
 mod login {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn when_not_already_logged_in(app: DivviupApi) -> TestResult {

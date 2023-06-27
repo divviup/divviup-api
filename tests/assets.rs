@@ -1,5 +1,5 @@
 mod harness;
-use harness::{test, *};
+use harness::{assert_eq, test, *};
 
 const INDEX_FILE_SNIPPET: &str = "<!doctype html>";
 

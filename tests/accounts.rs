@@ -2,7 +2,7 @@ mod harness;
 use harness::*;
 
 mod index {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
@@ -42,7 +42,7 @@ mod index {
 }
 
 mod show {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn as_a_member(app: DivviupApi) -> TestResult {
@@ -96,7 +96,7 @@ mod show {
 }
 
 mod create {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn not_logged_in(app: DivviupApi) -> TestResult {
@@ -162,7 +162,7 @@ mod create {
 }
 
 mod update {
-    use super::{test, *};
+    use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
     async fn as_a_member(app: DivviupApi) -> TestResult {
