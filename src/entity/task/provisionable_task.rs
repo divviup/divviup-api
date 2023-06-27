@@ -84,7 +84,7 @@ impl ProvisionableTask {
             .provision_aggregator(client.clone(), self.helper_aggregator.clone())
             .await?;
 
-        self.aggregator_auth_token = Some(helper.aggregator_auth_token);
+        self.aggregator_auth_token = helper.aggregator_auth_token;
 
         let _leader = self
             .provision_aggregator(client, self.leader_aggregator.clone())

@@ -167,8 +167,8 @@ pub struct TaskResponse {
     pub time_precision: JanusDuration,
     pub tolerable_clock_skew: JanusDuration,
     pub collector_hpke_config: HpkeConfig,
-    pub aggregator_auth_token: String,
-    pub collector_auth_token: String,
+    pub aggregator_auth_token: Option<String>,
+    pub collector_auth_token: Option<String>,
     pub aggregator_hpke_configs: Vec<HpkeConfig>,
 }
 
