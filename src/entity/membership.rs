@@ -1,5 +1,5 @@
 use crate::entity::{account, task};
-use sea_orm::{entity::prelude::*, ActiveValue::Set};
+use sea_orm::{entity::prelude::*, ActiveValue};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use validator::{Validate, ValidationErrors};
@@ -62,10 +62,10 @@ impl CreateMembership {
     pub fn build(self, account: &account::Model) -> Result<ActiveModel, ValidationErrors> {
         self.validate()?;
         Ok(ActiveModel {
-            id: Set(Uuid::new_v4()),
-            account_id: Set(account.id),
-            user_email: Set(self.user_email.unwrap()),
-            created_at: Set(TimeDateTimeWithTimeZone::now_utc()),
+            id: ActiveValue::Set(Uuid::new_v4()),
+            account_id: ActiveValue::Set(account.id),
+            user_email: ActiveValue::Set(self.user_email.unwrap()),
+            created_at: ActiveValue::Set(TimeDateTimeWithTimeZone::now_utc()),
         })
     }
 }

@@ -1,7 +1,7 @@
 use crate::clients::AggregatorClient;
 
 use super::{account, membership, url::Url};
-use sea_orm::{entity::prelude::*, IntoActiveModel, Set};
+use sea_orm::{entity::prelude::*, ActiveValue, IntoActiveModel};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -40,8 +40,8 @@ pub struct Model {
 impl Model {
     pub fn tombstone(self) -> ActiveModel {
         let mut aggregator = self.into_active_model();
-        aggregator.updated_at = Set(OffsetDateTime::now_utc());
-        aggregator.deleted_at = Set(Some(OffsetDateTime::now_utc()));
+        aggregator.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
+        aggregator.deleted_at = ActiveValue::Set(Some(OffsetDateTime::now_utc()));
         aggregator
     }
 

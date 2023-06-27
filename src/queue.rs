@@ -8,8 +8,8 @@ use crate::{
 };
 use sea_orm::{
     sea_query::{self, all, Expr},
-    ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, IntoActiveModel, PaginatorTrait,
-    QueryFilter, Set, TransactionTrait,
+    ActiveModelTrait, ActiveValue, ColumnTrait, DbErr, EntityTrait, IntoActiveModel,
+    PaginatorTrait, QueryFilter, TransactionTrait,
 };
 use std::{ops::Range, sync::Arc, time::Duration};
 use time::OffsetDateTime;
@@ -119,43 +119,46 @@ impl Queue {
             })?;
 
             let result = job.perform(&self.job_state, &tx).await;
-            queue_item.job = Set(job);
+            queue_item.job = ActiveValue::Set(job);
 
             match result {
                 Ok(Some(next_job)) => {
-                    queue_item.status = Set(JobStatus::Success);
-                    queue_item.scheduled_at = Set(None);
+                    queue_item.status = ActiveValue::Set(JobStatus::Success);
+                    queue_item.scheduled_at = ActiveValue::Set(None);
 
                     let mut next_job = ActiveModel::from(next_job);
-                    next_job.parent_id = Set(Some(*queue_item.id.as_ref()));
+                    next_job.parent_id = ActiveValue::Set(Some(*queue_item.id.as_ref()));
                     let next_job = next_job.insert(&tx).await?;
-                    queue_item.child_id = Set(Some(next_job.id));
+                    queue_item.child_id = ActiveValue::Set(Some(next_job.id));
                 }
 
                 Ok(None) => {
-                    queue_item.scheduled_at = Set(None);
-                    queue_item.status = Set(JobStatus::Success);
+                    queue_item.scheduled_at = ActiveValue::Set(None);
+                    queue_item.status = ActiveValue::Set(JobStatus::Success);
                 }
 
                 Err(e) if e.is_retryable() => {
-                    queue_item.failure_count = Set(queue_item.failure_count.as_ref() + 1);
+                    queue_item.failure_count =
+                        ActiveValue::Set(queue_item.failure_count.as_ref() + 1);
                     let reschedule =
                         reschedule_based_on_failure_count(*queue_item.failure_count.as_ref());
-                    queue_item.status =
-                        Set(reschedule.map_or(JobStatus::Failed, |_| JobStatus::Pending));
-                    queue_item.scheduled_at = Set(reschedule);
-                    queue_item.error_message = Set(Some(e));
+                    queue_item.status = ActiveValue::Set(
+                        reschedule.map_or(JobStatus::Failed, |_| JobStatus::Pending),
+                    );
+                    queue_item.scheduled_at = ActiveValue::Set(reschedule);
+                    queue_item.error_message = ActiveValue::Set(Some(e));
                 }
 
                 Err(e) => {
-                    queue_item.failure_count = Set(queue_item.failure_count.as_ref() + 1);
-                    queue_item.scheduled_at = Set(None);
-                    queue_item.status = Set(JobStatus::Failed);
-                    queue_item.error_message = Set(Some(e));
+                    queue_item.failure_count =
+                        ActiveValue::Set(queue_item.failure_count.as_ref() + 1);
+                    queue_item.scheduled_at = ActiveValue::Set(None);
+                    queue_item.status = ActiveValue::Set(JobStatus::Failed);
+                    queue_item.error_message = ActiveValue::Set(Some(e));
                 }
             }
 
-            queue_item.updated_at = Set(OffsetDateTime::now_utc());
+            queue_item.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
             Some(queue_item.update(&tx).await?)
         } else {
             None

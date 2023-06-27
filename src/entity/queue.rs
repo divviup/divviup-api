@@ -5,7 +5,7 @@ use crate::{
 use sea_orm::{
     entity::prelude::*,
     sea_query::{self, all, any, LockBehavior, LockType},
-    DatabaseTransaction, QueryOrder, QuerySelect, Set,
+    ActiveValue, DatabaseTransaction, QueryOrder, QuerySelect,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -52,16 +52,16 @@ impl ActiveModelBehavior for ActiveModel {}
 impl From<Job> for ActiveModel {
     fn from(job: Job) -> Self {
         Self {
-            id: Set(Uuid::new_v4()),
-            created_at: Set(OffsetDateTime::now_utc()),
-            updated_at: Set(OffsetDateTime::now_utc()),
-            scheduled_at: Set(None),
-            failure_count: Set(0),
-            status: Set(JobStatus::Pending),
-            job: Set(job),
-            error_message: Set(None),
-            parent_id: Set(None),
-            child_id: Set(None),
+            id: ActiveValue::Set(Uuid::new_v4()),
+            created_at: ActiveValue::Set(OffsetDateTime::now_utc()),
+            updated_at: ActiveValue::Set(OffsetDateTime::now_utc()),
+            scheduled_at: ActiveValue::Set(None),
+            failure_count: ActiveValue::Set(0),
+            status: ActiveValue::Set(JobStatus::Pending),
+            job: ActiveValue::Set(job),
+            error_message: ActiveValue::Set(None),
+            parent_id: ActiveValue::Set(None),
+            child_id: ActiveValue::Set(None),
         }
     }
 }
@@ -69,7 +69,7 @@ impl From<Job> for ActiveModel {
 impl From<EnqueueJob> for ActiveModel {
     fn from(EnqueueJob { job, scheduled }: EnqueueJob) -> Self {
         let mut am = Self::from(job);
-        am.scheduled_at = Set(scheduled);
+        am.scheduled_at = ActiveValue::Set(scheduled);
         am
     }
 }

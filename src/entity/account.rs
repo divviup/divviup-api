@@ -1,4 +1,4 @@
-use sea_orm::{entity::prelude::*, ActiveValue::Set, IntoActiveModel};
+use sea_orm::{entity::prelude::*, ActiveValue, IntoActiveModel};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use validator::{Validate, ValidationErrors};
@@ -66,11 +66,11 @@ impl NewAccount {
     pub fn build(self) -> Result<ActiveModel, ValidationErrors> {
         self.validate()?;
         Ok(ActiveModel {
-            id: Set(Uuid::new_v4()),
-            name: Set(self.name.unwrap()),
-            created_at: Set(TimeDateTimeWithTimeZone::now_utc()),
-            updated_at: Set(TimeDateTimeWithTimeZone::now_utc()),
-            admin: Set(false),
+            id: ActiveValue::Set(Uuid::new_v4()),
+            name: ActiveValue::Set(self.name.unwrap()),
+            created_at: ActiveValue::Set(TimeDateTimeWithTimeZone::now_utc()),
+            updated_at: ActiveValue::Set(TimeDateTimeWithTimeZone::now_utc()),
+            admin: ActiveValue::Set(false),
         })
     }
 }
@@ -85,8 +85,8 @@ impl UpdateAccount {
     pub fn build(self, account: Model) -> Result<ActiveModel, ValidationErrors> {
         self.validate()?;
         let mut am = account.into_active_model();
-        am.name = Set(self.name.unwrap());
-        am.updated_at = Set(TimeDateTimeWithTimeZone::now_utc());
+        am.name = ActiveValue::Set(self.name.unwrap());
+        am.updated_at = ActiveValue::Set(TimeDateTimeWithTimeZone::now_utc());
         Ok(am)
     }
 }
