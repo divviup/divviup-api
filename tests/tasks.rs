@@ -232,6 +232,7 @@ mod show {
         let task = fixtures::task(&app, &account).await;
         let mut task = task.into_active_model();
         task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc() - Duration::minutes(10));
+
         let task = task.update(app.db()).await?;
 
         let first_party_aggregator = task.first_party_aggregator(app.db()).await?.unwrap();

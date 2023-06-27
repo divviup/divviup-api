@@ -4,7 +4,7 @@ use crate::{
         account, membership, AccountColumn, Accounts, Aggregator, AggregatorColumn, Aggregators,
     },
 };
-use sea_orm::{entity::prelude::*, ActiveValue::Set, IntoActiveModel};
+use sea_orm::{entity::prelude::*, ActiveValue, IntoActiveModel};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use validator::{Validate, ValidationError};
@@ -48,10 +48,10 @@ impl Model {
         db: impl ConnectionTrait,
     ) -> Result<Self, DbErr> {
         let mut task = self.into_active_model();
-        task.report_count = Set(metrics.reports.try_into().unwrap_or(i32::MAX));
+        task.report_count = ActiveValue::Set(metrics.reports.try_into().unwrap_or(i32::MAX));
         task.aggregate_collection_count =
-            Set(metrics.report_aggregations.try_into().unwrap_or(i32::MAX));
-        task.updated_at = Set(OffsetDateTime::now_utc());
+            ActiveValue::Set(metrics.report_aggregations.try_into().unwrap_or(i32::MAX));
+        task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
         task.update(&db).await
     }
 
