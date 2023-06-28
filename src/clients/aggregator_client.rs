@@ -10,6 +10,8 @@ use url::Url;
 pub mod api_types;
 pub use api_types::{TaskCreate, TaskIds, TaskMetrics, TaskResponse};
 
+const CONTENT_TYPE: &str = "application/vnd.janus.aggregator+json;version=0.1";
+
 #[derive(Debug, Clone)]
 pub struct AggregatorClient {
     client: Client,
@@ -81,6 +83,7 @@ impl AggregatorClient {
         self.client
             .build_conn(method, self.url(path))
             .with_header(KnownHeaderName::Authorization, self.auth_header.clone())
+            .with_header(KnownHeaderName::Accept, CONTENT_TYPE)
     }
 
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T, ClientError> {
@@ -99,6 +102,7 @@ impl AggregatorClient {
     ) -> Result<T, ClientError> {
         self.conn(Method::Post, path)
             .with_json_body(body)?
+            .with_header(KnownHeaderName::ContentType, CONTENT_TYPE)
             .success_or_client_error()
             .await?
             .response_json()
