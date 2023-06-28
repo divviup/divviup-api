@@ -1,7 +1,7 @@
 mod harness;
 use harness::{assert_eq, test, *};
 
-const INDEX_FILE_SNIPPET: &str = "<!doctype html>";
+const INDEX_FILE_SNIPPET: &str = "<!DOCTYPE html>";
 
 #[test(harness = set_up)]
 async fn root_serves_index(app: DivviupApi) -> TestResult {
@@ -53,7 +53,7 @@ async fn static_files(app: DivviupApi) -> TestResult {
 
     let html = html_conn.take_response_body_string().unwrap();
 
-    let regex = regex::Regex::new(r#"script defer="defer" src="([^"]+)""#).unwrap();
+    let regex = regex::Regex::new(r#"script type="module" crossorigin src="([^"]+)""#).unwrap();
     let js_path = &regex.captures_iter(&html).next().unwrap()[1];
     let js_conn = get(js_path).with_app_host().run_async(&app).await;
     assert_ok!(&js_conn);

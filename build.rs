@@ -6,7 +6,7 @@ fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
     if std::env::var("ASSET_DIR").is_ok() {
         // Don't run npm, and let the ASSET_DIR value pass through to the static asset handler.
-    } else if std::env::var("SKIP_APP_COMPILATION").is_ok() {
+    } else if std::env::var("SKIP_APP_COMPILATION") == Ok("true".into()) {
         // Skip asset compilation, but reuse stale assets in the OUT_DIR directory.
         println!("cargo:rustc-env=ASSET_DIR={out_dir}");
     } else {
@@ -24,6 +24,7 @@ fn main() {
         println!("cargo:rerun-if-changed=app/package.json");
         println!("cargo:rerun-if-changed=app/package-lock.json");
         println!("cargo:rerun-if-changed=app/public");
+        println!("cargo:rerun-if-changed=app/index.html");
         println!("cargo:rerun-if-env-changed=API_URL");
 
         // Point the static asset handler at the build script output directory.

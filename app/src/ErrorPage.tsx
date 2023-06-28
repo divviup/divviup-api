@@ -19,13 +19,18 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
       case 404:
         return (
           <Layout>
-            <Alert variant="error">Not Found</Alert>
+            <Alert variant="warning">Not Found</Alert>
           </Layout>
         );
       case 500:
+        let body = error.response?.data;
         return (
           <Layout>
-            <Alert variant="error">{JSON.stringify(error)}</Alert>
+            <Alert variant="danger">
+              {" "}
+              <h1>Whoops!</h1>
+              <p>{body}</p>
+            </Alert>
           </Layout>
         );
     }

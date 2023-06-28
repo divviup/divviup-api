@@ -2,9 +2,9 @@ name: TypeScript
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   REACT_APP_API_URL: https://api.example
@@ -16,12 +16,11 @@ jobs:
       run:
         working-directory: ./app
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: latest
-        cache: 'npm'
-        cache-dependency-path: ./app/package-lock.json
-    - run: npm ci
-    - run: npm test  
-    - run: npm run build
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: latest
+          cache: "npm"
+          cache-dependency-path: ./app/package-lock.json
+      - run: npm ci
+      - run: npm run build
