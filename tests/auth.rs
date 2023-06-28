@@ -1,6 +1,5 @@
 use divviup_api::USER_SESSION_KEY;
-mod harness;
-use harness::{assert_eq, test, *};
+use test_support::{assert_eq, test, *};
 use trillium_sessions::{Session, SessionConnExt};
 
 #[test(harness = set_up)]

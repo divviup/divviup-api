@@ -1,0 +1,24 @@
+[package]
+name = "divviup-cli"
+version = "0.0.1"
+edition = "2021"
+
+[[bin]]
+name = "divviup"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.3.14", features = ["derive", "env"] }
+thiserror = "1.0.43"
+divviup-client = { path = "../client" }
+trillium-rustls = "0.4.0"
+trillium-tokio = "0.3.1"
+serde = "1.0.173"
+email_address = "0.2.4"
+humantime = "2.1.0"
+base64 = "0.21.2"
+time = { version = "0.3.23", features = [
+    "serde",
+    "serde-well-known",
+    "local-offset",
+] }

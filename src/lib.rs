@@ -7,7 +7,6 @@
 )]
 #![warn(clippy::perf, clippy::cargo)]
 
-pub mod aggregator_api_mock;
 pub mod clients;
 mod config;
 mod db;
@@ -22,7 +21,7 @@ mod user;
 
 pub use config::{Config, ConfigError};
 pub use db::Db;
-pub use handler::{DivviupApi, Error};
+pub use handler::{custom_mime_types::CONTENT_TYPE, DivviupApi, Error};
 pub use permissions::{Permissions, PermissionsActor};
 pub use queue::Queue;
 pub use routes::routes;

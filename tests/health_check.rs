@@ -1,5 +1,4 @@
-mod harness;
-use harness::{assert_eq, test, *};
+use test_support::{assert_eq, test, *};
 
 #[test(harness = set_up)]
 async fn health_check(app: DivviupApi) -> TestResult {

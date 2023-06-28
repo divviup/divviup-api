@@ -1,5 +1,4 @@
-mod harness;
-use harness::*;
+use test_support::*;
 
 mod get_users_me {
     use super::{assert_eq, test, *};

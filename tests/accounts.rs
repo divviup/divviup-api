@@ -1,5 +1,4 @@
-mod harness;
-use harness::*;
+use test_support::*;
 
 mod index {
     use super::{assert_eq, test, *};
@@ -245,6 +244,41 @@ mod create {
         assert_eq!(accounts.len(), 0);
         let memberships = Memberships::find().all(app.db()).await?;
         assert_eq!(memberships.len(), 0);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let name = fixtures::random_name();
+        let mut conn = post("/api/accounts")
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(json!({ "name": name }))
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 202);
+        let account: Account = conn.response_json().await;
+        assert_eq!(&account.name, &name);
+        assert_eq!(account.reload(app.db()).await?.unwrap().name, name);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonadmin_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let name = fixtures::random_name();
+        let conn = post("/api/accounts")
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(json!({ "name": name }))
+            .run_async(&app)
+            .await;
+
+        assert_response!(conn, 403);
+
         Ok(())
     }
 }

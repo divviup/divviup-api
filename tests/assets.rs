@@ -1,6 +1,5 @@
 #![cfg(assets)]
-mod harness;
-use harness::{assert_eq, test, *};
+use test_support::{assert_eq, test, *};
 
 const INDEX_FILE_SNIPPET: &str = "<!DOCTYPE html>";
 
