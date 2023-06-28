@@ -159,7 +159,7 @@ pub struct TaskResponse {
     pub query_type: QueryType,
     pub vdaf: VdafInstance,
     pub role: Role,
-    pub vdaf_verify_keys: Vec<String>,
+    pub vdaf_verify_key: String,
     pub max_batch_query_count: u64,
     pub task_expiration: Option<JanusTime>,
     pub report_expiry_age: Option<JanusDuration>,
@@ -248,9 +248,7 @@ mod test {
     }
   },
   "role": "Leader",
-  "vdaf_verify_keys": [
-    "dmRhZiB2ZXJpZnkga2V5IQ"
-  ],
+  "vdaf_verify_key": "dmRhZiB2ZXJpZnkga2V5IQ",
   "max_batch_query_count": 1,
   "task_expiration": 9000000000,
   "report_expiry_age": null,
