@@ -28,3 +28,5 @@ pub use user::{User, USER_SESSION_KEY};
 
 #[cfg(test)]
 pub mod test;
+
+pub mod api_mocks;

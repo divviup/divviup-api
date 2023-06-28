@@ -39,3 +39,5 @@ jobs:
         continue-on-error: true
       - name: Format
         run: cargo fmt --all -- --check
+      - name: check --features api-mocks
+        run: cargo check --features api-mocks

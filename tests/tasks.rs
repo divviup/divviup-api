@@ -86,7 +86,7 @@ mod index {
 
 mod create {
     use super::{assert_eq, test, *};
-    use divviup_api::{aggregator_api_mock::random_hpke_config, entity::task::vdaf::Vdaf};
+    use divviup_api::{api_mocks::aggregator_api::random_hpke_config, entity::task::vdaf::Vdaf};
 
     fn valid_task_json(leader_aggregator: &Aggregator, helper_aggregator: &Aggregator) -> Value {
         json!({
