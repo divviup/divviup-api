@@ -361,7 +361,6 @@ mod create {
         let error: Value = conn.response_json().await;
         assert!(error.get("name").is_some());
         assert!(error.get("api_url").is_some());
-        assert!(error.get("bearer_token").is_some());
         Ok(())
     }
 

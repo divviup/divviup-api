@@ -1,8 +1,8 @@
 use super::random_chars;
 use crate::clients::aggregator_client::api_types::{
-    AggregatorApiConfig, HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey,
-    JanusDuration, QueryType, Role, TaskCreate, TaskId, TaskIds, TaskMetrics, TaskResponse,
-    VdafInstance,
+    AggregatorApiConfig, AuthenticationToken, HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId,
+    HpkePublicKey, JanusDuration, QueryType, Role, TaskCreate, TaskId, TaskIds, TaskMetrics,
+    TaskResponse, VdafInstance,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use querystrong::QueryStrong;
@@ -80,8 +80,8 @@ async fn get_task(conn: &mut Conn, (): ()) -> Json<TaskResponse> {
         time_precision: JanusDuration::from_seconds(60),
         tolerable_clock_skew: JanusDuration::from_seconds(60),
         collector_hpke_config: random_hpke_config(),
-        aggregator_auth_token: Some(random_chars(32)),
-        collector_auth_token: Some(random_chars(32)),
+        aggregator_auth_token: Some(AuthenticationToken::new(random_chars(32))),
+        collector_auth_token: Some(AuthenticationToken::new(random_chars(32))),
         aggregator_hpke_configs: repeat_with(random_hpke_config).take(5).collect(),
     })
 }
@@ -109,8 +109,8 @@ pub fn task_response(task_create: TaskCreate) -> TaskResponse {
         time_precision: JanusDuration::from_seconds(task_create.time_precision),
         tolerable_clock_skew: JanusDuration::from_seconds(60),
         collector_hpke_config: random_hpke_config(),
-        aggregator_auth_token: Some(random_chars(32)),
-        collector_auth_token: Some(random_chars(32)),
+        aggregator_auth_token: Some(AuthenticationToken::new(random_chars(32))),
+        collector_auth_token: Some(AuthenticationToken::new(random_chars(32))),
         aggregator_hpke_configs: repeat_with(random_hpke_config).take(5).collect(),
     }
 }

@@ -9,6 +9,7 @@ pub const CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
 pub const DEFAULT_URL: &str = "https://api.staging.divviup.org/";
 pub const USER_AGENT: &str = concat!("divviup-client/", env!("CARGO_PKG_VERSION"));
 
+use aggregator::CollectorAuthenticationToken;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use std::{future::Future, pin::Pin};
@@ -248,7 +249,10 @@ impl DivviupClient {
             .await
     }
 
-    pub async fn task_collector_auth_tokens(&self, task_id: &str) -> ClientResult<Vec<String>> {
+    pub async fn task_collector_auth_tokens(
+        &self,
+        task_id: &str,
+    ) -> ClientResult<Vec<CollectorAuthenticationToken>> {
         self.get(&format!("api/tasks/{task_id}/collector_auth_tokens"))
             .await
     }

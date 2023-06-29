@@ -111,12 +111,35 @@ impl From<Option<i64>> for QueryType {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "type")]
+pub enum AuthenticationToken {
+    /// Type of the authentication token. Authentication token type is always "Bearer" in
+    /// divviup-api.
+    Bearer {
+        /// Encoded value of the token. The encoding is opaque to divviup-api.
+        token: String,
+    },
+}
+
+impl AuthenticationToken {
+    pub fn new(token: String) -> Self {
+        Self::Bearer { token }
+    }
+
+    pub fn token(self) -> String {
+        match self {
+            Self::Bearer { token } => token,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskCreate {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub aggregator_auth_token: Option<String>,
+    pub aggregator_auth_token: Option<AuthenticationToken>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub collector_auth_token: Option<String>,
+    pub collector_auth_token: Option<AuthenticationToken>,
     pub peer_aggregator_endpoint: Url,
     pub query_type: QueryType,
     pub vdaf: VdafInstance,
@@ -156,7 +179,10 @@ impl TaskCreate {
             time_precision: new_task.time_precision_seconds,
             collector_hpke_config: new_task.hpke_config.clone(),
             vdaf_verify_key: new_task.vdaf_verify_key.clone(),
-            aggregator_auth_token: new_task.aggregator_auth_token.clone(),
+            aggregator_auth_token: new_task
+                .aggregator_auth_token
+                .clone()
+                .map(AuthenticationToken::new),
             collector_auth_token: None,
         })
     }
@@ -177,8 +203,8 @@ pub struct TaskResponse {
     pub time_precision: JanusDuration,
     pub tolerable_clock_skew: JanusDuration,
     pub collector_hpke_config: HpkeConfig,
-    pub aggregator_auth_token: Option<String>,
-    pub collector_auth_token: Option<String>,
+    pub aggregator_auth_token: Option<AuthenticationToken>,
+    pub collector_auth_token: Option<AuthenticationToken>,
     pub aggregator_hpke_configs: Vec<HpkeConfig>,
 }
 
@@ -280,8 +306,14 @@ mod test {
     "aead_id": "Aes128Gcm",
     "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
   },
-  "aggregator_auth_token": "YWdncmVnYXRvci0xMjM0NTY3OA",
-  "collector_auth_token": "Y29sbGVjdG9yLWFiY2RlZjAw",
+  "aggregator_auth_token": {
+    "type": "Bearer",
+    "token": "YWdncmVnYXRvci0xMjM0NTY3OA"
+  },
+  "collector_auth_token": {
+    "type": "Bearer",
+    "token": "Y29sbGVjdG9yLWFiY2RlZjAw"
+  },
   "aggregator_hpke_configs": [
     {
       "id": 13,

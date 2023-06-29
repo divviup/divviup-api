@@ -1,7 +1,7 @@
 use super::ActiveModel;
 use crate::{
     clients::{AggregatorClient, ClientError},
-    entity::{validators::base64, Account, Aggregator},
+    entity::{Account, Aggregator},
     handler::Error,
 };
 use sea_orm::IntoActiveModel;
@@ -19,7 +19,6 @@ pub struct NewAggregator {
     pub name: Option<String>,
     #[cfg_attr(not(feature = "integration-testing"), validate(custom = "https"))]
     pub api_url: Option<String>,
-    #[validate(required, custom = "base64", length(min = 8))]
     pub bearer_token: Option<String>,
     pub is_first_party: Option<bool>,
 }

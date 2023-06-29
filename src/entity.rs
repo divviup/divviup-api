@@ -31,19 +31,3 @@ pub use aggregator::{
 pub use api_token::{
     Column as ApiTokenColumn, Entity as ApiTokens, Model as ApiToken, UpdateApiToken,
 };
-
-mod validators {
-    const BASE64_CHARS: &[u8] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-
-    pub(super) fn base64(data: &str) -> Result<(), validator::ValidationError> {
-        if data
-            .chars()
-            .all(|c| u8::try_from(c).map_or(false, |c| BASE64_CHARS.contains(&c)))
-        {
-            Ok(())
-        } else {
-            Err(validator::ValidationError::new("base64"))
-        }
-    }
-}
