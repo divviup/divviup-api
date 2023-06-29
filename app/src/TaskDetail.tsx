@@ -30,8 +30,6 @@ import Spinner from "react-bootstrap/Spinner";
 import FormControl from "react-bootstrap/FormControl";
 import InputGroup from "react-bootstrap/InputGroup";
 import { DateTime } from "luxon";
-import Highlight from "react-highlight";
-import "highlight.js/styles/googlecode.css";
 import "@github/relative-time-element";
 
 function TaskTitle() {
@@ -325,14 +323,12 @@ function ClientConfig() {
                   <Card.Title>Client Config</Card.Title>
                   Copy and paste this code to use{" "}
                   <a href="https://github.com/divviup/divviup-ts">divviup-ts</a>
-                  <Highlight className="js">
-                    <pre>
-                      <code className="my-3">
-                        import DAPClient from "@divviup/dap";{"\n"}const client
-                        = new DAPClient({JSON.stringify(json, null, 2)});
-                      </code>
-                    </pre>
-                  </Highlight>
+                  <pre>
+                    <code className="my-3">
+                      import DAPClient from "@divviup/dap";{"\n"}const client =
+                      new DAPClient({JSON.stringify(json, null, 2)});
+                    </code>
+                  </pre>
                 </Card.Body>
               </Card>
             </Col>

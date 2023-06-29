@@ -43,8 +43,7 @@ impl Handler for ReactApp {
         conn = self.handler.run(conn).await;
 
         if conn.is_halted() {
-            // https://create-react-app.dev/docs/production-build
-            if conn.path().starts_with("/static") {
+            if conn.path().starts_with("/assets" /*hashed assets*/) {
                 conn.with_header(CacheControl, MaxAge(ONE_YEAR))
             } else {
                 conn.with_header(CacheControl, NoCache)
