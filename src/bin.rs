@@ -22,16 +22,6 @@ async fn main() {
         .with_stopper(stopper.clone())
         .spawn(divviup_api::telemetry::metrics_exporter().unwrap());
 
-    #[cfg(all(debug_assertions, feature = "aggregator-api-mock"))]
-    if let Some(port) = config.aggregator_api_url.port() {
-        trillium_tokio::config()
-            .without_signals()
-            .with_port(port)
-            .with_observer(observer.clone())
-            .with_stopper(stopper.clone())
-            .spawn(divviup_api::aggregator_api_mock::aggregator_api());
-    }
-
     let app = DivviupApi::new(config).await;
 
     Queue::new(app.db(), app.config())

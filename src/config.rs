@@ -7,6 +7,8 @@ use trillium_rustls::RustlsConfig;
 use trillium_tokio::ClientConfig;
 use url::Url;
 
+const POSTMARK_URL: &str = "https://api.postmarkapp.com";
+
 #[derive(Debug, Clone)]
 pub struct ApiConfig {
     pub session_secret: String,
@@ -59,6 +61,19 @@ fn var_optional<T: FromStr>(name: &'static str, default: T) -> Result<T, ApiConf
     }
 }
 
+#[cfg(not(feature = "api-mocks"))]
+fn build_client() -> trillium_client::Client {
+    Client::new(RustlsConfig::default().with_tcp_config(ClientConfig::default()))
+        .with_default_pool()
+}
+
+#[cfg(feature = "api-mocks")]
+fn build_client() -> trillium_client::Client {
+    Client::new(trillium_testing::connector(
+        crate::api_mocks::ApiMocks::new(POSTMARK_URL, var::<Url>("AUTH_URL").unwrap().as_ref()),
+    ))
+}
+
 impl ApiConfig {
     pub fn from_env() -> Result<Self, ApiConfigError> {
         Ok(Self {
@@ -74,10 +89,9 @@ impl ApiConfig {
             prometheus_port: var_optional("OTEL_EXPORTER_PROMETHEUS_PORT", 9464)?,
             postmark_token: var("POSTMARK_TOKEN")?,
             email_address: var("EMAIL_ADDRESS")?,
-            postmark_url: Url::parse("https://api.postmarkapp.com").unwrap(),
+            postmark_url: Url::parse(POSTMARK_URL).unwrap(),
             skip_app_compilation: var_optional("SKIP_APP_COMPILATION", false)?,
-            client: Client::new(RustlsConfig::default().with_tcp_config(ClientConfig::default()))
-                .with_default_pool(),
+            client: build_client(),
         })
     }
 
