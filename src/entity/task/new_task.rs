@@ -133,7 +133,7 @@ impl NewTask {
             .ok()
             .flatten();
         if leader.is_none() {
-            errors.add("leader_aggregator_id", ValidationError::new("missing"));
+            errors.add("leader_aggregator_id", ValidationError::new("required"));
         }
 
         let helper = load_aggregator(account, self.helper_aggregator_id.as_deref(), db)
@@ -141,7 +141,7 @@ impl NewTask {
             .ok()
             .flatten();
         if helper.is_none() {
-            errors.add("helper_aggregator_id", ValidationError::new("missing"));
+            errors.add("helper_aggregator_id", ValidationError::new("required"));
         }
 
         let (Some(leader), Some(helper)) = (leader, helper) else { return None };

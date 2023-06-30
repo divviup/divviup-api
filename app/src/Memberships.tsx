@@ -5,67 +5,32 @@ import ListGroup from "react-bootstrap/ListGroup";
 import {
   Await,
   useLoaderData,
-  useAsyncValue,
   useRouteLoaderData,
   Form,
   useSubmit,
 } from "react-router-dom";
 import React, { Suspense, useState } from "react";
-import { Account, Membership, User } from "./ApiClient";
-import { LinkContainer } from "react-router-bootstrap";
-import { Button, FormControl, Spinner } from "react-bootstrap";
+import { Membership, User } from "./ApiClient";
+import { Button, FormControl } from "react-bootstrap";
 import { PersonSlash, PersonAdd, People } from "react-bootstrap-icons";
 import Modal from "react-bootstrap/Modal";
+import { AccountBreadcrumbs, WithAccount } from "./util";
+
+function Breadcrumbs() {
+  return (
+    <AccountBreadcrumbs>
+      <Breadcrumb.Item active>Memberships</Breadcrumb.Item>
+    </AccountBreadcrumbs>
+  );
+}
 
 export default function Memberships() {
-  let { account } = useRouteLoaderData("account") as {
-    account: Promise<Account>;
-  };
-  return (
-    <Suspense fallback={<Spinner />}>
-      <Await resolve={account}>
-        <MembershipsFull />
-      </Await>
-    </Suspense>
-  );
-}
-
-function Breadcrumbs({ account }: { account: Account }) {
-  return (
-    <Row>
-      <Col>
-        <Breadcrumb>
-          <LinkContainer to="/">
-            <Breadcrumb.Item>Home</Breadcrumb.Item>
-          </LinkContainer>
-          <LinkContainer to="/accounts">
-            <Breadcrumb.Item>Accounts</Breadcrumb.Item>
-          </LinkContainer>
-          <LinkContainer to={`/accounts/${account.id}`}>
-            <Breadcrumb.Item>{account.name}</Breadcrumb.Item>
-          </LinkContainer>
-          <Breadcrumb.Item active>Members</Breadcrumb.Item>
-        </Breadcrumb>
-      </Col>
-    </Row>
-  );
-}
-
-function MembershipsFull() {
-  let account = useAsyncValue() as Account;
-  let { memberships } = useLoaderData() as {
-    memberships: Promise<Membership[]>;
-  };
   return (
     <>
-      <Breadcrumbs account={account} />
+      <Breadcrumbs />
       <Row>
         <Col>
-          <Suspense fallback={<Spinner />}>
-            <Await resolve={memberships}>
-              <MembershipList account={account} />
-            </Await>
-          </Suspense>
+          <MembershipList />
         </Col>
       </Row>
     </>
@@ -144,41 +109,67 @@ function AddMembershipForm() {
   );
 }
 
-function MembershipList({ account }: { account: Account }) {
-  let memberships = useAsyncValue() as Membership[];
+function MembershipList() {
+  let { memberships } = useLoaderData() as {
+    memberships: Promise<Membership[]>;
+  };
   let { currentUser } = useRouteLoaderData("currentUser") as {
     currentUser: Promise<User>;
   };
 
   return (
-    <React.Suspense>
-      <Await resolve={currentUser}>
-        {(currentUser) => (
-          <>
-            <h3>
-              <People /> {account.name} Members
-            </h3>
-            <AddMembershipForm />
-            <ListGroup>
-              {memberships.map((membership) => {
-                const isCurrent = membership.user_email === currentUser.email;
-                return (
-                  <ListGroup.Item
-                    className="d-flex justify-content-between align-items-center"
-                    key={membership.id}
-                    disabled={isCurrent}
-                  >
-                    {membership.user_email}
-                    {isCurrent ? null : (
-                      <DeleteMembershipButton membership={membership} />
+    <>
+      <h1>
+        <People />{" "}
+        <Suspense fallback="...">
+          <WithAccount>{(account) => account.name}</WithAccount>
+        </Suspense>{" "}
+        Members
+      </h1>
+      <AddMembershipForm />
+      <ListGroup>
+        <Suspense>
+          <Await resolve={memberships}>
+            {(memberships: Membership[]) =>
+              memberships.map((membership) => (
+                <Suspense
+                  key={membership.id}
+                  fallback={<MembershipItem membership={membership} />}
+                >
+                  <Await resolve={currentUser}>
+                    {(currentUser: User) => (
+                      <MembershipItem
+                        membership={membership}
+                        current={membership.user_email === currentUser.email}
+                      />
                     )}
-                  </ListGroup.Item>
-                );
-              })}
-            </ListGroup>
-          </>
-        )}
-      </Await>
-    </React.Suspense>
+                  </Await>
+                </Suspense>
+              ))
+            }
+          </Await>
+        </Suspense>
+      </ListGroup>
+    </>
+  );
+}
+
+function MembershipItem({
+  membership,
+  current = true,
+}: {
+  membership: Membership;
+  current?: boolean;
+}) {
+  return (
+    <ListGroup.Item
+      className="d-flex justify-content-between align-items-center"
+      key={membership.id}
+      disabled={current}
+    >
+      {membership.user_email}
+
+      {current ? null : <DeleteMembershipButton membership={membership} />}
+    </ListGroup.Item>
   );
 }

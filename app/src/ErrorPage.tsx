@@ -37,7 +37,11 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
   }
 
   if (isRouteErrorResponse(error)) {
-    return <Alert variant="error">{JSON.stringify(error)}</Alert>;
+    return (
+      <Layout>
+        <Alert variant="warning">Not Found</Alert>
+      </Layout>
+    );
   }
 
   return (

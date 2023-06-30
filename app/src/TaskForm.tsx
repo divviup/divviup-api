@@ -5,6 +5,7 @@ import {
   useParams,
   useRouteLoaderData,
   NavigateFunction,
+  useLoaderData,
 } from "react-router-dom";
 import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Button from "react-bootstrap/Button";
@@ -14,11 +15,16 @@ import FormControl from "react-bootstrap/FormControl";
 import FormGroup from "react-bootstrap/FormGroup";
 import FormLabel from "react-bootstrap/FormLabel";
 import FormSelect from "react-bootstrap/FormSelect";
-import React, { ChangeEvent, ChangeEventHandler } from "react";
+import React, { ChangeEvent, ChangeEventHandler, Suspense } from "react";
 import Row from "react-bootstrap/Row";
 import { ApiClientContext } from "./ApiClientContext";
 import { LinkContainer } from "react-router-bootstrap";
-import ApiClient, { Account, NewTask, formikErrors } from "./ApiClient";
+import ApiClient, {
+  Account,
+  Aggregator,
+  NewTask,
+  formikErrors,
+} from "./ApiClient";
 import { Formik, FormikHelpers, FormikProps } from "formik";
 import FormCheck from "react-bootstrap/FormCheck";
 import { DateTime } from "luxon";
@@ -69,13 +75,12 @@ export default function TaskForm() {
             initialValues={
               {
                 min_batch_size: 100,
-                partner_url: "https://divviup.cloudflare.com",
                 name: "",
+                max_batch_size: null,
                 time_precision_seconds: 3600,
                 expiration: null,
-                is_leader: true,
                 hpke_config: "",
-              } as NewTask
+              } as unknown as NewTask
             }
             onSubmit={handleSubmit}
           >
@@ -87,12 +92,13 @@ export default function TaskForm() {
                 autoComplete="off"
               >
                 <TaskName {...props} />
+                <LeaderAggregator {...props} />
+                <HelperAggregator {...props} />
                 <VdafType {...props} />
                 <VdafDetails {...props} />
                 <QueryType {...props} />
                 <MinBatchSize {...props} />
                 <HpkeConfig {...props} />
-                <IsLeader {...props} />
                 <TimePrecisionSeconds {...props} />
                 <Expiration {...props} />
                 <Button
@@ -111,16 +117,74 @@ export default function TaskForm() {
   );
 }
 
-function IsLeader({ handleChange, values }: FormikProps<NewTask>) {
+function LeaderAggregator(props: FormikProps<NewTask>) {
+  const { aggregators } = useLoaderData() as {
+    aggregators: Promise<Aggregator[]>;
+  };
   return (
-    <FormCheck
-      type="switch"
-      checked={values.is_leader}
-      onChange={handleChange}
-      name="is_leader"
-      id="is_leader"
-      label="Leader"
-    />
+    <FormGroup>
+      <FormLabel>Leader Aggregator</FormLabel>
+
+      <FormSelect
+        value={props.values.leader_aggregator_id}
+        isInvalid={!!props.errors.leader_aggregator_id}
+        onChange={props.handleChange}
+        onBlur={props.handleBlur}
+        name="leader_aggregator_id"
+      >
+        <option />
+
+        <Suspense>
+          <Await resolve={aggregators}>
+            {(aggregators: Aggregator[]) =>
+              aggregators.map((aggregator) => (
+                <option key={aggregator.id} value={aggregator.id}>
+                  {aggregator.name}
+                </option>
+              ))
+            }
+          </Await>
+        </Suspense>
+      </FormSelect>
+      <FormControl.Feedback type="invalid">
+        {props.errors.leader_aggregator_id}
+      </FormControl.Feedback>
+    </FormGroup>
+  );
+}
+
+function HelperAggregator(props: FormikProps<NewTask>) {
+  const { aggregators } = useLoaderData() as {
+    aggregators: Promise<Aggregator[]>;
+  };
+  return (
+    <FormGroup>
+      <FormLabel>Helper Aggregator</FormLabel>
+
+      <FormSelect
+        value={props.values.helper_aggregator_id}
+        isInvalid={!!props.errors.helper_aggregator_id}
+        onChange={props.handleChange}
+        onBlur={props.handleBlur}
+        name="helper_aggregator_id"
+      >
+        <option />
+        <Suspense>
+          <Await resolve={aggregators}>
+            {(aggregators: Aggregator[]) =>
+              aggregators.map((aggregator) => (
+                <option key={aggregator.id} value={aggregator.id}>
+                  {aggregator.name}
+                </option>
+              ))
+            }
+          </Await>
+        </Suspense>
+      </FormSelect>
+      <FormControl.Feedback type="invalid">
+        {props.errors.helper_aggregator_id}
+      </FormControl.Feedback>
+    </FormGroup>
   );
 }
 
@@ -135,12 +199,12 @@ function QueryType(props: FormikProps<NewTask>) {
     (event: ChangeEvent<HTMLInputElement>) => {
       setFieldValue(
         "max_batch_size",
-        event.target.value === "fixed"
+        event.target.value === "fixed" && typeof min_batch_size === "number"
           ? min_batch_size * 2
           : /*jbr: I have no idea what a good
              * default is, but it needs to be
              * greater than min*/
-            null
+          null
       );
     },
     [setFieldValue, min_batch_size]
@@ -429,7 +493,6 @@ function HistogramBucketSelection(props: FormikProps<NewTask>) {
   }, [input, setInput, setFieldValue]);
 
   if (props.values.vdaf?.type !== "histogram") return <></>;
-
   return (
     <FormGroup className="mb-3" controlId="vdaf.bits">
       <FormLabel>Histogram buckets</FormLabel>
@@ -527,13 +590,13 @@ function Expiration(props: FormikProps<NewTask>) {
 
   const formValue = expiration
     ? DateTime.fromISO(expiration)
-        .toLocal()
-        .set({ second: 0, millisecond: 0 })
-        .toISO({
-          includeOffset: false,
-          suppressSeconds: true,
-          suppressMilliseconds: true,
-        }) || ""
+      .toLocal()
+      .set({ second: 0, millisecond: 0 })
+      .toISO({
+        includeOffset: false,
+        suppressSeconds: true,
+        suppressMilliseconds: true,
+      }) || ""
     : "";
 
   return (
