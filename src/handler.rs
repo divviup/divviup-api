@@ -1,4 +1,5 @@
 pub(crate) mod account_bearer_token;
+#[cfg(assets)]
 pub(crate) mod assets;
 pub(crate) mod cors;
 pub(crate) mod custom_mime_types;
@@ -11,7 +12,6 @@ pub(crate) mod session_store;
 
 use crate::{routes, ApiConfig, Db};
 
-use assets::static_assets;
 use cors::cors_headers;
 use error::ErrorHandler;
 use logger::logger;
@@ -63,7 +63,8 @@ impl DivviupApi {
                 Forwarding::trust_always(),
                 caching_headers(),
                 logger(),
-                static_assets(&config),
+                #[cfg(assets)]
+                assets::static_assets(&config),
                 api(&db, &config),
                 ErrorHandler,
             )),
