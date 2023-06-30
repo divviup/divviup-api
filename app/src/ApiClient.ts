@@ -54,8 +54,8 @@ type VdafDefinition =
 export interface Task {
   id: string;
   name: string;
-  leader_url: string;
-  helper_url: string;
+  leader_aggregator_id: string;
+  helper_aggregator_id: string;
   vdaf: VdafDefinition;
   min_batch_size: number;
   time_precision_seconds: number;
@@ -63,7 +63,6 @@ export interface Task {
   created_at: string;
   updated_at: string;
   expiration: string | null;
-  is_leader: boolean;
   max_batch_size: number | null;
   report_count: number;
   aggregate_collection_count: number;
@@ -88,6 +87,29 @@ export interface UpdateTask {
 
 export interface CreateMembership {
   user_email: string;
+}
+
+export type Role = "leader" | "helper" | "either";
+
+export interface Aggregator {
+  id: string;
+  account_id: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  api_url: string;
+  dap_url: string;
+  role: Role;
+  name: string;
+  is_first_party: boolean;
+}
+
+export interface NewAggregator {
+  role: Role;
+  name: string;
+  api_url: string;
+  dap_url: string;
+  bearer_token: string;
 }
 
 const mime = "application/vnd.divviup+json;version=0.1";
@@ -218,6 +240,36 @@ export class ApiClient {
     return null;
   }
 
+  async accountAggregators(accountId: string): Promise<Aggregator[]> {
+    const res = await this.get(`/api/accounts/${accountId}/aggregators`);
+    return res.data as Aggregator[];
+  }
+
+  async createAggregator(
+    accountId: string,
+    aggregator: NewAggregator
+  ): Promise<Aggregator | { error: ValidationErrorsFor<NewAggregator> }> {
+    const res = await this.post(
+      `/api/accounts/${accountId}/aggregators`,
+      aggregator
+    );
+    switch (res.status) {
+      case 201:
+        return res.data as Aggregator;
+      case 400:
+        return { error: res.data } as {
+          error: ValidationErrorsFor<NewAggregator>;
+        };
+      default:
+        throw res;
+    }
+  }
+
+  async aggregator(aggregatorId: string): Promise<Aggregator> {
+    const res = await this.get(`/api/aggregators/${aggregatorId}`);
+    return res.data as Aggregator;
+  }
+
   async updateTask(
     taskId: string,
     task: UpdateTask
@@ -265,6 +317,18 @@ function errorToMessage({ message, code, params }: ValidationError) {
   if (message) return message;
   if (code === "required") {
     return "is required";
+  } else if (code === "url") {
+    return "must be a well-formed url";
+  } else if (code === "https-url") {
+    return "must be a well-formed https:// url";
+  } else if (code === "no-first-party") {
+    return "one of the aggregators must be operated by Divvi Up";
+  } else if (code === "base64") {
+    return "must be base64";
+  } else if (code === "same") {
+    return "must not be the same";
+  } else if (code === "enum" && Array.isArray(params.values)) {
+    return `must be one of these values: ${params.values.join(", ")}`;
   } else if (code === "length") {
     if ("min" in params && "max" in params)
       return `length must be between ${params.min} and ${params.max}`;
@@ -280,7 +344,7 @@ function errorToMessage({ message, code, params }: ValidationError) {
 }
 
 function errorsToMessage(validationErrors: ValidationError[]) {
-  return validationErrors.map(errorToMessage).join(", ");
+  return [...new Set(validationErrors.map(errorToMessage))].join(", ");
 }
 
 function formikErrors_(v: ValidationErrors): FormikLikeErrors {
@@ -313,14 +377,14 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-    ? ValidationErrorsFor<T[K]>
-    : ValidationError[];
+  ? ValidationErrorsFor<T[K]>
+  : ValidationError[];
 };
 
 export interface ValidationError {
   code: string;
   message: null | string;
-  params: { value: unknown };
+  params: { [key: string]: unknown };
 }
 
 export default ApiClient;

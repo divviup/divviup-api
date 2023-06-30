@@ -10,18 +10,29 @@ import { LinkContainer } from "react-router-bootstrap";
 import { Button } from "react-bootstrap";
 import { BuildingAdd } from "react-bootstrap-icons";
 
+function Breadcrumbs() {
+  return (
+    <Row>
+      <Col>
+        <Breadcrumb>
+          <LinkContainer to="/">
+            <Breadcrumb.Item>Home</Breadcrumb.Item>
+          </LinkContainer>
+          <Breadcrumb.Item active>Accounts</Breadcrumb.Item>
+        </Breadcrumb>
+      </Col>
+    </Row>
+  );
+}
+
 export default function AccountList() {
   let { accounts } = useLoaderData() as { accounts: Promise<Account[]> };
   return (
     <Container>
+      <Breadcrumbs />
       <Row>
         <Col>
-          <Breadcrumb>
-            <LinkContainer to="/">
-              <Breadcrumb.Item>Home</Breadcrumb.Item>
-            </LinkContainer>
-            <Breadcrumb.Item active>Accounts</Breadcrumb.Item>
-          </Breadcrumb>
+          <h1>Accounts</h1>
         </Col>
       </Row>
       <Row>
@@ -35,7 +46,13 @@ export default function AccountList() {
       </Row>
       <Row>
         <Col>
-          <React.Suspense fallback={<span>loading</span>}>
+          <React.Suspense
+            fallback={
+              <ListGroup>
+                <ListGroup.Item>Loading</ListGroup.Item>
+              </ListGroup>
+            }
+          >
             <Await resolve={accounts}>
               <LoadedAccounts />
             </Await>

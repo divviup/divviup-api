@@ -10,14 +10,16 @@ import { ApiClient, PartialAccount } from "./ApiClient";
 import AccountForm from "./AccountForm";
 import AccountList from "./AccountList";
 import Layout from "./Layout";
-import Root from "./Root";
 import TaskList from "./TaskList";
 import Memberships from "./Memberships";
 import AccountSummary from "./AccountSummary";
 import TaskForm from "./TaskForm";
 import TaskDetail from "./TaskDetail";
+import Aggregators from "./AggregatorList";
 import { AxiosError } from "axios";
 import ErrorPage from "./ErrorPage";
+import AggregatorForm from "./AggregatorForm";
+import AggregatorDetail from "./AggregatorDetail";
 
 function Login({ apiClient }: { apiClient: ApiClient }) {
   apiClient.loginUrl().then((url) => {
@@ -55,7 +57,9 @@ function buildRouter(apiClient: ApiClient) {
       children: [
         {
           path: "",
-          element: <Root />,
+          loader() {
+            return redirect("/accounts");
+          },
           index: true,
         },
         {
@@ -141,6 +145,47 @@ function buildRouter(apiClient: ApiClient) {
                   path: "",
                   element: <AccountSummary />,
                 },
+
+                {
+                  path: "aggregators",
+                  element: <Aggregators />,
+                  loader({ params }) {
+                    return defer({
+                      aggregators: apiClient.accountAggregators(
+                        params.account_id as string
+                      ),
+                    });
+                  },
+                },
+                {
+                  path: "aggregators/:aggregator_id",
+                  element: <AggregatorDetail />,
+                  loader({ params }) {
+                    return defer({
+                      aggregator: apiClient.aggregator(
+                        params.aggregator_id as string
+                      ),
+                    });
+                  },
+
+                  async action({ params, request }) {
+                    let data = Object.fromEntries(await request.formData());
+                    switch (request.method) {
+                      case "PATCH":
+                        return await apiClient.updateTask(
+                          params.task_id as string,
+                          data as { name: string }
+                        );
+                      default:
+                        throw new Error(`unexpected method ${request.method}`);
+                    }
+                  },
+                },
+
+                {
+                  path: "aggregators/new",
+                  element: <AggregatorForm />,
+                },
                 {
                   path: "memberships",
                   element: <Memberships />,
@@ -189,8 +234,17 @@ function buildRouter(apiClient: ApiClient) {
                   path: "tasks/:task_id",
                   element: <TaskDetail />,
                   loader({ params }) {
+                    let task = apiClient.task(params.task_id as string);
+                    let leaderAggregator = task.then((t) =>
+                      apiClient.aggregator(t.leader_aggregator_id)
+                    );
+                    let helperAggregator = task.then((t) =>
+                      apiClient.aggregator(t.helper_aggregator_id)
+                    );
                     return defer({
-                      task: apiClient.task(params.task_id as string),
+                      task,
+                      leaderAggregator,
+                      helperAggregator,
                     });
                   },
 
@@ -211,6 +265,13 @@ function buildRouter(apiClient: ApiClient) {
                 {
                   path: "tasks/new",
                   element: <TaskForm />,
+                  loader({ params }) {
+                    return defer({
+                      aggregators: apiClient.accountAggregators(
+                        params.account_id as string
+                      ),
+                    });
+                  },
                 },
               ],
             },

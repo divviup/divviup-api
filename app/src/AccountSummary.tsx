@@ -11,30 +11,19 @@ import {
 } from "react-router-dom";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { Account } from "./ApiClient";
-
 import Spinner from "react-bootstrap/Spinner";
 import { LinkContainer } from "react-router-bootstrap";
 import {
   Building,
+  CloudUpload,
   FileEarmarkCode,
   PencilFill,
   People,
 } from "react-bootstrap-icons";
 import { Button, FormControl, InputGroup } from "react-bootstrap";
-export default function AccountSummary() {
-  let { account } = useRouteLoaderData("account") as {
-    account: Promise<Account>;
-  };
-  return (
-    <Suspense fallback={<Spinner />}>
-      <Await resolve={account}>
-        <AccountSummaryLoaded />
-      </Await>
-    </Suspense>
-  );
-}
+import { WithAccount } from "./util";
 
-function AccountName({ account }: { account: Account }) {
+function AccountName() {
   let [isEditingName, setIsEditingName] = useState(false);
   let edit = useCallback(() => setIsEditingName(true), [setIsEditingName]);
   let actionData = useActionData();
@@ -52,12 +41,20 @@ function AccountName({ account }: { account: Account }) {
                 <InputGroup.Text id="inputGroupPrepend">
                   <Building />
                 </InputGroup.Text>
-                <FormControl
-                  type="text"
-                  name="name"
-                  defaultValue={account.name}
-                  required
-                />
+                <Suspense
+                  fallback={<FormControl type="text" name="name" required />}
+                >
+                  <WithAccount>
+                    {(account) => (
+                      <FormControl
+                        type="text"
+                        name="name"
+                        defaultValue={account.name}
+                        required
+                      />
+                    )}
+                  </WithAccount>
+                </Suspense>
               </InputGroup>
             </Form>
           </Col>
@@ -75,7 +72,9 @@ function AccountName({ account }: { account: Account }) {
         <Col xs="11">
           <h1>
             <Building />
-            {account.name}
+            <Suspense fallback="...">
+              <WithAccount>{(account) => account.name}</WithAccount>
+            </Suspense>
           </h1>
         </Col>
         <Col>
@@ -88,8 +87,7 @@ function AccountName({ account }: { account: Account }) {
   }
 }
 
-export function AccountSummaryLoaded() {
-  let account = useAsyncValue() as Account;
+export default function AccountSummary() {
   return (
     <>
       <Row>
@@ -101,13 +99,17 @@ export function AccountSummaryLoaded() {
             <LinkContainer to="/accounts">
               <Breadcrumb.Item>Accounts</Breadcrumb.Item>
             </LinkContainer>
-            <Breadcrumb.Item active>{account.name}</Breadcrumb.Item>
+            <Breadcrumb.Item active>
+              <Suspense fallback="...">
+                <WithAccount>{(account) => account.name}</WithAccount>
+              </Suspense>
+            </Breadcrumb.Item>
           </Breadcrumb>
         </Col>
       </Row>
       <Row>
         <Col>
-          <AccountName account={account} />
+          <AccountName />
           <ListGroup>
             <LinkContainer to="memberships">
               <ListGroup.Item action>
@@ -118,6 +120,12 @@ export function AccountSummaryLoaded() {
             <LinkContainer to="tasks">
               <ListGroup.Item action>
                 <FileEarmarkCode /> Tasks
+              </ListGroup.Item>
+            </LinkContainer>
+
+            <LinkContainer to="aggregators">
+              <ListGroup.Item action>
+                <CloudUpload /> Aggregators
               </ListGroup.Item>
             </LinkContainer>
           </ListGroup>

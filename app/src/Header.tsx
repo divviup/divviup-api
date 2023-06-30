@@ -52,13 +52,24 @@ function LoggedInHeader() {
 }
 
 export default function Header() {
-  let { currentUser } = useLoaderData() as { currentUser: Promise<User> };
-
-  return (
-    <Suspense fallback={<HeaderPlaceholder />}>
-      <Await resolve={currentUser}>
-        {(user) => (user ? <LoggedInHeader /> : <HeaderPlaceholder />)}
-      </Await>
-    </Suspense>
-  );
+  let loaderData = useLoaderData();
+  let currentUser: Promise<User> | undefined;
+  if (
+    typeof loaderData === "object" &&
+    loaderData &&
+    "currentUser" in loaderData
+  ) {
+    currentUser = loaderData.currentUser as Promise<User>;
+  }
+  if (currentUser) {
+    return (
+      <Suspense fallback={<HeaderPlaceholder />}>
+        <Await resolve={currentUser}>
+          {(user) => (user ? <LoggedInHeader /> : <HeaderPlaceholder />)}
+        </Await>
+      </Suspense>
+    );
+  } else {
+    return <HeaderPlaceholder />;
+  }
 }

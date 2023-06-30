@@ -17,39 +17,33 @@ pub struct NewAggregator {
     pub role: Option<String>,
     #[validate(required, length(min = 1))]
     pub name: Option<String>,
-    #[validate(required, url)]
+    #[validate(required, custom = "https")]
     pub api_url: Option<String>,
-    #[validate(required, url)]
+    #[validate(required, custom = "https")]
     pub dap_url: Option<String>,
-    #[validate(required, custom = "base64")]
+    #[validate(required, custom = "base64", length(min = 8))]
     pub bearer_token: Option<String>,
 }
 
 fn validate_role(role: &str) -> Result<(), ValidationError> {
     Role::from_str(role)
-        .map_err(|_| ValidationError::new("role"))
+        .map_err(|_| {
+            let mut error = ValidationError::new("enum");
+            error.add_param("values".into(), &vec!["Leader", "Helper", "Either"]);
+            error
+        })
         .map(|_| ())
 }
 
-impl NewAggregator {
-    pub fn validate(&self) -> Result<(), ValidationErrors> {
-        let errors = Validate::validate(self);
-        match (&self.dap_url, &self.bearer_token) {
-            (Some(_), Some(_)) | (None, None) => errors,
-            (Some(_), None) => {
-                let mut err = errors.err().unwrap_or_default();
-                err.add("bearer_token", ValidationError::new("required"));
-                Err(err)
-            }
-
-            (None, Some(_)) => {
-                let mut err = errors.err().unwrap_or_default();
-                err.add("dap_url", ValidationError::new("required"));
-                Err(err)
-            }
-        }
+fn https(url: &str) -> Result<(), ValidationError> {
+    let url = url::Url::from_str(url).map_err(|_| ValidationError::new("https-url"))?;
+    if url.scheme() != "https" {
+        return Err(ValidationError::new("https-url"));
     }
+    Ok(())
+}
 
+impl NewAggregator {
     pub fn build(self, account: Option<&Account>) -> Result<ActiveModel, Error> {
         self.validate()?;
         // unwrap safety: the below unwraps will never panic, because
