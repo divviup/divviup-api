@@ -1,3 +1,4 @@
+#![cfg(assets)]
 mod harness;
 use harness::{assert_eq, test, *};
 

@@ -83,7 +83,6 @@ pub fn config(api_mocks: impl Handler) -> ApiConfig {
         email_address: "test@example.test".parse().unwrap(),
         postmark_url: POSTMARK_URL.parse().unwrap(),
         client: Client::new(trillium_testing::connector(api_mocks)),
-        skip_app_compilation: false,
     }
 }
 

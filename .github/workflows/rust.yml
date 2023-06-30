@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  ASSET_DIR: ./app/build
 
 jobs:
   build:
@@ -20,7 +21,7 @@ jobs:
           node-version: latest
           cache: "npm"
           cache-dependency-path: ./app/package-lock.json
-      - run: npm ci
+      - run: npm ci && npm run build
         working-directory: ./app
       - uses: dtolnay/rust-toolchain@stable
         with:

@@ -25,7 +25,6 @@ pub struct ApiConfig {
     pub email_address: EmailAddress,
     pub postmark_url: Url,
     pub client: Client,
-    pub skip_app_compilation: bool,
 }
 
 #[derive(Debug, Error, Clone, Copy)]
@@ -90,7 +89,6 @@ impl ApiConfig {
             postmark_token: var("POSTMARK_TOKEN")?,
             email_address: var("EMAIL_ADDRESS")?,
             postmark_url: Url::parse(POSTMARK_URL).unwrap(),
-            skip_app_compilation: var_optional("SKIP_APP_COMPILATION", false)?,
             client: build_client(),
         })
     }
