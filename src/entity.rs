@@ -1,5 +1,6 @@
 pub mod account;
 pub mod aggregator;
+pub mod api_token;
 pub mod membership;
 pub mod queue;
 pub mod session;
@@ -10,7 +11,8 @@ mod url;
 pub mod macros;
 
 pub use account::{
-    Column as AccountColumn, Entity as Accounts, Model as Account, NewAccount, UpdateAccount,
+    Column as AccountColumn, Entity as Accounts, Model as Account, NewAccount,
+    Relation as AccountRelation, UpdateAccount,
 };
 pub use membership::{
     Column as MembershipColumn, CreateMembership, Entity as Memberships, Model as Membership,
@@ -25,6 +27,8 @@ pub use aggregator::{
     Column as AggregatorColumn, Entity as Aggregators, Model as Aggregator, NewAggregator,
     UpdateAggregator,
 };
+
+pub use api_token::{Column as ApiTokenColumn, Entity as ApiTokens, Model as ApiToken};
 
 mod validators {
     const BASE64_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

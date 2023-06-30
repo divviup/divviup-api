@@ -84,6 +84,12 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for Error {
     }
 }
 
+impl From<serde_json::Error> for Error {
+    fn from(value: serde_json::Error) -> Self {
+        ApiError::from(value).into()
+    }
+}
+
 impl From<DbErr> for Error {
     fn from(value: DbErr) -> Self {
         Self::Database(Arc::new(value))

@@ -1,6 +1,7 @@
 mod accounts;
 mod admin;
 mod aggregators;
+mod api_tokens;
 mod health_check;
 mod memberships;
 mod tasks;
@@ -75,6 +76,7 @@ fn api_routes(config: &ApiConfig) -> impl Handler {
                 "/aggregators",
                 (api(admin_required), api(aggregators::admin_create)),
             )
+            .delete("/api_tokens/:api_token_id", api(api_tokens::delete))
             .any(
                 &[Patch, Get, Post],
                 "/accounts/:account_id/*",
@@ -94,4 +96,6 @@ fn accounts_routes(config: &ApiConfig) -> impl Handler {
         .post("/tasks", (state(config.clone()), api(tasks::create)))
         .post("/aggregators", api(aggregators::create))
         .get("/aggregators", api(aggregators::index))
+        .post("/api_tokens", api(api_tokens::create))
+        .get("/api_tokens", api(api_tokens::index))
 }

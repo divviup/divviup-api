@@ -1,6 +1,5 @@
+use super::{url::Url, AccountColumn, AccountRelation, Accounts, Memberships};
 use crate::clients::AggregatorClient;
-
-use super::{account, membership, url::Url};
 use sea_orm::{entity::prelude::*, ActiveValue, IntoActiveModel};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -97,28 +96,28 @@ impl FromStr for Role {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::account::Entity",
+        belongs_to = "Accounts",
         from = "Column::AccountId",
-        to = "super::account::Column::Id",
+        to = "AccountColumn::Id",
         on_update = "Restrict",
         on_delete = "Restrict"
     )]
     Account,
 }
 
-impl Related<account::Entity> for Entity {
+impl Related<Accounts> for Entity {
     fn to() -> RelationDef {
         Relation::Account.def()
     }
 }
 
-impl Related<membership::Entity> for Entity {
+impl Related<Memberships> for Entity {
     fn to() -> RelationDef {
-        account::Relation::Membership.def()
+        AccountRelation::Memberships.def()
     }
 
     fn via() -> Option<RelationDef> {
-        Some(account::Relation::Aggregator.def().rev())
+        Some(AccountRelation::Aggregators.def().rev())
     }
 }
 

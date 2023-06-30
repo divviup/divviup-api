@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! json_newtype {
     ($type:ty) => {
-        json_newtype!($type where);
+        $crate::json_newtype!($type where);
     };
 
     ($type:ty where $($generic_type_name:ident $(: $generic_type_bound:ident $(+ $generic_type_bound2:ident)*)?),*) => {

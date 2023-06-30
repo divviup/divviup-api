@@ -8,14 +8,6 @@ impl Reload for Aggregator {
     }
 }
 
-#[track_caller]
-fn assert_same_json_representation<T: serde::Serialize>(actual: &T, expected: &T) {
-    assert_eq!(
-        serde_json::to_value(actual).unwrap(),
-        serde_json::to_value(expected).unwrap()
-    );
-}
-
 mod index {
     use super::{assert_eq, test, *};
 

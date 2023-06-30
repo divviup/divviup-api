@@ -22,29 +22,37 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::membership::Entity")]
-    Membership,
-    #[sea_orm(has_many = "super::task::Entity")]
-    Task,
-    #[sea_orm(has_many = "super::aggregator::Entity")]
-    Aggregator,
+    #[sea_orm(has_many = "super::Memberships")]
+    Memberships,
+    #[sea_orm(has_many = "super::Tasks")]
+    Tasks,
+    #[sea_orm(has_many = "super::Aggregators")]
+    Aggregators,
+    #[sea_orm(has_many = "super::ApiTokens")]
+    ApiTokens,
 }
 
-impl Related<super::membership::Entity> for Entity {
+impl Related<super::Memberships> for Entity {
     fn to() -> RelationDef {
-        Relation::Membership.def()
+        Relation::Memberships.def()
     }
 }
 
-impl Related<super::aggregator::Entity> for Entity {
+impl Related<super::Aggregators> for Entity {
     fn to() -> RelationDef {
-        Relation::Aggregator.def()
+        Relation::Aggregators.def()
     }
 }
 
-impl Related<super::task::Entity> for Entity {
+impl Related<super::Tasks> for Entity {
     fn to() -> RelationDef {
-        Relation::Task.def()
+        Relation::Tasks.def()
+    }
+}
+
+impl Related<super::ApiTokens> for Entity {
+    fn to() -> RelationDef {
+        Relation::ApiTokens.def()
     }
 }
 

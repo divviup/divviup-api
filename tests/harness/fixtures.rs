@@ -1,8 +1,7 @@
 use super::*;
-use divviup_api::entity::aggregator::Role;
-use janus_messages::TaskId;
+use divviup_api::{clients::aggregator_client::api_types::TaskId, entity::aggregator::Role};
 use rand::random;
-use time::OffsetDateTime;
+use trillium::HeaderValue;
 
 pub fn user() -> User {
     User {
@@ -121,4 +120,10 @@ pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregat
         .insert(app.db())
         .await
         .unwrap()
+}
+
+pub async fn api_token(app: &DivviupApi, account: &Account) -> (ApiToken, HeaderValue) {
+    let (api_token, token) = ApiToken::build(account);
+    let api_token = api_token.insert(app.db()).await.unwrap();
+    (api_token, format!("Bearer {token}").into())
 }
