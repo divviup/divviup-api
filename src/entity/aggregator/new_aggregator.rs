@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use time::OffsetDateTime;
 use uuid::Uuid;
-use validator::{Validate, ValidationError, ValidationErrors};
+use validator::{Validate, ValidationError};
 
 use super::{ActiveModel, Role};
 
@@ -17,9 +17,11 @@ pub struct NewAggregator {
     pub role: Option<String>,
     #[validate(required, length(min = 1))]
     pub name: Option<String>,
-    #[validate(required, custom = "https")]
+    #[validate(required)]
+    #[cfg_attr(not(feature = "integration-testing"), validate(custom = "https"))]
     pub api_url: Option<String>,
-    #[validate(required, custom = "https")]
+    #[validate(required)]
+    #[cfg_attr(not(feature = "integration-testing"), validate(custom = "https"))]
     pub dap_url: Option<String>,
     #[validate(required, custom = "base64", length(min = 8))]
     pub bearer_token: Option<String>,
@@ -35,6 +37,7 @@ fn validate_role(role: &str) -> Result<(), ValidationError> {
         .map(|_| ())
 }
 
+#[cfg_attr(feature = "integration-testing", allow(dead_code))]
 fn https(url: &str) -> Result<(), ValidationError> {
     let url = url::Url::from_str(url).map_err(|_| ValidationError::new("https-url"))?;
     if url.scheme() != "https" {
