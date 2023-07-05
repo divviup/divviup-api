@@ -249,7 +249,7 @@ mod show {
             aggregator_api_request.url,
             first_party_aggregator
                 .api_url
-                .join(&format!("/tasks/{}/metrics", task.id))
+                .join(&format!("tasks/{}/metrics", task.id))
                 .unwrap()
         );
         let metrics: TaskMetrics = aggregator_api_request.response_json();

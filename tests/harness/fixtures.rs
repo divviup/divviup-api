@@ -100,7 +100,8 @@ pub fn new_aggregator() -> NewAggregator {
     NewAggregator {
         role: Some(Role::Either.as_ref().to_string()),
         name: Some(format!("{}-aggregator", random_name())),
-        api_url: Some(format!("https://api.{}.divviup.org", random_name())),
+        // This path prefix matches that in the ApiMocks router.
+        api_url: Some(format!("https://api.{}.divviup.org/prefix/", random_name())),
         dap_url: Some(format!("https://dap.{}.divviup.org", random_name())),
         bearer_token: Some(random_name()),
     }

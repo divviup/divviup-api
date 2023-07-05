@@ -6,6 +6,7 @@ use trillium_logger::{
     logger,
 };
 use trillium_macros::Handler;
+use trillium_router::Router;
 
 pub mod aggregator_api;
 pub mod auth0;
@@ -41,7 +42,9 @@ impl ApiMocks {
             origin_router()
                 .with_handler(postmark_url, postmark::mock())
                 .with_handler(auth0_url, auth0::mock(auth0_url)),
-            aggregator_api::mock(),
+            // Add a path prefix before the aggregator API mock. Aggregator test fixtures must
+            // include this prefix in their URLs.
+            Router::new().all("prefix/*", aggregator_api::mock()),
         )))
     }
 }
