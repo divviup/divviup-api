@@ -32,7 +32,7 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Collect coverage data
-        run: cargo llvm-cov nextest --lcov --output-path lcov.info
+        run: cargo llvm-cov nextest --lcov --output-path lcov.info --workspace
       - name: Upload coverage data to coveralls
         uses: coverallsapp/github-action@v2
         with:
