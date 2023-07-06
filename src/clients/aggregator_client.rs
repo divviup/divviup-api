@@ -38,7 +38,7 @@ impl AggregatorClient {
 
     pub async fn get_task_ids(&self) -> Result<Vec<String>, ClientError> {
         let mut ids = vec![];
-        let mut path = String::from("/task_ids");
+        let mut path = String::from("task_ids");
         loop {
             let TaskIds {
                 task_ids,
@@ -49,7 +49,7 @@ impl AggregatorClient {
 
             match pagination_token {
                 Some(pagination_token) => {
-                    path = format!("/task_ids?pagination_token={pagination_token}");
+                    path = format!("task_ids?pagination_token={pagination_token}");
                 }
                 None => break Ok(ids),
             }
@@ -57,20 +57,20 @@ impl AggregatorClient {
     }
 
     pub async fn get_task(&self, task_id: &str) -> Result<TaskResponse, ClientError> {
-        self.get(&format!("/tasks/{task_id}")).await
+        self.get(&format!("tasks/{task_id}")).await
     }
 
     pub async fn get_task_metrics(&self, task_id: &str) -> Result<TaskMetrics, ClientError> {
-        self.get(&format!("/tasks/{task_id}/metrics")).await
+        self.get(&format!("tasks/{task_id}/metrics")).await
     }
 
     pub async fn delete_task(&self, task_id: &str) -> Result<(), ClientError> {
-        self.delete(&format!("/tasks/{task_id}")).await
+        self.delete(&format!("tasks/{task_id}")).await
     }
 
     pub async fn create_task(&self, task: &ProvisionableTask) -> Result<TaskResponse, Error> {
         let task_create = TaskCreate::build(&self.aggregator, task)?;
-        self.post("/tasks", &task_create).await.map_err(Into::into)
+        self.post("tasks", &task_create).await.map_err(Into::into)
     }
 
     // private below here
