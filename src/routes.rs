@@ -77,6 +77,7 @@ fn api_routes(config: &ApiConfig) -> impl Handler {
                 (api(admin_required), api(aggregators::admin_create)),
             )
             .delete("/api_tokens/:api_token_id", api(api_tokens::delete))
+            .patch("/api_tokens/:api_token_id", api(api_tokens::update))
             .any(
                 &[Patch, Get, Post],
                 "/accounts/:account_id/*",

@@ -1,6 +1,6 @@
 import { Await, useLoaderData, useParams } from "react-router-dom";
-import { Aggregator } from "./ApiClient";
-import { AccountBreadcrumbs } from "./util";
+import { Aggregator } from "../ApiClient";
+import { AccountBreadcrumbs } from "../util";
 import { LinkContainer } from "react-router-bootstrap";
 import Breadcrumb from "react-bootstrap/Breadcrumb";
 import React, { Suspense } from "react";
@@ -8,7 +8,8 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { CloudUpload } from "react-bootstrap-icons";
 import Table from "react-bootstrap/Table";
-import D from "./logo/color/svg/small.svg";
+import D from "../logo/color/svg/small.svg";
+import Placeholder from "react-bootstrap/Placeholder";
 
 function Breadcrumbs() {
   let { aggregator } = useLoaderData() as {
@@ -22,7 +23,7 @@ function Breadcrumbs() {
         <Breadcrumb.Item>Aggregators</Breadcrumb.Item>
       </LinkContainer>
       <Breadcrumb.Item active>
-        <React.Suspense fallback="...">
+        <React.Suspense fallback={<Placeholder animation="glow" xs={6} />}>
           <Await resolve={aggregator}>{(aggregator) => aggregator.name}</Await>
         </React.Suspense>
       </Breadcrumb.Item>
@@ -44,7 +45,7 @@ export default function AggregatorDetail() {
             <Suspense
               fallback={
                 <>
-                  <CloudUpload /> {" ..."}
+                  <CloudUpload /> <Placeholder animation="glow" xs={6} />
                 </>
               }
             >
@@ -121,7 +122,7 @@ export function WithAggregator({
   };
 
   return (
-    <Suspense fallback="...">
+    <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
       <Await resolve={aggregator} children={children} />
     </Suspense>
   );

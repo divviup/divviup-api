@@ -2,16 +2,8 @@ import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import ListGroup from "react-bootstrap/ListGroup";
-import {
-  Await,
-  Form,
-  useActionData,
-  useAsyncValue,
-  useRouteLoaderData,
-} from "react-router-dom";
+import { Form, useActionData } from "react-router-dom";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import { Account } from "./ApiClient";
-import Spinner from "react-bootstrap/Spinner";
 import { LinkContainer } from "react-router-bootstrap";
 import {
   Building,
@@ -19,9 +11,11 @@ import {
   FileEarmarkCode,
   PencilFill,
   People,
+  ShieldLock,
 } from "react-bootstrap-icons";
 import { Button, FormControl, InputGroup } from "react-bootstrap";
-import { WithAccount } from "./util";
+import { WithAccount } from "../util";
+import Placeholder from "react-bootstrap/Placeholder";
 
 function AccountName() {
   let [isEditingName, setIsEditingName] = useState(false);
@@ -72,7 +66,7 @@ function AccountName() {
         <Col xs="11">
           <h1>
             <Building />
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <WithAccount>{(account) => account.name}</WithAccount>
             </Suspense>
           </h1>
@@ -100,7 +94,7 @@ export default function AccountSummary() {
               <Breadcrumb.Item>Accounts</Breadcrumb.Item>
             </LinkContainer>
             <Breadcrumb.Item active>
-              <Suspense fallback="...">
+              <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
                 <WithAccount>{(account) => account.name}</WithAccount>
               </Suspense>
             </Breadcrumb.Item>
@@ -126,6 +120,12 @@ export default function AccountSummary() {
             <LinkContainer to="aggregators">
               <ListGroup.Item action>
                 <CloudUpload /> Aggregators
+              </ListGroup.Item>
+            </LinkContainer>
+
+            <LinkContainer to="api_tokens">
+              <ListGroup.Item action>
+                <ShieldLock /> API Tokens
               </ListGroup.Item>
             </LinkContainer>
           </ListGroup>

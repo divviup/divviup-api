@@ -4,10 +4,10 @@ import Col from "react-bootstrap/Col";
 import Breadcrumb from "react-bootstrap/Breadcrumb";
 import React from "react";
 import { useLoaderData, useAsyncValue, Await } from "react-router-dom";
-import { Account } from "./ApiClient";
+import { Account } from "../ApiClient";
 import ListGroup from "react-bootstrap/ListGroup";
 import { LinkContainer } from "react-router-bootstrap";
-import { Button } from "react-bootstrap";
+import { Button, Placeholder } from "react-bootstrap";
 import { BuildingAdd } from "react-bootstrap-icons";
 
 function Breadcrumbs() {
@@ -49,7 +49,9 @@ export default function AccountList() {
           <React.Suspense
             fallback={
               <ListGroup>
-                <ListGroup.Item>Loading</ListGroup.Item>
+                <ListGroup.Item>
+                  <Placeholder animation="glow" xs={12} />
+                </ListGroup.Item>
               </ListGroup>
             }
           >

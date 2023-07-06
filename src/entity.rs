@@ -28,7 +28,9 @@ pub use aggregator::{
     UpdateAggregator,
 };
 
-pub use api_token::{Column as ApiTokenColumn, Entity as ApiTokens, Model as ApiToken};
+pub use api_token::{
+    Column as ApiTokenColumn, Entity as ApiTokens, Model as ApiToken, UpdateApiToken,
+};
 
 mod validators {
     const BASE64_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

@@ -5,6 +5,7 @@ import { LinkContainer } from "react-router-bootstrap";
 import { Suspense } from "react";
 import { Await, useRouteLoaderData } from "react-router-dom";
 import { Account } from "./ApiClient";
+import Placeholder from "react-bootstrap/Placeholder";
 
 export function WithAccount({
   children,
@@ -33,7 +34,13 @@ export function AccountBreadcrumbs({
           <LinkContainer to="/accounts">
             <Breadcrumb.Item>Accounts</Breadcrumb.Item>
           </LinkContainer>
-          <Suspense fallback="...">
+          <Suspense
+            fallback={
+              <Breadcrumb.Item>
+                <Placeholder size="sm" xs={2} />
+              </Breadcrumb.Item>
+            }
+          >
             <WithAccount>
               {(account) => (
                 <LinkContainer to={`/accounts/${account.id}`}>
