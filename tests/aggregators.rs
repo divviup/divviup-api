@@ -145,6 +145,47 @@ mod index {
     }
 }
 
+mod shared_aggregator_index {
+    use super::{assert_eq, test, *};
+
+    #[test(harness = set_up)]
+    async fn as_user(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let _ = fixtures::aggregator(&app, Some(&other_account)).await;
+
+        let shared_aggregator1 = fixtures::aggregator(&app, None).await;
+        let shared_aggregator2 = fixtures::aggregator(&app, None).await;
+
+        let (user, account, ..) = fixtures::member(&app).await;
+        fixtures::aggregator(&app, Some(&account)).await;
+
+        let mut conn = get("/api/aggregators")
+            .with_api_headers()
+            .with_state(user)
+            .run_async(&app)
+            .await;
+
+        assert_ok!(conn);
+        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        assert_same_json_representation(
+            &aggregators,
+            &vec![shared_aggregator1, shared_aggregator2],
+        );
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn not_logged_in(app: DivviupApi) -> TestResult {
+        let conn = get("/api/aggregators")
+            .with_api_headers()
+            .run_async(&app)
+            .await;
+
+        assert_status!(conn, 403);
+        Ok(())
+    }
+}
+
 mod create {
     use super::{assert_eq, test, *};
 
@@ -179,6 +220,26 @@ mod create {
             .unwrap();
 
         assert_same_json_representation(&aggregator, &aggregator_from_db);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn is_first_party_is_ignored(app: DivviupApi) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+
+        let mut new_aggregator = fixtures::new_aggregator();
+        new_aggregator.is_first_party = Some(true);
+        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+            .with_api_headers()
+            .with_state(user)
+            .with_request_json(new_aggregator)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 201);
+        let aggregator: Aggregator = conn.response_json().await;
+        assert!(!aggregator.is_first_party);
+        assert!(!aggregator.reload(app.db()).await?.unwrap().is_first_party);
 
         Ok(())
     }
@@ -794,6 +855,8 @@ mod shared_create {
         );
         assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
         assert!(aggregator.account_id.is_none());
+
+        // defaults to true when not specified
         assert!(aggregator.is_first_party);
 
         let aggregator_from_db = Aggregators::find_by_id(aggregator.id)
@@ -803,6 +866,44 @@ mod shared_create {
 
         assert!(aggregator_from_db.is_first_party);
         assert_same_json_representation(&aggregator, &aggregator_from_db);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn is_first_party_true_is_accepted(app: DivviupApi) -> TestResult {
+        let (admin, ..) = fixtures::admin(&app).await;
+        let mut new_aggregator = fixtures::new_aggregator();
+        new_aggregator.is_first_party = Some(true);
+        let mut conn = post("/api/aggregators")
+            .with_api_headers()
+            .with_state(admin)
+            .with_request_json(new_aggregator)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 201);
+        let aggregator: Aggregator = conn.response_json().await;
+        assert!(aggregator.is_first_party);
+        assert!(aggregator.reload(app.db()).await?.unwrap().is_first_party);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn is_first_party_false_is_accepted(app: DivviupApi) -> TestResult {
+        let (admin, ..) = fixtures::admin(&app).await;
+        let mut new_aggregator = fixtures::new_aggregator();
+        new_aggregator.is_first_party = Some(false);
+        let mut conn = post("/api/aggregators")
+            .with_api_headers()
+            .with_state(admin)
+            .with_request_json(new_aggregator)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 201);
+        let aggregator: Aggregator = conn.response_json().await;
+        assert!(!aggregator.is_first_party);
+        assert!(!aggregator.reload(app.db()).await?.unwrap().is_first_party);
 
         Ok(())
     }

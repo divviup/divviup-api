@@ -44,16 +44,71 @@ async function submit(
   }
 }
 
-export default function AggregatorForm() {
-  let params = useParams();
-  const accountId = params.account_id as string;
+export function AggregatorForm({
+  handleSubmit,
+  showIsFirstParty = false,
+}: {
+  handleSubmit: (
+    aggregator: NewAggregator,
+    helpers: FormikHelpers<NewAggregator>
+  ) => void;
+  showIsFirstParty?: boolean;
+}) {
   const actionData = useActionData();
   let errors: undefined | FormikErrors<NewAggregator> = undefined;
   if (typeof actionData === "object" && actionData && "error" in actionData) {
     errors = actionData.error as FormikErrors<NewAggregator>;
   }
-  const navigate = useNavigate();
   const navigation = useNavigation();
+
+  return (
+    <Formik
+      validateOnChange={false}
+      validateOnBlur={false}
+      validateOnMount={false}
+      errors={errors}
+      initialValues={
+        {
+          role: "either",
+          name: "",
+          api_url: "",
+          dap_url: "",
+          bearer_token: "",
+          is_first_party: showIsFirstParty ? true : undefined,
+        } as NewAggregator
+      }
+      onSubmit={handleSubmit}
+    >
+      {(props) => (
+        <Form
+          method="post"
+          onSubmit={props.handleSubmit}
+          noValidate
+          autoComplete="off"
+        >
+          <RoleSelect {...props} />
+          <Name {...props} />
+          <ApiUrl {...props} />
+          <DapUrl {...props} />
+          <BearerToken {...props} />
+          {showIsFirstParty ? <IsFirstParty {...props} /> : null}
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={navigation.state === "submitting"}
+          >
+            Submit
+          </Button>
+        </Form>
+      )}
+    </Formik>
+  );
+}
+
+export default function AggregatorFormPage() {
+  let params = useParams();
+  const accountId = params.account_id as string;
+  const navigate = useNavigate();
   const apiClient = React.useContext(ApiClientContext);
   const handleSubmit = React.useCallback(
     (values: NewAggregator, actions: FormikHelpers<NewAggregator>) =>
@@ -77,47 +132,24 @@ export default function AggregatorForm() {
       </Row>
       <Row>
         <Col>
-          <Formik
-            validateOnChange={false}
-            validateOnBlur={false}
-            validateOnMount={false}
-            errors={errors}
-            initialValues={
-              {
-                role: "either",
-                name: "",
-                api_url: "",
-                dap_url: "",
-                bearer_token: "",
-              } as NewAggregator
-            }
-            onSubmit={handleSubmit}
-          >
-            {(props) => (
-              <Form
-                method="post"
-                onSubmit={props.handleSubmit}
-                noValidate
-                autoComplete="off"
-              >
-                <RoleSelect {...props} />
-                <Name {...props} />
-                <ApiUrl {...props} />
-                <DapUrl {...props} />
-                <BearerToken {...props} />
-                <Button
-                  variant="primary"
-                  type="submit"
-                  disabled={navigation.state === "submitting"}
-                >
-                  Submit
-                </Button>
-              </Form>
-            )}
-          </Formik>
+          <AggregatorForm handleSubmit={handleSubmit} />
         </Col>
       </Row>
     </>
+  );
+}
+
+function IsFirstParty(props: FormikProps<NewAggregator>) {
+  return (
+    <FormGroup>
+      <Form.Switch
+        id="is_first_party"
+        label="First Party?"
+        onChange={props.handleChange}
+        onBlur={props.handleBlur}
+        checked={props.values.is_first_party}
+      />
+    </FormGroup>
   );
 }
 
@@ -134,7 +166,7 @@ function Name(props: FormikProps<NewAggregator>) {
         onBlur={props.handleBlur}
         value={props.values.name}
         isInvalid={!!props.errors.name}
-        data-1p-ignore={true}
+        data-1p-ignore
       />
       <FormControl.Feedback type="invalid">
         {props.errors.name}

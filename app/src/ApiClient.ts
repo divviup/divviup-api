@@ -110,6 +110,7 @@ export interface NewAggregator {
   api_url: string;
   dap_url: string;
   bearer_token: string;
+  is_first_party?: boolean;
 }
 
 export interface ApiToken {
@@ -276,6 +277,27 @@ export class ApiClient {
     return res.data as Aggregator;
   }
 
+  async sharedAggregators(): Promise<Aggregator[]> {
+    const res = await this.get("/api/aggregators");
+    return res.data as Aggregator[];
+  }
+
+  async createSharedAggregator(
+    aggregator: NewAggregator
+  ): Promise<Aggregator | { error: ValidationErrorsFor<NewAggregator> }> {
+    const res = await this.post(`/api/aggregators`, aggregator);
+    switch (res.status) {
+      case 201:
+        return res.data as Aggregator;
+      case 400:
+        return { error: res.data } as {
+          error: ValidationErrorsFor<NewAggregator>;
+        };
+      default:
+        throw res;
+    }
+  }
+
   async updateTask(
     taskId: string,
     task: UpdateTask
@@ -408,8 +430,8 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-    ? ValidationErrorsFor<T[K]>
-    : ValidationError[];
+  ? ValidationErrorsFor<T[K]>
+  : ValidationError[];
 };
 
 export interface ValidationError {

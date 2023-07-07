@@ -39,11 +39,18 @@ function LoggedInHeader() {
         </Navbar.Brand>
 
         {user.admin ? (
-          <Nav className="me-auto">
-            <LinkContainer to="/admin/queue">
-              <Nav.Link>Queue</Nav.Link>
-            </LinkContainer>
-          </Nav>
+          <>
+            <Nav className="">
+              <LinkContainer to="/admin/queue">
+                <Nav.Link>Queue</Nav.Link>
+              </LinkContainer>
+            </Nav>{" "}
+            <Nav className="me-auto">
+              <LinkContainer to="/admin/aggregators">
+                <Nav.Link>Aggregators</Nav.Link>
+              </LinkContainer>
+            </Nav>
+          </>
         ) : null}
 
         <NavDropdown title={user.name}>
