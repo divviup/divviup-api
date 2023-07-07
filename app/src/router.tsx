@@ -15,13 +15,15 @@ import accounts from "./accounts";
 import apiTokens from "./api-tokens";
 import aggregators from "./aggregators";
 import { Spinner } from "react-bootstrap";
+import queue from "./queue";
+import sharedAggregators from "./shared-aggregators";
 
 function buildRouter(apiClient: ApiClient) {
   return createBrowserRouter([
     layout(apiClient, [
       logout(apiClient),
       root(apiClient),
-      admin(apiClient),
+      admin(apiClient, [queue(apiClient), sharedAggregators(apiClient)]),
       accounts(apiClient, [
         aggregators(apiClient),
         apiTokens(apiClient),

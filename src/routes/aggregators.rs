@@ -67,15 +67,22 @@ pub async fn show(_: &mut Conn, aggregator: Aggregator) -> Json<Aggregator> {
 }
 
 pub async fn index(
-    _: &mut Conn,
-    (db, account): (Db, Account),
+    conn: &mut Conn,
+    (db, account): (Db, Option<Account>),
 ) -> Result<Json<Vec<Aggregator>>, Error> {
+    if conn.param("account_id").is_some() && account.is_none() {
+        return Err(Error::NotFound);
+    }
+
     Aggregators::find()
         .filter(all![
-            any![
-                AggregatorColumn::AccountId.eq(account.id),
-                AggregatorColumn::AccountId.is_null()
-            ],
+            match account {
+                Some(account) => any![
+                    AggregatorColumn::AccountId.eq(account.id),
+                    AggregatorColumn::AccountId.is_null()
+                ],
+                None => any![AggregatorColumn::AccountId.is_null()],
+            },
             AggregatorColumn::DeletedAt.is_null()
         ])
         .all(&db)

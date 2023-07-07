@@ -72,6 +72,7 @@ fn api_routes(config: &ApiConfig) -> impl Handler {
             .patch("/aggregators/:aggregator_id", api(aggregators::update))
             .get("/aggregators/:aggregator_id", api(aggregators::show))
             .delete("/aggregators/:aggregator_id", api(aggregators::delete))
+            .get("/aggregators", api(aggregators::index))
             .post(
                 "/aggregators",
                 (api(admin_required), api(aggregators::admin_create)),

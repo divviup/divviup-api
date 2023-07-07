@@ -145,6 +145,47 @@ mod index {
     }
 }
 
+mod shared_aggregator_index {
+    use super::{assert_eq, test, *};
+
+    #[test(harness = set_up)]
+    async fn as_user(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let _ = fixtures::aggregator(&app, Some(&other_account)).await;
+
+        let shared_aggregator1 = fixtures::aggregator(&app, None).await;
+        let shared_aggregator2 = fixtures::aggregator(&app, None).await;
+
+        let (user, account, ..) = fixtures::member(&app).await;
+        fixtures::aggregator(&app, Some(&account)).await;
+
+        let mut conn = get("/api/aggregators")
+            .with_api_headers()
+            .with_state(user)
+            .run_async(&app)
+            .await;
+
+        assert_ok!(conn);
+        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        assert_same_json_representation(
+            &aggregators,
+            &vec![shared_aggregator1, shared_aggregator2],
+        );
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn not_logged_in(app: DivviupApi) -> TestResult {
+        let conn = get("/api/aggregators")
+            .with_api_headers()
+            .run_async(&app)
+            .await;
+
+        assert_status!(conn, 403);
+        Ok(())
+    }
+}
+
 mod create {
     use super::{assert_eq, test, *};
 
