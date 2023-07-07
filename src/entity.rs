@@ -33,7 +33,8 @@ pub use api_token::{
 };
 
 mod validators {
-    const BASE64_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const BASE64_CHARS: &[u8] =
+        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
     pub(super) fn base64(data: &str) -> Result<(), validator::ValidationError> {
         if data
