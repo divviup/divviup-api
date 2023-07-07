@@ -30,6 +30,8 @@ import FormGroup from "react-bootstrap/FormGroup";
 import InputGroup from "react-bootstrap/InputGroup";
 import Modal from "react-bootstrap/Modal";
 import Placeholder from "react-bootstrap/Placeholder";
+import OverlayTrigger from "react-bootstrap/OverlayTrigger";
+import Tooltip from "react-bootstrap/Tooltip";
 
 export default function ApiTokens() {
   const navigation = useNavigation();
@@ -226,14 +228,16 @@ function Token({ token }: { token: string | null }) {
   }, [setCopied, token]);
 
   return (
-    <>
+    <OverlayTrigger
+      overlay={<Tooltip>{copied ? "Copied!" : "Click to copy"}</Tooltip>}
+    >
       <span onClick={copy} style={{ cursor: "pointer" }}>
         <code className="user-select-all">{token}</code>{" "}
         <Button size="sm" variant="outline-secondary" className="ml-auto">
           {copied ? <ClipboardCheckFill /> : <Clipboard />}
         </Button>
       </span>
-    </>
+    </OverlayTrigger>
   );
 }
 
