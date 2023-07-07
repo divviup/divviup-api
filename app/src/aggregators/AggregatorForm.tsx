@@ -2,7 +2,7 @@ import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
-import { AccountBreadcrumbs, WithAccount } from "./util";
+import { AccountBreadcrumbs, WithAccount } from "../util";
 import { CloudUpload } from "react-bootstrap-icons";
 import React from "react";
 import { LinkContainer } from "react-router-bootstrap";
@@ -12,7 +12,7 @@ import FormControl from "react-bootstrap/FormControl";
 import FormGroup from "react-bootstrap/FormGroup";
 import FormLabel from "react-bootstrap/FormLabel";
 import FormSelect from "react-bootstrap/FormSelect";
-import ApiClient, { NewAggregator, formikErrors } from "./ApiClient";
+import ApiClient, { NewAggregator, formikErrors } from "../ApiClient";
 import {
   NavigateFunction,
   useActionData,
@@ -20,8 +20,9 @@ import {
   useNavigation,
   useParams,
 } from "react-router-dom";
-import { ApiClientContext } from "./ApiClientContext";
+import { ApiClientContext } from "../ApiClientContext";
 const { Suspense } = React;
+import Placeholder from "react-bootstrap/Placeholder";
 
 async function submit(
   apiClient: ApiClient,
@@ -67,7 +68,7 @@ export default function AggregatorForm() {
         <Col>
           <h1>
             <CloudUpload />{" "}
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <WithAccount>{(account) => account.name}</WithAccount>
             </Suspense>{" "}
             Aggregators

@@ -1,10 +1,15 @@
-import { Await, useLoaderData, Link, useAsyncValue } from "react-router-dom";
+import {
+  Await,
+  Link,
+  useAsyncValue,
+  useRouteLoaderData,
+} from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Navbar from "react-bootstrap/Navbar";
-import { User } from "./ApiClient";
+import { User } from "../ApiClient";
 import { Suspense } from "react";
 import NavDropdown from "react-bootstrap/NavDropdown";
-import logo from "./logo/color/svg/cropped.svg";
+import logo from "../logo/color/svg/cropped.svg";
 import { LinkContainer } from "react-router-bootstrap";
 import { Nav } from "react-bootstrap";
 
@@ -52,24 +57,14 @@ function LoggedInHeader() {
 }
 
 export default function Header() {
-  let loaderData = useLoaderData();
-  let currentUser: Promise<User> | undefined;
-  if (
-    typeof loaderData === "object" &&
-    loaderData &&
-    "currentUser" in loaderData
-  ) {
-    currentUser = loaderData.currentUser as Promise<User>;
-  }
-  if (currentUser) {
-    return (
-      <Suspense fallback={<HeaderPlaceholder />}>
-        <Await resolve={currentUser}>
-          {(user) => (user ? <LoggedInHeader /> : <HeaderPlaceholder />)}
-        </Await>
-      </Suspense>
-    );
-  } else {
-    return <HeaderPlaceholder />;
-  }
+  let { currentUser } = useRouteLoaderData("currentUser") as {
+    currentUser: Promise<User>;
+  };
+  return (
+    <Suspense fallback={<HeaderPlaceholder />}>
+      <Await resolve={currentUser}>
+        {(user) => (user ? <LoggedInHeader /> : <HeaderPlaceholder />)}
+      </Await>
+    </Suspense>
+  );
 }

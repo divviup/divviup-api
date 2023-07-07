@@ -1,21 +1,26 @@
 use crate::{
-    entity::{Account, ApiToken, ApiTokens, MembershipColumn, Memberships},
+    entity::{
+        Account, ApiToken, ApiTokenColumn, ApiTokens, MembershipColumn, Memberships, UpdateApiToken,
+    },
     handler::Error,
     user::User,
     Db,
 };
 use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait};
-
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
 use trillium_caching_headers::CachingHeadersExt;
 use trillium_router::RouterConnExt;
 
 pub async fn index(conn: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
-    let api_tokens = account.find_related(ApiTokens).all(&db).await?;
+    let api_tokens = account
+        .find_related(ApiTokens)
+        .filter(ApiTokenColumn::DeletedAt.is_null())
+        .all(&db)
+        .await?;
     if let Some(last_modified) = api_tokens
         .iter()
-        .map(|api_token| api_token.updated_at())
+        .map(|api_token| api_token.updated_at)
         .max()
     {
         conn.set_last_modified(last_modified.into());
@@ -60,4 +65,12 @@ pub async fn create(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl H
 pub async fn delete(_: &mut Conn, (api_token, db): (ApiToken, Db)) -> Result<Status, Error> {
     api_token.tombstone().update(&db).await?;
     Ok(Status::NoContent)
+}
+
+pub async fn update(
+    _: &mut Conn,
+    (api_token, db, Json(update)): (ApiToken, Db, Json<UpdateApiToken>),
+) -> Result<impl Handler, Error> {
+    let token = update.build(api_token)?.update(&db).await?;
+    Ok((Json(token), Status::Ok))
 }

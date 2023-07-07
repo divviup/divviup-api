@@ -56,7 +56,9 @@ async fn reset_password(app: DivviupApi, client_logs: ClientLogs) -> TestResult 
         .parse()
         .unwrap();
 
-    let Job::V1(V1::SendInvitationEmail(next)) = next.job else { panic!() };
+    let Job::V1(V1::SendInvitationEmail(next)) = next.job else {
+        panic!()
+    };
     assert_eq!(next.membership_id, membership_id);
     assert_eq!(next.action_url, action_url);
     Ok(())

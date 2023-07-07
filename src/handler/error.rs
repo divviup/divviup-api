@@ -18,7 +18,9 @@ impl Handler for ErrorHandler {
             .take_state::<ApiError>()
             .map(Error::from)
             .or_else(|| conn.take_state())
-        else { return conn };
+        else {
+            return conn;
+        };
 
         match error {
             Error::AccessDenied => conn.with_status(Status::Forbidden).with_body(""),

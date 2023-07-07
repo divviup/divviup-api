@@ -12,7 +12,7 @@ import Col from "react-bootstrap/Col";
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 import Row from "react-bootstrap/Row";
 import { LinkContainer } from "react-router-bootstrap";
-import { Task, Account, Aggregator } from "./ApiClient";
+import { Task, Aggregator } from "../ApiClient";
 import humanizeDuration from "humanize-duration";
 import {
   FileEarmarkBarGraph,
@@ -27,12 +27,12 @@ import {
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
-import Spinner from "react-bootstrap/Spinner";
 import FormControl from "react-bootstrap/FormControl";
 import InputGroup from "react-bootstrap/InputGroup";
 import { DateTime } from "luxon";
 import "@github/relative-time-element";
-import { AccountBreadcrumbs } from "./util";
+import { AccountBreadcrumbs } from "../util";
+import Placeholder from "react-bootstrap/Placeholder";
 
 function TaskTitle() {
   let { task } = useLoaderData() as {
@@ -155,7 +155,7 @@ function Breadcrumbs() {
         <Breadcrumb.Item>Tasks</Breadcrumb.Item>
       </LinkContainer>
       <Breadcrumb.Item active>
-        <React.Suspense fallback="...">
+        <React.Suspense fallback={<Placeholder animation="glow" xs={6} />}>
           <Await resolve={task}>{(task) => task.name}</Await>
         </React.Suspense>
       </Breadcrumb.Item>
@@ -193,7 +193,7 @@ function TaskPropertyTable() {
           <ListGroup.Item>
             Task Id:{" "}
             <code>
-              <Suspense fallback="...">
+              <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
                 <Await resolve={task}>{(task) => task.id}</Await>
               </Suspense>
             </code>
@@ -201,7 +201,7 @@ function TaskPropertyTable() {
 
           <ListGroup.Item>
             Time Precision:{" "}
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <Await resolve={task}>
                 {(task) => humanizeDuration(1000 * task.time_precision_seconds)}
               </Await>
@@ -209,7 +209,7 @@ function TaskPropertyTable() {
           </ListGroup.Item>
           <ListGroup.Item>
             Query Type:{" "}
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <Await resolve={task}>
                 {(task) =>
                   typeof task.max_batch_size === "number"
@@ -221,19 +221,19 @@ function TaskPropertyTable() {
           </ListGroup.Item>
           <ListGroup.Item>
             Minimum Batch Size:{" "}
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <Await resolve={task}>{(task) => task.min_batch_size}</Await>
             </Suspense>
           </ListGroup.Item>
           <ListGroup.Item>
             Expires:{" "}
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <Await resolve={task}>
                 {(task) =>
                   task.expiration
                     ? DateTime.fromISO(task.expiration)
-                      .toLocal()
-                      .toLocaleString(DateTime.DATETIME_SHORT)
+                        .toLocal()
+                        .toLocaleString(DateTime.DATETIME_SHORT)
                     : "never"
                 }
               </Await>
@@ -241,7 +241,7 @@ function TaskPropertyTable() {
           </ListGroup.Item>
           <ListGroup.Item>
             Leader:{" "}
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <Await resolve={leaderAggregator}>
                 {(aggregator) => (
                   <Link
@@ -255,7 +255,7 @@ function TaskPropertyTable() {
           </ListGroup.Item>
           <ListGroup.Item>
             Helper:{" "}
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <Await resolve={helperAggregator}>
                 {(aggregator) => (
                   <Link
@@ -269,7 +269,7 @@ function TaskPropertyTable() {
           </ListGroup.Item>
           <ListGroup.Item>
             Created:{" "}
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <Await resolve={task}>
                 {(task) =>
                   DateTime.fromISO(task.created_at)
@@ -279,7 +279,7 @@ function TaskPropertyTable() {
               </Await>
             </Suspense>
           </ListGroup.Item>
-          <Suspense fallback="...">
+          <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
             <Await resolve={task}>{(task) => <Vdaf task={task} />}</Await>
           </Suspense>
         </ListGroup>
@@ -334,7 +334,7 @@ function Metrics() {
         </ListGroup>
         <Card.Footer className="text-muted">
           Last updated{" "}
-          <Suspense fallback="...">
+          <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
             <Await resolve={task}>
               {(task) => (
                 <relative-time datetime={task.updated_at} format="relative">

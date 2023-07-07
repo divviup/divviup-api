@@ -10,11 +10,12 @@ import {
   useSubmit,
 } from "react-router-dom";
 import React, { Suspense, useState } from "react";
-import { Membership, User } from "./ApiClient";
+import { Membership, User } from "../ApiClient";
 import { Button, FormControl } from "react-bootstrap";
 import { PersonSlash, PersonAdd, People } from "react-bootstrap-icons";
 import Modal from "react-bootstrap/Modal";
-import { AccountBreadcrumbs, WithAccount } from "./util";
+import { AccountBreadcrumbs, WithAccount } from "../util";
+import Placeholder from "react-bootstrap/Placeholder";
 
 function Breadcrumbs() {
   return (
@@ -121,7 +122,7 @@ function MembershipList() {
     <>
       <h1>
         <People />{" "}
-        <Suspense fallback="...">
+        <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
           <WithAccount>{(account) => account.name}</WithAccount>
         </Suspense>{" "}
         Members

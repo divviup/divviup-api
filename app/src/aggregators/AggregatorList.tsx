@@ -2,14 +2,15 @@ import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
-import { AccountBreadcrumbs, WithAccount } from "./util";
+import { AccountBreadcrumbs, WithAccount } from "../util";
 import { CloudUpload } from "react-bootstrap-icons";
 import { Suspense } from "react";
 import { LinkContainer } from "react-router-bootstrap";
 import { Await, useLoaderData } from "react-router-dom";
-import { Aggregator } from "./ApiClient";
+import { Aggregator } from "../ApiClient";
 import { ListGroup } from "react-bootstrap";
-import D from "./logo/color/svg/small.svg";
+import D from "../logo/color/svg/small.svg";
+import Placeholder from "react-bootstrap/Placeholder";
 
 export default function Aggregators() {
   return (
@@ -19,7 +20,7 @@ export default function Aggregators() {
         <Col>
           <h1>
             <CloudUpload />{" "}
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <WithAccount>{(account) => account.name}</WithAccount>
             </Suspense>{" "}
             Aggregators

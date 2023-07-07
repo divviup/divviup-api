@@ -4,12 +4,13 @@ import Row from "react-bootstrap/Row";
 import ListGroup from "react-bootstrap/ListGroup";
 import { Await, useLoaderData, useAsyncValue } from "react-router-dom";
 import { Suspense } from "react";
-import { Task } from "./ApiClient";
+import { Task } from "../ApiClient";
 import { Alert, Button, Spinner } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { FileEarmarkCode } from "react-bootstrap-icons";
 import { VdafIcon } from "./TaskDetail";
-import { AccountBreadcrumbs, WithAccount } from "./util";
+import { AccountBreadcrumbs, WithAccount } from "../util";
+import Placeholder from "react-bootstrap/Placeholder";
 
 function Breadcrumbs() {
   return (
@@ -30,7 +31,7 @@ export default function AccountDetailFull() {
         <Col>
           <h1>
             <FileEarmarkCode />{" "}
-            <Suspense fallback="...">
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <WithAccount>{(account) => account.name}</WithAccount>
             </Suspense>{" "}
             Tasks

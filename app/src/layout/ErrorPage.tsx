@@ -1,12 +1,18 @@
 import { AxiosError } from "axios";
 import Alert from "react-bootstrap/Alert";
-import { isRouteErrorResponse, useRouteError } from "react-router";
+import {
+  isRouteErrorResponse,
+  useRouteError,
+  useRouteLoaderData,
+} from "react-router-dom";
 import ApiClient from "./ApiClient";
 import Layout from "./Layout";
 
 export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
   const error = useRouteError();
-
+  let { currentUser } = useRouteLoaderData("currentUser") as {
+    currentUser: Promise<User>;
+  };
   if (error instanceof AxiosError) {
     switch (error.response?.status) {
       case 403:
@@ -27,7 +33,6 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
         return (
           <Layout>
             <Alert variant="danger">
-              {" "}
               <h1>Whoops!</h1>
               <p>{body}</p>
             </Alert>
@@ -44,12 +49,20 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
     );
   }
 
+  console.error(error);
+
   return (
     <>
       <h1>Whoops!</h1>
-      <h2>{error as unknown as string}</h2>
       <pre>
-        <code>{JSON.stringify(error, null, 2)}</code>
+        <code>
+          {typeof error === "object" &&
+          error &&
+          "stack" in error &&
+          typeof error.stack === "string"
+            ? error.stack
+            : null}
+        </code>
       </pre>
     </>
   );

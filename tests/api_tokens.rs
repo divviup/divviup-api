@@ -19,7 +19,7 @@ mod index {
         let (token1, _) = fixtures::api_token(&app, &account).await;
         let (token2, _) = fixtures::api_token(&app, &account).await;
         let (deleted, _) = fixtures::api_token(&app, &account).await;
-        let deleted = deleted.tombstone().update(app.db()).await.unwrap();
+        let _deleted = deleted.tombstone().update(app.db()).await.unwrap();
 
         let mut conn = get(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
@@ -29,7 +29,7 @@ mod index {
         assert_ok!(conn);
 
         let api_tokens: Vec<ApiToken> = conn.response_json().await;
-        assert_same_json_representation(&api_tokens, &vec![token1, token2, deleted]);
+        assert_same_json_representation(&api_tokens, &vec![token1, token2]);
         Ok(())
     }
 
@@ -256,6 +256,88 @@ mod delete {
             .await;
         assert_status!(conn, 204);
         assert!(api_token.reload(app.db()).await?.unwrap().is_tombstoned());
+
+        Ok(())
+    }
+}
+
+mod update {
+    use uuid::Uuid;
+
+    use super::{assert_eq, test, *};
+
+    #[test(harness = set_up)]
+    async fn nonexistant_api_token(app: DivviupApi) -> TestResult {
+        let (user, ..) = fixtures::member(&app).await;
+        let mut conn = patch(format!("/api/api_tokens/{}", Uuid::new_v4()))
+            .with_request_json(json!({ "name": fixtures::random_name() }))
+            .with_api_headers()
+            .with_state(user)
+            .run_async(&app)
+            .await;
+        assert_not_found!(conn);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn as_member(app: DivviupApi) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let (api_token, _) = fixtures::api_token(&app, &account).await;
+        let name = fixtures::random_name();
+        let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
+            .with_api_headers()
+            .with_request_json(json!({ "name": name }))
+            .with_state(user)
+            .run_async(&app)
+            .await;
+        assert_status!(conn, 200);
+        let response: ApiToken = conn.response_json().await;
+        assert_eq!(response.name.unwrap(), name);
+        assert_eq!(
+            api_token.reload(app.db()).await?.unwrap().name.unwrap(),
+            name
+        );
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn non_member(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (user, ..) = fixtures::member(&app).await;
+        let (api_token, ..) = fixtures::api_token(&app, &account).await;
+        let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
+            .with_api_headers()
+            .with_request_json(json!({ "name": fixtures::random_name() }))
+            .with_state(user)
+            .run_async(&app)
+            .await;
+        let name_before = api_token.name.clone();
+        assert_not_found!(conn);
+        assert_eq!(api_token.reload(app.db()).await?.unwrap().name, name_before);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn admin_not_member(app: DivviupApi) -> TestResult {
+        let (admin, ..) = fixtures::admin(&app).await;
+        let account = fixtures::account(&app).await;
+        let (api_token, _) = fixtures::api_token(&app, &account).await;
+        let name = fixtures::random_name();
+        let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
+            .with_api_headers()
+            .with_request_json(json!({ "name": name }))
+            .with_state(admin)
+            .run_async(&app)
+            .await;
+        assert_status!(conn, 200);
+        let response: ApiToken = conn.response_json().await;
+        assert_eq!(response.name.unwrap(), name);
+        assert_eq!(
+            api_token.reload(app.db()).await?.unwrap().name.unwrap(),
+            name
+        );
 
         Ok(())
     }

@@ -112,11 +112,20 @@ export interface NewAggregator {
   bearer_token: string;
 }
 
+export interface ApiToken {
+  id: string;
+  account_id: string;
+  token_hash: string;
+  created_at: string;
+  deleted_at?: string;
+  name?: string;
+  last_used_at?: string;
+}
+
 const mime = "application/vnd.divviup+json;version=0.1";
 
 export class ApiClient {
   private client?: Promise<AxiosInstance> | AxiosInstance;
-  currentUser?: User;
 
   static async fetchBaseUrl(): Promise<URL> {
     let url = new URL(window.location.href);
@@ -135,7 +144,7 @@ export class ApiClient {
         Accept: mime,
       },
       validateStatus(status) {
-        return status >= 200 && status < 500;
+        return (status >= 200 && status < 300) || status == 400;
       },
     });
   }
@@ -151,22 +160,19 @@ export class ApiClient {
     return (await this.populateClient()).getUri({ url: "/login" });
   }
 
+  async redirectToLogin(): Promise<null> {
+    let loginUrl = await this.loginUrl();
+    window.location.href = loginUrl;
+    return null;
+  }
+
   async logoutUrl(): Promise<string> {
     return (await this.populateClient()).getUri({ url: "/logout" });
   }
 
-  isLoggedIn(): boolean {
-    return !!this.currentUser;
-  }
-
   async getCurrentUser(): Promise<User> {
-    if (this.currentUser) {
-      return this.currentUser;
-    }
-    let client = await this.populateClient();
-    let res = await client.get("/api/users/me");
-    this.currentUser = res.data as User;
-    return this.currentUser;
+    let res = await this.get("/api/users/me");
+    return res.data as User;
   }
 
   private async get(path: string): Promise<AxiosResponse> {
@@ -174,7 +180,7 @@ export class ApiClient {
     return client.get(path);
   }
 
-  private async post(path: string, body: unknown): Promise<AxiosResponse> {
+  private async post(path: string, body?: unknown): Promise<AxiosResponse> {
     let client = await this.populateClient();
     return client.post(path, body);
   }
@@ -302,6 +308,31 @@ export class ApiClient {
     }
   }
 
+  async accountApiTokens(accountId: string): Promise<ApiToken[]> {
+    const res = await this.get(`/api/accounts/${accountId}/api_tokens`);
+    return res.data as ApiToken[];
+  }
+
+  async createApiToken(
+    accountId: string
+  ): Promise<ApiToken & { token: string }> {
+    const res = await this.post(`/api/accounts/${accountId}/api_tokens`);
+    return res.data as ApiToken & { token: string };
+  }
+
+  async deleteApiToken(tokenId: string): Promise<null> {
+    await this.delete(`/api/api_tokens/${tokenId}`);
+    return null;
+  }
+
+  async updateApiToken(
+    tokenId: string,
+    token: { name: string }
+  ): Promise<null> {
+    await this.patch(`/api/api_tokens/${tokenId}`, token);
+    return null;
+  }
+
   async queue(searchParams: URLSearchParams): Promise<QueueJob[]> {
     const res = await this.get(`/api/admin/queue?${searchParams}`);
     return res.data as QueueJob[];
@@ -377,8 +408,8 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-  ? ValidationErrorsFor<T[K]>
-  : ValidationError[];
+    ? ValidationErrorsFor<T[K]>
+    : ValidationError[];
 };
 
 export interface ValidationError {

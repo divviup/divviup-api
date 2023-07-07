@@ -81,8 +81,12 @@ async fn load_aggregator(
     id: Option<&str>,
     db: &impl ConnectionTrait,
 ) -> Result<Option<Aggregator>, Error> {
-    let Some(id) = id.map(Uuid::parse_str).transpose()? else { return Ok(None) };
-    let Some(aggregator) = Aggregators::find_by_id(id).one(db).await? else { return Ok(None) };
+    let Some(id) = id.map(Uuid::parse_str).transpose()? else {
+        return Ok(None);
+    };
+    let Some(aggregator) = Aggregators::find_by_id(id).one(db).await? else {
+        return Ok(None);
+    };
 
     if aggregator.account_id.is_none() || aggregator.account_id == Some(account.id) {
         Ok(Some(aggregator))
@@ -144,7 +148,9 @@ impl NewTask {
             errors.add("helper_aggregator_id", ValidationError::new("required"));
         }
 
-        let (Some(leader), Some(helper)) = (leader, helper) else { return None };
+        let (Some(leader), Some(helper)) = (leader, helper) else {
+            return None;
+        };
 
         if leader == helper {
             errors.add("leader_aggregator_id", ValidationError::new("same"));
