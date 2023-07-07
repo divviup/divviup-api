@@ -270,7 +270,7 @@ mod update {
     async fn nonexistant_api_token(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
         let mut conn = patch(format!("/api/api_tokens/{}", Uuid::new_v4()))
-            .with_request_json(json!({"name": fixtures::random_name()}))
+            .with_request_json(json!({ "name": fixtures::random_name() }))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
@@ -286,7 +286,7 @@ mod update {
         let name = fixtures::random_name();
         let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
-            .with_request_json(json!({"name": name}))
+            .with_request_json(json!({ "name": name }))
             .with_state(user)
             .run_async(&app)
             .await;
@@ -308,7 +308,7 @@ mod update {
         let (api_token, ..) = fixtures::api_token(&app, &account).await;
         let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
-            .with_request_json(json!({"name": fixtures::random_name()}))
+            .with_request_json(json!({ "name": fixtures::random_name() }))
             .with_state(user)
             .run_async(&app)
             .await;
@@ -327,7 +327,7 @@ mod update {
         let name = fixtures::random_name();
         let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
-            .with_request_json(json!({"name": name}))
+            .with_request_json(json!({ "name": name }))
             .with_state(admin)
             .run_async(&app)
             .await;
