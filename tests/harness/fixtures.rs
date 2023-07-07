@@ -104,6 +104,7 @@ pub fn new_aggregator() -> NewAggregator {
         api_url: Some(format!("https://api.{}.divviup.org/prefix/", random_name())),
         dap_url: Some(format!("https://dap.{}.divviup.org", random_name())),
         bearer_token: Some(random_name()),
+        is_first_party: None,
     }
 }
 

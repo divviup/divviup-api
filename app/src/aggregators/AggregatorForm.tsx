@@ -46,11 +46,13 @@ async function submit(
 
 export function AggregatorForm({
   handleSubmit,
+  showIsFirstParty = false,
 }: {
   handleSubmit: (
     aggregator: NewAggregator,
     helpers: FormikHelpers<NewAggregator>
   ) => void;
+  showIsFirstParty?: boolean;
 }) {
   const actionData = useActionData();
   let errors: undefined | FormikErrors<NewAggregator> = undefined;
@@ -72,6 +74,7 @@ export function AggregatorForm({
           api_url: "",
           dap_url: "",
           bearer_token: "",
+          is_first_party: showIsFirstParty ? true : undefined,
         } as NewAggregator
       }
       onSubmit={handleSubmit}
@@ -88,6 +91,7 @@ export function AggregatorForm({
           <ApiUrl {...props} />
           <DapUrl {...props} />
           <BearerToken {...props} />
+          {showIsFirstParty ? <IsFirstParty {...props} /> : null}
           <Button
             variant="primary"
             type="submit"
@@ -135,6 +139,20 @@ export default function AggregatorFormPage() {
   );
 }
 
+function IsFirstParty(props: FormikProps<NewAggregator>) {
+  return (
+    <FormGroup>
+      <Form.Switch
+        id="is_first_party"
+        label="First Party?"
+        onChange={props.handleChange}
+        onBlur={props.handleBlur}
+        checked={props.values.is_first_party}
+      />
+    </FormGroup>
+  );
+}
+
 function Name(props: FormikProps<NewAggregator>) {
   return (
     <FormGroup>
@@ -148,7 +166,7 @@ function Name(props: FormikProps<NewAggregator>) {
         onBlur={props.handleBlur}
         value={props.values.name}
         isInvalid={!!props.errors.name}
-        data-1p-ignore={true}
+        data-1p-ignore
       />
       <FormControl.Feedback type="invalid">
         {props.errors.name}

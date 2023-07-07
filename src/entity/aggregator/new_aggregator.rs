@@ -25,6 +25,7 @@ pub struct NewAggregator {
     pub dap_url: Option<String>,
     #[validate(required, custom = "base64", length(min = 8))]
     pub bearer_token: Option<String>,
+    pub is_first_party: Option<bool>,
 }
 
 fn validate_role(role: &str) -> Result<(), ValidationError> {
@@ -49,6 +50,7 @@ fn https(url: &str) -> Result<(), ValidationError> {
 impl NewAggregator {
     pub fn build(self, account: Option<&Account>) -> Result<ActiveModel, Error> {
         self.validate()?;
+
         // unwrap safety: the below unwraps will never panic, because
         // the above call to `NewAggregator::validate` will
         // early-return if any of the required `Option`s is `None`.
@@ -72,7 +74,7 @@ impl NewAggregator {
             created_at: OffsetDateTime::now_utc(),
             updated_at: OffsetDateTime::now_utc(),
             deleted_at: None,
-            is_first_party: account.is_none(),
+            is_first_party: account.is_none() && self.is_first_party.unwrap_or(true),
         }
         .into_active_model())
     }

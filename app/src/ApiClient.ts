@@ -110,6 +110,7 @@ export interface NewAggregator {
   api_url: string;
   dap_url: string;
   bearer_token: string;
+  is_first_party?: boolean;
 }
 
 export interface ApiToken {

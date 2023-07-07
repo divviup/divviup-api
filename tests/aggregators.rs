@@ -225,6 +225,26 @@ mod create {
     }
 
     #[test(harness = set_up)]
+    async fn is_first_party_is_ignored(app: DivviupApi) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+
+        let mut new_aggregator = fixtures::new_aggregator();
+        new_aggregator.is_first_party = Some(true);
+        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+            .with_api_headers()
+            .with_state(user)
+            .with_request_json(new_aggregator)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 201);
+        let aggregator: Aggregator = conn.response_json().await;
+        assert!(!aggregator.is_first_party);
+        assert!(!aggregator.reload(app.db()).await?.unwrap().is_first_party);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
     async fn invalid(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
 
@@ -835,6 +855,8 @@ mod shared_create {
         );
         assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
         assert!(aggregator.account_id.is_none());
+
+        // defaults to true when not specified
         assert!(aggregator.is_first_party);
 
         let aggregator_from_db = Aggregators::find_by_id(aggregator.id)
@@ -844,6 +866,44 @@ mod shared_create {
 
         assert!(aggregator_from_db.is_first_party);
         assert_same_json_representation(&aggregator, &aggregator_from_db);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn is_first_party_true_is_accepted(app: DivviupApi) -> TestResult {
+        let (admin, ..) = fixtures::admin(&app).await;
+        let mut new_aggregator = fixtures::new_aggregator();
+        new_aggregator.is_first_party = Some(true);
+        let mut conn = post("/api/aggregators")
+            .with_api_headers()
+            .with_state(admin)
+            .with_request_json(new_aggregator)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 201);
+        let aggregator: Aggregator = conn.response_json().await;
+        assert!(aggregator.is_first_party);
+        assert!(aggregator.reload(app.db()).await?.unwrap().is_first_party);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn is_first_party_false_is_accepted(app: DivviupApi) -> TestResult {
+        let (admin, ..) = fixtures::admin(&app).await;
+        let mut new_aggregator = fixtures::new_aggregator();
+        new_aggregator.is_first_party = Some(false);
+        let mut conn = post("/api/aggregators")
+            .with_api_headers()
+            .with_state(admin)
+            .with_request_json(new_aggregator)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 201);
+        let aggregator: Aggregator = conn.response_json().await;
+        assert!(!aggregator.is_first_party);
+        assert!(!aggregator.reload(app.db()).await?.unwrap().is_first_party);
 
         Ok(())
     }

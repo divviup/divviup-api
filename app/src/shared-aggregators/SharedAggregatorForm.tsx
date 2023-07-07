@@ -38,7 +38,7 @@ export default function SharedAggreatorForm() {
   return (
     <>
       <h1>New Shared Aggregator</h1>
-      <AggregatorForm handleSubmit={handleSubmit} />
+      <AggregatorForm handleSubmit={handleSubmit} showIsFirstParty />
     </>
   );
 }
