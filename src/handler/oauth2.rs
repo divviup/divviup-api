@@ -48,12 +48,21 @@ pub async fn redirect(conn: Conn) -> Conn {
 pub async fn callback(conn: Conn) -> Conn {
     let qs = QueryStrong::parse(conn.querystring()).unwrap_or_default();
 
-    let Some(auth_code) = qs.get_str("code").map(|c| AuthorizationCode::new(String::from(c))) else {
-        return conn.with_body("expected code query param").with_status(Status::Forbidden).halt()
+    let Some(auth_code) = qs
+        .get_str("code")
+        .map(|c| AuthorizationCode::new(String::from(c)))
+    else {
+        return conn
+            .with_body("expected code query param")
+            .with_status(Status::Forbidden)
+            .halt();
     };
 
     let Some(pkce_verifier) = conn.session().get("pkce_verifier") else {
-        return conn.with_body("expected pkce verifier in session").with_status(Status::Forbidden).halt()
+        return conn
+            .with_body("expected pkce verifier in session")
+            .with_status(Status::Forbidden)
+            .halt();
     };
 
     let session_csrf: Option<String> = conn.session().get("csrf_token");
