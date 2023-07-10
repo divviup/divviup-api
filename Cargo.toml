@@ -80,7 +80,7 @@ features = [
 [dev-dependencies]
 trillium-testing = { version = "0.5.0", features = ["tokio"] }
 sea-orm = { version = "0.11.3", features = ["sqlx-sqlite"] }
-regex = "1.8.4"
+regex = "1.9.1"
 pretty_assertions = "1.3.0"
 
 [build-dependencies]
