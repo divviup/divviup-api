@@ -89,7 +89,7 @@ export interface CreateMembership {
   user_email: string;
 }
 
-export type Role = "leader" | "helper" | "either";
+export type Role = "Leader" | "Helper" | "Either";
 
 export interface Aggregator {
   id: string;
