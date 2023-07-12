@@ -490,15 +490,24 @@ mod update {
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
 
         let new_name = format!("new name {}", fixtures::random_name());
+        let new_bearer_token = fixtures::random_name();
         let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
-            .with_request_json(json!({ "name": &new_name }))
+            .with_request_json(json!({ "name": &new_name, "bearer_token": new_bearer_token }))
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
         let response_aggregator: Aggregator = conn.response_json().await;
         assert_eq!(response_aggregator.name, new_name);
+        assert_eq!(
+            Aggregators::find_by_id(aggregator.id)
+                .one(app.db())
+                .await?
+                .unwrap()
+                .bearer_token,
+            new_bearer_token
+        );
         assert_eq!(
             Aggregators::find_by_id(aggregator.id)
                 .one(app.db())
