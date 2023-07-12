@@ -2,6 +2,7 @@
   "name": "divviup-app",
   "version": "0.1.0",
   "private": true,
+  "license": "MPL-2.0",
   "dependencies": {
     "@github/relative-time-element": "^4.3.0",
     "@testing-library/react": "^14.0.0",
