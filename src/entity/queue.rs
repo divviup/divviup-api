@@ -3,13 +3,15 @@ use crate::{
     queue::{EnqueueJob, Job, JobError},
 };
 use sea_orm::{
-    entity::prelude::*,
     sea_query::{self, all, any, LockBehavior, LockType},
-    ActiveValue, DatabaseTransaction, QueryOrder, QuerySelect,
+    ActiveModelBehavior, ActiveValue, ColumnTrait, DatabaseTransaction, DbErr, DeriveActiveEnum,
+    DeriveEntityModel, DerivePrimaryKey, DeriveRelation, EntityTrait, EnumIter, PrimaryKeyTrait,
+    QueryFilter, QueryOrder, QuerySelect,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use time::OffsetDateTime;
+use uuid::Uuid;
 
 json_newtype!(JobError);
 json_newtype!(Job);
@@ -76,16 +78,15 @@ impl From<EnqueueJob> for ActiveModel {
 
 impl Entity {
     pub async fn next(tx: &DatabaseTransaction) -> Result<Option<Model>, DbErr> {
-        use Column::*;
         let mut select = Entity::find()
             .filter(all![
-                Status.eq(JobStatus::Pending),
+                Column::Status.eq(JobStatus::Pending),
                 any![
-                    ScheduledAt.is_null(),
-                    ScheduledAt.lt(OffsetDateTime::now_utc())
+                    Column::ScheduledAt.is_null(),
+                    Column::ScheduledAt.lt(OffsetDateTime::now_utc())
                 ]
             ])
-            .order_by_asc(CreatedAt)
+            .order_by_asc(Column::CreatedAt)
             .limit(1);
 
         QuerySelect::query(&mut select)

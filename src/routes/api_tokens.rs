@@ -1,15 +1,12 @@
 use crate::{
-    entity::{
-        Account, ApiToken, ApiTokenColumn, ApiTokens, MembershipColumn, Memberships, UpdateApiToken,
-    },
-    handler::Error,
-    user::User,
-    Db,
+    entity::{Account, ApiToken, ApiTokenColumn, ApiTokens, UpdateApiToken},
+    Db, Error, Permissions, PermissionsActor,
 };
-use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait, QueryOrder};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter, QueryOrder};
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
 use trillium_router::RouterConnExt;
+use uuid::Uuid;
 
 pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
     account
@@ -25,27 +22,23 @@ pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Ha
 #[trillium::async_trait]
 impl FromConn for ApiToken {
     async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let user = User::from_conn(conn).await?;
+        let actor = PermissionsActor::from_conn(conn).await?;
         let id = conn.param("api_token_id")?.parse::<Uuid>().ok()?;
         let db: &Db = conn.state()?;
-
-        let api_token = if user.is_admin() {
-            ApiTokens::find_by_id(id).one(db).await
-        } else {
-            ApiTokens::find_by_id(id)
-                .inner_join(Memberships)
-                .filter(MembershipColumn::UserEmail.eq(&user.email))
-                .one(db)
-                .await
-        };
-
-        match api_token {
-            Ok(api_token) => api_token,
+        match ApiTokens::find_by_id(id).one(db).await {
+            Ok(Some(api_token)) => actor.if_allowed(conn.method(), api_token),
+            Ok(None) => None,
             Err(error) => {
                 conn.set_state(Error::from(error));
                 None
             }
         }
+    }
+}
+
+impl Permissions for ApiToken {
+    fn allow_write(&self, actor: &PermissionsActor) -> bool {
+        actor.is_admin() || actor.account_ids().contains(&self.account_id)
     }
 }
 

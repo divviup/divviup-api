@@ -1,5 +1,6 @@
-use sea_orm::{entity::prelude::*, ActiveValue, IntoActiveModel};
+use sea_orm::{ActiveValue, IntoActiveModel};
 use serde::Deserialize;
+use time::OffsetDateTime;
 use validator::Validate;
 
 #[derive(Deserialize, Validate, Debug)]
@@ -13,7 +14,7 @@ impl UpdateTask {
         self.validate()?;
         let mut am = model.into_active_model();
         am.name = ActiveValue::Set(self.name.unwrap());
-        am.updated_at = ActiveValue::Set(TimeDateTimeWithTimeZone::now_utc());
+        am.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
         Ok(am)
     }
 }

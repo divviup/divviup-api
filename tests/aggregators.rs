@@ -1,13 +1,6 @@
 mod harness;
 use harness::{assert_eq, *};
 
-#[trillium::async_trait]
-impl Reload for Aggregator {
-    async fn reload(self, db: &impl ConnectionTrait) -> Result<Option<Self>, DbErr> {
-        Aggregators::find_by_id(self.id).one(db).await
-    }
-}
-
 mod index {
     use super::{assert_eq, test, *};
 
@@ -143,6 +136,83 @@ mod index {
         );
         Ok(())
     }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let _ = fixtures::aggregator(&app, Some(&other_account)).await;
+        let shared_aggregator = fixtures::aggregator(&app, None).await;
+
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let aggregator1 = fixtures::aggregator(&app, Some(&account)).await;
+        let aggregator2 = fixtures::aggregator(&app, Some(&account)).await;
+
+        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, token)
+            .run_async(&app)
+            .await;
+
+        assert_ok!(conn);
+        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        assert_same_json_representation(
+            &aggregators,
+            &vec![shared_aggregator, aggregator1, aggregator2],
+        );
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let _ = fixtures::aggregator(&app, Some(&other_account)).await;
+        let shared_aggregator = fixtures::aggregator(&app, None).await;
+
+        let account = fixtures::account(&app).await;
+        let aggregator1 = fixtures::aggregator(&app, Some(&account)).await;
+        let aggregator2 = fixtures::aggregator(&app, Some(&account)).await;
+
+        let admin_token = fixtures::admin_token(&app).await;
+
+        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, admin_token)
+            .run_async(&app)
+            .await;
+
+        assert_ok!(conn);
+        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        assert_same_json_representation(
+            &aggregators,
+            &vec![shared_aggregator, aggregator1, aggregator2],
+        );
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        fixtures::aggregator(&app, Some(&other_account)).await;
+        fixtures::aggregator(&app, None).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+
+        let account = fixtures::account(&app).await;
+        fixtures::aggregator(&app, Some(&account)).await;
+        fixtures::aggregator(&app, Some(&account)).await;
+
+        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, token)
+            .run_async(&app)
+            .await;
+
+        assert_not_found!(conn);
+
+        Ok(())
+    }
 }
 
 mod shared_aggregator_index {
@@ -162,6 +232,33 @@ mod shared_aggregator_index {
         let mut conn = get("/api/aggregators")
             .with_api_headers()
             .with_state(user)
+            .run_async(&app)
+            .await;
+
+        assert_ok!(conn);
+        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        assert_same_json_representation(
+            &aggregators,
+            &vec![shared_aggregator1, shared_aggregator2],
+        );
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn as_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let _ = fixtures::aggregator(&app, Some(&other_account)).await;
+
+        let shared_aggregator1 = fixtures::aggregator(&app, None).await;
+        let shared_aggregator2 = fixtures::aggregator(&app, None).await;
+
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        fixtures::aggregator(&app, Some(&account)).await;
+
+        let mut conn = get("/api/aggregators")
+            .with_api_headers()
+            .with_auth_header(token)
             .run_async(&app)
             .await;
 
@@ -214,11 +311,7 @@ mod create {
         assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
         assert!(!aggregator.is_first_party);
 
-        let aggregator_from_db = Aggregators::find_by_id(aggregator.id)
-            .one(app.db())
-            .await?
-            .unwrap();
-
+        let aggregator_from_db = aggregator.reload(app.db()).await?.unwrap();
         assert_same_json_representation(&aggregator, &aggregator_from_db);
 
         Ok(())
@@ -324,11 +417,70 @@ mod create {
         let aggregator: Aggregator = conn.response_json().await;
         assert!(!aggregator.is_first_party);
 
-        let aggregator_from_db = Aggregators::find_by_id(aggregator.id)
-            .one(app.db())
-            .await?
-            .unwrap();
+        let aggregator_from_db = aggregator.reload(app.db()).await?.unwrap();
         assert_same_json_representation(&aggregator, &aggregator_from_db);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(fixtures::new_aggregator())
+            .run_async(&app)
+            .await;
+
+        assert_response!(conn, 201);
+        let aggregator: Aggregator = conn.response_json().await;
+        assert!(!aggregator.is_first_party);
+
+        let aggregator_from_db = aggregator.reload(app.db()).await?.unwrap();
+        assert_same_json_representation(&aggregator, &aggregator_from_db);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(fixtures::new_aggregator())
+            .run_async(&app)
+            .await;
+
+        assert_response!(conn, 201);
+        let aggregator: Aggregator = conn.response_json().await;
+        assert!(!aggregator.is_first_party);
+
+        let aggregator_from_db = aggregator.reload(app.db()).await?.unwrap();
+        assert_same_json_representation(&aggregator, &aggregator_from_db);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+
+        let account = fixtures::account(&app).await;
+        let aggregator_count_before = Aggregators::find().count(app.db()).await?;
+        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(fixtures::new_aggregator())
+            .run_async(&app)
+            .await;
+
+        assert_not_found!(conn);
+        let aggregator_count_after = Aggregators::find().count(app.db()).await?;
+        assert_eq!(aggregator_count_before, aggregator_count_after);
 
         Ok(())
     }
@@ -479,6 +631,53 @@ mod show {
         assert_not_found!(conn);
         Ok(())
     }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let response: Aggregator = conn.response_json().await;
+        assert_same_json_representation(&aggregator, &response);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let response: Aggregator = conn.response_json().await;
+        assert_same_json_representation(&aggregator, &response);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+        let account = fixtures::account(&app).await;
+        let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_not_found!(conn);
+        Ok(())
+    }
 }
 
 mod update {
@@ -500,22 +699,9 @@ mod update {
         assert_ok!(conn);
         let response_aggregator: Aggregator = conn.response_json().await;
         assert_eq!(response_aggregator.name, new_name);
-        assert_eq!(
-            Aggregators::find_by_id(aggregator.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .bearer_token,
-            new_bearer_token
-        );
-        assert_eq!(
-            Aggregators::find_by_id(aggregator.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
-            new_name
-        );
+        let reloaded = aggregator.reload(app.db()).await?.unwrap();
+        assert_eq!(reloaded.name, new_name);
+        assert_eq!(reloaded.bearer_token, new_bearer_token);
 
         Ok(())
     }
@@ -536,11 +722,7 @@ mod update {
         assert!(errors.get("name").is_some());
 
         assert_eq!(
-            Aggregators::find_by_id(aggregator.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
+            aggregator.reload(app.db()).await?.unwrap().name,
             aggregator.name // unchanged
         );
 
@@ -562,11 +744,7 @@ mod update {
 
         assert_not_found!(conn);
         assert_eq!(
-            Aggregators::find_by_id(aggregator.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
+            aggregator.reload(app.db()).await?.unwrap().name,
             aggregator.name // unchanged
         );
         Ok(())
@@ -576,7 +754,7 @@ mod update {
     async fn shared(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let aggregator = fixtures::aggregator(&app, None).await;
-
+        let old_name = aggregator.name.clone();
         let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": "irrelevant" }))
@@ -585,14 +763,7 @@ mod update {
             .await;
 
         assert_not_found!(conn);
-        assert_eq!(
-            Aggregators::find_by_id(aggregator.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
-            aggregator.name // unchanged
-        );
+        assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, old_name);
         Ok(())
     }
 
@@ -612,15 +783,7 @@ mod update {
         assert_ok!(conn);
         let response_aggregator: Aggregator = conn.response_json().await;
         assert_eq!(response_aggregator.name, new_name);
-        assert_eq!(
-            Aggregators::find_by_id(aggregator.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
-            new_name
-        );
-
+        assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, new_name);
         Ok(())
     }
 
@@ -640,14 +803,7 @@ mod update {
         assert_ok!(conn);
         let response_aggregator: Aggregator = conn.response_json().await;
         assert_eq!(response_aggregator.name, new_name);
-        assert_eq!(
-            Aggregators::find_by_id(aggregator.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
-            new_name
-        );
+        assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, new_name);
 
         Ok(())
     }
@@ -739,12 +895,71 @@ mod update {
         assert_not_found!(conn);
         Ok(())
     }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+        let name = fixtures::random_name();
+        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(json!({ "name": name }))
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert_eq!(response_aggregator.name, name);
+        assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, name);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+        let name = fixtures::random_name();
+        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(json!({ "name": name }))
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert_eq!(response_aggregator.name, name);
+        assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, name);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+        let account = fixtures::account(&app).await;
+        let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+        let name_before = aggregator.name.clone();
+        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(json!({ "name": fixtures::random_name() }))
+            .run_async(&app)
+            .await;
+        assert_not_found!(conn);
+        assert_eq!(
+            aggregator.reload(app.db()).await?.unwrap().name,
+            name_before
+        );
+
+        Ok(())
+    }
 }
 
 mod delete {
-    use uuid::Uuid;
-
     use super::{assert_eq, test, *};
+    use uuid::Uuid;
 
     #[test(harness = set_up)]
     #[ignore]
@@ -835,6 +1050,81 @@ mod delete {
 
         Ok(())
     }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+        let conn = delete(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_status!(conn, 204);
+        assert!(aggregator.reload(app.db()).await?.unwrap().is_tombstoned());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+        let conn = delete(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_status!(conn, 204);
+        assert!(aggregator.reload(app.db()).await?.unwrap().is_tombstoned());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+        let account = fixtures::account(&app).await;
+        let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+        let mut conn = delete(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_not_found!(conn);
+        assert!(!aggregator.reload(app.db()).await?.unwrap().is_tombstoned());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonadmin_token_shared_aggregator(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let aggregator = fixtures::aggregator(&app, None).await;
+        let mut conn = delete(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_not_found!(conn);
+        assert!(!aggregator.reload(app.db()).await?.unwrap().is_tombstoned());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn admin_token_shared_aggregator(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let aggregator = fixtures::aggregator(&app, None).await;
+        let conn = delete(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_status!(conn, 204);
+        assert!(aggregator.reload(app.db()).await?.unwrap().is_tombstoned());
+        Ok(())
+    }
 }
 
 mod shared_create {
@@ -868,11 +1158,7 @@ mod shared_create {
         // defaults to true when not specified
         assert!(aggregator.is_first_party);
 
-        let aggregator_from_db = Aggregators::find_by_id(aggregator.id)
-            .one(app.db())
-            .await?
-            .unwrap();
-
+        let aggregator_from_db = aggregator.reload(app.db()).await?.unwrap();
         assert!(aggregator_from_db.is_first_party);
         assert_same_json_representation(&aggregator, &aggregator_from_db);
 
@@ -933,6 +1219,45 @@ mod shared_create {
         assert_not_found!(conn);
         let aggregator_count_after = Aggregators::find().count(app.db()).await?;
         assert_eq!(aggregator_count_before, aggregator_count_after);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonadmin_token_shared_aggregator(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let new_aggregator = fixtures::new_aggregator();
+        let aggregator_count_before = Aggregators::find().count(app.db()).await?;
+
+        let mut conn = post("/api/aggregators")
+            .with_request_json(&new_aggregator)
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+
+        assert_not_found!(conn);
+        let aggregator_count_after = Aggregators::find().count(app.db()).await?;
+        assert_eq!(aggregator_count_before, aggregator_count_after);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn admin_token_shared_aggregator(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let new_aggregator = fixtures::new_aggregator();
+        let aggregator_count_before = Aggregators::find().count(app.db()).await?;
+        let mut conn = post("/api/aggregators")
+            .with_request_json(&new_aggregator)
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        let aggregator: Aggregator = conn.response_json().await;
+        assert_eq!(aggregator.name, new_aggregator.name.unwrap());
+        let aggregator_count_after = Aggregators::find().count(app.db()).await?;
+        assert_eq!(aggregator_count_after, aggregator_count_before + 1);
 
         Ok(())
     }

@@ -1,11 +1,15 @@
 use super::{Account, AccountColumn, AccountRelation, Accounts, Memberships};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::Rng;
-use sea_orm::{entity::prelude::*, IntoActiveModel};
+use sea_orm::{
+    ActiveModelBehavior, DeriveEntityModel, DerivePrimaryKey, DeriveRelation, EntityTrait,
+    EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef, RelationTrait,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fmt::Debug;
 use time::OffsetDateTime;
+use uuid::Uuid;
 
 #[derive(Clone, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "api_token")]

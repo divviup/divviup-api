@@ -1,6 +1,11 @@
-use sea_orm::{entity::prelude::*, ActiveValue, IntoActiveModel};
+use sea_orm::{
+    ActiveModelBehavior, ActiveValue, ColumnTrait, DeriveEntityModel, DerivePrimaryKey,
+    DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, QueryFilter, Related,
+    RelationDef, RelationTrait,
+};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
+use uuid::Uuid;
 use validator::{Validate, ValidationErrors};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -18,6 +23,16 @@ pub struct Model {
     pub updated_at: OffsetDateTime,
 
     pub admin: bool,
+}
+
+impl Entity {
+    pub fn for_actor(actor: &crate::PermissionsActor) -> sea_orm::Select<Self> {
+        if actor.is_admin() {
+            Self::find()
+        } else {
+            Self::find().filter(Column::Id.is_in(actor.account_ids()))
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -76,8 +91,8 @@ impl NewAccount {
         Ok(ActiveModel {
             id: ActiveValue::Set(Uuid::new_v4()),
             name: ActiveValue::Set(self.name.unwrap()),
-            created_at: ActiveValue::Set(TimeDateTimeWithTimeZone::now_utc()),
-            updated_at: ActiveValue::Set(TimeDateTimeWithTimeZone::now_utc()),
+            created_at: ActiveValue::Set(OffsetDateTime::now_utc()),
+            updated_at: ActiveValue::Set(OffsetDateTime::now_utc()),
             admin: ActiveValue::Set(false),
         })
     }
@@ -94,7 +109,7 @@ impl UpdateAccount {
         self.validate()?;
         let mut am = account.into_active_model();
         am.name = ActiveValue::Set(self.name.unwrap());
-        am.updated_at = ActiveValue::Set(TimeDateTimeWithTimeZone::now_utc());
+        am.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
         Ok(am)
     }
 }

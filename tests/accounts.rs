@@ -16,7 +16,6 @@ mod index {
 
         assert_ok!(conn);
         let accounts: Vec<Account> = conn.response_json().await;
-        assert_eq!(accounts.len(), 1);
         assert_eq!(accounts, vec![account]);
         Ok(())
     }
@@ -32,11 +31,54 @@ mod index {
             .await;
 
         let accounts: Vec<Account> = conn.response_json().await;
+        assert_eq!(accounts, vec![account, other_account]);
+        Ok(())
+    }
 
-        assert_eq!(accounts.len(), 2);
+    #[test(harness = set_up)]
+    async fn as_admin_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::admin_account(&app).await;
+        let other_account = fixtures::account(&app).await;
+        let (_, header) = fixtures::api_token(&app, &account).await;
+        let mut conn = get("/api/accounts")
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, header)
+            .run_async(&app)
+            .await;
+        let accounts: Vec<Account> = conn.response_json().await;
 
         assert_eq!(accounts, vec![account, other_account]);
+        Ok(())
+    }
 
+    #[test(harness = set_up)]
+    async fn as_normal_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        fixtures::account(&app).await;
+        let (_, header) = fixtures::api_token(&app, &account).await;
+        let mut conn = get("/api/accounts")
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, header)
+            .run_async(&app)
+            .await;
+        let accounts: Vec<Account> = conn.response_json().await;
+
+        assert_eq!(accounts, vec![account]);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn as_bogus_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        fixtures::account(&app).await;
+        let (token, header) = fixtures::api_token(&app, &account).await;
+        token.delete(app.db()).await?;
+        let conn = get("/api/accounts")
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, header)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 403);
         Ok(())
     }
 }
@@ -91,6 +133,52 @@ mod show {
 
         assert_eq!(account, other_account);
 
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn as_admin_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::admin_account(&app).await;
+        let other_account = fixtures::account(&app).await;
+        let (_, header) = fixtures::api_token(&app, &account).await;
+        let mut conn = get(format!("/api/accounts/{}", other_account.id))
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, header)
+            .run_async(&app)
+            .await;
+        let response: Account = conn.response_json().await;
+
+        assert_eq!(response, other_account);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn as_normal_token_with_access(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        fixtures::account(&app).await;
+        let (_, header) = fixtures::api_token(&app, &account).await;
+        let mut conn = get(format!("/api/accounts/{}", account.id))
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, header)
+            .run_async(&app)
+            .await;
+
+        let response: Account = conn.response_json().await;
+        assert_eq!(response, account);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn as_normal_token_without_access(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let other_account = fixtures::account(&app).await;
+        let (_, header) = fixtures::api_token(&app, &account).await;
+        let mut conn = get(format!("/api/accounts/{}", other_account.id))
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, header)
+            .run_async(&app)
+            .await;
+        assert_not_found!(conn);
         Ok(())
     }
 }
@@ -176,16 +264,9 @@ mod update {
             .await;
 
         assert_response!(conn, 202);
-        let account: Account = conn.response_json().await;
-        assert_eq!(&account.name, "new name");
-        assert_eq!(
-            Accounts::find_by_id(account.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
-            "new name"
-        );
+        let response: Account = conn.response_json().await;
+        assert_eq!(&response.name, "new name");
+        assert_eq!(account.reload(app.db()).await?.unwrap().name, "new name");
 
         Ok(())
     }
@@ -222,14 +303,7 @@ mod update {
         let account: Account = conn.response_json().await;
 
         assert_eq!(&account.name, "new name");
-        assert_eq!(
-            Accounts::find_by_id(account.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
-            "new name"
-        );
+        assert_eq!(account.reload(app.db()).await?.unwrap().name, "new name");
 
         Ok(())
     }
@@ -248,6 +322,65 @@ mod update {
         let errors: Value = conn.response_json().await;
         assert!(errors.get("name").is_some());
 
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn as_token_with_access(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, header) = fixtures::api_token(&app, &account).await;
+        let name = fixtures::random_name();
+        let mut conn = patch(format!("/api/accounts/{}", account.id))
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, header)
+            .with_request_json(json!({ "name": &name }))
+            .run_async(&app)
+            .await;
+
+        assert_response!(conn, 202);
+        let response: Account = conn.response_json().await;
+
+        assert_eq!(&response.name, &name);
+        assert_eq!(account.reload(app.db()).await?.unwrap().name, name);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn as_token_without_access(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let other_account = fixtures::account(&app).await;
+        let (_, header) = fixtures::api_token(&app, &account).await;
+        let name = fixtures::random_name();
+        let mut conn = patch(format!("/api/accounts/{}", other_account.id))
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, header)
+            .with_request_json(json!({ "name": &name }))
+            .run_async(&app)
+            .await;
+
+        assert_not_found!(conn);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn as_admin_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::admin_account(&app).await;
+        let other_account = fixtures::account(&app).await;
+        let (_, header) = fixtures::api_token(&app, &account).await;
+        let name = fixtures::random_name();
+        let mut conn = patch(format!("/api/accounts/{}", other_account.id))
+            .with_api_headers()
+            .with_request_header(KnownHeaderName::Authorization, header)
+            .with_request_json(json!({ "name": &name }))
+            .run_async(&app)
+            .await;
+
+        assert_response!(conn, 202);
+        let response: Account = conn.response_json().await;
+
+        assert_eq!(&response.name, &name);
+        assert_eq!(other_account.reload(app.db()).await?.unwrap().name, name);
         Ok(())
     }
 }

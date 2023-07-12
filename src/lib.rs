@@ -14,6 +14,7 @@ mod db;
 #[macro_use]
 pub mod entity;
 pub mod handler;
+pub mod permissions;
 pub mod queue;
 mod routes;
 pub mod telemetry;
@@ -21,7 +22,8 @@ mod user;
 
 pub use config::{ApiConfig, ApiConfigError};
 pub use db::Db;
-pub use handler::DivviupApi;
+pub use handler::{DivviupApi, Error};
+pub use permissions::{Permissions, PermissionsActor};
 pub use queue::Queue;
 pub use routes::routes;
 pub use user::{User, USER_SESSION_KEY};

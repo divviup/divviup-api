@@ -3,9 +3,8 @@ use crate::{
     Db,
 };
 use sea_orm::{
-    prelude::*,
     sea_query::{self, all},
-    QuerySelect,
+    ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect, Select,
 };
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
@@ -29,6 +28,10 @@ pub struct User {
 }
 
 impl User {
+    pub fn memberships(&self) -> Select<Memberships> {
+        Memberships::for_user(self)
+    }
+
     pub fn for_integration_testing() -> Self {
         Self {
             email: "integration@test.example".into(),
