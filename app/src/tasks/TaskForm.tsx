@@ -121,6 +121,7 @@ function LeaderAggregator(props: FormikProps<NewTask>) {
   const { aggregators } = useLoaderData() as {
     aggregators: Promise<Aggregator[]>;
   };
+
   return (
     <FormGroup>
       <FormLabel>Leader Aggregator</FormLabel>
@@ -137,11 +138,13 @@ function LeaderAggregator(props: FormikProps<NewTask>) {
         <Suspense>
           <Await resolve={aggregators}>
             {(aggregators: Aggregator[]) =>
-              aggregators.map((aggregator) => (
-                <option key={aggregator.id} value={aggregator.id}>
-                  {aggregator.name}
-                </option>
-              ))
+              aggregators
+                .filter((a) => a.role === "Leader" || a.role === "Either")
+                .map((aggregator) => (
+                  <option key={aggregator.id} value={aggregator.id}>
+                    {aggregator.name}
+                  </option>
+                ))
             }
           </Await>
         </Suspense>
@@ -172,11 +175,13 @@ function HelperAggregator(props: FormikProps<NewTask>) {
         <Suspense>
           <Await resolve={aggregators}>
             {(aggregators: Aggregator[]) =>
-              aggregators.map((aggregator) => (
-                <option key={aggregator.id} value={aggregator.id}>
-                  {aggregator.name}
-                </option>
-              ))
+              aggregators
+                .filter((a) => a.role === "Helper" || a.role === "Either")
+                .map((aggregator) => (
+                  <option key={aggregator.id} value={aggregator.id}>
+                    {aggregator.name}
+                  </option>
+                ))
             }
           </Await>
         </Suspense>
