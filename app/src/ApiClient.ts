@@ -76,9 +76,15 @@ export type NewTask = Omit<
   | "account_id"
   | "created_at"
   | "updated_at"
+  | "vdaf"
 > & {
   hpke_config: string;
   partner_url: string;
+  vdaf: {
+    type: "sum" | "count" | "histogram";
+    bits?: number;
+    buckets?: number;
+  };
 };
 
 export interface UpdateTask {

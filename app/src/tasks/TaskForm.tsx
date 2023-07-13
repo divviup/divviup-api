@@ -28,6 +28,8 @@ import ApiClient, {
 import { Formik, FormikHelpers, FormikProps } from "formik";
 import FormCheck from "react-bootstrap/FormCheck";
 import { DateTime } from "luxon";
+import FormText from "react-bootstrap/FormText";
+import { Alert } from "react-bootstrap";
 
 async function submit(
   apiClient: ApiClient,
@@ -45,8 +47,26 @@ async function submit(
       return navigate(`/accounts/${accountId}/tasks/${task.id}`);
     }
   } catch (e) {
-    console.log(e);
+    console.error(e);
   }
+}
+
+type Props = FormikProps<NewTask> & {
+  setFocusedField(k: Field<NewTask>): void;
+};
+
+function TaskFormGroup({
+  children,
+  controlId,
+}: {
+  children: React.ReactNode;
+  controlId?: string;
+}) {
+  return (
+    <FormGroup className="mb-5" controlId={controlId}>
+      {children}
+    </FormGroup>
+  );
 }
 
 export default function TaskForm() {
@@ -63,11 +83,22 @@ export default function TaskForm() {
   );
   const navigation = useNavigation();
 
+  const [focusedField, setFocusedField] = React.useState<Field<NewTask> | null>(
+    null
+  );
+
+  const focus = React.useCallback(
+    (event: React.FocusEvent<HTMLFormElement>) => {
+      setFocusedField(event.target.name as unknown as Field<NewTask>);
+    },
+    [setFocusedField, navigate]
+  );
+
   return (
     <>
       <Breadcrumbs account={account} />
-      <Row>
-        <Col sm="9">
+      <Row style={{ height: "calc(100vh - 100px)" }}>
+        <Col sm="6" style={{ maxHeight: "100%", overflowY: "auto" }}>
           <Formik
             validateOnChange={false}
             validateOnBlur={false}
@@ -84,47 +115,316 @@ export default function TaskForm() {
             }
             onSubmit={handleSubmit}
           >
-            {(props) => (
-              <Form
-                method="post"
-                onSubmit={props.handleSubmit}
-                noValidate
-                autoComplete="off"
-              >
-                <TaskName {...props} />
-                <LeaderAggregator {...props} />
-                <HelperAggregator {...props} />
-                <VdafType {...props} />
-                <VdafDetails {...props} />
-                <QueryType {...props} />
-                <MinBatchSize {...props} />
-                <HpkeConfig {...props} />
-                <TimePrecisionSeconds {...props} />
-                <Expiration {...props} />
-                <Button
-                  variant="primary"
-                  type="submit"
-                  disabled={navigation.state === "submitting"}
+            {(formikProps) => {
+              const props = { ...formikProps, setFocusedField };
+              return (
+                <Form
+                  className="mb-5"
+                  method="post"
+                  onSubmit={props.handleSubmit}
+                  noValidate
+                  autoComplete="off"
+                  onFocus={focus}
                 >
-                  Submit
-                </Button>
-              </Form>
-            )}
+                  <TaskName {...props} />
+                  <LeaderAggregator {...props} />
+                  <HelperAggregator {...props} />
+                  <VdafType {...props} />
+                  <VdafDetails {...props} />
+                  <QueryType {...props} />
+                  <MinBatchSize {...props} />
+                  <HpkeConfig {...props} />
+                  <TimePrecisionSeconds {...props} />
+                  <Expiration {...props} />
+                  <TaskFormGroup>
+                    <Button
+                      variant="primary"
+                      type="submit"
+                      disabled={navigation.state === "submitting"}
+                    >
+                      Submit
+                    </Button>
+                  </TaskFormGroup>
+                </Form>
+              );
+            }}
           </Formik>
+        </Col>
+        <Col sm={6}>
+          {focusedField ? <LongHelpText field={focusedField} /> : null}
         </Col>
       </Row>
     </>
   );
 }
 
-function LeaderAggregator(props: FormikProps<NewTask>) {
+type Field<O extends object> = {
+  [K in keyof O & string]: O[K] extends object ? `${K}.${Field<O[K]>}` : K;
+}[keyof O & string];
+
+const helps: {
+  [K in Field<NewTask>]?: {
+    title: string;
+    short: React.ReactNode;
+    long?: React.ReactNode;
+  };
+} = {
+  name: {
+    title: "Task Name",
+    short:
+      "A short name to identify this task in this application. This can be edited.",
+  },
+
+  leader_aggregator_id: {
+    title: "Leader Aggregator",
+    short: "Select an aggregator server to process this metrics task.",
+    long: (
+      <p>
+        The leader aggregator is one of the two non-colluding servers that
+        processes metrics tasks. Its role is more resource-intensive than the
+        helper&apos;s. One of the two aggregators must be run by Divvi Up, and
+        the other must be run by a different organization. To use a self-hosted
+        aggregator, you must first add it to your account; it will then appear
+        in this list.
+      </p>
+    ),
+  },
+
+  helper_aggregator_id: {
+    title: "Helper Aggregator",
+    short: "Select an aggregator server to process this metrics task.",
+    long: (
+      <p>
+        The helper aggregator is one of the two non-colluding servers that
+        processes metrics tasks. Its role is less resource-intensive than the
+        leader&apos;s. One of the two aggregators must be run by Divvi Up, and
+        the other must be run by a different organization. To use a self-hosted
+        aggregator, you must first add it to your account; it will then appear
+        in this list.
+      </p>
+    ),
+  },
+
+  min_batch_size: {
+    title: "Minimum Batch Size",
+    short: "Minimum number of reports per batch.",
+    long: (
+      <p>
+        This number should be set high enough that the aggregate results over a
+        batch do not violate the application&apos;s privacy goals. This is
+        determined by a number of factors, including the aggregation function
+        used, the population distribution of measurements, the
+        importance/sensitivity of the underlying data, and whether client
+        attestation is used to prevent{" "}
+        <a href="https://www.ietf.org/archive/id/draft-ietf-ppm-dap-05.html#section-7-4.3">
+          Sybil attacks
+        </a>
+        . If differential privacy noise is added, it can simplify selection of a
+        minimum batch size.
+      </p>
+    ),
+  },
+
+  "vdaf.type": {
+    title: "Function",
+    short:
+      "Determines the kind of client measurement accepted, and how they are summarized.",
+    long: (
+      <>
+        <p>Selects the aggregation function used by this metrics task.</p>
+        <p>The following functions are supported:</p>
+        <ul>
+          <li>
+            Count: Each client measurement is either "true" or "false". The
+            aggregate result is the number of "true" measurements.
+          </li>
+          <li>
+            Sum: Each client measurement is an integer number. The aggregate
+            result is the sum of the measurements.
+          </li>
+          <li>
+            Histogram: The aggregate result is a list of counters, and each
+            client measurement chooses one counter to increment.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+
+  "vdaf.bits": {
+    title: "Measurement Range",
+    short: "Selects the bit width and range of valid client measurements.",
+    long: (
+      <p>
+        Determines the range of integers that are accepted as client
+        measurements. Note that this only determines the maximum value of
+        individual measurements, and not the maximum value of the aggregate
+        result (sum of measurements). Regardless of this choice, the aggregate
+        result wraps around at about 3.4×10<sup>38</sup>. This parameter affects
+        the size of client reports.
+      </p>
+    ),
+  },
+
+  "vdaf.buckets": {
+    title: "Histogram",
+    short: "Selects the number of histogram buckets or counters.",
+    long: (
+      <p>
+        Determines how many buckets the histogram has. Each client report can
+        only add one to a single bucket/counter. This parameter affects the size
+        of client reports.
+      </p>
+    ),
+  },
+
+  max_batch_size: {
+    title: "Query Type",
+    short:
+      "Determines how reports are grouped into batches, and what kinds of queries the collector can make.",
+    long: (
+      <>
+        <h5>Time Interval:</h5>
+        <p>
+          Groups measurements into batches by their client timestamp. Collectors
+          may query for aggregate results over (non-overlapping) time intervals.
+          Good for identifying temporal patterns in data. If client reports may
+          be received late, well after their timestamps, then the collector is
+          forced to choose between delaying collection requests or abandoning
+          late reports.
+        </p>
+        <h5>Fixed Size:</h5>
+        <p>
+          Groups measurements into batches arbitrarily as they arrive. Grants
+          more control over batch sizes, because a maximum batch size can be
+          set. Good for cases where the report upload rate is unknown or varies
+          widely. Temporal patterns in data may be obscured by aggregating
+          on-time and late reports together in the same batches.
+        </p>
+      </>
+    ),
+  },
+
+  hpke_config: {
+    title: "DAP-encoded HPKE file",
+    short:
+      "The collector's public key. Results will be encrypted using this key.",
+    long: (
+      <p>
+        Upload a binary public key file in DAP "HpkeConfig" format. Do not
+        upload the corresponding private key. You will need to use the private
+        key when collecting aggregate results, to decrypt results from the
+        aggregators.
+      </p>
+    ),
+  },
+
+  time_precision_seconds: {
+    title: "Time precision",
+    short: "Granularity of client report timestamps.",
+    long: (
+      <p>
+        All client report timestamps will be rounded to the previous multiple of
+        this duration. If the query type is Time Interval, then query time
+        intervals must start and end on multiples of this duration as well.
+      </p>
+    ),
+  },
+
+  expiration: {
+    title: "Expiration",
+    short: "Optional, pre-scheduled time to decommission this task.",
+    long: (
+      <p>
+        If set, then reports may no longer be uploaded for this task after its
+        expiration time.
+      </p>
+    ),
+  },
+};
+
+function LongHelpText({ field }: { field: Field<NewTask> }) {
+  let help = helps[field];
+  if (help && help.long) {
+    return (
+      <Alert>
+        <Alert.Heading>{help.title}</Alert.Heading>
+        {help.long}
+      </Alert>
+    );
+  } else {
+    return null;
+  }
+}
+
+function ShortHelpAndLabel({
+  htmlFor,
+  fieldKey,
+  setFocusedField,
+}: {
+  htmlFor?: string;
+  fieldKey: Field<NewTask>;
+  setFocusedField(field: Field<NewTask>): void;
+}) {
+  let help = helps[fieldKey];
+  if (help && help.title) {
+    return (
+      <>
+        <FormLabel htmlFor={htmlFor}>{help.title}</FormLabel>
+        <ShortHelpText fieldKey={fieldKey} setFocusedField={setFocusedField} />
+      </>
+    );
+  } else return null;
+}
+
+function ShortHelpText({
+  fieldKey,
+  setFocusedField,
+}: {
+  fieldKey: Field<NewTask>;
+  setFocusedField(field: Field<NewTask>): void;
+}) {
+  const expand = React.useCallback(
+    (e: React.MouseEvent) => {
+      setFocusedField(fieldKey);
+      e.preventDefault();
+    },
+    [setFocusedField, fieldKey]
+  );
+
+  let help = helps[fieldKey];
+  if (help) {
+    return (
+      <div>
+        <FormText muted>
+          {help.short}
+          {help.long ? (
+            <>
+              {" "}
+              <a onClick={expand} href="#">
+                more&raquo;
+              </a>
+            </>
+          ) : null}
+        </FormText>
+      </div>
+    );
+  } else {
+    return null;
+  }
+}
+
+function LeaderAggregator(props: Props) {
   const { aggregators } = useLoaderData() as {
     aggregators: Promise<Aggregator[]>;
   };
 
   return (
-    <FormGroup>
-      <FormLabel>Leader Aggregator</FormLabel>
+    <TaskFormGroup controlId="leader_aggregator_id">
+      <ShortHelpAndLabel
+        fieldKey="leader_aggregator_id"
+        setFocusedField={props.setFocusedField}
+      />
 
       <FormSelect
         value={props.values.leader_aggregator_id}
@@ -152,17 +452,20 @@ function LeaderAggregator(props: FormikProps<NewTask>) {
       <FormControl.Feedback type="invalid">
         {props.errors.leader_aggregator_id}
       </FormControl.Feedback>
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
-function HelperAggregator(props: FormikProps<NewTask>) {
+function HelperAggregator(props: Props) {
   const { aggregators } = useLoaderData() as {
     aggregators: Promise<Aggregator[]>;
   };
   return (
-    <FormGroup>
-      <FormLabel>Helper Aggregator</FormLabel>
+    <TaskFormGroup>
+      <ShortHelpAndLabel
+        fieldKey="helper_aggregator_id"
+        setFocusedField={props.setFocusedField}
+      />
 
       <FormSelect
         value={props.values.helper_aggregator_id}
@@ -189,11 +492,11 @@ function HelperAggregator(props: FormikProps<NewTask>) {
       <FormControl.Feedback type="invalid">
         {props.errors.helper_aggregator_id}
       </FormControl.Feedback>
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
-function QueryType(props: FormikProps<NewTask>) {
+function QueryType(props: Props) {
   const {
     setFieldValue,
     values: { max_batch_size, min_batch_size },
@@ -216,7 +519,11 @@ function QueryType(props: FormikProps<NewTask>) {
   );
 
   return (
-    <FormGroup className="mb-3" controlId="querytype">
+    <TaskFormGroup controlId="querytype">
+      <ShortHelpAndLabel
+        fieldKey="max_batch_size"
+        setFocusedField={props.setFocusedField}
+      />
       <FormCheck
         type="radio"
         name="query-type"
@@ -236,11 +543,11 @@ function QueryType(props: FormikProps<NewTask>) {
         value="fixed"
       />
       <MaxBatchSize {...props} />
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
-function MaxBatchSize(props: FormikProps<NewTask>) {
+function MaxBatchSize(props: Props) {
   const { values, setFieldValue, errors, handleBlur } = props;
   const { max_batch_size, min_batch_size } = values;
 
@@ -255,7 +562,7 @@ function MaxBatchSize(props: FormikProps<NewTask>) {
 
   if (typeof max_batch_size !== "number") return null;
   return (
-    <FormGroup>
+    <TaskFormGroup>
       <FormLabel>Maximum Batch Size</FormLabel>
       <FormControl
         type="number"
@@ -270,11 +577,11 @@ function MaxBatchSize(props: FormikProps<NewTask>) {
       <FormControl.Feedback type="invalid">
         {errors.max_batch_size}
       </FormControl.Feedback>
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
-function HpkeConfig({ setFieldValue, errors }: FormikProps<NewTask>) {
+function HpkeConfig({ setFieldValue, errors, setFocusedField }: Props) {
   let reader = React.useMemo(() => {
     let reader = new FileReader();
     reader.addEventListener("load", () => {
@@ -295,8 +602,11 @@ function HpkeConfig({ setFieldValue, errors }: FormikProps<NewTask>) {
   );
 
   return (
-    <FormGroup className="mb-3" controlId="hpke_config">
-      <FormLabel>DAP-encoded HPKE file</FormLabel>
+    <TaskFormGroup controlId="hpke_config">
+      <ShortHelpAndLabel
+        fieldKey="hpke_config"
+        setFocusedField={setFocusedField}
+      />
       <FormControl
         type="file"
         onChange={onChange}
@@ -305,35 +615,41 @@ function HpkeConfig({ setFieldValue, errors }: FormikProps<NewTask>) {
       <FormControl.Feedback type="invalid">
         {errors.hpke_config}
       </FormControl.Feedback>
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
-function TaskName(props: FormikProps<NewTask>) {
+function TaskName(props: Props) {
   return (
-    <FormGroup className="mb-3" controlId="name">
-      <FormLabel>Task Name</FormLabel>
+    <TaskFormGroup controlId="name">
+      <ShortHelpAndLabel
+        fieldKey="name"
+        setFocusedField={props.setFocusedField}
+      />
       <FormControl
         type="text"
         name="name"
         autoComplete="off"
-        placeholder="Task Name"
         onChange={props.handleChange}
         onBlur={props.handleBlur}
         value={props.values.name}
         isInvalid={!!props.errors.name}
+        data-1p-ignore
       />
       <FormControl.Feedback type="invalid">
         {props.errors.name}
       </FormControl.Feedback>
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
-function MinBatchSize(props: FormikProps<NewTask>) {
+function MinBatchSize(props: Props) {
   return (
-    <FormGroup className="mb-3" controlId="min_batch_size">
-      <FormLabel>Minimum Batch Size</FormLabel>
+    <TaskFormGroup controlId="min_batch_size">
+      <ShortHelpAndLabel
+        fieldKey="min_batch_size"
+        setFocusedField={props.setFocusedField}
+      />
       <FormControl
         type="number"
         name="min_batch_size"
@@ -346,7 +662,7 @@ function MinBatchSize(props: FormikProps<NewTask>) {
       <FormControl.Feedback type="invalid">
         {props.errors.min_batch_size}
       </FormControl.Feedback>
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
@@ -357,7 +673,7 @@ const seconds = {
   week: 60 * 60 * 24 * 7,
 };
 type Unit = keyof typeof seconds;
-function TimePrecisionSeconds(props: FormikProps<NewTask>) {
+function TimePrecisionSeconds(props: Props) {
   let { setFieldValue } = props;
   const [count, setCount] = React.useState<number | undefined>(undefined);
   const [unit, setUnit] = React.useState<Unit>("minute");
@@ -385,10 +701,11 @@ function TimePrecisionSeconds(props: FormikProps<NewTask>) {
   );
 
   return (
-    <FormGroup className="mb-3">
-      <FormLabel column htmlFor="time-precision-number">
-        Time Precision
-      </FormLabel>
+    <TaskFormGroup>
+      <ShortHelpAndLabel
+        fieldKey="time_precision_seconds"
+        setFocusedField={props.setFocusedField}
+      />
       <Row>
         <Col xs="2">
           <FormControl
@@ -418,14 +735,17 @@ function TimePrecisionSeconds(props: FormikProps<NewTask>) {
           </FormControl.Feedback>
         </Col>
       </Row>
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
-function VdafType(props: FormikProps<NewTask>) {
+function VdafType(props: Props) {
   return (
-    <FormGroup className="mb-3" controlId="vdaf.type">
-      <FormLabel>Function</FormLabel>
+    <TaskFormGroup controlId="vdaf.type">
+      <ShortHelpAndLabel
+        fieldKey="vdaf.type"
+        setFocusedField={props.setFocusedField}
+      />
       <FormSelect
         value={props.values.vdaf?.type}
         name="vdaf.type"
@@ -441,11 +761,11 @@ function VdafType(props: FormikProps<NewTask>) {
       <FormControl.Feedback type="invalid">
         {typeof props.errors.vdaf === "string" ? props.errors.vdaf : null}
       </FormControl.Feedback>
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
-function VdafDetails(props: FormikProps<NewTask>) {
+function VdafDetails(props: Props) {
   switch (props.values.vdaf?.type) {
     case "sum":
       return <SumBits {...props} />;
@@ -458,7 +778,7 @@ function VdafDetails(props: FormikProps<NewTask>) {
   }
 }
 
-function HistogramBucketSelection(props: FormikProps<NewTask>) {
+function HistogramBucketSelection(props: Props) {
   let { setFieldValue } = props;
   let [input, setInput] = React.useState(
     props.values.vdaf?.type === "histogram"
@@ -499,8 +819,12 @@ function HistogramBucketSelection(props: FormikProps<NewTask>) {
 
   if (props.values.vdaf?.type !== "histogram") return <></>;
   return (
-    <FormGroup className="mb-3" controlId="vdaf.bits">
-      <FormLabel>Histogram buckets</FormLabel>
+    <TaskFormGroup controlId="vdaf.buckets">
+      <ShortHelpAndLabel
+        fieldKey="vdaf.buckets"
+        setFocusedField={props.setFocusedField}
+      />
+
       <FormControl
         value={input}
         name="vdaf.buckets"
@@ -517,11 +841,11 @@ function HistogramBucketSelection(props: FormikProps<NewTask>) {
           "buckets" in props.errors.vdaf &&
           props.errors.vdaf.buckets}
       </FormControl.Feedback>
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
-function SumBits(props: FormikProps<NewTask>) {
+function SumBits(props: Props) {
   let { setFieldValue } = props;
   let handleChange = React.useCallback(
     (event: ChangeEvent<HTMLSelectElement>) =>
@@ -531,8 +855,11 @@ function SumBits(props: FormikProps<NewTask>) {
   if (props.values.vdaf?.type !== "sum") return <></>;
 
   return (
-    <FormGroup className="mb-3" controlId="vdaf.bits">
-      <FormLabel>Measurement Range</FormLabel>
+    <TaskFormGroup controlId="vdaf.bits">
+      <ShortHelpAndLabel
+        fieldKey="vdaf.bits"
+        setFocusedField={props.setFocusedField}
+      />
       <FormSelect
         value={props.values.vdaf?.bits}
         name="vdaf.bits"
@@ -546,11 +873,11 @@ function SumBits(props: FormikProps<NewTask>) {
           </option>
         ))}
       </FormSelect>
-    </FormGroup>
+    </TaskFormGroup>
   );
 }
 
-function Expiration(props: FormikProps<NewTask>) {
+function Expiration(props: Props) {
   let { setFieldValue, values } = props;
   let { expiration } = values;
 
@@ -605,7 +932,7 @@ function Expiration(props: FormikProps<NewTask>) {
     : "";
 
   return (
-    <FormGroup className="mb-3" controlId="expiration">
+    <TaskFormGroup controlId="expiration">
       <FormCheck
         type="switch"
         checked={enabled}
@@ -627,7 +954,11 @@ function Expiration(props: FormikProps<NewTask>) {
       <FormControl.Feedback type="invalid">
         {props.errors.expiration}
       </FormControl.Feedback>
-    </FormGroup>
+      <ShortHelpText
+        fieldKey="expiration"
+        setFocusedField={props.setFocusedField}
+      />
+    </TaskFormGroup>
   );
 }
 
