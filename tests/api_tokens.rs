@@ -29,7 +29,7 @@ mod index {
         assert_ok!(conn);
 
         let api_tokens: Vec<ApiToken> = conn.response_json().await;
-        assert_same_json_representation(&api_tokens, &vec![token1, token2]);
+        assert_same_json_representation(&api_tokens, &vec![token2, token1]);
         Ok(())
     }
 
@@ -86,7 +86,7 @@ mod index {
 
         assert_ok!(conn);
         let api_tokens: Vec<ApiToken> = conn.response_json().await;
-        assert_same_json_representation(&api_tokens, &vec![api_token1, api_token2]);
+        assert_same_json_representation(&api_tokens, &vec![api_token2, api_token1]);
         Ok(())
     }
 }

@@ -6,26 +6,20 @@ use crate::{
     user::User,
     Db,
 };
-use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait};
+use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait, QueryOrder};
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
-use trillium_caching_headers::CachingHeadersExt;
 use trillium_router::RouterConnExt;
 
-pub async fn index(conn: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
-    let api_tokens = account
+pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
+    account
         .find_related(ApiTokens)
         .filter(ApiTokenColumn::DeletedAt.is_null())
+        .order_by_desc(ApiTokenColumn::CreatedAt)
         .all(&db)
-        .await?;
-    if let Some(last_modified) = api_tokens
-        .iter()
-        .map(|api_token| api_token.updated_at)
-        .max()
-    {
-        conn.set_last_modified(last_modified.into());
-    }
-    Ok(Json(api_tokens))
+        .await
+        .map(Json)
+        .map_err(Error::from)
 }
 
 #[trillium::async_trait]

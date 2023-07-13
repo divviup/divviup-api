@@ -46,7 +46,7 @@ pub async fn show(conn: &mut Conn, account: Account) -> Json<Account> {
     Json(account)
 }
 
-pub async fn index(conn: &mut Conn, (user, db): (User, Db)) -> Result<impl Handler, Error> {
+pub async fn index(_: &mut Conn, (user, db): (User, Db)) -> Result<impl Handler, Error> {
     let accounts = if user.is_admin() {
         Accounts::find().all(&db).await?
     } else {
@@ -56,10 +56,6 @@ pub async fn index(conn: &mut Conn, (user, db): (User, Db)) -> Result<impl Handl
             .all(&db)
             .await?
     };
-
-    if let Some(last_modified) = accounts.iter().map(|account| account.updated_at).max() {
-        conn.set_last_modified(last_modified.into());
-    }
 
     Ok(Json(accounts))
 }

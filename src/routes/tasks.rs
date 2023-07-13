@@ -14,12 +14,13 @@ use trillium_caching_headers::CachingHeadersExt;
 use trillium_client::Client;
 use trillium_router::RouterConnExt;
 
-pub async fn index(conn: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
-    let tasks = account.find_related(Tasks).all(&db).await?;
-    if let Some(last_modified) = tasks.iter().map(|task| task.updated_at).max() {
-        conn.set_last_modified(last_modified.into());
-    }
-    Ok(Json(tasks))
+pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
+    account
+        .find_related(Tasks)
+        .all(&db)
+        .await
+        .map(Json)
+        .map_err(Error::from)
 }
 
 #[trillium::async_trait]

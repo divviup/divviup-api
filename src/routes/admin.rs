@@ -57,17 +57,12 @@ async fn index(conn: &mut Conn, db: Db) -> Result<Json<Vec<Model>>, Error> {
         _ => {}
     }
 
-    let queue = find
-        .order_by_desc(Column::UpdatedAt)
+    find.order_by_desc(Column::UpdatedAt)
         .limit(100)
         .all(&db)
-        .await?;
-
-    if let Some(first) = queue.first() {
-        conn.set_last_modified(first.updated_at.into());
-    }
-
-    Ok(Json(queue))
+        .await
+        .map(Json)
+        .map_err(Error::from)
 }
 
 async fn show(conn: &mut Conn, queue_job: Model) -> Json<Model> {
