@@ -12,6 +12,7 @@ use sea_orm::{
 };
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
+use trillium_caching_headers::CachingHeadersExt;
 use trillium_router::RouterConnExt;
 use uuid::Uuid;
 
@@ -62,7 +63,8 @@ impl FromConn for Aggregator {
     }
 }
 
-pub async fn show(_: &mut Conn, aggregator: Aggregator) -> Json<Aggregator> {
+pub async fn show(conn: &mut Conn, aggregator: Aggregator) -> Json<Aggregator> {
+    conn.set_last_modified(aggregator.updated_at.into());
     Json(aggregator)
 }
 
