@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     clients::aggregator_client::api_types::{Decode, HpkeConfig},
-    entity::{Account, Aggregator, Aggregators},
+    entity::{aggregator::Role, Account, Aggregator, Aggregators},
     handler::Error,
 };
 use base64::{
@@ -84,6 +84,7 @@ async fn load_aggregator(
     let Some(id) = id.map(Uuid::parse_str).transpose()? else {
         return Ok(None);
     };
+
     let Some(aggregator) = Aggregators::find_by_id(id).one(db).await? else {
         return Ok(None);
     };
@@ -166,6 +167,14 @@ impl NewTask {
                 "helper_aggregator_id",
                 ValidationError::new("no-first-party"),
             );
+        }
+
+        if leader.role == Role::Helper {
+            errors.add("leader_aggregator_id", ValidationError::new("role"))
+        }
+
+        if helper.role == Role::Leader {
+            errors.add("helper_aggregator_id", ValidationError::new("role"))
         }
 
         if errors.is_empty() {
