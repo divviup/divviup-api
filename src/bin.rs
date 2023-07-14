@@ -9,8 +9,12 @@ async fn main() {
 
     let config = match Config::from_env() {
         Ok(config) => config,
-        Err(e) => panic!("{e}"),
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(-1);
+        }
     };
+
     let stopper = Stopper::new();
     let observer = CloneCounterObserver::default();
 

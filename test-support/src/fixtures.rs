@@ -120,15 +120,19 @@ pub async fn aggregator_pair(app: &DivviupApi, account: &Account) -> (Aggregator
 }
 
 pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregator {
+    let api_url: Url = format!("https://api.{}.divviup.org/", random_name())
+        .parse()
+        .unwrap();
     Aggregator {
         account_id: account.map(|a| a.id),
-        api_url: format!("https://api.{}.divviup.org/", random_name())
-            .parse()
-            .unwrap(),
+        api_url: api_url.clone().into(),
         dap_url: format!("https://dap.{}.divviup.org/", random_name())
             .parse()
             .unwrap(),
-        bearer_token: random_name(),
+        encrypted_bearer_token: app
+            .crypter()
+            .encrypt(api_url.as_ref().as_bytes(), random_name().as_bytes())
+            .unwrap(),
         created_at: OffsetDateTime::now_utc(),
         updated_at: OffsetDateTime::now_utc(),
         deleted_at: None,

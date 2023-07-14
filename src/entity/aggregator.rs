@@ -5,12 +5,13 @@ mod update_aggregator;
 mod vdaf_name;
 
 use super::{url::Url, AccountColumn, AccountRelation, Accounts, Memberships};
-use crate::clients::AggregatorClient;
+use crate::{clients::AggregatorClient, Crypter, Error};
 use sea_orm::{
     ActiveModelBehavior, ActiveValue, DeriveEntityModel, DerivePrimaryKey, DeriveRelation,
     EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef, RelationTrait,
 };
 use serde::{Deserialize, Serialize};
+
 use time::OffsetDateTime;
 use uuid::Uuid;
 
@@ -39,10 +40,10 @@ pub struct Model {
     pub dap_url: Url,
     pub api_url: Url,
     pub is_first_party: bool,
-    #[serde(skip)]
-    pub bearer_token: String,
     pub query_types: QueryTypeNameSet,
     pub vdafs: VdafNameSet,
+    #[serde(skip)]
+    pub encrypted_bearer_token: Vec<u8>,
 }
 
 impl Model {
@@ -57,8 +58,24 @@ impl Model {
         self.deleted_at.is_some()
     }
 
-    pub fn client(&self, http_client: trillium_client::Client) -> AggregatorClient {
-        AggregatorClient::new(http_client, self.clone())
+    pub fn client(
+        &self,
+        http_client: trillium_client::Client,
+        crypter: &Crypter,
+    ) -> Result<AggregatorClient, Error> {
+        Ok(AggregatorClient::new(
+            http_client,
+            self.clone(),
+            &self.bearer_token(crypter)?,
+        ))
+    }
+
+    pub fn bearer_token(&self, crypter: &Crypter) -> Result<String, Error> {
+        let bearer_token_bytes = crypter.decrypt(
+            self.api_url.as_ref().as_bytes(),
+            &self.encrypted_bearer_token,
+        )?;
+        String::from_utf8(bearer_token_bytes).map_err(Into::into)
     }
 }
 

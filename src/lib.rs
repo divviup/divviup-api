@@ -12,6 +12,7 @@ mod config;
 mod db;
 #[macro_use]
 pub mod entity;
+mod crypter;
 pub mod handler;
 pub mod permissions;
 pub mod queue;
@@ -20,6 +21,7 @@ pub mod telemetry;
 mod user;
 
 pub use config::{Config, ConfigError};
+pub use crypter::Crypter;
 pub use db::Db;
 pub use handler::{custom_mime_types::CONTENT_TYPE, DivviupApi, Error};
 pub use permissions::{Permissions, PermissionsActor};

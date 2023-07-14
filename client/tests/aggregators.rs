@@ -95,7 +95,8 @@ async fn rotate_bearer_token(
             .one(app.db())
             .await?
             .unwrap()
-            .bearer_token,
+            .bearer_token(app.crypter())
+            .unwrap(),
         new_bearer_token
     );
     Ok(())

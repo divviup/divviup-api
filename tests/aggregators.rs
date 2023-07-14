@@ -737,7 +737,7 @@ mod update {
         assert_eq!(response_aggregator.name, new_name);
         let reloaded = aggregator.reload(app.db()).await?.unwrap();
         assert_eq!(reloaded.name, new_name);
-        assert_eq!(reloaded.bearer_token, new_bearer_token);
+        assert_eq!(reloaded.bearer_token(app.crypter())?, new_bearer_token);
 
         Ok(())
     }
@@ -747,7 +747,7 @@ mod update {
         let (user, account, ..) = fixtures::member(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
 
-        let original_bearer_token = aggregator.bearer_token.clone();
+        let original_bearer_token = aggregator.encrypted_bearer_token.clone();
         let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "bearer_token": &BAD_BEARER_TOKEN }))
@@ -766,7 +766,11 @@ mod update {
         );
 
         assert_eq!(
-            aggregator.reload(app.db()).await?.unwrap().bearer_token,
+            aggregator
+                .reload(app.db())
+                .await?
+                .unwrap()
+                .encrypted_bearer_token,
             original_bearer_token
         );
         assert_eq!(client_logs.last().response_status, Status::Unauthorized);

@@ -38,6 +38,7 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 * `DATABASE_URL` -- A [libpq-compatible postgres uri](https://www.postgresql.org/docs/current/libpq-connect.html#id-1.7.3.8.3.6)
 * `POSTMARK_TOKEN` -- the token from the transactional stream from a [postmark](https://postmarkapp.com) account
 * `EMAIL_ADDRESS` -- the address this deployment should send from
+* `DATABASE_ENCRYPTION_KEYS` -- Comma-joined url-safe-no-pad base64'ed 16 byte cryptographically-random keys. The first one will be used to encrypt aggregator API authentication tokens at rest in the database
 
 ### Optional binding environment variables
 

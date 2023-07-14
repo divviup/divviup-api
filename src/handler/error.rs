@@ -78,6 +78,18 @@ pub enum Error {
     TaskProvisioning(#[from] crate::entity::task::TaskProvisioningError),
     #[error(transparent)]
     Uuid(#[from] uuid::Error),
+    #[error("encryption error")]
+    Encryption,
+    #[error(transparent)]
+    Utf8Error(#[from] std::string::FromUtf8Error),
+    #[error("{0}")]
+    String(&'static str),
+}
+
+impl From<aes_gcm::Error> for Error {
+    fn from(_: aes_gcm::Error) -> Self {
+        Self::Encryption
+    }
 }
 
 impl From<Box<dyn std::error::Error + Send + Sync>> for Error {

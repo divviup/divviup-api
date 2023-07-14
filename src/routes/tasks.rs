@@ -1,6 +1,6 @@
 use crate::{
     entity::{Account, NewTask, Task, Tasks, UpdateTask},
-    Db, Error, Permissions, PermissionsActor,
+    Crypter, Db, Error, Permissions, PermissionsActor,
 };
 use sea_orm::{ActiveModelTrait, EntityTrait, ModelTrait};
 use std::time::Duration;
@@ -46,12 +46,13 @@ impl FromConn for Task {
 
 type CreateArgs = (Account, Json<NewTask>, State<Client>, Db);
 pub async fn create(
-    _: &mut Conn,
+    conn: &mut Conn,
     (account, task, State(client), db): CreateArgs,
 ) -> Result<impl Handler, Error> {
+    let crypter = conn.state().unwrap();
     task.validate(account, &db)
         .await?
-        .provision(client)
+        .provision(client, crypter)
         .await?
         .insert(&db)
         .await
@@ -59,12 +60,20 @@ pub async fn create(
         .map(|task| (Status::Created, Json(task)))
 }
 
-async fn refresh_metrics_if_needed(task: Task, db: Db, client: Client) -> Result<Task, Error> {
+async fn refresh_metrics_if_needed(
+    task: Task,
+    db: Db,
+    client: Client,
+    crypter: &Crypter,
+) -> Result<Task, Error> {
     if OffsetDateTime::now_utc() - task.updated_at <= Duration::from_secs(5 * 60) {
         return Ok(task);
     }
     if let Some(aggregator) = task.first_party_aggregator(&db).await? {
-        let metrics = aggregator.client(client).get_task_metrics(&task.id).await?;
+        let metrics = aggregator
+            .client(client, crypter)?
+            .get_task_metrics(&task.id)
+            .await?;
         task.update_metrics(metrics, db).await.map_err(Into::into)
     } else {
         Ok(task)
@@ -75,7 +84,8 @@ pub async fn show(
     conn: &mut Conn,
     (task, db, State(client)): (Task, Db, State<Client>),
 ) -> Result<Json<Task>, Error> {
-    let task = refresh_metrics_if_needed(task, db, client).await?;
+    let crypter = conn.state().unwrap();
+    let task = refresh_metrics_if_needed(task, db, client, crypter).await?;
     conn.set_last_modified(task.updated_at.into());
     Ok(Json(task))
 }
@@ -84,18 +94,23 @@ pub async fn update(
     _: &mut Conn,
     (task, Json(update), db): (Task, Json<UpdateTask>, Db),
 ) -> Result<impl Handler, Error> {
-    let task = update.build(task)?.update(&db).await?;
-    Ok(Json(task))
+    update
+        .build(task)?
+        .update(&db)
+        .await
+        .map(Json)
+        .map_err(Error::from)
 }
 
 pub mod collector_auth_tokens {
     use super::*;
     pub async fn index(
-        _: &mut Conn,
+        conn: &mut Conn,
         (task, db, State(client)): (Task, Db, State<Client>),
     ) -> Result<impl Handler, Error> {
+        let crypter = conn.state().unwrap();
         let leader = task.leader_aggregator(&db).await?;
-        let client = leader.client(client);
+        let client = leader.client(client, crypter)?;
         let task_response = client.get_task(&task.id).await?;
         Ok(Json([task_response.collector_auth_token]))
     }

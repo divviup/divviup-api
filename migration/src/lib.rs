@@ -15,6 +15,7 @@ mod m20230626_183248_add_is_first_party_to_aggregators;
 mod m20230630_175314_create_api_tokens;
 mod m20230703_201332_add_additional_fields_to_api_tokens;
 mod m20230725_220134_add_vdafs_and_query_types_to_aggregators;
+mod m20230731_181722_rename_aggregator_bearer_token;
 
 pub struct Migrator;
 
@@ -37,6 +38,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230630_175314_create_api_tokens::Migration),
             Box::new(m20230703_201332_add_additional_fields_to_api_tokens::Migration),
             Box::new(m20230725_220134_add_vdafs_and_query_types_to_aggregators::Migration),
+            Box::new(m20230731_181722_rename_aggregator_bearer_token::Migration),
         ]
     }
 }
