@@ -1,5 +1,9 @@
-use sea_orm::entity::prelude::*;
+use sea_orm::{
+    ActiveModelBehavior, DeriveEntityModel, DerivePrimaryKey, DeriveRelation, EntityTrait,
+    EnumIter, PrimaryKeyTrait,
+};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use time::OffsetDateTime;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -9,7 +13,7 @@ pub struct Model {
     #[serde(skip_deserializing)]
     pub id: String,
     pub expiry: Option<OffsetDateTime>,
-    pub data: Json,
+    pub data: Value,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

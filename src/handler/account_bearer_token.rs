@@ -3,8 +3,11 @@ use crate::{
     Db,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{
+    ActiveModelTrait, ActiveValue, ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter,
+};
 use sha2::{Digest, Sha256};
+use time::OffsetDateTime;
 use trillium::Conn;
 use trillium_api::FromConn;
 use trillium_http::KnownHeaderName;
@@ -43,6 +46,10 @@ impl FromConn for AccountBearerToken {
             .await
             .ok()
             .flatten()?;
+
+        let mut api_token = api_token.clone().into_active_model();
+        api_token.last_used_at = ActiveValue::Set(Some(OffsetDateTime::now_utc()));
+        let api_token = api_token.update(db).await.ok()?;
 
         let account = account?;
         let account_bearer_token = Self { account, api_token };

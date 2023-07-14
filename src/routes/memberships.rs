@@ -1,19 +1,17 @@
 use crate::{
-    entity::{Account, Accounts, CreateMembership, Membership, MembershipColumn, Memberships},
-    handler::Error,
+    entity::{Account, CreateMembership, Membership, MembershipColumn, Memberships},
     queue::Job,
-    user::User,
-    Db,
+    Db, Error, PermissionsActor,
 };
 use sea_orm::{
-    prelude::*,
     sea_query::{self, all},
-    ModelTrait, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter, TransactionTrait,
 };
 use trillium::{Conn, Handler, Status};
 use trillium_api::Json;
 
 use trillium_router::RouterConnExt;
+use uuid::Uuid;
 
 pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
     account
@@ -61,32 +59,25 @@ pub async fn create(
 
 pub async fn delete(
     conn: &mut Conn,
-    (current_user, db): (User, Db),
+    (actor, db): (PermissionsActor, Db),
 ) -> Result<impl Handler, Error> {
-    let membership_id = conn.param("membership_id").unwrap();
-    let membership_id = Uuid::parse_str(membership_id).map_err(|_| Error::NotFound)?;
+    let membership_id = conn
+        .param("membership_id")
+        .unwrap()
+        .parse::<Uuid>()
+        .map_err(|_| Error::NotFound)?;
 
-    let (membership, account) = Memberships::find_by_id(membership_id)
-        .find_also_related(Accounts)
+    let membership = Memberships::find_by_id(membership_id)
         .one(&db)
         .await?
         .ok_or(Error::NotFound)?;
 
-    let account = account.ok_or(Error::NotFound)?;
-
-    if membership.user_email == current_user.email {
-        return Err(Error::AccessDenied);
+    if matches!(&actor, PermissionsActor::User(user, _) if membership.user_email == user.email) {
+        Err(Error::AccessDenied)
+    } else if actor.is_admin() || actor.account_ids().contains(&membership.account_id) {
+        membership.delete(&db).await?;
+        Ok(Status::NoContent)
+    } else {
+        Err(Error::NotFound)
     }
-
-    if !current_user.is_admin() {
-        account
-            .find_related(Memberships)
-            .filter(MembershipColumn::UserEmail.eq(&current_user.email))
-            .one(&db)
-            .await?
-            .ok_or(Error::NotFound)?;
-    }
-
-    membership.delete(&db).await?;
-    Ok(Status::NoContent)
 }

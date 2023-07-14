@@ -1,4 +1,4 @@
-use crate::{ApiConfig, User};
+use crate::{ApiConfig, PermissionsActor, User};
 use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Halt};
 use trillium_redirect::Redirect;
@@ -35,16 +35,16 @@ pub async fn destroy_session(mut conn: Conn) -> Conn {
     conn
 }
 
-pub async fn user_required(_: &mut Conn, user: Option<User>) -> impl Handler {
-    if user.is_none() {
+pub async fn actor_required(_: &mut Conn, actor: Option<PermissionsActor>) -> impl Handler {
+    if actor.is_none() {
         Some((Status::Forbidden, Halt))
     } else {
         None
     }
 }
 
-pub async fn admin_required(_: &mut Conn, user: Option<User>) -> impl Handler {
-    if matches!(user, Some(user) if user.is_admin()) {
+pub async fn admin_required(_: &mut Conn, actor: Option<PermissionsActor>) -> impl Handler {
+    if matches!(actor, Some(actor) if actor.is_admin()) {
         None
     } else {
         // we return not found instead of forbidden so as to not

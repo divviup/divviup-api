@@ -1,12 +1,9 @@
-use std::time::Duration;
-
 use crate::{
-    entity::{Account, MembershipColumn, Memberships, NewTask, Task, Tasks, UpdateTask},
-    handler::Error,
-    user::User,
-    Db,
+    entity::{Account, NewTask, Task, Tasks, UpdateTask},
+    Db, Error, Permissions, PermissionsActor,
 };
-use sea_orm::{prelude::*, ActiveModelTrait, ModelTrait};
+use sea_orm::{ActiveModelTrait, EntityTrait, ModelTrait};
+use std::time::Duration;
 use time::OffsetDateTime;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json, State};
@@ -23,25 +20,22 @@ pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Ha
         .map_err(Error::from)
 }
 
+impl Permissions for Task {
+    fn allow_write(&self, actor: &PermissionsActor) -> bool {
+        actor.is_admin() || actor.account_ids().contains(&self.account_id)
+    }
+}
+
 #[trillium::async_trait]
 impl FromConn for Task {
     async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let db = Db::from_conn(conn).await?;
-        let user = User::from_conn(conn).await?;
+        let actor = PermissionsActor::from_conn(conn).await?;
+        let db: &Db = conn.state()?;
         let id = conn.param("task_id")?;
 
-        let task = if user.is_admin() {
-            Tasks::find_by_id(id).one(&db).await
-        } else {
-            Tasks::find_by_id(id)
-                .inner_join(Memberships)
-                .filter(MembershipColumn::UserEmail.eq(&user.email))
-                .one(&db)
-                .await
-        };
-
-        match task {
-            Ok(task) => task,
+        match Tasks::find_by_id(id).one(db).await {
+            Ok(Some(task)) => actor.if_allowed(conn.method(), task),
+            Ok(None) => None,
             Err(error) => {
                 conn.set_state(Error::from(error));
                 None

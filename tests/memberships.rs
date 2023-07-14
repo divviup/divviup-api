@@ -23,10 +23,7 @@ mod create {
         assert_eq!(membership.account_id, account.id);
         let membership_id = membership.id;
 
-        assert!(Memberships::find_by_id(membership_id)
-            .one(app.db())
-            .await?
-            .is_some());
+        assert!(membership.reload(app.db()).await?.is_some());
 
         let queue = queue::Entity::find().all(app.db()).await?;
         assert_eq!(queue.len(), 1);
@@ -61,12 +58,7 @@ mod create {
         let membership: Membership = conn.response_json().await;
         assert_eq!(membership.user_email, other_user.email);
         assert_eq!(membership.account_id, account.id);
-        let membership_id = membership.id;
-
-        assert!(Memberships::find_by_id(membership_id)
-            .one(app.db())
-            .await?
-            .is_some());
+        assert!(membership.reload(app.db()).await?.is_some());
 
         Ok(())
     }
@@ -138,12 +130,65 @@ mod create {
         let membership: Membership = conn.response_json().await;
         assert_eq!(membership.user_email, "someone.else@example.com");
         assert_eq!(membership.account_id, account.id);
+        assert!(membership.reload(app.db()).await?.is_some());
 
-        assert!(Memberships::find_by_id(membership.id)
-            .one(app.db())
-            .await?
-            .is_some());
+        Ok(())
+    }
 
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let email = format!("{}@example.com", fixtures::random_name());
+        let mut conn = post(format!("/api/accounts/{}/memberships", account.id))
+            .with_api_headers()
+            .with_request_json(json!({ "user_email": email }))
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 201);
+        let membership: Membership = conn.response_json().await;
+        assert_eq!(membership.user_email, email);
+        assert_eq!(membership.account_id, account.id);
+        assert!(membership.reload(app.db()).await?.is_some());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let email = format!("{}@example.com", fixtures::random_name());
+        let mut conn = post(format!("/api/accounts/{}/memberships", account.id))
+            .with_api_headers()
+            .with_request_json(json!({ "user_email": email }))
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 201);
+        let membership: Membership = conn.response_json().await;
+        assert_eq!(membership.user_email, email);
+        assert_eq!(membership.account_id, account.id);
+        assert!(membership.reload(app.db()).await?.is_some());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+        let account = fixtures::account(&app).await;
+        let email = format!("{}@example.com", fixtures::random_name());
+        let count_before = Memberships::find().count(app.db()).await?;
+        let mut conn = post(format!("/api/accounts/{}/memberships", account.id))
+            .with_api_headers()
+            .with_request_json(json!({ "user_email": email }))
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_not_found!(conn);
+        let count_after = Memberships::find().count(app.db()).await?;
+        assert_eq!(count_before, count_after);
         Ok(())
     }
 }
@@ -152,7 +197,6 @@ mod index {
     use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
-
     async fn member(app: DivviupApi) -> TestResult {
         let _ = fixtures::member(&app).await; // there is unrelated data in the db;
 
@@ -213,6 +257,59 @@ mod index {
 
         Ok(())
     }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        fixtures::membership(&app, &account, &fixtures::user()).await;
+        fixtures::membership(&app, &account, &fixtures::user()).await;
+
+        let mut conn = get(format!("/api/accounts/{}/memberships", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let memberships: Vec<Membership> = conn.response_json().await;
+        assert_eq!(memberships.len(), 2);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        fixtures::membership(&app, &account, &fixtures::user()).await;
+        fixtures::membership(&app, &account, &fixtures::user()).await;
+
+        let mut conn = get(format!("/api/accounts/{}/memberships", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let memberships: Vec<Membership> = conn.response_json().await;
+        assert_eq!(memberships.len(), 2);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+        let account = fixtures::account(&app).await;
+        fixtures::membership(&app, &account, &fixtures::user()).await;
+        fixtures::membership(&app, &account, &fixtures::user()).await;
+
+        let mut conn = get(format!("/api/accounts/{}/memberships", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_not_found!(conn);
+        Ok(())
+    }
 }
 
 mod delete {
@@ -229,10 +326,7 @@ mod delete {
             .run_async(&app)
             .await;
         assert_response!(conn, 204);
-        assert!(Memberships::find_by_id(other_membership.id)
-            .one(app.db())
-            .await?
-            .is_none());
+        assert!(other_membership.reload(app.db()).await?.is_none());
 
         Ok(())
     }
@@ -248,10 +342,7 @@ mod delete {
             .run_async(&app)
             .await;
         assert_not_found!(conn);
-        assert!(Memberships::find_by_id(other_membership.id)
-            .one(app.db())
-            .await?
-            .is_some());
+        assert!(other_membership.reload(app.db()).await?.is_some());
         Ok(())
     }
 
@@ -283,17 +374,69 @@ mod delete {
     async fn admin_not_member(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
-        let other_membership = fixtures::membership(&app, &account, &fixtures::user()).await;
-        let conn = delete(format!("/api/memberships/{}", other_membership.id))
+        let membership = fixtures::membership(&app, &account, &fixtures::user()).await;
+        let conn = delete(format!("/api/memberships/{}", membership.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
         assert_response!(conn, 204);
-        assert!(Memberships::find_by_id(other_membership.id)
-            .one(app.db())
-            .await?
-            .is_none());
+        assert!(membership.reload(app.db()).await?.is_none());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let membership = fixtures::membership(&app, &account, &fixtures::user()).await;
+        let count_before = Memberships::find().count(app.db()).await?;
+        let conn = delete(format!("/api/memberships/{}", membership.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 204);
+        assert!(membership.reload(app.db()).await?.is_none());
+        let count_after = Memberships::find().count(app.db()).await?;
+        assert_eq!(count_before - 1, count_after);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let membership = fixtures::membership(&app, &account, &fixtures::user()).await;
+        let count_before = Memberships::find().count(app.db()).await?;
+        let conn = delete(format!("/api/memberships/{}", membership.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 204);
+        assert!(membership.reload(app.db()).await?.is_none());
+        let count_after = Memberships::find().count(app.db()).await?;
+        assert_eq!(count_before - 1, count_after);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+        let account = fixtures::account(&app).await;
+        let membership = fixtures::membership(&app, &account, &fixtures::user()).await;
+        let count_before = Memberships::find().count(app.db()).await?;
+        let mut conn = delete(format!("/api/memberships/{}", membership.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_not_found!(conn);
+        assert!(membership.reload(app.db()).await?.is_some());
+        let count_after = Memberships::find().count(app.db()).await?;
+        assert_eq!(count_before, count_after);
         Ok(())
     }
 }

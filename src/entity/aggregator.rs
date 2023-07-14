@@ -1,11 +1,18 @@
 use super::{url::Url, AccountColumn, AccountRelation, Accounts, Memberships};
 use crate::clients::AggregatorClient;
-use sea_orm::{entity::prelude::*, ActiveValue, IntoActiveModel};
+use sea_orm::{
+    ActiveModelBehavior, ActiveValue, DeriveActiveEnum, DeriveEntityModel, DerivePrimaryKey,
+    DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef,
+    RelationTrait,
+};
 use serde::{Deserialize, Serialize};
-use std::error::Error;
-use std::fmt::{self, Display, Formatter};
-use std::str::FromStr;
+use std::{
+    error::Error,
+    fmt::{self, Display, Formatter},
+    str::FromStr,
+};
 use time::OffsetDateTime;
+use uuid::Uuid;
 
 mod update_aggregator;
 pub use update_aggregator::UpdateAggregator;

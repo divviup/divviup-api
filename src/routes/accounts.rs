@@ -1,38 +1,31 @@
 use crate::{
-    entity::{
-        Account, Accounts, CreateMembership, MembershipColumn, Memberships, NewAccount,
-        UpdateAccount,
-    },
+    entity::{Account, Accounts, CreateMembership, NewAccount, UpdateAccount},
     handler::Error,
     user::User,
-    Db,
+    Db, Permissions, PermissionsActor,
 };
-use sea_orm::{prelude::*, EntityTrait, TransactionTrait};
+use sea_orm::{ActiveModelTrait, EntityTrait, TransactionTrait};
 use trillium::{async_trait, Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
 use trillium_caching_headers::CachingHeadersExt;
 use trillium_router::RouterConnExt;
+use uuid::Uuid;
+
+impl Permissions for Account {
+    fn allow_write(&self, actor: &PermissionsActor) -> bool {
+        actor.is_admin() || actor.account_ids().contains(&self.id)
+    }
+}
 
 #[async_trait]
 impl FromConn for Account {
     async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let db = Db::from_conn(conn).await?;
-        let user = User::from_conn(conn).await?;
-        let account_id = conn.param("account_id")?;
-        let account_id = Uuid::parse_str(account_id).ok()?;
-
-        let account = if user.is_admin() {
-            Accounts::find_by_id(account_id).one(&db).await
-        } else {
-            Accounts::find_by_id(account_id)
-                .inner_join(Memberships)
-                .filter(MembershipColumn::UserEmail.eq(&user.email))
-                .one(&db)
-                .await
-        };
-
-        match account {
-            Ok(account) => account,
+        let actor = PermissionsActor::from_conn(conn).await?;
+        let db: &Db = conn.state()?;
+        let account_id = conn.param("account_id")?.parse::<Uuid>().ok()?;
+        match Accounts::find_by_id(account_id).one(db).await {
+            Ok(Some(account)) => actor.if_allowed(conn.method(), account),
+            Ok(None) => None,
             Err(error) => {
                 conn.set_state(Error::from(error));
                 None
@@ -46,18 +39,15 @@ pub async fn show(conn: &mut Conn, account: Account) -> Json<Account> {
     Json(account)
 }
 
-pub async fn index(_: &mut Conn, (user, db): (User, Db)) -> Result<impl Handler, Error> {
-    let accounts = if user.is_admin() {
-        Accounts::find().all(&db).await?
-    } else {
-        Accounts::find()
-            .inner_join(Memberships)
-            .filter(MembershipColumn::UserEmail.eq(&user.email))
-            .all(&db)
-            .await?
-    };
-
-    Ok(Json(accounts))
+pub async fn index(
+    _: &mut Conn,
+    (actor, db): (PermissionsActor, Db),
+) -> Result<impl Handler, Error> {
+    Accounts::for_actor(&actor)
+        .all(&db)
+        .await
+        .map(Json)
+        .map_err(Error::from)
 }
 
 pub async fn create(

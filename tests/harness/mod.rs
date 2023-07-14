@@ -10,6 +10,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, future::Future};
 use trillium::Handler;
 use trillium_client::Client;
+use trillium_http::HeaderValue;
 use trillium_testing::TestConn;
 
 pub use divviup_api::{
@@ -21,7 +22,7 @@ pub use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 pub use querystrong::QueryStrong;
 pub use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, ConnectionTrait, DbBackend, DbErr, EntityTrait,
-    IntoActiveModel, PaginatorTrait, QueryFilter, Schema,
+    IntoActiveModel, ModelTrait, PaginatorTrait, QueryFilter, Schema,
 };
 pub use serde_json::{json, Value};
 pub use test_harness::test;
@@ -175,6 +176,7 @@ pub trait TestExt {
     fn with_api_headers(self) -> Self;
     fn with_api_host(self) -> Self;
     fn with_app_host(self) -> Self;
+    fn with_auth_header(self, token: HeaderValue) -> Self;
 }
 
 impl TestExt for TestConn {
@@ -197,12 +199,32 @@ impl TestExt for TestConn {
         .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
         .with_api_host()
     }
+
+    fn with_auth_header(self, token: HeaderValue) -> Self {
+        self.with_request_header(KnownHeaderName::Authorization, token)
+    }
 }
 
 #[trillium::async_trait]
 pub trait Reload: Sized {
-    async fn reload(self, db: &impl ConnectionTrait) -> Result<Option<Self>, DbErr>;
+    async fn reload(&self, db: &impl ConnectionTrait) -> Result<Option<Self>, DbErr>;
 }
+macro_rules! impl_reload {
+    ($model:ty, $entity:ty) => {
+        #[trillium::async_trait]
+        impl Reload for $model {
+            async fn reload(&self, db: &impl ConnectionTrait) -> Result<Option<Self>, DbErr> {
+                <$entity>::find_by_id(self.id.clone()).one(db).await
+            }
+        }
+    };
+}
+
+impl_reload!(Account, Accounts);
+impl_reload!(Membership, Memberships);
+impl_reload!(Task, Tasks);
+impl_reload!(Aggregator, Aggregators);
+impl_reload!(ApiToken, ApiTokens);
 
 #[track_caller]
 pub fn assert_same_json_representation<T: serde::Serialize>(actual: &T, expected: &T) {

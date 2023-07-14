@@ -1,10 +1,7 @@
 use crate::{
-    entity::{
-        Account, Aggregator, AggregatorColumn, Aggregators, MembershipColumn, Memberships,
-        NewAggregator, UpdateAggregator,
-    },
+    entity::{Account, Aggregator, AggregatorColumn, Aggregators, NewAggregator, UpdateAggregator},
     handler::Error,
-    Db, User,
+    Db, Permissions, PermissionsActor,
 };
 use sea_orm::{
     sea_query::{self, all, any},
@@ -12,49 +9,22 @@ use sea_orm::{
 };
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
-use trillium_caching_headers::CachingHeadersExt;
 use trillium_router::RouterConnExt;
 use uuid::Uuid;
 
 #[trillium::async_trait]
 impl FromConn for Aggregator {
     async fn from_conn(conn: &mut Conn) -> Option<Self> {
+        let actor = PermissionsActor::from_conn(conn).await?;
         let db: &Db = conn.state()?;
-        let user: &User = conn.state()?;
-        let id = conn
-            .param("aggregator_id")
-            .and_then(|s| Uuid::parse_str(s).ok())?;
-
-        let aggregator = if user.is_admin() {
-            Aggregators::find_by_id(id)
-                .filter(AggregatorColumn::DeletedAt.is_null())
-                .one(db)
-                .await
-        } else if conn.method().is_safe() {
-            Aggregators::find_by_id(id)
-                .left_join(Memberships)
-                .filter(all![
-                    any![
-                        MembershipColumn::UserEmail.eq(&user.email),
-                        AggregatorColumn::AccountId.is_null()
-                    ],
-                    AggregatorColumn::DeletedAt.is_null()
-                ])
-                .one(db)
-                .await
-        } else {
-            Aggregators::find_by_id(id)
-                .inner_join(Memberships)
-                .filter(all![
-                    MembershipColumn::UserEmail.eq(&user.email),
-                    AggregatorColumn::DeletedAt.is_null()
-                ])
-                .one(db)
-                .await
-        };
-
+        let id = conn.param("aggregator_id")?.parse::<Uuid>().ok()?;
+        let aggregator = Aggregators::find_by_id(id)
+            .filter(AggregatorColumn::DeletedAt.is_null())
+            .one(db)
+            .await;
         match aggregator {
-            Ok(aggregator) => aggregator,
+            Ok(Some(aggregator)) => actor.if_allowed(conn.method(), aggregator),
+            Ok(None) => None,
             Err(error) => {
                 conn.set_state(Error::from(error));
                 None
@@ -63,8 +33,25 @@ impl FromConn for Aggregator {
     }
 }
 
-pub async fn show(conn: &mut Conn, aggregator: Aggregator) -> Json<Aggregator> {
-    conn.set_last_modified(aggregator.updated_at.into());
+impl Permissions for Aggregator {
+    fn allow_read(&self, actor: &crate::PermissionsActor) -> bool {
+        actor.is_admin()
+            || match &self.account_id {
+                Some(account_id) => actor.account_ids().contains(account_id),
+                None => true,
+            }
+    }
+
+    fn allow_write(&self, actor: &crate::PermissionsActor) -> bool {
+        actor.is_admin()
+            || match &self.account_id {
+                Some(account_id) => actor.account_ids().contains(account_id),
+                None => false,
+            }
+    }
+}
+
+pub async fn show(_: &mut Conn, aggregator: Aggregator) -> Json<Aggregator> {
     Json(aggregator)
 }
 

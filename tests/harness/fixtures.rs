@@ -129,3 +129,9 @@ pub async fn api_token(app: &DivviupApi, account: &Account) -> (ApiToken, Header
     let api_token = api_token.insert(app.db()).await.unwrap();
     (api_token, format!("Bearer {token}").into())
 }
+
+pub async fn admin_token(app: &DivviupApi) -> HeaderValue {
+    let account = admin_account(app).await;
+    let (_, header) = api_token(app, &account).await;
+    header
+}

@@ -4,9 +4,14 @@ use crate::{
         account, membership, AccountColumn, Accounts, Aggregator, AggregatorColumn, Aggregators,
     },
 };
-use sea_orm::{entity::prelude::*, ActiveValue, IntoActiveModel};
+use sea_orm::{
+    ActiveModelBehavior, ActiveModelTrait, ActiveValue, ConnectionTrait, DbErr, DeriveEntityModel,
+    DerivePrimaryKey, DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait,
+    Related, RelationDef, RelationTrait,
+};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
+use uuid::Uuid;
 use validator::{Validate, ValidationError};
 
 pub mod vdaf;
@@ -75,10 +80,9 @@ impl Model {
     }
 
     pub async fn aggregators(&self, db: &impl ConnectionTrait) -> Result<[Aggregator; 2], DbErr> {
-        let (leader, helper) =
-            futures_lite::future::try_zip(self.leader_aggregator(db), self.helper_aggregator(db))
-                .await?;
-        Ok([leader, helper])
+        futures_lite::future::try_zip(self.leader_aggregator(db), self.helper_aggregator(db))
+            .await
+            .map(|(leader, helper)| [leader, helper])
     }
 
     pub async fn first_party_aggregator(

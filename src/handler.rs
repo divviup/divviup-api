@@ -30,9 +30,9 @@ use trillium_macros::Handler;
 use trillium_sessions::sessions;
 
 pub(crate) use custom_mime_types::ReplaceMimeTypes;
-pub(crate) use error::Error;
 pub(crate) use misc::*;
 
+pub use error::Error;
 pub use origin_router::origin_router;
 
 #[derive(Handler, Debug)]

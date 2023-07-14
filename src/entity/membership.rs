@@ -1,7 +1,15 @@
-use crate::entity::{Account, AccountColumn, AccountRelation, Accounts, Aggregators, Tasks};
-use sea_orm::{prelude::*, IntoActiveModel};
+use crate::{
+    entity::{Account, AccountColumn, AccountRelation, Accounts, Aggregators, Tasks},
+    User,
+};
+use sea_orm::{
+    ActiveModelBehavior, ColumnTrait, DeriveEntityModel, DerivePrimaryKey, DeriveRelation,
+    EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, QueryFilter, Related, RelationDef,
+    RelationTrait, Select,
+};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
+use uuid::Uuid;
 use validator::{Validate, ValidationErrors};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
@@ -25,6 +33,12 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     Account,
+}
+
+impl Entity {
+    pub fn for_user(user: &User) -> Select<Self> {
+        Self::find().filter(Column::UserEmail.eq(&user.email))
+    }
 }
 
 impl Related<Accounts> for Entity {
@@ -75,7 +89,7 @@ impl CreateMembership {
             id: Uuid::new_v4(),
             account_id: account.id,
             user_email: self.user_email.unwrap(),
-            created_at: TimeDateTimeWithTimeZone::now_utc(),
+            created_at: OffsetDateTime::now_utc(),
         }
         .into_active_model())
     }

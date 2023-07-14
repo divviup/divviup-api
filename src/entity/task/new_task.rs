@@ -13,8 +13,8 @@ use sha2::{Digest, Sha256};
 use std::io::Cursor;
 use validator::ValidationErrors;
 
-fn in_the_future(time: &TimeDateTimeWithTimeZone) -> Result<(), ValidationError> {
-    if time < &TimeDateTimeWithTimeZone::now_utc() {
+fn in_the_future(time: &OffsetDateTime) -> Result<(), ValidationError> {
+    if time < &OffsetDateTime::now_utc() {
         Err(ValidationError::new("past"))
     } else {
         Ok(())
@@ -43,7 +43,7 @@ pub struct NewTask {
 
     #[validate(custom = "in_the_future")]
     #[serde(default, with = "time::serde::iso8601::option")]
-    pub expiration: Option<TimeDateTimeWithTimeZone>,
+    pub expiration: Option<OffsetDateTime>,
 
     #[validate(
         required,

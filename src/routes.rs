@@ -10,9 +10,9 @@ mod users;
 use crate::{
     clients::Auth0Client,
     handler::{
-        admin_required, destroy_session, logout_from_auth0,
+        actor_required, admin_required, destroy_session, logout_from_auth0,
         oauth2::{self, OauthClient},
-        redirect_if_logged_in, user_required, ReplaceMimeTypes,
+        redirect_if_logged_in, ReplaceMimeTypes,
     },
     ApiConfig,
 };
@@ -57,7 +57,7 @@ pub fn routes(config: &ApiConfig) -> impl Handler {
 fn api_routes(config: &ApiConfig) -> impl Handler {
     (
         ReplaceMimeTypes,
-        api(user_required),
+        api(actor_required),
         router()
             .get("/users/me", api(users::show))
             .get("/accounts", api(accounts::index))

@@ -82,6 +82,63 @@ mod index {
         assert_eq!(vec![task1, task2], tasks);
         Ok(())
     }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let task1 = fixtures::task(&app, &account).await;
+        let task2 = fixtures::task(&app, &account).await;
+
+        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+
+        assert_ok!(conn);
+        let tasks: Vec<Task> = conn.response_json().await;
+        assert_eq!(vec![task1, task2], tasks);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let task1 = fixtures::task(&app, &account).await;
+        let task2 = fixtures::task(&app, &account).await;
+
+        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+
+        assert_ok!(conn);
+        let tasks: Vec<Task> = conn.response_json().await;
+        assert_eq!(vec![task1, task2], tasks);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+
+        let account = fixtures::account(&app).await;
+        fixtures::task(&app, &account).await;
+        fixtures::task(&app, &account).await;
+
+        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+
+        assert_not_found!(conn);
+        Ok(())
+    }
 }
 
 mod create {
@@ -120,7 +177,7 @@ mod create {
         assert_eq!(task.vdaf, Vdaf::Count);
         assert_eq!(task.min_batch_size, 500);
         assert_eq!(task.time_precision_seconds, 60);
-        assert!(Tasks::find_by_id(task.id).one(app.db()).await?.is_some());
+        assert!(task.reload(app.db()).await?.is_some());
 
         Ok(())
     }
@@ -202,7 +259,66 @@ mod create {
 
         assert_response!(conn, 201);
         let task: Task = conn.response_json().await;
-        assert!(Tasks::find_by_id(task.id).one(app.db()).await?.is_some());
+        assert!(task.reload(app.db()).await?.is_some());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(valid_task_json(&leader, &helper))
+            .run_async(&app)
+            .await;
+
+        assert_response!(conn, 201);
+        let task: Task = conn.response_json().await;
+        assert!(task.reload(app.db()).await?.is_some());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let count_before = Tasks::find().count(app.db()).await?;
+        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(valid_task_json(&leader, &helper))
+            .run_async(&app)
+            .await;
+        let count_after = Tasks::find().count(app.db()).await?;
+        assert_response!(conn, 201);
+        assert_eq!(count_before + 1, count_after);
+        let task: Task = conn.response_json().await;
+        assert!(task.reload(app.db()).await?.is_some());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+
+        let account = fixtures::account(&app).await;
+        let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let count_before = Tasks::find().count(app.db()).await?;
+        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .with_request_json(valid_task_json(&leader, &helper))
+            .run_async(&app)
+            .await;
+
+        let count_after = Tasks::find().count(app.db()).await?;
+        assert_eq!(count_before, count_after);
+        assert_not_found!(conn);
         Ok(())
     }
 }
@@ -323,6 +439,53 @@ mod show {
         assert_not_found!(conn);
         Ok(())
     }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut conn = get(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let response_task: Task = conn.response_json().await;
+        assert_eq!(response_task, task);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut conn = get(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let response_task: Task = conn.response_json().await;
+        assert_eq!(response_task, task);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+        let account = fixtures::account(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut conn = get(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_not_found!(conn);
+        Ok(())
+    }
 }
 
 mod update {
@@ -343,14 +506,7 @@ mod update {
         assert_ok!(conn);
         let response_task: Task = conn.response_json().await;
         assert_eq!(response_task.name, new_name);
-        assert_eq!(
-            Tasks::find_by_id(task.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
-            new_name
-        );
+        assert_eq!(task.reload(app.db()).await?.unwrap().name, new_name);
 
         Ok(())
     }
@@ -371,11 +527,7 @@ mod update {
         assert!(errors.get("name").is_some());
 
         assert_eq!(
-            Tasks::find_by_id(task.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
+            task.reload(app.db()).await?.unwrap().name,
             task.name // unchanged
         );
 
@@ -397,11 +549,7 @@ mod update {
 
         assert_not_found!(conn);
         assert_eq!(
-            Tasks::find_by_id(task.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
+            task.reload(app.db()).await?.unwrap().name,
             task.name // unchanged
         );
         Ok(())
@@ -423,15 +571,7 @@ mod update {
         assert_ok!(conn);
         let response_task: Task = conn.response_json().await;
         assert_eq!(response_task.name, new_name);
-        assert_eq!(
-            Tasks::find_by_id(task.id)
-                .one(app.db())
-                .await?
-                .unwrap()
-                .name,
-            new_name
-        );
-
+        assert_eq!(task.reload(app.db()).await?.unwrap().name, new_name);
         Ok(())
     }
 
@@ -444,6 +584,66 @@ mod update {
             .with_state(user)
             .run_async(&app)
             .await;
+        assert_not_found!(conn);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn admin_token(app: DivviupApi) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let task = fixtures::task(&app, &account).await;
+
+        let new_name = format!("new name {}", fixtures::random_name());
+        let mut conn = patch(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_request_json(json!({ "name": &new_name }))
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let response_task: Task = conn.response_json().await;
+        assert_eq!(response_task.name, new_name);
+        assert_eq!(task.reload(app.db()).await?.unwrap().name, new_name);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn member_token(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let task = fixtures::task(&app, &account).await;
+
+        let new_name = format!("new name {}", fixtures::random_name());
+        let mut conn = patch(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_request_json(json!({ "name": &new_name }))
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let response_task: Task = conn.response_json().await;
+        assert_eq!(response_task.name, new_name);
+        assert_eq!(task.reload(app.db()).await?.unwrap().name, new_name);
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn nonmember_token(app: DivviupApi) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+        let account = fixtures::account(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let name_before = task.name.clone();
+        let new_name = format!("new name {}", fixtures::random_name());
+        let mut conn = patch(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_request_json(json!({ "name": &new_name }))
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+
+        assert_eq!(task.reload(app.db()).await?.unwrap().name, name_before);
         assert_not_found!(conn);
         Ok(())
     }
@@ -508,6 +708,68 @@ mod collector_auth_tokens {
         assert_ok!(conn);
         let body: Vec<String> = conn.response_json().await;
         assert_eq!(vec![auth_token], body);
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn admin_token(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let token = fixtures::admin_token(&app).await;
+        let account = fixtures::account(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        let auth_token = client_logs
+            .last()
+            .response_json::<TaskResponse>()
+            .collector_auth_token
+            .unwrap();
+
+        assert_ok!(conn);
+        let body: Vec<String> = conn.response_json().await;
+        assert_eq!(vec![auth_token], body);
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn member_token(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &account).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+        let auth_token = client_logs
+            .last()
+            .response_json::<TaskResponse>()
+            .collector_auth_token
+            .unwrap();
+
+        assert_ok!(conn);
+        let body: Vec<String> = conn.response_json().await;
+        assert_eq!(vec![auth_token], body);
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn nonmember_token(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let other_account = fixtures::account(&app).await;
+        let (_, token) = fixtures::api_token(&app, &other_account).await;
+
+        let account = fixtures::account(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
+            .with_api_headers()
+            .with_auth_header(token)
+            .run_async(&app)
+            .await;
+
+        assert!(client_logs.logs().is_empty());
+        assert_not_found!(conn);
         Ok(())
     }
 }

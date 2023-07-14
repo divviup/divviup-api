@@ -3,6 +3,25 @@ mod harness;
 use harness::{assert_eq, test, *};
 use trillium_sessions::{Session, SessionConnExt};
 
+#[test(harness = set_up)]
+async fn first_use_of_a_token_updates_last_used_at(app: DivviupApi) -> TestResult {
+    let account = fixtures::account(&app).await;
+    let (api_token, token) = fixtures::api_token(&app, &account).await;
+    assert!(api_token.last_used_at.is_none());
+    get("/api/accounts") //this could be any token-authorized route
+        .with_api_headers()
+        .with_auth_header(token)
+        .run_async(&app)
+        .await;
+    assert!(api_token
+        .reload(app.db())
+        .await?
+        .unwrap()
+        .last_used_at
+        .is_some());
+    Ok(())
+}
+
 mod login {
     use super::{assert_eq, test, *};
 
