@@ -8,10 +8,7 @@ pub struct Db(DbConn);
 
 impl Db {
     pub async fn connect(url: &str) -> Self {
-        Database::connect(url)
-            .await
-            .map(Self)
-            .expect("could not connect to the database")
+        Database::connect(url).await.map(Self).unwrap()
     }
 }
 
