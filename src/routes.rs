@@ -14,7 +14,7 @@ use crate::{
         oauth2::{self, OauthClient},
         redirect_if_logged_in, ReplaceMimeTypes,
     },
-    ApiConfig,
+    Config,
 };
 pub use health_check::health_check;
 use trillium::{
@@ -25,7 +25,7 @@ use trillium_api::api;
 use trillium_redirect::redirect;
 use trillium_router::router;
 
-pub fn routes(config: &ApiConfig) -> impl Handler {
+pub fn routes(config: &Config) -> impl Handler {
     let oauth2_client = OauthClient::new(&config.oauth_config());
     let auth0_client = Auth0Client::new(config);
 
@@ -54,7 +54,7 @@ pub fn routes(config: &ApiConfig) -> impl Handler {
         )
 }
 
-fn api_routes(config: &ApiConfig) -> impl Handler {
+fn api_routes(config: &Config) -> impl Handler {
     (
         ReplaceMimeTypes,
         api(actor_required),
@@ -88,7 +88,7 @@ fn api_routes(config: &ApiConfig) -> impl Handler {
     )
 }
 
-fn accounts_routes(config: &ApiConfig) -> impl Handler {
+fn accounts_routes(config: &Config) -> impl Handler {
     router()
         .patch("/", api(accounts::update))
         .get("/", api(accounts::show))

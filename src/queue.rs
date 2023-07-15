@@ -4,7 +4,7 @@ pub use job::*;
 
 use crate::{
     entity::queue::{ActiveModel, Column, Entity, Model},
-    ApiConfig, Db, DivviupApi,
+    Config, Db, DivviupApi,
 };
 use sea_orm::{
     sea_query::{self, all, Expr},
@@ -27,7 +27,7 @@ pub struct Queue {
     job_state: Arc<SharedJobState>,
 }
 /*
-These configuration variables may eventually be useful to put on ApiConfig
+These configuration variables may eventually be useful to put on Config
 */
 const MAX_RETRY: i32 = 5;
 const QUEUE_CHECK_INTERVAL: Range<u64> = 60_000..120_000;
@@ -53,7 +53,7 @@ impl From<&DivviupApi> for Queue {
 }
 
 impl Queue {
-    pub fn new(db: &Db, config: &ApiConfig) -> Self {
+    pub fn new(db: &Db, config: &Config) -> Self {
         Self {
             observer: Default::default(),
             db: db.clone(),

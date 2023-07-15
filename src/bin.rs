@@ -1,4 +1,4 @@
-use divviup_api::{ApiConfig, DivviupApi, Queue};
+use divviup_api::{Config, DivviupApi, Queue};
 
 use trillium_http::Stopper;
 use trillium_tokio::CloneCounterObserver;
@@ -7,7 +7,7 @@ use trillium_tokio::CloneCounterObserver;
 async fn main() {
     env_logger::init();
 
-    let config = match ApiConfig::from_env() {
+    let config = match Config::from_env() {
         Ok(config) => config,
         Err(e) => panic!("{e}"),
     };

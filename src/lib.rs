@@ -20,7 +20,7 @@ mod routes;
 pub mod telemetry;
 mod user;
 
-pub use config::{ApiConfig, ApiConfigError};
+pub use config::{Config, ConfigError};
 pub use db::Db;
 pub use handler::{DivviupApi, Error};
 pub use permissions::{Permissions, PermissionsActor};

@@ -1,4 +1,4 @@
-use crate::{handler::origin_router, ApiConfig};
+use crate::{handler::origin_router, Config};
 use std::time::Duration;
 use trillium::{
     Conn, Handler,
@@ -11,7 +11,7 @@ use url::Url;
 
 const ONE_YEAR: Duration = Duration::from_secs(60 * 60 * 24 * 365);
 
-pub fn static_assets(config: &ApiConfig) -> impl Handler {
+pub fn static_assets(config: &Config) -> impl Handler {
     origin_router().with_handler(
         config.app_url.as_ref(),
         ReactApp {

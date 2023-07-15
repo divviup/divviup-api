@@ -1,6 +1,6 @@
 use crate::{
     clients::{ClientConnExt, ClientError},
-    ApiConfig,
+    Config,
 };
 use email_address::EmailAddress;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -26,7 +26,7 @@ impl FromConn for PostmarkClient {
 }
 
 impl PostmarkClient {
-    pub fn new(config: &ApiConfig) -> Self {
+    pub fn new(config: &Config) -> Self {
         Self {
             token: config.postmark_token.clone(),
             client: config.client.clone(),

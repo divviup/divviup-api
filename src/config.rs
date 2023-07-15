@@ -10,7 +10,7 @@ use url::Url;
 const POSTMARK_URL: &str = "https://api.postmarkapp.com";
 
 #[derive(Debug, Clone)]
-pub struct ApiConfig {
+pub struct Config {
     pub session_secret: String,
     pub api_url: Url,
     pub app_url: Url,
@@ -28,7 +28,7 @@ pub struct ApiConfig {
 }
 
 #[derive(Debug, Error, Clone, Copy)]
-pub enum ApiConfigError {
+pub enum ConfigError {
     #[error("environment variable `{0}` was not found.")]
     MissingEnvVar(&'static str),
 
@@ -39,23 +39,23 @@ pub enum ApiConfigError {
     InvalidUrl(#[from] url::ParseError),
 }
 
-fn var<T: FromStr>(name: &'static str) -> Result<T, ApiConfigError> {
+fn var<T: FromStr>(name: &'static str) -> Result<T, ConfigError> {
     let format = std::any::type_name::<T>();
     std::env::var(name)
         .map_err(|error| match error {
-            VarError::NotPresent => ApiConfigError::MissingEnvVar(name),
-            VarError::NotUnicode(_) => ApiConfigError::InvalidEnvVarFormat(name, format),
+            VarError::NotPresent => ConfigError::MissingEnvVar(name),
+            VarError::NotUnicode(_) => ConfigError::InvalidEnvVarFormat(name, format),
         })
         .and_then(|input| {
             input
                 .parse()
-                .map_err(|_| ApiConfigError::InvalidEnvVarFormat(name, format))
+                .map_err(|_| ConfigError::InvalidEnvVarFormat(name, format))
         })
 }
 
-fn var_optional<T: FromStr>(name: &'static str, default: T) -> Result<T, ApiConfigError> {
+fn var_optional<T: FromStr>(name: &'static str, default: T) -> Result<T, ConfigError> {
     match var(name) {
-        Err(ApiConfigError::MissingEnvVar(_)) => Ok(default),
+        Err(ConfigError::MissingEnvVar(_)) => Ok(default),
         other => other,
     }
 }
@@ -73,8 +73,8 @@ fn build_client() -> trillium_client::Client {
     ))
 }
 
-impl ApiConfig {
-    pub fn from_env() -> Result<Self, ApiConfigError> {
+impl Config {
+    pub fn from_env() -> Result<Self, ConfigError> {
         Ok(Self {
             database_url: var("DATABASE_URL")?,
             session_secret: var("SESSION_SECRET")?,
@@ -107,7 +107,7 @@ impl ApiConfig {
     }
 }
 
-impl AsRef<Client> for ApiConfig {
+impl AsRef<Client> for Config {
     fn as_ref(&self) -> &Client {
         &self.client
     }
