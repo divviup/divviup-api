@@ -130,7 +130,7 @@ impl AsRef<Client> for Config {
 pub enum SessionSecretsDecodeError {
     #[error("session secret must be at least 32 bytes after base64 decode")]
     TooShort,
-    #[error("session secret must be url-safe no-pad base64")]
+    #[error("session secret must be base64url without padding")]
     Base64,
     #[error("at least one session secret must be provided")]
     Missing,
