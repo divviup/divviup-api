@@ -17,7 +17,7 @@ use url::Url;
 
 use crate::{
     clients::{ClientConnExt, ClientError, PostmarkClient},
-    ApiConfig,
+    Config,
 };
 
 #[derive(Debug, Clone)]
@@ -42,7 +42,7 @@ fn generate_password() -> String {
 }
 
 impl Auth0Client {
-    pub fn new(config: &ApiConfig) -> Self {
+    pub fn new(config: &Config) -> Self {
         Self {
             token: Arc::new(RwLock::new(None)),
             client: config.client.clone(),

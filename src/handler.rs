@@ -10,7 +10,7 @@ pub(crate) mod oauth2;
 pub(crate) mod origin_router;
 pub(crate) mod session_store;
 
-use crate::{routes, ApiConfig, Db};
+use crate::{routes, Config, Db};
 
 use cors::cors_headers;
 use error::ErrorHandler;
@@ -40,7 +40,7 @@ pub struct DivviupApi {
     #[handler(except = init)]
     handler: Box<dyn Handler>,
     db: Db,
-    config: Arc<ApiConfig>,
+    config: Arc<Config>,
 }
 
 impl DivviupApi {
@@ -53,7 +53,7 @@ impl DivviupApi {
         self.handler.init(info).await
     }
 
-    pub async fn new(config: ApiConfig) -> Self {
+    pub async fn new(config: Config) -> Self {
         let config = Arc::new(config);
         let db = Db::connect(config.database_url.as_ref()).await;
         Self {
@@ -77,7 +77,7 @@ impl DivviupApi {
         &self.db
     }
 
-    pub fn config(&self) -> &ApiConfig {
+    pub fn config(&self) -> &Config {
         &self.config
     }
 }
@@ -88,7 +88,7 @@ impl AsRef<Db> for DivviupApi {
     }
 }
 
-fn api(db: &Db, config: &ApiConfig) -> impl Handler {
+fn api(db: &Db, config: &Config) -> impl Handler {
     (
         compression(),
         #[cfg(feature = "integration-testing")]

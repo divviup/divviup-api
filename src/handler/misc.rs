@@ -1,11 +1,11 @@
-use crate::{ApiConfig, PermissionsActor, User};
+use crate::{Config, PermissionsActor, User};
 use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Halt};
 use trillium_redirect::Redirect;
 use trillium_sessions::SessionConnExt;
 
 /// note(jbr): most of these need to find better places to live
-pub fn redirect_if_logged_in(config: &ApiConfig) -> impl Handler {
+pub fn redirect_if_logged_in(config: &Config) -> impl Handler {
     let app_url = config.app_url.to_string();
     api(move |_: &mut Conn, user: Option<User>| {
         let app_url = app_url.clone();
@@ -19,7 +19,7 @@ pub fn redirect_if_logged_in(config: &ApiConfig) -> impl Handler {
     })
 }
 
-pub fn logout_from_auth0(config: &ApiConfig) -> impl Handler {
+pub fn logout_from_auth0(config: &Config) -> impl Handler {
     let mut logout_url = config.auth_url.join("/v2/logout").unwrap();
 
     logout_url.query_pairs_mut().extend_pairs([

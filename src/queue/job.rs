@@ -1,7 +1,7 @@
 use crate::{
     clients::{Auth0Client, ClientError, PostmarkClient},
     entity::Membership,
-    ApiConfig,
+    Config,
 };
 use sea_orm::{ActiveModelTrait, ConnectionTrait, DbErr};
 use serde::{Deserialize, Serialize};
@@ -78,8 +78,8 @@ pub struct SharedJobState {
     pub auth0_client: Auth0Client,
     pub postmark_client: PostmarkClient,
 }
-impl From<&ApiConfig> for SharedJobState {
-    fn from(config: &ApiConfig) -> Self {
+impl From<&Config> for SharedJobState {
+    fn from(config: &Config) -> Self {
         Self {
             auth0_client: Auth0Client::new(config),
             postmark_client: PostmarkClient::new(config),

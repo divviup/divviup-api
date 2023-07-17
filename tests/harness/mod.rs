@@ -4,7 +4,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use divviup_api::{
     clients::aggregator_client::api_types::{Encode, HpkeConfig},
     entity::queue,
-    ApiConfig, Db,
+    Config, Db,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, future::Future};
@@ -68,8 +68,8 @@ async fn set_up_schema(db: &Db) {
     set_up_schema_for(&schema, db, ApiTokens).await;
 }
 
-pub fn config(api_mocks: impl Handler) -> ApiConfig {
-    ApiConfig {
+pub fn config(api_mocks: impl Handler) -> Config {
+    Config {
         session_secret: "x".repeat(32),
         api_url: "https://api.example".parse().unwrap(),
         app_url: "https://app.example".parse().unwrap(),

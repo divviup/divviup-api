@@ -1,4 +1,4 @@
-use crate::ApiConfig;
+use crate::Config;
 use trillium::{
     Conn, Handler,
     KnownHeaderName::{
@@ -43,13 +43,13 @@ impl Handler for CorsHeaders {
 }
 
 impl CorsHeaders {
-    pub fn new(config: &ApiConfig) -> Self {
+    pub fn new(config: &Config) -> Self {
         let mut origin = config.app_url.to_string();
         origin.pop();
         Self { origin }
     }
 }
 
-pub fn cors_headers(config: &ApiConfig) -> impl Handler {
+pub fn cors_headers(config: &Config) -> impl Handler {
     CorsHeaders::new(config)
 }
