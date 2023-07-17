@@ -94,8 +94,12 @@ fn api(db: &Db, config: &Config) -> impl Handler {
         #[cfg(feature = "integration-testing")]
         state(crate::User::for_integration_testing()),
         cookies(),
-        sessions(SessionStore::new(db.clone()), config.session_secret.clone())
-            .with_cookie_name("divviup.sid"),
+        sessions(
+            SessionStore::new(db.clone()),
+            &config.session_secrets.current,
+        )
+        .with_cookie_name("divviup.sid")
+        .with_older_secrets(&config.session_secrets.older),
         state(config.client.clone()),
         cors_headers(config),
         cache_control([Private, MustRevalidate]),
