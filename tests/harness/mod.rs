@@ -7,7 +7,7 @@ use divviup_api::{
     Config, Db,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use std::{error::Error, future::Future};
+use std::{error::Error, future::Future, iter::repeat_with};
 use trillium::Handler;
 use trillium_client::Client;
 use trillium_http::HeaderValue;
@@ -70,7 +70,10 @@ async fn set_up_schema(db: &Db) {
 
 pub fn config(api_mocks: impl Handler) -> Config {
     Config {
-        session_secret: "x".repeat(32),
+        session_secrets: repeat_with(|| fastrand::u8(..))
+            .take(32)
+            .collect::<Vec<_>>()
+            .into(),
         api_url: "https://api.example".parse().unwrap(),
         app_url: "https://app.example".parse().unwrap(),
         database_url: "sqlite::memory:".parse().unwrap(),
