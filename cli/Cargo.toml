@@ -8,12 +8,12 @@ name = "divviup"
 path = "src/main.rs"
 
 [dependencies]
-clap = { version = "4.3.14", features = ["derive", "env"] }
-thiserror = "1.0.43"
+clap = { version = "4.3.19", features = ["derive", "env"] }
+thiserror = "1.0.44"
 divviup-client = { path = "../client" }
 trillium-rustls = "0.4.0"
 trillium-tokio = "0.3.1"
-serde = "1.0.173"
+serde = "1.0.175"
 email_address = "0.2.4"
 humantime = "2.1.0"
 base64 = "0.21.2"
