@@ -323,11 +323,18 @@ const helps: {
     title: "Time precision",
     short: "Granularity of client report timestamps.",
     long: (
-      <p>
-        All client report timestamps will be rounded to the previous multiple of
-        this duration. If the query type is Time Interval, then query time
-        intervals must start and end on multiples of this duration as well.
-      </p>
+      <>
+        <p>
+          All client report timestamps will be rounded down to the previous
+          multiple of this duration.
+        </p>
+        <p>
+          If the query type is Time Interval, then query time intervals must
+          have a duration at least as long as the time precision, must have a
+          duration that is a multiple of the time precision, and must start and
+          end on multiples of the time precision as well.
+        </p>
+      </>
     ),
   },
 
