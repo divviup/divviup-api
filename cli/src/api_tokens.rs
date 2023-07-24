@@ -1,4 +1,4 @@
-use crate::{output, CliResult};
+use crate::{CliResult, Output};
 use clap::Subcommand;
 use divviup_client::{DivviupClient, Uuid};
 
@@ -10,22 +10,25 @@ pub enum ApiTokenAction {
 }
 
 impl ApiTokenAction {
-    pub async fn run(self, account_id: Uuid, client: DivviupClient) -> CliResult {
+    pub(crate) async fn run(
+        self,
+        account_id: Uuid,
+        client: DivviupClient,
+        output: Output,
+    ) -> CliResult {
         match self {
             ApiTokenAction::List => {
-                output(client.api_tokens(account_id).await?);
-                Ok(())
+                output.display(client.api_tokens(account_id).await?);
             }
 
             ApiTokenAction::Create => {
-                output(client.create_api_token(account_id).await?);
-                Ok(())
+                output.display(client.create_api_token(account_id).await?);
             }
 
             ApiTokenAction::Delete { api_token_id } => {
                 client.delete_api_token(api_token_id).await?;
-                Ok(())
             }
         }
+        Ok(())
     }
 }

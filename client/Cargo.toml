@@ -14,6 +14,8 @@ trillium-http = "0.3.2"
 url = { version = "2.4.0", features = ["serde"] }
 uuid = { version = "1.4.1", features = ["v4", "fast-rng", "serde"] }
 time = { version = "0.3.23", features = ["serde", "serde-well-known"] }
+log = "0.4.19"
+pad-adapter = "0.1.1"
 
 [dev-dependencies]
 divviup-api = { version = "*", path = ".." }

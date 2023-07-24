@@ -1,4 +1,4 @@
-use crate::{output, CliResult};
+use crate::{CliResult, Output};
 use clap::Subcommand;
 use divviup_client::{DivviupClient, NewAggregator, Url, Uuid};
 
@@ -61,9 +61,14 @@ pub enum AggregatorAction {
 }
 
 impl AggregatorAction {
-    pub(crate) async fn run(self, account_id: Uuid, client: DivviupClient) -> CliResult {
+    pub(crate) async fn run(
+        self,
+        account_id: Uuid,
+        client: DivviupClient,
+        output: Output,
+    ) -> CliResult {
         match self {
-            AggregatorAction::List => output(client.aggregators(account_id).await?),
+            AggregatorAction::List => output.display(client.aggregators(account_id).await?),
 
             AggregatorAction::Create {
                 role,
@@ -71,7 +76,7 @@ impl AggregatorAction {
                 dap_url,
                 api_url,
                 bearer_token,
-            } => output(
+            } => output.display(
                 client
                     .create_aggregator(
                         account_id,
@@ -89,7 +94,7 @@ impl AggregatorAction {
             AggregatorAction::Rename {
                 aggregator_id,
                 name,
-            } => output(client.rename_aggregator(aggregator_id, &name).await?),
+            } => output.display(client.rename_aggregator(aggregator_id, &name).await?),
         }
         Ok(())
     }

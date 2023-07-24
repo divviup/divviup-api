@@ -1,4 +1,4 @@
-use crate::{output, CliResult};
+use crate::{CliResult, Output};
 use clap::Subcommand;
 use divviup_client::{DivviupClient, Uuid};
 use email_address::EmailAddress;
@@ -11,12 +11,17 @@ pub enum MembershipAction {
 }
 
 impl MembershipAction {
-    pub(crate) async fn run(self, account_id: Uuid, client: DivviupClient) -> CliResult {
+    pub(crate) async fn run(
+        self,
+        account_id: Uuid,
+        client: DivviupClient,
+        output: Output,
+    ) -> CliResult {
         match self {
-            MembershipAction::List => output(client.memberships(account_id).await?),
+            MembershipAction::List => output.display(client.memberships(account_id).await?),
 
             MembershipAction::Create { email } => {
-                output(client.create_membership(account_id, email.as_ref()).await?)
+                output.display(client.create_membership(account_id, email.as_ref()).await?)
             }
 
             MembershipAction::Delete { membership_id } => {

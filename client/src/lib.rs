@@ -3,13 +3,14 @@ mod aggregator;
 mod api_token;
 mod membership;
 mod task;
+mod validation_errors;
 
 const CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
 
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use std::{future::Future, pin::Pin};
-use trillium_http::{HeaderValue, Headers, KnownHeaderName, Method};
+use trillium_http::{HeaderValue, Headers, KnownHeaderName, Method, Status};
 
 pub use account::Account;
 pub use aggregator::{Aggregator, NewAggregator, Role};
@@ -21,6 +22,7 @@ pub use trillium_client::Client;
 pub use trillium_client::Conn;
 pub use url::Url;
 pub use uuid::Uuid;
+pub use validation_errors::ValidationErrors;
 
 trait ErrInto<T, E1, E2> {
     fn err_into(self) -> Result<T, E2>;
@@ -266,9 +268,12 @@ pub enum Error {
     HttpStatusNotSuccess {
         method: Method,
         url: Url,
-        status: Option<trillium_http::Status>,
+        status: Option<Status>,
         body: String,
     },
+
+    #[error("Validation errors:\n{0}")]
+    ValidationErrors(ValidationErrors),
 }
 
 pub trait ClientConnExt: Sized {
@@ -280,20 +285,26 @@ impl ClientConnExt for Conn {
         self,
     ) -> Pin<Box<dyn Future<Output = ClientResult<Self>> + Send + 'static>> {
         Box::pin(async move {
-            match self.await?.success() {
-                Ok(conn) => Ok(conn),
-                Err(mut error) => {
-                    let status = error.status();
-                    let url = error.url().clone();
-                    let method = error.method();
-                    let body = error.response_body().await?;
-                    Err(Error::HttpStatusNotSuccess {
-                        method,
-                        url,
-                        status,
-                        body,
-                    })
-                }
+            let mut error = match self.await?.success() {
+                Ok(conn) => return Ok(conn),
+                Err(error) => error,
+            };
+
+            let status = error.status();
+            if let Some(Status::BadRequest) = status {
+                let body = error.response_body().read_string().await?;
+                log::trace!("{body}");
+                Err(Error::ValidationErrors(serde_json::from_str(&body)?))
+            } else {
+                let url = error.url().clone();
+                let method = error.method();
+                let body = error.response_body().await?;
+                Err(Error::HttpStatusNotSuccess {
+                    method,
+                    url,
+                    status,
+                    body,
+                })
             }
         })
     }

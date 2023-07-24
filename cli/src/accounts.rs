@@ -1,6 +1,8 @@
-use crate::{output, CliResult};
+use crate::CliResult;
 use clap::Subcommand;
 use divviup_client::{Account, DivviupClient, Uuid};
+
+use super::Output;
 
 #[derive(Subcommand, Debug)]
 pub enum AccountAction {
@@ -15,17 +17,18 @@ impl AccountAction {
         account_id: Uuid,
         client: DivviupClient,
         accounts: Option<Vec<Account>>,
+        output: Output,
     ) -> CliResult {
         match &self {
-            AccountAction::List => output(match accounts {
+            AccountAction::List => output.display(match accounts {
                 Some(accounts) => accounts,
                 None => client.accounts().await?,
             }),
 
-            AccountAction::Create { name } => output(client.create_account(name).await?),
+            AccountAction::Create { name } => output.display(client.create_account(name).await?),
 
             AccountAction::Rename { name } => {
-                output(client.rename_account(account_id, name).await?)
+                output.display(client.rename_account(account_id, name).await?)
             }
         }
 

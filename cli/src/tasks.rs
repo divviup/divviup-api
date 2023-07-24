@@ -1,4 +1,4 @@
-use crate::{output, CliResult};
+use crate::{CliResult, Output};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use clap::Subcommand;
 use divviup_client::{NewTask, Uuid, Vdaf};
@@ -62,9 +62,10 @@ impl TaskAction {
         self,
         account_id: divviup_client::Uuid,
         client: divviup_client::DivviupClient,
+        output: Output,
     ) -> CliResult {
         match self {
-            TaskAction::List => output(client.tasks(account_id).await?),
+            TaskAction::List => output.display(client.tasks(account_id).await?),
             TaskAction::Create {
                 name,
                 leader_aggregator_id,
@@ -121,15 +122,15 @@ impl TaskAction {
                     hpke_config,
                 };
 
-                output(client.create_task(account_id, task).await?)
+                output.display(client.create_task(account_id, task).await?)
             }
 
             TaskAction::Rename { task_id, name } => {
-                output(client.rename_task(&task_id, &name).await?)
+                output.display(client.rename_task(&task_id, &name).await?)
             }
 
             TaskAction::CollectorAuthTokens { task_id } => {
-                output(client.task_collector_auth_tokens(&task_id).await?)
+                output.display(client.task_collector_auth_tokens(&task_id).await?)
             }
         }
 
