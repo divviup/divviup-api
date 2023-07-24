@@ -4,23 +4,30 @@ mod api_tokens;
 mod memberships;
 mod tasks;
 
-use std::{
-    fmt::{Debug, Display},
-    io::IsTerminal,
-    process::ExitCode,
-};
-
 use accounts::AccountAction;
 use aggregators::AggregatorAction;
 use api_tokens::ApiTokenAction;
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
-use divviup_client::{Client, DivviupClient, Url, Uuid};
+use const_format::concatcp;
+use divviup_client::{Client, DivviupClient, HeaderValue, KnownHeaderName, Url, Uuid};
 use memberships::MembershipAction;
 use serde::Serialize;
+use std::{
+    fmt::{Debug, Display},
+    io::IsTerminal,
+    process::ExitCode,
+};
 use tasks::TaskAction;
 use trillium_rustls::RustlsConfig;
 use trillium_tokio::ClientConfig;
+
+pub const USER_AGENT: &str = concatcp!(
+    "divviup-cli/",
+    env!("CARGO_PKG_VERSION"),
+    " ",
+    divviup_client::USER_AGENT
+);
 
 #[derive(ValueEnum, Debug, Default, Clone, Copy)]
 enum Output {
@@ -120,10 +127,13 @@ impl ClientBin {
         let mut client = DivviupClient::new(
             self.token.clone(),
             Client::new(RustlsConfig::<ClientConfig>::default()).with_default_pool(),
-        );
+        )
+        .with_header(KnownHeaderName::UserAgent, HeaderValue::from(USER_AGENT));
+
         if let Some(url) = self.url.clone() {
             client.set_url(url);
         }
+
         client
     }
 

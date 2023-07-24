@@ -5,12 +5,15 @@ mod membership;
 mod task;
 mod validation_errors;
 
-const CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
+pub const CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
+pub const DEFAULT_URL: &str = "https://api.staging.divviup.org/";
+pub const USER_AGENT: &str = concat!("divviup-client/", env!("CARGO_PKG_VERSION"));
 
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use std::{future::Future, pin::Pin};
-use trillium_http::{HeaderValue, Headers, KnownHeaderName, Method, Status};
+use trillium_http::{HeaderName, HeaderValues};
+pub use trillium_http::{HeaderValue, Headers, KnownHeaderName, Method, Status};
 
 pub use account::Account;
 pub use aggregator::{Aggregator, NewAggregator, Role};
@@ -18,6 +21,7 @@ pub use api_token::ApiToken;
 pub use membership::Membership;
 pub use task::{NewTask, Task, Vdaf};
 pub use time::OffsetDateTime;
+pub use trillium_client;
 pub use trillium_client::Client;
 pub use trillium_client::Conn;
 pub use url::Url;
@@ -43,11 +47,10 @@ pub struct DivviupClient {
     url: Url,
 }
 
-const DEFAULT_URL: &str = "https://api.staging.divviup.org/";
-
 impl DivviupClient {
     pub fn new(token: String, http_client: impl Into<Client>) -> Self {
         let headers = Headers::from_iter([
+            (KnownHeaderName::UserAgent, HeaderValue::from(USER_AGENT)),
             (KnownHeaderName::Accept, HeaderValue::from(CONTENT_TYPE)),
             (
                 KnownHeaderName::Authorization,
@@ -60,6 +63,31 @@ impl DivviupClient {
             http_client: http_client.into(),
             headers,
         }
+    }
+
+    pub fn with_header(
+        mut self,
+        name: impl Into<HeaderName<'static>>,
+        value: impl Into<HeaderValues>,
+    ) -> Self {
+        self.insert_header(name, value);
+        self
+    }
+
+    pub fn insert_header(
+        &mut self,
+        name: impl Into<HeaderName<'static>>,
+        value: impl Into<HeaderValues>,
+    ) {
+        self.headers.insert(name, value);
+    }
+
+    pub fn headers(&self) -> &Headers {
+        &self.headers
+    }
+
+    pub fn headers_mut(&mut self) -> &mut Headers {
+        &mut self.headers
     }
 
     pub fn set_url(&mut self, url: Url) {
