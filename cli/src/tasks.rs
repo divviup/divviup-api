@@ -40,7 +40,7 @@ pub enum TaskAction {
         hpke_config_path: Option<PathBuf>,
         #[arg(long, required_unless_present("hpke_config_path"))]
         hpke_config_base64: Option<String>,
-        #[arg(long, required_if_eq("vdaf", "histogram"))]
+        #[arg(long, required_if_eq("vdaf", "histogram"), value_delimiter = ',')]
         buckets: Option<Vec<u64>>,
         #[arg(long, required_if_eq_any([("vdaf", "count_vec"), ("vdaf", "sum_vec")]))]
         length: Option<u64>,
