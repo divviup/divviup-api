@@ -117,10 +117,8 @@ export interface Aggregator {
 }
 
 export interface NewAggregator {
-  role: Role;
   name: string;
   api_url: string;
-  dap_url: string;
   bearer_token: string;
   is_first_party?: boolean;
 }
