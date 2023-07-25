@@ -70,6 +70,8 @@ impl NewAggregator {
             updated_at: OffsetDateTime::now_utc(),
             deleted_at: None,
             is_first_party: account.is_none() && self.is_first_party.unwrap_or(true),
+            query_types: aggregator_config.query_types.into(),
+            vdafs: aggregator_config.vdafs.into(),
         }
         .into_active_model())
     }

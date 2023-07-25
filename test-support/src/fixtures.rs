@@ -136,6 +136,8 @@ pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregat
         id: Uuid::new_v4(),
         name: random_name(),
         role: Role::Either,
+        query_types: Default::default(),
+        vdafs: Default::default(),
     }
     .into_active_model()
     .insert(app.db())

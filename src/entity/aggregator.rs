@@ -1,5 +1,5 @@
 use super::{url::Url, AccountColumn, AccountRelation, Accounts, Memberships};
-use crate::clients::AggregatorClient;
+use crate::{clients::AggregatorClient, json_newtype};
 use rand::{distributions::Standard, prelude::Distribution};
 use sea_orm::{
     ActiveModelBehavior, ActiveValue, DeriveActiveEnum, DeriveEntityModel, DerivePrimaryKey,
@@ -42,7 +42,37 @@ pub struct Model {
     pub is_first_party: bool,
     #[serde(skip)]
     pub bearer_token: String,
+    pub query_types: QueryTypes,
+    pub vdafs: Vdafs,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct QueryTypes(pub Vec<u8>);
+impl From<Vec<u8>> for QueryTypes {
+    fn from(value: Vec<u8>) -> Self {
+        Self(value)
+    }
+}
+impl Default for QueryTypes {
+    fn default() -> Self {
+        Self(vec![1, 2])
+    }
+}
+json_newtype!(QueryTypes);
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct Vdafs(pub Vec<u32>);
+impl From<Vec<u32>> for Vdafs {
+    fn from(value: Vec<u32>) -> Self {
+        Self(value)
+    }
+}
+impl Default for Vdafs {
+    fn default() -> Self {
+        Self(vec![1, 2, 3])
+    }
+}
+json_newtype!(Vdafs);
 
 impl Model {
     pub fn tombstone(self) -> ActiveModel {
