@@ -19,6 +19,9 @@ COPY Cargo.lock /src/Cargo.lock
 COPY build.rs /src/build.rs
 COPY migration /src/migration
 COPY src /src/src
+COPY test-support /src/test-support
+COPY client /src/client
+COPY cli /src/cli
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef as builder
@@ -29,6 +32,9 @@ COPY Cargo.lock /src/Cargo.lock
 COPY build.rs /src/build.rs
 COPY migration /src/migration
 COPY src /src/src
+COPY test-support /src/test-support
+COPY client /src/client
+COPY cli /src/cli
 COPY --from=assets /src/app/build /src/app/build
 ARG RUST_FEATURES=default
 RUN ASSET_DIR=/src/app/build cargo build --workspace --release --features ${RUST_FEATURES}

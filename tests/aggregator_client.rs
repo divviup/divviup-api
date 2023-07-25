@@ -1,6 +1,4 @@
-mod harness;
-
-use harness::{assert_eq, test, *};
+use test_support::{assert_eq, test, *};
 
 #[test(harness = set_up)]
 async fn get_task_ids(app: DivviupApi) -> TestResult {

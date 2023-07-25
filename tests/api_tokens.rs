@@ -1,5 +1,4 @@
-mod harness;
-use harness::*;
+use test_support::*;
 
 mod index {
     use super::{assert_eq, test, *};

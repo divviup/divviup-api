@@ -3,9 +3,11 @@ use divviup_api::{clients::aggregator_client::api_types::TaskId, entity::aggrega
 use rand::random;
 use trillium::HeaderValue;
 
+pub use divviup_api::api_mocks::aggregator_api::random_hpke_config;
+
 pub fn user() -> User {
     User {
-        email: format!("test-{}@example.example", random_name()),
+        email: random_email(),
         email_verified: true,
         name: "test user".into(),
         nickname: "testy".into(),
@@ -14,6 +16,10 @@ pub fn user() -> User {
         updated_at: time::OffsetDateTime::now_utc(),
         admin: None,
     }
+}
+
+pub fn random_email() -> String {
+    format!("test-{}@example.example", random_name())
 }
 
 pub fn random_name() -> String {
@@ -134,4 +140,10 @@ pub async fn admin_token(app: &DivviupApi) -> HeaderValue {
     let account = admin_account(app).await;
     let (_, header) = api_token(app, &account).await;
     header
+}
+
+pub async fn make_account_admin(app: &DivviupApi, account: Account) -> Account {
+    let mut account = account.into_active_model();
+    account.admin = ActiveValue::Set(true);
+    account.update(app.db()).await.unwrap()
 }

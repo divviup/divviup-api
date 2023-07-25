@@ -1,9 +1,5 @@
-#![allow(dead_code)]
-// because different tests use different parts of this
-use base64::{engine::general_purpose::STANDARD, Engine};
 use divviup_api::{
     clients::aggregator_client::api_types::{Encode, HpkeConfig},
-    entity::queue,
     Config, Db,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -13,6 +9,10 @@ use trillium_client::Client;
 use trillium_http::HeaderValue;
 use trillium_testing::TestConn;
 
+pub use base64::{
+    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
+    Engine,
+};
 pub use divviup_api::{
     entity::{self, *},
     queue::{Job, Queue},
@@ -230,7 +230,11 @@ impl_reload!(Aggregator, Aggregators);
 impl_reload!(ApiToken, ApiTokens);
 
 #[track_caller]
-pub fn assert_same_json_representation<T: serde::Serialize>(actual: &T, expected: &T) {
+pub fn assert_same_json_representation<Actual, Expected>(actual: &Actual, expected: &Expected)
+where
+    Actual: Serialize,
+    Expected: Serialize,
+{
     assert_eq!(
         serde_json::to_value(actual).unwrap(),
         serde_json::to_value(expected).unwrap()

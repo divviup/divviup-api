@@ -32,6 +32,14 @@ impl PermissionsActor {
         }
     }
 
+    pub fn is_user(&self) -> bool {
+        matches!(self, Self::User(_, _))
+    }
+
+    pub fn is_token(&self) -> bool {
+        matches!(self, Self::ApiToken(_))
+    }
+
     pub fn account_ids(&self) -> Vec<uuid::Uuid> {
         match self {
             PermissionsActor::ApiToken(token) => vec![token.account.id],

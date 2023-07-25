@@ -1,9 +1,8 @@
-mod harness;
 use divviup_api::{
     entity::queue::Entity,
     queue::{CreateUser, Job, JobStatus, Queue, ResetPassword, SendInvitationEmail, V1},
 };
-use harness::{assert_eq, test, *};
+use test_support::{assert_eq, test, *};
 use uuid::Uuid;
 
 #[test(harness = with_client_logs)]

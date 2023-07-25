@@ -1,4 +1,4 @@
-const CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
+pub const CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
 
 pub struct ReplaceMimeTypes;
 

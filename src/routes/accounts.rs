@@ -1,7 +1,6 @@
 use crate::{
     entity::{Account, Accounts, CreateMembership, NewAccount, UpdateAccount},
     handler::Error,
-    user::User,
     Db, Permissions, PermissionsActor,
 };
 use sea_orm::{ActiveModelTrait, EntityTrait, TransactionTrait};
@@ -52,14 +51,20 @@ pub async fn index(
 
 pub async fn create(
     _: &mut Conn,
-    (Json(new_account), current_user, db): (Json<NewAccount>, User, Db),
+    (Json(new_account), actor, db): (Json<NewAccount>, PermissionsActor, Db),
 ) -> Result<impl Handler, Error> {
+    if !(actor.is_user() || actor.is_admin()) {
+        return Err(Error::AccessDenied);
+    }
+
     let transaction = db.begin().await?;
     let account = new_account.build()?.insert(&transaction).await?;
-    let membership = CreateMembership {
-        user_email: Some(current_user.email),
-    };
-    membership.build(&account)?.insert(&transaction).await?;
+    if let PermissionsActor::User(user, _) = actor {
+        let membership = CreateMembership {
+            user_email: Some(user.email),
+        };
+        membership.build(&account)?.insert(&transaction).await?;
+    }
     transaction.commit().await?;
     Ok((Json(account), Status::Accepted))
 }
