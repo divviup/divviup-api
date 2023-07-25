@@ -8,7 +8,7 @@ use trillium::{HeaderValue, KnownHeaderName, Method};
 use trillium_client::{Client, Conn};
 use url::Url;
 pub mod api_types;
-pub use api_types::{TaskCreate, TaskIds, TaskMetrics, TaskResponse};
+pub use api_types::{AggregatorApiConfig, TaskCreate, TaskIds, TaskMetrics, TaskResponse};
 
 const CONTENT_TYPE: &str = "application/vnd.janus.aggregator+json;version=0.1";
 
@@ -34,6 +34,21 @@ impl AggregatorClient {
             auth_header: HeaderValue::from(format!("Bearer {}", &aggregator.bearer_token)),
             aggregator,
         }
+    }
+
+    pub async fn get_config(
+        client: Client,
+        base_url: Url,
+        token: &str,
+    ) -> Result<AggregatorApiConfig, ClientError> {
+        client
+            .get(base_url)
+            .with_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
+            .success_or_client_error()
+            .await?
+            .response_json()
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn get_task_ids(&self) -> Result<Vec<String>, ClientError> {

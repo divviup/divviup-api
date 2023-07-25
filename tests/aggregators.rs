@@ -1,3 +1,5 @@
+use divviup_api::{clients::aggregator_client::AggregatorApiConfig, entity::aggregator::Role};
+use std::str::FromStr;
 use test_support::{assert_eq, *};
 
 mod index {
@@ -285,8 +287,8 @@ mod shared_aggregator_index {
 mod create {
     use super::{assert_eq, test, *};
 
-    #[test(harness = set_up)]
-    async fn success(app: DivviupApi) -> TestResult {
+    #[test(harness = with_client_logs)]
+    async fn success(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
 
         let new_aggregator = fixtures::new_aggregator();
@@ -298,16 +300,19 @@ mod create {
             .await;
         assert_response!(conn, 201);
         let aggregator: Aggregator = conn.response_json().await;
+
+        let aggregator_config: AggregatorApiConfig = client_logs.last().response_json();
+
         assert_eq!(aggregator.account_id.unwrap(), account.id);
-        assert_eq!(
-            aggregator.dap_url,
-            Url::parse(&new_aggregator.dap_url.unwrap()).unwrap()
-        );
+        assert_eq!(aggregator.dap_url, aggregator_config.dap_url);
         assert_eq!(
             aggregator.api_url,
             Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
         );
-        assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
+        assert_eq!(
+            Role::from_str(aggregator.role.as_ref()).unwrap(),
+            aggregator_config.role
+        );
         assert!(!aggregator.is_first_party);
 
         let aggregator_from_db = aggregator.reload(app.db()).await?.unwrap();
@@ -344,21 +349,17 @@ mod create {
             .with_api_headers()
             .with_state(user)
             .with_request_json(json!({
-                "role": "whatever",
                 "bearer_token": "not valid base64",
                 "api_url": "not a url",
-                "dap_url": "also not a url"
             }))
             .run_async(&app)
             .await;
 
         assert_response!(conn, 400);
         let error: Value = conn.response_json().await;
-        assert!(error.get("role").is_some());
         assert!(error.get("name").is_some());
         assert!(error.get("api_url").is_some());
         assert!(error.get("bearer_token").is_some());
-        assert!(error.get("dap_url").is_some());
         Ok(())
     }
 
@@ -1129,8 +1130,8 @@ mod delete {
 mod shared_create {
     use super::{assert_eq, test, *};
 
-    #[test(harness = set_up)]
-    async fn as_admin(app: DivviupApi) -> TestResult {
+    #[test(harness = with_client_logs)]
+    async fn as_admin(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         let (admin, ..) = fixtures::admin(&app).await;
         let new_aggregator = fixtures::new_aggregator();
         let mut conn = post("/api/aggregators")
@@ -1142,18 +1143,18 @@ mod shared_create {
 
         assert_response!(conn, 201);
         let aggregator: Aggregator = conn.response_json().await;
-        assert!(aggregator.is_first_party);
-        assert_eq!(
-            aggregator.dap_url,
-            Url::parse(&new_aggregator.dap_url.unwrap()).unwrap()
-        );
+        let aggregator_config: AggregatorApiConfig = client_logs.last().response_json();
+
+        assert!(aggregator.account_id.is_none());
+        assert_eq!(aggregator.dap_url, aggregator_config.dap_url);
         assert_eq!(
             aggregator.api_url,
             Url::parse(&new_aggregator.api_url.unwrap()).unwrap()
         );
-        assert_eq!(aggregator.role.as_ref(), new_aggregator.role.unwrap());
-        assert!(aggregator.account_id.is_none());
-
+        assert_eq!(
+            Role::from_str(aggregator.role.as_ref()).unwrap(),
+            aggregator_config.role
+        );
         // defaults to true when not specified
         assert!(aggregator.is_first_party);
 

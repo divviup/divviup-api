@@ -1,5 +1,6 @@
 use crate::{
     entity::{
+        aggregator::Role as AggregatorRole,
         task::vdaf::{CountVec, Histogram, Sum, SumVec, Vdaf},
         Aggregator, ProvisionableTask,
     },
@@ -192,6 +193,15 @@ pub struct TaskIds {
 pub struct TaskMetrics {
     pub reports: u64,
     pub report_aggregations: u64,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct AggregatorApiConfig {
+    pub dap_url: Url,
+    pub role: AggregatorRole,
+    pub vdafs: Vec<u32>,
+    pub query_types: Vec<String>,
+    pub aggregator_api_capabilities: Vec<String>,
 }
 
 #[cfg(test)]
