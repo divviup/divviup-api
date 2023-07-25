@@ -28,9 +28,6 @@ export function AccountBreadcrumbs({
     <Row>
       <Col>
         <Breadcrumb>
-          <LinkContainer to="/">
-            <Breadcrumb.Item>Home</Breadcrumb.Item>
-          </LinkContainer>
           <LinkContainer to="/accounts">
             <Breadcrumb.Item>Accounts</Breadcrumb.Item>
           </LinkContainer>
