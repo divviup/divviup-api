@@ -1,5 +1,5 @@
 use super::random_chars;
-use crate::clients::auth0_client::Token;
+use crate::{clients::auth0_client::Token, User};
 use serde_json::json;
 use trillium::Handler;
 use trillium_api::Json;
@@ -7,6 +7,7 @@ use trillium_router::router;
 
 pub fn mock(auth0_url: &str) -> impl Handler {
     router()
+        .get("/userinfo", Json(User::for_integration_testing()))
         .post(
             "/oauth/token",
             Json(Token {
