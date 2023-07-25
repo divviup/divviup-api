@@ -27,13 +27,13 @@ pub struct Aggregator {
     pub dap_url: Url,
     pub api_url: Url,
     pub is_first_party: bool,
+    pub vdafs: Vec<u32>,
+    pub query_types: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct NewAggregator {
-    pub role: Role,
     pub name: String,
-    pub dap_url: Url,
     pub api_url: Url,
     pub bearer_token: String,
 }
