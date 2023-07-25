@@ -58,6 +58,14 @@ pub enum AggregatorAction {
         /// new name
         name: String,
     },
+
+    RotateBearerToken {
+        /// uuid for this aggregator
+        aggregator_id: Uuid,
+
+        /// new bearer token for this aggregator
+        bearer_token: String,
+    },
 }
 
 impl AggregatorAction {
@@ -95,6 +103,15 @@ impl AggregatorAction {
                 aggregator_id,
                 name,
             } => output.display(client.rename_aggregator(aggregator_id, &name).await?),
+
+            AggregatorAction::RotateBearerToken {
+                aggregator_id,
+                bearer_token,
+            } => output.display(
+                client
+                    .rotate_aggregator_bearer_token(aggregator_id, &bearer_token)
+                    .await?,
+            ),
         }
         Ok(())
     }
