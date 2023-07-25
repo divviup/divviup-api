@@ -1,5 +1,6 @@
 use super::{url::Url, AccountColumn, AccountRelation, Accounts, Memberships};
 use crate::clients::AggregatorClient;
+use rand::{distributions::Standard, prelude::Distribution};
 use sea_orm::{
     ActiveModelBehavior, ActiveValue, DeriveActiveEnum, DeriveEntityModel, DerivePrimaryKey,
     DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef,
@@ -69,6 +70,16 @@ pub enum Role {
     Helper,
     #[sea_orm(num_value = 2)]
     Either,
+}
+
+impl Distribution<Role> for Standard {
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Role {
+        match rng.gen_range(0..3) {
+            0 => Role::Leader,
+            1 => Role::Helper,
+            _ => Role::Either,
+        }
+    }
 }
 impl AsRef<str> for Role {
     fn as_ref(&self) -> &str {

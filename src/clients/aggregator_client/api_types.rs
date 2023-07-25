@@ -201,7 +201,6 @@ pub struct AggregatorApiConfig {
     pub role: AggregatorRole,
     pub vdafs: Vec<u32>,
     pub query_types: Vec<u8>,
-    pub aggregator_api_capabilities: Vec<String>,
 }
 
 #[cfg(test)]

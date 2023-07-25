@@ -1,11 +1,8 @@
 use super::random_chars;
-use crate::{
-    clients::aggregator_client::api_types::{
-        AggregatorApiConfig, HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey,
-        JanusDuration, QueryType, Role, TaskCreate, TaskId, TaskIds, TaskMetrics, TaskResponse,
-        VdafInstance,
-    },
-    entity::aggregator,
+use crate::clients::aggregator_client::api_types::{
+    AggregatorApiConfig, HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey,
+    JanusDuration, QueryType, Role, TaskCreate, TaskId, TaskIds, TaskMetrics, TaskResponse,
+    VdafInstance,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use querystrong::QueryStrong;
@@ -22,11 +19,12 @@ pub fn mock() -> impl Handler {
         .get(
             "/",
             Json(AggregatorApiConfig {
-                dap_url: "https://dap".parse().unwrap(),
-                role: aggregator::Role::Either,
+                dap_url: format!("https://dap.{}.example", random_chars(5))
+                    .parse()
+                    .unwrap(),
+                role: random(),
                 vdafs: vec![1, 2, 3],
                 query_types: vec![1, 2],
-                aggregator_api_capabilities: vec![],
             }),
         )
         .post("/tasks", api(post_task))
