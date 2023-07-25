@@ -1,6 +1,10 @@
 import {
   Button,
+  ButtonGroup,
   Col,
+  FormControl,
+  FormGroup,
+  FormLabel,
   ListGroup,
   ListGroupItem,
   Modal,
@@ -17,7 +21,7 @@ import { Aggregator } from "../ApiClient";
 import "@github/relative-time-element";
 import { Suspense, useEffect, useState } from "react";
 import SharedAggregatorForm from "./SharedAggregatorForm";
-import { Trash } from "react-bootstrap-icons";
+import { Pencil, PencilSquare, Trash } from "react-bootstrap-icons";
 import React from "react";
 
 export const Component = JobQueue;
@@ -59,20 +63,80 @@ export function JobQueue() {
 }
 
 function AggregatorRow({ aggregator }: { aggregator: Aggregator }) {
-  let aggWithoutAccountId = { ...aggregator } as Partial<Aggregator>;
-  delete aggWithoutAccountId.account_id;
+  let aggForDisplay = { ...aggregator } as Partial<Aggregator>;
+  delete aggForDisplay.account_id;
+  delete aggForDisplay.name;
   return (
     <ListGroupItem>
+      <h3>{aggregator.name}</h3>
       <pre>
         <code>
-          {JSON.stringify(aggWithoutAccountId, null, 2).replaceAll(
-            /"|,|\{|\}|  /g,
-            ""
-          )}
+          {JSON.stringify(aggForDisplay, null, 2)
+            .replaceAll(/"|,|\{|\}|  /g, "")
+            .trim()}
         </code>
       </pre>
-      <DeleteAggregatorButton aggregator={aggregator} />
+      <ButtonGroup>
+        <RenameAggregatorButton aggregator={aggregator} />
+        <DeleteAggregatorButton aggregator={aggregator} />
+      </ButtonGroup>
     </ListGroupItem>
+  );
+}
+
+function RenameAggregatorButton({ aggregator }: { aggregator: Aggregator }) {
+  const navigation = useNavigation();
+
+  const [show, setShow] = useState(false);
+  const close = React.useCallback(() => setShow(false), []);
+  const open = React.useCallback(() => setShow(true), []);
+  const fetcher = useFetcher();
+
+  useEffect(() => {
+    if (fetcher.data) close();
+  }, [fetcher, close]);
+
+  return (
+    <>
+      <Button
+        variant="outline-secondary"
+        className="ml-auto"
+        size="sm"
+        onClick={open}
+      >
+        <PencilSquare />
+      </Button>
+      <Modal show={show} onHide={close}>
+        <fetcher.Form method="PATCH" action={aggregator.id}>
+          <Modal.Header closeButton>
+            <Modal.Title>Edit "{aggregator.name}"</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormGroup controlId="name">
+              <FormLabel>Name</FormLabel>
+              <FormControl
+                name="name"
+                type="text"
+                data-1p-ignore
+                defaultValue={aggregator.name}
+              />
+            </FormGroup>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={close}>
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={navigation.state === "submitting"}
+            >
+              <Pencil /> Edit
+            </Button>
+          </Modal.Footer>
+        </fetcher.Form>
+      </Modal>
+    </>
   );
 }
 
@@ -100,9 +164,7 @@ function DeleteAggregatorButton({ aggregator }: { aggregator: Aggregator }) {
       </Button>
       <Modal show={show} onHide={close}>
         <Modal.Header closeButton>
-          <Modal.Title>
-            Confirm Aggregator Deletion ({aggregator.name})
-          </Modal.Title>
+          <Modal.Title>Delete "{aggregator.name}"?</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           This aggregator will immediately be removed from the interface and no

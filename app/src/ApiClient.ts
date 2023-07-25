@@ -125,6 +125,11 @@ export interface NewAggregator {
   is_first_party?: boolean;
 }
 
+export interface UpdateAggregator {
+  name?: string;
+  bearer_token?: string;
+}
+
 export interface ApiToken {
   id: string;
   account_id: string;
@@ -278,6 +283,26 @@ export class ApiClient {
       case 400:
         return { error: res.data } as {
           error: ValidationErrorsFor<NewAggregator>;
+        };
+      default:
+        throw res;
+    }
+  }
+
+  async updateAggregator(
+    aggregatorId: string,
+    aggregator: UpdateAggregator
+  ): Promise<Aggregator | { error: ValidationErrorsFor<UpdateAggregator> }> {
+    const res = await this.patch(
+      `/api/aggregators/${aggregatorId}`,
+      aggregator
+    );
+    switch (res.status) {
+      case 200:
+        return res.data as Aggregator;
+      case 400:
+        return { error: res.data } as {
+          error: ValidationErrorsFor<UpdateAggregator>;
         };
       default:
         throw res;
@@ -447,8 +472,8 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-  ? ValidationErrorsFor<T[K]>
-  : ValidationError[];
+    ? ValidationErrorsFor<T[K]>
+    : ValidationError[];
 };
 
 export interface ValidationError {
