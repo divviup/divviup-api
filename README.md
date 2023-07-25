@@ -1,4 +1,4 @@
-# DivviUp API Server
+# DivviUp API Server and web app
 
 ## Badges
 
@@ -46,7 +46,6 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 * `LISTEN_FD` -- if supplied on unix-like systems, if this is set to an open file descriptor number, the server will listen to that fd
 * `OTEL_EXPORTER_PROMETHEUS_HOST` -- default `"localhost"`
 * `OTEL_EXPORTER_PROMETHEUS_PORT` -- default `9464`
-* `SKIP_APP_COMPILATION` -- we currently build the react app in a build script. To avoid this behavior, set this environment variable to `true`.
 * `ASSET_DIR` -- set this to skip building the react app and include react app assets from a different directory
 
 ## Initial setup
@@ -117,30 +116,25 @@ $ cd app && npm ci && cd -
 
 ## Running the server
 
-Because this server has a service dependency on the aggregator api
-now, we include a mock aggregator api that runs on the port specified
-by `AGGREGATOR_URL`. This aggregator api mock is FOR DEVELOPMENT ONLY
-and will not be enabled if compiled in a release profile. In addition
-to this safeguard, running this server requires turning enabling a
-`aggregator-api-mock` cargo feature.
+This service has dependencies on several external services. In order to support development and testing, there is an `api-mocks` cargo feature to stub out all external services including aggregator apis, auth0, and postmark.
 
 As such, to run a standalone development server,
 
 ```bash
-$ cargo run --features aggregator-api-mock
+$ cargo run --features api-mocks
 ```
 
 ### Embedded React App
 
-By default, building the rust server will also build the react app. To skip this (for example, when running a development server), set `SKIP_APP_COMPIILATION=1`
+If an environment variable `ASSET_DIR` is available, all files in that directory will be served as a virtual host on `APP_URL`.
 
 ```bash
-$ SKIP_APP_COMPILATION=true cargo run --features aggregator-api-mock
+$ cd app && npm ci && npm run build && cd - && env ASSET_DIR=app/build cargo run
 ```
 
 ### Running the React development server
 
-Configure the rust app environment to point `APP_URL` to whatever port you're using here, eg `SKIP_APP_COMPILATION=1 APP_URL=http://localhost:8082 cargo run --features aggregator-api-mock`
+Configure the rust app environment to point `APP_URL` to whatever port you're using here, eg `env APP_URL=http://localhost:8082 cargo run --features api-mocks`
 
 ```bash
 $ cd app && PORT=8082 npm start
