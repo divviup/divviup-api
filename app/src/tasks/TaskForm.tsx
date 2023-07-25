@@ -30,6 +30,7 @@ import FormCheck from "react-bootstrap/FormCheck";
 import { DateTime } from "luxon";
 import FormText from "react-bootstrap/FormText";
 import { Alert } from "react-bootstrap";
+import { AccountBreadcrumbs } from "../util";
 
 async function submit(
   apiClient: ApiClient,
@@ -71,9 +72,6 @@ function TaskFormGroup({
 
 export default function TaskForm() {
   const { account_id } = useParams();
-  const { account } = useRouteLoaderData("account") as {
-    account: Promise<Account>;
-  };
   const apiClient = React.useContext(ApiClientContext);
   const navigate = useNavigate();
   const handleSubmit = React.useCallback(
@@ -96,7 +94,7 @@ export default function TaskForm() {
 
   return (
     <>
-      <Breadcrumbs account={account} />
+      <Breadcrumbs />
       <Row style={{ height: "calc(100vh - 100px)" }}>
         <Col sm="6" style={{ maxHeight: "100%", overflowY: "auto" }}>
           <Formik
@@ -969,41 +967,15 @@ function Expiration(props: Props) {
   );
 }
 
-// <FormControl
-//   value={props.values.vdaf?.type}
-//   name="vdaf.bits"
-//   onChange={props.handleChange}
-//   onBlur={props.handleBlur}
-//   isInvalid={!!props.errors.time_precision_seconds}
-// />
-
-function Breadcrumbs({ account }: { account: Promise<Account> }) {
+function Breadcrumbs() {
   let { account_id } = useParams();
 
   return (
-    <Row>
-      <Col>
-        <Breadcrumb>
-          <LinkContainer to="/">
-            <Breadcrumb.Item>Home</Breadcrumb.Item>
-          </LinkContainer>
-          <LinkContainer to="/accounts">
-            <Breadcrumb.Item>Accounts</Breadcrumb.Item>
-          </LinkContainer>
-          <LinkContainer to={`/accounts/${account_id}`}>
-            <Breadcrumb.Item>
-              <React.Suspense fallback={<span>...</span>}>
-                <Await resolve={account}>{(account) => account.name}</Await>
-              </React.Suspense>
-            </Breadcrumb.Item>
-          </LinkContainer>
-
-          <LinkContainer to={`/accounts/${account_id}/tasks`}>
-            <Breadcrumb.Item>Tasks</Breadcrumb.Item>
-          </LinkContainer>
-          <Breadcrumb.Item active>new</Breadcrumb.Item>
-        </Breadcrumb>
-      </Col>
-    </Row>
+    <AccountBreadcrumbs>
+      <LinkContainer to={`/accounts/${account_id}/tasks`}>
+        <Breadcrumb.Item>Tasks</Breadcrumb.Item>
+      </LinkContainer>
+      <Breadcrumb.Item active>new</Breadcrumb.Item>
+    </AccountBreadcrumbs>
   );
 }

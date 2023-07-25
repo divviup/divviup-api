@@ -1,7 +1,6 @@
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import Breadcrumb from "react-bootstrap/Breadcrumb";
 import React from "react";
 import { useLoaderData, useAsyncValue, Await } from "react-router-dom";
 import { Account } from "../ApiClient";
@@ -10,26 +9,10 @@ import { LinkContainer } from "react-router-bootstrap";
 import { Button, Placeholder } from "react-bootstrap";
 import { BuildingAdd } from "react-bootstrap-icons";
 
-function Breadcrumbs() {
-  return (
-    <Row>
-      <Col>
-        <Breadcrumb>
-          <LinkContainer to="/">
-            <Breadcrumb.Item>Home</Breadcrumb.Item>
-          </LinkContainer>
-          <Breadcrumb.Item active>Accounts</Breadcrumb.Item>
-        </Breadcrumb>
-      </Col>
-    </Row>
-  );
-}
-
 export default function AccountList() {
   let { accounts } = useLoaderData() as { accounts: Promise<Account[]> };
   return (
     <Container>
-      <Breadcrumbs />
       <Row>
         <Col>
           <h1>Accounts</h1>
