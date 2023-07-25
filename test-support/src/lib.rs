@@ -57,7 +57,7 @@ async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
         .unwrap();
 }
 
-async fn set_up_schema(db: &Db) {
+pub async fn set_up_schema(db: &Db) {
     let schema = Schema::new(DbBackend::Sqlite);
     set_up_schema_for(&schema, db, Sessions).await;
     set_up_schema_for(&schema, db, Accounts).await;

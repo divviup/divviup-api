@@ -189,7 +189,7 @@ pub struct TaskIds {
     pub pagination_token: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TaskMetrics {
     pub reports: u64,
     pub report_aggregations: u64,

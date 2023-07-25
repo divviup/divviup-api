@@ -28,9 +28,14 @@ impl AsRef<Client> for AggregatorClient {
 
 impl AggregatorClient {
     pub fn new(client: Client, aggregator: Aggregator) -> Self {
+        let mut base_url: Url = aggregator.api_url.clone().into();
+        if !base_url.path().ends_with('/') {
+            base_url.set_path(&format!("{}/", base_url.path()));
+        }
+
         Self {
             client,
-            base_url: aggregator.api_url.clone().into(),
+            base_url,
             auth_header: HeaderValue::from(format!("Bearer {}", &aggregator.bearer_token)),
             aggregator,
         }
