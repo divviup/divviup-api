@@ -284,6 +284,11 @@ export class ApiClient {
     }
   }
 
+  async deleteAggregator(aggregatorId: string): Promise<null> {
+    await this.delete(`/api/aggregators/${aggregatorId}`);
+    return null;
+  }
+
   async aggregator(aggregatorId: string): Promise<Aggregator> {
     const res = await this.get(`/api/aggregators/${aggregatorId}`);
     return res.data as Aggregator;
