@@ -22,7 +22,13 @@ function TabLink({ search, text }: { search: string; text: string }) {
   let active = params.toString() === search;
   return (
     <Nav.Item>
-      <LinkContainer to={{ search }}>
+      <LinkContainer
+        to={
+          { search } as unknown as {
+            pathname: string;
+          } /*https://github.com/DefinitelyTyped/DefinitelyTyped/pull/66167*/
+        }
+      >
         <Nav.Link eventKey={text} active={active}>
           {text}
         </Nav.Link>

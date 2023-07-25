@@ -83,7 +83,7 @@ export type NewTask = Omit<
   vdaf: {
     type: "sum" | "count" | "histogram";
     bits?: number;
-    buckets?: number;
+    buckets?: number[];
   };
 };
 
@@ -95,7 +95,13 @@ export interface CreateMembership {
   user_email: string;
 }
 
-export type Role = "Leader" | "Helper" | "Either";
+export type Role =
+  | "Leader"
+  | "Helper"
+  | "Either"
+  | "leader"
+  | "helper"
+  | "either";
 
 export interface Aggregator {
   id: string;

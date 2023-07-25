@@ -1,26 +1,17 @@
 import { AxiosError } from "axios";
 import Alert from "react-bootstrap/Alert";
-import {
-  isRouteErrorResponse,
-  useRouteError,
-  useRouteLoaderData,
-} from "react-router-dom";
-import ApiClient from "./ApiClient";
+import { isRouteErrorResponse, useRouteError } from "react-router-dom";
+import ApiClient from "../ApiClient";
 import Layout from "./Layout";
 
 export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
   const error = useRouteError();
-  let { currentUser } = useRouteLoaderData("currentUser") as {
-    currentUser: Promise<User>;
-  };
   if (error instanceof AxiosError) {
     switch (error.response?.status) {
       case 403:
-        if (!apiClient.isLoggedIn()) {
-          apiClient.loginUrl().then((url) => {
-            window.location.href = url;
-          });
-        }
+        apiClient.loginUrl().then((url) => {
+          window.location.href = url;
+        });
         break;
       case 404:
         return (
