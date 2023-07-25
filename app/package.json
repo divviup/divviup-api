@@ -25,7 +25,8 @@
   "scripts": {
     "analyze": "source-map-explorer 'build/assets/*.js'",
     "start": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "check": "tsc --noEmit -p ./tsconfig.json"
   },
   "eslintConfig": {
     "extends": [
