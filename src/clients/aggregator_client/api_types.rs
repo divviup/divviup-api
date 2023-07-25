@@ -200,7 +200,7 @@ pub struct AggregatorApiConfig {
     pub dap_url: Url,
     pub role: AggregatorRole,
     pub vdafs: Vec<u32>,
-    pub query_types: Vec<String>,
+    pub query_types: Vec<u8>,
     pub aggregator_api_capabilities: Vec<String>,
 }
 

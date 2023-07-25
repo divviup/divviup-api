@@ -25,7 +25,7 @@ pub fn mock() -> impl Handler {
                 dap_url: "https://dap".parse().unwrap(),
                 role: aggregator::Role::Either,
                 vdafs: vec![1, 2, 3],
-                query_types: vec!["TimeInterval".into(), "FixedSize".into()],
+                query_types: vec![1, 2],
                 aggregator_api_capabilities: vec![],
             }),
         )
