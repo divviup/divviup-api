@@ -80,3 +80,25 @@ async fn rename_aggregator(
     );
     Ok(())
 }
+
+#[test(harness = with_configured_client)]
+async fn rotate_bearer_token(
+    app: Arc<DivviupApi>,
+    account: Account,
+    client: DivviupClient,
+) -> TestResult {
+    let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+    let new_bearer_token = fixtures::random_name();
+    client
+        .rotate_aggregator_bearer_token(aggregator.id, &new_bearer_token)
+        .await?;
+    assert_eq!(
+        Aggregators::find_by_id(aggregator.id)
+            .one(app.db())
+            .await?
+            .unwrap()
+            .bearer_token,
+        new_bearer_token
+    );
+    Ok(())
+}
