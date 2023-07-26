@@ -204,7 +204,7 @@ impl DivviupClient {
         &self,
         aggregator_id: Uuid,
         new_bearer_token: &str,
-    ) -> ClientResult<Account> {
+    ) -> ClientResult<Aggregator> {
         self.patch(
             &format!("api/aggregators/{aggregator_id}"),
             &json!({ "bearer_token": new_bearer_token }),
