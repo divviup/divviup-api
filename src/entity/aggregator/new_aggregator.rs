@@ -48,7 +48,7 @@ impl NewAggregator {
         .await
         .map_err(|e| match e {
             ClientError::HttpStatusNotSuccess {
-                status: Some(Status::Forbidden),
+                status: Some(Status::Unauthorized | Status::Forbidden),
                 ..
             } => {
                 let mut ve = ValidationErrors::new();

@@ -502,7 +502,7 @@ mod create {
             .run_async(&app)
             .await;
         assert_response!(conn, 400);
-        assert_eq!(client_logs.last().response_status, Status::Forbidden);
+        assert_eq!(client_logs.last().response_status, Status::Unauthorized);
         let error: Value = conn.response_json().await;
         assert!(error.get("bearer_token").is_some());
         let aggregator_count_after = Aggregators::find().count(app.db()).await?;

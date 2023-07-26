@@ -53,7 +53,7 @@ async fn bearer_token_check(conn: Conn) -> Conn {
     if token_is_valid {
         conn
     } else {
-        conn.with_status(Status::Forbidden).halt()
+        conn.with_status(Status::Unauthorized).halt()
     }
 }
 
