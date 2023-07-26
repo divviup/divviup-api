@@ -1,20 +1,20 @@
 use crate::{
     entity::{
-        aggregator::Role as AggregatorRole,
+        aggregator::{QueryTypeIdSet, Role as AggregatorRole, VdafIdSet},
         task::vdaf::{CountVec, Histogram, Sum, SumVec, Vdaf},
         Aggregator, ProvisionableTask,
     },
     handler::Error,
 };
+use serde::{Deserialize, Serialize};
+use time::{error::ComponentRange, OffsetDateTime};
+use url::Url;
 
 pub use janus_messages::{
     codec::{Decode, Encode},
     Duration as JanusDuration, HpkeAeadId, HpkeConfig, HpkeConfigId, HpkeConfigList, HpkeKdfId,
     HpkeKemId, HpkePublicKey, Role, TaskId, Time as JanusTime,
 };
-use serde::{Deserialize, Serialize};
-use time::{error::ComponentRange, OffsetDateTime};
-use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
@@ -199,8 +199,8 @@ pub struct TaskMetrics {
 pub struct AggregatorApiConfig {
     pub dap_url: Url,
     pub role: AggregatorRole,
-    pub vdafs: Vec<u32>,
-    pub query_types: Vec<u8>,
+    pub vdafs: VdafIdSet,
+    pub query_types: QueryTypeIdSet,
 }
 
 #[cfg(test)]

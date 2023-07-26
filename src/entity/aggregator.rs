@@ -1,25 +1,24 @@
+mod new_aggregator;
+mod query_type_id;
+mod role;
+mod update_aggregator;
+mod vdaf_id;
+
 use super::{url::Url, AccountColumn, AccountRelation, Accounts, Memberships};
-use crate::{clients::AggregatorClient, json_newtype};
-use rand::{distributions::Standard, prelude::Distribution};
+use crate::clients::AggregatorClient;
 use sea_orm::{
-    ActiveModelBehavior, ActiveValue, DeriveActiveEnum, DeriveEntityModel, DerivePrimaryKey,
-    DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef,
-    RelationTrait,
+    ActiveModelBehavior, ActiveValue, DeriveEntityModel, DerivePrimaryKey, DeriveRelation,
+    EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef, RelationTrait,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    error::Error,
-    fmt::{self, Display, Formatter},
-    str::FromStr,
-};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-mod update_aggregator;
-pub use update_aggregator::UpdateAggregator;
-
-mod new_aggregator;
 pub use new_aggregator::NewAggregator;
+pub use query_type_id::{QueryTypeId, QueryTypeIdSet};
+pub use role::{Role, UnrecognizedRole};
+pub use update_aggregator::UpdateAggregator;
+pub use vdaf_id::{VdafId, VdafIdSet};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "aggregator")]
@@ -42,37 +41,9 @@ pub struct Model {
     pub is_first_party: bool,
     #[serde(skip)]
     pub bearer_token: String,
-    pub query_types: QueryTypes,
-    pub vdafs: Vdafs,
+    pub query_types: QueryTypeIdSet,
+    pub vdafs: VdafIdSet,
 }
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct QueryTypes(pub Vec<u8>);
-impl From<Vec<u8>> for QueryTypes {
-    fn from(value: Vec<u8>) -> Self {
-        Self(value)
-    }
-}
-impl Default for QueryTypes {
-    fn default() -> Self {
-        Self(vec![1, 2])
-    }
-}
-json_newtype!(QueryTypes);
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Vdafs(pub Vec<u32>);
-impl From<Vec<u32>> for Vdafs {
-    fn from(value: Vec<u32>) -> Self {
-        Self(value)
-    }
-}
-impl Default for Vdafs {
-    fn default() -> Self {
-        Self(vec![1, 2, 3])
-    }
-}
-json_newtype!(Vdafs);
 
 impl Model {
     pub fn tombstone(self) -> ActiveModel {
@@ -88,56 +59,6 @@ impl Model {
 
     pub fn client(&self, http_client: trillium_client::Client) -> AggregatorClient {
         AggregatorClient::new(http_client, self.clone())
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
-#[sea_orm(rs_type = "i32", db_type = "Integer")]
-pub enum Role {
-    #[sea_orm(num_value = 0)]
-    Leader,
-    #[sea_orm(num_value = 1)]
-    Helper,
-    #[sea_orm(num_value = 2)]
-    Either,
-}
-
-impl Distribution<Role> for Standard {
-    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Role {
-        match rng.gen_range(0..3) {
-            0 => Role::Leader,
-            1 => Role::Helper,
-            _ => Role::Either,
-        }
-    }
-}
-impl AsRef<str> for Role {
-    fn as_ref(&self) -> &str {
-        match self {
-            Self::Leader => "leader",
-            Self::Helper => "helper",
-            Self::Either => "either",
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct UnrecognizedRole(String);
-impl Display for UnrecognizedRole {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("{} was not a recognized role option", self.0))
-    }
-}
-impl Error for UnrecognizedRole {}
-impl FromStr for Role {
-    type Err = UnrecognizedRole;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match &*s.to_lowercase() {
-            "leader" => Ok(Self::Leader),
-            "helper" => Ok(Self::Helper),
-            "either" => Ok(Self::Either),
-            unrecognized => Err(UnrecognizedRole(unrecognized.to_string())),
-        }
     }
 }
 

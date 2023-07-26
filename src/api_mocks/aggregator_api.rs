@@ -28,8 +28,8 @@ pub fn mock() -> impl Handler {
                         .parse()
                         .unwrap(),
                     role: random(),
-                    vdafs: vec![1, 2, 3],
-                    query_types: vec![1, 2],
+                    vdafs: Default::default(),
+                    query_types: Default::default(),
                 }),
             )
             .post("/tasks", api(post_task))
