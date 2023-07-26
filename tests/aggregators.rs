@@ -285,6 +285,8 @@ mod shared_aggregator_index {
 }
 
 mod create {
+    use divviup_api::api_mocks::aggregator_api::BAD_BEARER_TOKEN;
+
     use super::{assert_eq, test, *};
 
     #[test(harness = with_client_logs)]
@@ -479,6 +481,30 @@ mod create {
             .await;
 
         assert_not_found!(conn);
+        let aggregator_count_after = Aggregators::find().count(app.db()).await?;
+        assert_eq!(aggregator_count_before, aggregator_count_after);
+
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn aggregator_api_forbidden(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+
+        let mut new_aggregator = fixtures::new_aggregator();
+        new_aggregator.bearer_token = Some(BAD_BEARER_TOKEN.to_string());
+        let aggregator_count_before = Aggregators::find().count(app.db()).await?;
+
+        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+            .with_api_headers()
+            .with_state(user)
+            .with_request_json(new_aggregator.clone())
+            .run_async(&app)
+            .await;
+        assert_response!(conn, 400);
+        assert_eq!(client_logs.last().response_status, Status::Forbidden);
+        let error: Value = conn.response_json().await;
+        assert!(error.get("bearer_token").is_some());
         let aggregator_count_after = Aggregators::find().count(app.db()).await?;
         assert_eq!(aggregator_count_before, aggregator_count_after);
 

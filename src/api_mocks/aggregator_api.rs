@@ -11,27 +11,50 @@ use sha2::{Digest, Sha256};
 use std::iter::repeat_with;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Json};
+use trillium_http::KnownHeaderName;
 use trillium_router::{router, RouterConnExt};
 use uuid::Uuid;
 
+pub const BAD_BEARER_TOKEN: &str = "badbearertoken";
+
 pub fn mock() -> impl Handler {
-    router()
-        .get(
-            "/",
-            Json(AggregatorApiConfig {
-                dap_url: format!("https://dap.{}.example", random_chars(5))
-                    .parse()
-                    .unwrap(),
-                role: random(),
-                vdafs: vec![1, 2, 3],
-                query_types: vec![1, 2],
-            }),
-        )
-        .post("/tasks", api(post_task))
-        .get("/tasks/:task_id", api(get_task))
-        .get("/task_ids", api(task_ids))
-        .delete("/tasks/:task_id", Status::Ok)
-        .get("/tasks/:task_id/metrics", api(get_task_metrics))
+    (
+        bearer_token_check,
+        router()
+            .get(
+                "/",
+                Json(AggregatorApiConfig {
+                    dap_url: format!("https://dap.{}.example", random_chars(5))
+                        .parse()
+                        .unwrap(),
+                    role: random(),
+                    vdafs: vec![1, 2, 3],
+                    query_types: vec![1, 2],
+                }),
+            )
+            .post("/tasks", api(post_task))
+            .get("/tasks/:task_id", api(get_task))
+            .get("/task_ids", api(task_ids))
+            .delete("/tasks/:task_id", Status::Ok)
+            .get("/tasks/:task_id/metrics", api(get_task_metrics)),
+    )
+}
+
+async fn bearer_token_check(conn: Conn) -> Conn {
+    let token_is_valid = conn
+        .request_headers()
+        .get_str(KnownHeaderName::Authorization)
+        .map_or(false, |s| match s.split_once(' ') {
+            Some(("Bearer", BAD_BEARER_TOKEN)) => false,
+            Some(("Bearer", _)) => true,
+            _ => false,
+        });
+
+    if token_is_valid {
+        conn
+    } else {
+        conn.with_status(Status::Forbidden).halt()
+    }
 }
 
 async fn get_task_metrics(_: &mut Conn, (): ()) -> Json<TaskMetrics> {

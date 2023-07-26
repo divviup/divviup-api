@@ -1,6 +1,6 @@
 use super::ActiveModel;
 use crate::{
-    clients::AggregatorClient,
+    clients::{AggregatorClient, ClientError},
     entity::{validators::base64, Account, Aggregator},
     handler::Error,
 };
@@ -9,8 +9,9 @@ use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use time::OffsetDateTime;
 use trillium_client::Client;
+use trillium_http::Status;
 use uuid::Uuid;
-use validator::{Validate, ValidationError};
+use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(Deserialize, Serialize, Validate, Debug, Clone, Default)]
 pub struct NewAggregator {
@@ -44,7 +45,29 @@ impl NewAggregator {
             self.api_url.as_ref().unwrap().parse()?,
             self.bearer_token.as_ref().unwrap(),
         )
-        .await?;
+        .await
+        .map_err(|e| match e {
+            ClientError::HttpStatusNotSuccess {
+                status: Some(Status::Forbidden),
+                ..
+            } => {
+                let mut ve = ValidationErrors::new();
+                ve.add("bearer_token", ValidationError::new("token-not-recognized"));
+                ve.into()
+            }
+
+            ClientError::Http(_)
+            | ClientError::HttpStatusNotSuccess {
+                status: Some(Status::NotFound),
+                ..
+            } => {
+                let mut ve = ValidationErrors::new();
+                ve.add("api_url", ValidationError::new("http-error"));
+                ve.into()
+            }
+
+            other => Error::from(other),
+        })?;
 
         // unwrap safety: the below unwraps will never panic, because
         // the above call to `NewAggregator::validate` will

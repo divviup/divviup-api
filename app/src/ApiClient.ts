@@ -420,6 +420,10 @@ function errorToMessage({ message, code, params }: ValidationError) {
     return "must be base64";
   } else if (code === "same") {
     return "must not be the same";
+  } else if (code === "token-not-recognized") {
+    return "bearer token not recognized";
+  } else if (code === "http-error") {
+    return "error connecting to url";
   } else if (code === "enum" && Array.isArray(params.values)) {
     return `must be one of these values: ${params.values.join(", ")}`;
   } else if (code === "length") {
