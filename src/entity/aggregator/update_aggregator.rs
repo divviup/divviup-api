@@ -49,8 +49,8 @@ impl UpdateAggregator {
                     other => Error::from(other),
                 })?;
 
-            aggregator.query_types = ActiveValue::Set(aggregator_config.query_types.into());
-            aggregator.vdafs = ActiveValue::Set(aggregator_config.vdafs.into());
+            aggregator.query_types = ActiveValue::Set(aggregator_config.query_types);
+            aggregator.vdafs = ActiveValue::Set(aggregator_config.vdafs);
             aggregator.bearer_token = ActiveValue::Set(bearer_token);
         }
 
