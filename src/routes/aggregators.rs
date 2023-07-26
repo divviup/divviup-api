@@ -106,10 +106,16 @@ pub async fn delete(_: &mut Conn, (db, aggregator): (Db, Aggregator)) -> Result<
 
 pub async fn update(
     _: &mut Conn,
-    (db, aggregator, Json(update_aggregator)): (Db, Aggregator, Json<UpdateAggregator>),
+    (db, aggregator, Json(update_aggregator), State(client)): (
+        Db,
+        Aggregator,
+        Json<UpdateAggregator>,
+        State<Client>,
+    ),
 ) -> Result<Json<Aggregator>, Error> {
     update_aggregator
-        .build(aggregator)?
+        .build(aggregator, client)
+        .await?
         .update(&db)
         .await
         .map_err(Error::from)

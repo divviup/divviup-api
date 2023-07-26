@@ -707,10 +707,12 @@ mod show {
 }
 
 mod update {
+    use divviup_api::api_mocks::aggregator_api::BAD_BEARER_TOKEN;
+
     use super::{assert_eq, test, *};
 
-    #[test(harness = set_up)]
-    async fn valid(app: DivviupApi) -> TestResult {
+    #[test(harness = with_client_logs)]
+    async fn valid(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
 
@@ -718,16 +720,59 @@ mod update {
         let new_bearer_token = fixtures::random_name();
         let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
-            .with_request_json(json!({ "name": &new_name, "bearer_token": new_bearer_token }))
+            .with_request_json(json!({ "name": &new_name, "bearer_token": &new_bearer_token }))
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
+        assert_eq!(client_logs.logs().len(), 1);
+        assert_eq!(
+            client_logs
+                .last()
+                .request_headers
+                .get_str(KnownHeaderName::Authorization)
+                .unwrap(),
+            format!("Bearer {new_bearer_token}")
+        );
         let response_aggregator: Aggregator = conn.response_json().await;
         assert_eq!(response_aggregator.name, new_name);
         let reloaded = aggregator.reload(app.db()).await?.unwrap();
         assert_eq!(reloaded.name, new_name);
         assert_eq!(reloaded.bearer_token, new_bearer_token);
+
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn bad_bearer_token(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let aggregator = fixtures::aggregator(&app, Some(&account)).await;
+
+        let original_bearer_token = aggregator.bearer_token.clone();
+        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_request_json(json!({ "bearer_token": &BAD_BEARER_TOKEN }))
+            .with_state(user)
+            .run_async(&app)
+            .await;
+        assert_status!(conn, 400);
+        assert_eq!(client_logs.logs().len(), 1);
+        assert_eq!(
+            client_logs
+                .last()
+                .request_headers
+                .get_str(KnownHeaderName::Authorization)
+                .unwrap(),
+            format!("Bearer {BAD_BEARER_TOKEN}")
+        );
+
+        assert_eq!(
+            aggregator.reload(app.db()).await?.unwrap().bearer_token,
+            original_bearer_token
+        );
+        assert_eq!(client_logs.last().response_status, Status::Unauthorized);
+        let errors: Value = conn.response_json().await;
+        assert!(errors.get("bearer_token").is_some());
 
         Ok(())
     }
