@@ -2,7 +2,7 @@ use crate::json_newtype;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
-/// https://www.ietf.org/archive/id/draft-ietf-ppm-dap-04.html#name-queries
+/// https://www.ietf.org/archive/id/draft-ietf-ppm-dap-05.html#name-queries
 #[derive(Debug, Clone, Copy, Eq)]
 pub enum QueryTypeId {
     Reserved,
