@@ -21,6 +21,23 @@ export default function accounts(
         index: true,
       },
       {
+        path: "new",
+        element: <AccountForm />,
+        async action({ request }) {
+          let data = Object.fromEntries(await request.formData());
+          switch (request.method) {
+            case "POST":
+              const account = await apiClient.createAccount(
+                data as unknown as PartialAccount
+              );
+              return redirect(`/accounts/${account.id}`);
+            default:
+              throw new Error(`unexpected method ${request.method}`);
+          }
+        },
+      },
+
+      {
         path: ":account_id",
         id: "account",
         loader({ params }) {
@@ -52,27 +69,7 @@ export default function accounts(
           );
         },
         children: [
-          {
-            path: "",
-            element: <AccountSummary />,
-          },
-          {
-            path: "new",
-            element: <AccountForm />,
-            async action({ request }) {
-              let data = Object.fromEntries(await request.formData());
-              switch (request.method) {
-                case "POST":
-                  const account = await apiClient.createAccount(
-                    data as unknown as PartialAccount
-                  );
-                  return redirect(`/accounts/${account.id}`);
-                default:
-                  throw new Error(`unexpected method ${request.method}`);
-              }
-            },
-          },
-
+          { element: <AccountSummary />, path: "", index: true },
           ...children,
         ],
       },
