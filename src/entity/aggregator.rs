@@ -1,8 +1,8 @@
 mod new_aggregator;
-mod query_type_id;
+mod query_type_name;
 mod role;
 mod update_aggregator;
-mod vdaf_id;
+mod vdaf_name;
 
 use super::{url::Url, AccountColumn, AccountRelation, Accounts, Memberships};
 use crate::clients::AggregatorClient;
@@ -15,10 +15,10 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 pub use new_aggregator::NewAggregator;
-pub use query_type_id::{QueryTypeId, QueryTypeIdSet};
+pub use query_type_name::{QueryTypeName, QueryTypeNameSet};
 pub use role::{Role, UnrecognizedRole};
 pub use update_aggregator::UpdateAggregator;
-pub use vdaf_id::{VdafId, VdafIdSet};
+pub use vdaf_name::{VdafName, VdafNameSet};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "aggregator")]
@@ -41,8 +41,8 @@ pub struct Model {
     pub is_first_party: bool,
     #[serde(skip)]
     pub bearer_token: String,
-    pub query_types: QueryTypeIdSet,
-    pub vdafs: VdafIdSet,
+    pub query_types: QueryTypeNameSet,
+    pub vdafs: VdafNameSet,
 }
 
 impl Model {

@@ -27,8 +27,8 @@ pub struct Aggregator {
     pub dap_url: Url,
     pub api_url: Url,
     pub is_first_party: bool,
-    pub vdafs: Vec<u32>,
-    pub query_types: Vec<u8>,
+    pub vdafs: Vec<String>,
+    pub query_types: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]

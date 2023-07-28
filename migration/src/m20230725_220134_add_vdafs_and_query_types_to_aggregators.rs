@@ -20,8 +20,14 @@ impl MigrationTrait for Migration {
             Query::update()
                 .table(Aggregator::Table)
                 .values([
-                    (Aggregator::Vdafs, json!([1, 2, 3]).into()), // [VdafId::Prio3Count, VdafId::Prio3Sum, VdafId::Prio3Histogram]
-                    (Aggregator::QueryTypes, json!([1, 2]).into()), // [QueryTypeId::TimeInterval, QueryTypeId::FixedSize]
+                    (
+                        Aggregator::Vdafs,
+                        json!(["Prio3Count", "Prio3Sum", "Prio3Histogram"]).into(),
+                    ),
+                    (
+                        Aggregator::QueryTypes,
+                        json!(["TimeInterval", "FixedSize"]).into(),
+                    ),
                 ])
                 .to_owned(),
         )
