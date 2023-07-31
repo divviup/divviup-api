@@ -13,16 +13,16 @@ thiserror = "1.0.44"
 divviup-client = { path = "../client" }
 trillium-rustls = "0.4.0"
 trillium-tokio = "0.3.1"
-serde = "1.0.175"
+serde = "1.0.179"
 email_address = "0.2.4"
 humantime = "2.1.0"
 base64 = "0.21.2"
-time = { version = "0.3.23", features = [
+time = { version = "0.3.24", features = [
     "serde",
     "serde-well-known",
     "local-offset",
 ] }
-serde_json = "1.0.103"
+serde_json = "1.0.104"
 serde_yaml = "0.9.25"
 env_logger = "0.10.0"
 colored = "2.0.4"

@@ -3,7 +3,7 @@ use crate::{
     queue::job::{v1::V1, EnqueueJob, Job, JobError, SharedJobState},
 };
 use sea_orm::{
-    sea_query::{self, all, Expr},
+    sea_query::{all, Expr},
     ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter,
 };
 use serde::{Deserialize, Serialize};

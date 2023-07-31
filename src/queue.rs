@@ -7,7 +7,7 @@ use crate::{
     Config, Db, DivviupApi,
 };
 use sea_orm::{
-    sea_query::{self, all, Expr},
+    sea_query::{all, Expr},
     ActiveModelTrait, ActiveValue, ColumnTrait, DbErr, EntityTrait, IntoActiveModel,
     PaginatorTrait, QueryFilter, TransactionTrait,
 };

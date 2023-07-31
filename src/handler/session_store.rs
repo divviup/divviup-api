@@ -5,7 +5,7 @@ use async_session::{
     serde_json, Session,
 };
 use sea_orm::{
-    sea_query::{self, any, OnConflict},
+    sea_query::{any, OnConflict},
     ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter,
 };
 use serde_json::json;
