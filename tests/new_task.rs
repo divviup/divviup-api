@@ -1,3 +1,4 @@
+use divviup_api::entity::aggregator::Role;
 use test_support::{assert_eq, test, *};
 
 pub async fn assert_errors(app: &DivviupApi, new_task: &NewTask, field: &str, codes: &[&str]) {
@@ -45,21 +46,13 @@ async fn batch_size(app: DivviupApi) -> TestResult {
 
 #[test(harness = set_up)]
 async fn aggregator_roles(app: DivviupApi) -> TestResult {
-    let leader = NewAggregator {
-        role: Some("leader".into()),
-        ..fixtures::new_aggregator()
-    }
-    .build(None)?
-    .insert(app.db())
-    .await?;
+    let mut leader = fixtures::aggregator(&app, None).await.into_active_model();
+    leader.role = ActiveValue::Set(Role::Leader);
+    let leader = leader.update(app.db()).await?;
 
-    let helper = NewAggregator {
-        role: Some("helper".into()),
-        ..fixtures::new_aggregator()
-    }
-    .build(None)?
-    .insert(app.db())
-    .await?;
+    let mut helper = fixtures::aggregator(&app, None).await.into_active_model();
+    helper.role = ActiveValue::Set(Role::Helper);
+    let helper = helper.update(app.db()).await?;
 
     let either = fixtures::aggregator(&app, None).await;
 

@@ -69,10 +69,8 @@ export function AggregatorForm({
       errors={errors}
       initialValues={
         {
-          role: "either",
           name: "",
           api_url: "",
-          dap_url: "",
           bearer_token: "",
           is_first_party: showIsFirstParty ? true : undefined,
         } as NewAggregator
@@ -86,10 +84,8 @@ export function AggregatorForm({
           noValidate
           autoComplete="off"
         >
-          <RoleSelect {...props} />
           <Name {...props} />
           <ApiUrl {...props} />
-          <DapUrl {...props} />
           <BearerToken {...props} />
           {showIsFirstParty ? <IsFirstParty {...props} /> : null}
           <Button
@@ -215,52 +211,6 @@ function ApiUrl(props: FormikProps<NewAggregator>) {
       />
       <FormControl.Feedback type="invalid">
         {props.errors.api_url}
-      </FormControl.Feedback>
-    </FormGroup>
-  );
-}
-function DapUrl(props: FormikProps<NewAggregator>) {
-  return (
-    <FormGroup>
-      <FormLabel>DAP Url</FormLabel>
-
-      <FormControl
-        type="url"
-        onChange={props.handleChange}
-        onBlur={props.handleBlur}
-        value={props.values.dap_url}
-        isInvalid={!!props.errors.dap_url}
-        required
-        autoComplete="off"
-        placeholder="https://example.com"
-        pattern="https://.*"
-        name="dap_url"
-      />
-      <FormControl.Feedback type="invalid">
-        {props.errors.dap_url}
-      </FormControl.Feedback>
-    </FormGroup>
-  );
-}
-
-function RoleSelect(props: FormikProps<NewAggregator>) {
-  return (
-    <FormGroup>
-      <FormLabel>Role</FormLabel>
-
-      <FormSelect
-        value={props.values.role}
-        isInvalid={!!props.errors.role}
-        onChange={props.handleChange}
-        onBlur={props.handleBlur}
-        name="role"
-      >
-        <option value="leader">Leader</option>
-        <option value="helper">Helper</option>
-        <option value="either">Either Leader or Helper</option>
-      </FormSelect>
-      <FormControl.Feedback type="invalid">
-        {props.errors.role}
       </FormControl.Feedback>
     </FormGroup>
   );

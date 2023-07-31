@@ -1879,6 +1879,7 @@ dependencies = [
  "clap 4.3.19",
  "sea-orm",
  "sea-orm-migration",
+ "serde_json",
  "thiserror",
  "time",
  "tracing",

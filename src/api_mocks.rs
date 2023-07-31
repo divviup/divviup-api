@@ -1,12 +1,11 @@
 use crate::handler::origin_router;
-use trillium::{Conn, Handler};
+use trillium::Handler;
 use trillium_http::KnownHeaderName;
 use trillium_logger::{
-    formatters::{method, status, url},
+    formatters::{method, request_header, status, url},
     logger,
 };
 use trillium_macros::Handler;
-use trillium_router::Router;
 
 pub mod aggregator_api;
 pub mod auth0;
@@ -28,12 +27,7 @@ impl ApiMocks {
                 "[mock] ",
                 method,
                 " ",
-                move |conn: &Conn, _| {
-                    conn.headers()
-                        .get_str(KnownHeaderName::Host)
-                        .unwrap_or_default()
-                        .to_string()
-                },
+                request_header(KnownHeaderName::Host),
                 " ",
                 url,
                 " ",
@@ -42,9 +36,7 @@ impl ApiMocks {
             origin_router()
                 .with_handler(postmark_url, postmark::mock())
                 .with_handler(auth0_url, auth0::mock(auth0_url)),
-            // Add a path prefix before the aggregator API mock. Aggregator test fixtures must
-            // include this prefix in their URLs.
-            Router::new().all("prefix/*", aggregator_api::mock()),
+            aggregator_api::mock(),
         )))
     }
 }

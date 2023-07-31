@@ -1,5 +1,5 @@
 mod harness;
-use divviup_client::{DivviupClient, NewAggregator, Role};
+use divviup_client::{DivviupClient, NewAggregator};
 use harness::with_configured_client;
 use std::sync::Arc;
 use test_support::{assert_eq, test, *};
@@ -29,8 +29,6 @@ async fn create_aggregator(
         .create_aggregator(
             account.id,
             NewAggregator {
-                role: Role::Either,
-                dap_url: "https://dap.url".parse().unwrap(),
                 api_url: "https://api.url".parse().unwrap(),
                 name: "my account name".into(),
                 bearer_token: "somebearertoken".into(),

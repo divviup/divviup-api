@@ -1,41 +1,27 @@
+use super::ActiveModel;
 use crate::{
-    entity::{validators::base64, Account},
+    clients::{AggregatorClient, ClientError},
+    entity::{validators::base64, Account, Aggregator},
     handler::Error,
 };
 use sea_orm::IntoActiveModel;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use time::OffsetDateTime;
+use trillium_client::Client;
+use trillium_http::Status;
 use uuid::Uuid;
-use validator::{Validate, ValidationError};
-
-use super::{ActiveModel, Role};
+use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(Deserialize, Serialize, Validate, Debug, Clone, Default)]
 pub struct NewAggregator {
-    #[validate(required, custom = "validate_role")]
-    pub role: Option<String>,
     #[validate(required, length(min = 1))]
     pub name: Option<String>,
-    #[validate(required)]
     #[cfg_attr(not(feature = "integration-testing"), validate(custom = "https"))]
     pub api_url: Option<String>,
-    #[validate(required)]
-    #[cfg_attr(not(feature = "integration-testing"), validate(custom = "https"))]
-    pub dap_url: Option<String>,
     #[validate(required, custom = "base64", length(min = 8))]
     pub bearer_token: Option<String>,
     pub is_first_party: Option<bool>,
-}
-
-fn validate_role(role: &str) -> Result<(), ValidationError> {
-    Role::from_str(role)
-        .map_err(|_| {
-            let mut error = ValidationError::new("enum");
-            error.add_param("values".into(), &vec!["Leader", "Helper", "Either"]);
-            error
-        })
-        .map(|_| ())
 }
 
 #[cfg_attr(feature = "integration-testing", allow(dead_code))]
@@ -48,8 +34,40 @@ fn https(url: &str) -> Result<(), ValidationError> {
 }
 
 impl NewAggregator {
-    pub fn build(self, account: Option<&Account>) -> Result<ActiveModel, Error> {
+    pub async fn build(
+        self,
+        account: Option<&Account>,
+        client: Client,
+    ) -> Result<ActiveModel, Error> {
         self.validate()?;
+        let aggregator_config = AggregatorClient::get_config(
+            client,
+            self.api_url.as_ref().unwrap().parse()?,
+            self.bearer_token.as_ref().unwrap(),
+        )
+        .await
+        .map_err(|e| match e {
+            ClientError::HttpStatusNotSuccess {
+                status: Some(Status::Unauthorized | Status::Forbidden),
+                ..
+            } => {
+                let mut ve = ValidationErrors::new();
+                ve.add("bearer_token", ValidationError::new("token-not-recognized"));
+                ve.into()
+            }
+
+            ClientError::Http(_)
+            | ClientError::HttpStatusNotSuccess {
+                status: Some(Status::NotFound),
+                ..
+            } => {
+                let mut ve = ValidationErrors::new();
+                ve.add("api_url", ValidationError::new("http-error"));
+                ve.into()
+            }
+
+            other => Error::from(other),
+        })?;
 
         // unwrap safety: the below unwraps will never panic, because
         // the above call to `NewAggregator::validate` will
@@ -63,11 +81,11 @@ impl NewAggregator {
         // of the scope of this repository, we work around this by
         // double-checking these Options -- once in validate, and
         // again in the conversion to non-optional fields.
-        Ok(super::Model {
-            role: self.role.unwrap().parse().unwrap(),
+        Ok(Aggregator {
+            role: aggregator_config.role,
             name: self.name.unwrap(),
             api_url: self.api_url.unwrap().parse()?,
-            dap_url: self.dap_url.unwrap().parse()?,
+            dap_url: aggregator_config.dap_url.into(),
             bearer_token: self.bearer_token.unwrap(),
             id: Uuid::new_v4(),
             account_id: account.map(|account| account.id),
@@ -75,6 +93,8 @@ impl NewAggregator {
             updated_at: OffsetDateTime::now_utc(),
             deleted_at: None,
             is_first_party: account.is_none() && self.is_first_party.unwrap_or(true),
+            query_types: aggregator_config.query_types,
+            vdafs: aggregator_config.vdafs,
         }
         .into_active_model())
     }

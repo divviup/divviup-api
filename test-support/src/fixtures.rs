@@ -4,6 +4,7 @@ use rand::random;
 use trillium::HeaderValue;
 
 pub use divviup_api::api_mocks::aggregator_api::random_hpke_config;
+use uuid::Uuid;
 
 pub fn user() -> User {
     User {
@@ -104,11 +105,8 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
 
 pub fn new_aggregator() -> NewAggregator {
     NewAggregator {
-        role: Some(Role::Either.as_ref().to_string()),
         name: Some(format!("{}-aggregator", random_name())),
-        // This path prefix matches that in the ApiMocks router.
-        api_url: Some(format!("https://api.{}.divviup.org/prefix/", random_name())),
-        dap_url: Some(format!("https://dap.{}.divviup.org", random_name())),
+        api_url: Some(format!("https://api.{}.divviup.org/", random_name())),
         bearer_token: Some(random_name()),
         is_first_party: None,
     }
@@ -122,12 +120,29 @@ pub async fn aggregator_pair(app: &DivviupApi, account: &Account) -> (Aggregator
 }
 
 pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregator {
-    new_aggregator()
-        .build(account)
-        .unwrap()
-        .insert(app.db())
-        .await
-        .unwrap()
+    Aggregator {
+        account_id: account.map(|a| a.id),
+        api_url: format!("https://api.{}.divviup.org/", random_name())
+            .parse()
+            .unwrap(),
+        dap_url: format!("https://dap.{}.divviup.org/", random_name())
+            .parse()
+            .unwrap(),
+        bearer_token: random_name(),
+        created_at: OffsetDateTime::now_utc(),
+        updated_at: OffsetDateTime::now_utc(),
+        deleted_at: None,
+        is_first_party: account.is_none(),
+        id: Uuid::new_v4(),
+        name: random_name(),
+        role: Role::Either,
+        query_types: Default::default(),
+        vdafs: Default::default(),
+    }
+    .into_active_model()
+    .insert(app.db())
+    .await
+    .unwrap()
 }
 
 pub async fn api_token(app: &DivviupApi, account: &Account) -> (ApiToken, HeaderValue) {

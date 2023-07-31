@@ -8,7 +8,8 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter,
 };
 use trillium::{Conn, Handler, Status};
-use trillium_api::{FromConn, Json};
+use trillium_api::{FromConn, Json, State};
+use trillium_client::Client;
 use trillium_router::RouterConnExt;
 use uuid::Uuid;
 
@@ -82,10 +83,16 @@ pub async fn index(
 
 pub async fn create(
     _: &mut Conn,
-    (db, account, Json(new_aggregator)): (Db, Account, Json<NewAggregator>),
+    (db, account, Json(new_aggregator), State(client)): (
+        Db,
+        Account,
+        Json<NewAggregator>,
+        State<Client>,
+    ),
 ) -> Result<impl Handler, Error> {
     new_aggregator
-        .build(Some(&account))?
+        .build(Some(&account), client)
+        .await?
         .insert(&db)
         .await
         .map_err(Error::from)
@@ -99,10 +106,16 @@ pub async fn delete(_: &mut Conn, (db, aggregator): (Db, Aggregator)) -> Result<
 
 pub async fn update(
     _: &mut Conn,
-    (db, aggregator, Json(update_aggregator)): (Db, Aggregator, Json<UpdateAggregator>),
+    (db, aggregator, Json(update_aggregator), State(client)): (
+        Db,
+        Aggregator,
+        Json<UpdateAggregator>,
+        State<Client>,
+    ),
 ) -> Result<Json<Aggregator>, Error> {
     update_aggregator
-        .build(aggregator)?
+        .build(aggregator, client)
+        .await?
         .update(&db)
         .await
         .map_err(Error::from)
@@ -111,10 +124,11 @@ pub async fn update(
 
 pub async fn admin_create(
     _: &mut Conn,
-    (db, Json(new_aggregator)): (Db, Json<NewAggregator>),
+    (db, Json(new_aggregator), State(client)): (Db, Json<NewAggregator>, State<Client>),
 ) -> Result<impl Handler, Error> {
     new_aggregator
-        .build(None)?
+        .build(None, client)
+        .await?
         .insert(&db)
         .await
         .map_err(Error::from)

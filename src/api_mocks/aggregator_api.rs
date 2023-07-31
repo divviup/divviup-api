@@ -1,7 +1,8 @@
 use super::random_chars;
 use crate::clients::aggregator_client::api_types::{
-    HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, QueryType, Role,
-    TaskCreate, TaskId, TaskIds, TaskMetrics, TaskResponse, VdafInstance,
+    AggregatorApiConfig, HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId, HpkePublicKey,
+    JanusDuration, QueryType, Role, TaskCreate, TaskId, TaskIds, TaskMetrics, TaskResponse,
+    VdafInstance,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use querystrong::QueryStrong;
@@ -10,16 +11,50 @@ use sha2::{Digest, Sha256};
 use std::iter::repeat_with;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Json};
+use trillium_http::KnownHeaderName;
 use trillium_router::{router, RouterConnExt};
 use uuid::Uuid;
 
+pub const BAD_BEARER_TOKEN: &str = "badbearertoken";
+
 pub fn mock() -> impl Handler {
-    router()
-        .post("/tasks", api(post_task))
-        .get("/tasks/:task_id", api(get_task))
-        .get("/task_ids", api(task_ids))
-        .delete("/tasks/:task_id", Status::Ok)
-        .get("/tasks/:task_id/metrics", api(get_task_metrics))
+    (
+        bearer_token_check,
+        router()
+            .get(
+                "/",
+                Json(AggregatorApiConfig {
+                    dap_url: format!("https://dap.{}.example", random_chars(5))
+                        .parse()
+                        .unwrap(),
+                    role: random(),
+                    vdafs: Default::default(),
+                    query_types: Default::default(),
+                }),
+            )
+            .post("/tasks", api(post_task))
+            .get("/tasks/:task_id", api(get_task))
+            .get("/task_ids", api(task_ids))
+            .delete("/tasks/:task_id", Status::Ok)
+            .get("/tasks/:task_id/metrics", api(get_task_metrics)),
+    )
+}
+
+async fn bearer_token_check(conn: Conn) -> Conn {
+    let token_is_valid = conn
+        .request_headers()
+        .get_str(KnownHeaderName::Authorization)
+        .map_or(false, |s| match s.split_once(' ') {
+            Some(("Bearer", BAD_BEARER_TOKEN)) => false,
+            Some(("Bearer", _)) => true,
+            _ => false,
+        });
+
+    if token_is_valid {
+        conn
+    } else {
+        conn.with_status(Status::Unauthorized).halt()
+    }
 }
 
 async fn get_task_metrics(_: &mut Conn, (): ()) -> Json<TaskMetrics> {
