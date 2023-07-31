@@ -52,7 +52,7 @@
     "@types/jest": "^29.5.3",
     "@types/luxon": "^3.3.1",
     "@types/node": "^20.4.4",
-    "@types/react": "^18.2.16",
+    "@types/react": "^18.2.17",
     "@types/react-bootstrap": "^0.32.32",
     "@types/react-dom": "^18.2.7",
     "@types/react-router": "^5.1.20",
