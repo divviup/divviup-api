@@ -4,7 +4,7 @@ use crate::{
     Db, Permissions, PermissionsActor,
 };
 use sea_orm::{
-    sea_query::{self, all, any},
+    sea_query::{all, any},
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter,
 };
 use trillium::{Conn, Handler, Status};

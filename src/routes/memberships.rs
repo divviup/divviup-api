@@ -4,8 +4,8 @@ use crate::{
     Db, Error, PermissionsActor,
 };
 use sea_orm::{
-    sea_query::{self, all},
-    ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter, TransactionTrait,
+    sea_query::all, ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter,
+    TransactionTrait,
 };
 use trillium::{Conn, Handler, Status};
 use trillium_api::Json;

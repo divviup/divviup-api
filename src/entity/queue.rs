@@ -3,7 +3,7 @@ use crate::{
     queue::{EnqueueJob, Job, JobError},
 };
 use sea_orm::{
-    sea_query::{self, all, any, LockBehavior, LockType},
+    sea_query::{all, any, LockBehavior, LockType},
     ActiveModelBehavior, ActiveValue, ColumnTrait, DatabaseTransaction, DbErr, DeriveActiveEnum,
     DeriveEntityModel, DerivePrimaryKey, DeriveRelation, EntityTrait, EnumIter, PrimaryKeyTrait,
     QueryFilter, QueryOrder, QuerySelect,

@@ -3,8 +3,7 @@ use crate::{
     Db,
 };
 use sea_orm::{
-    sea_query::{self, all},
-    ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect, Select,
+    sea_query::all, ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect, Select,
 };
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
