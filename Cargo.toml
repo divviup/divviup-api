@@ -28,7 +28,7 @@ git-version = "0.3.5"
 janus_messages = "0.5.10"
 log = "0.4.19"
 opentelemetry = { version = "0.19.0", features = ["metrics"] }
-opentelemetry-prometheus = { version = "0.12.0", features = [
+opentelemetry-prometheus = { version = "0.13.0", features = [
     "prometheus-encoding",
 ] }
 querystrong = "0.3.0"
