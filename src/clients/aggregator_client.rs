@@ -49,6 +49,7 @@ impl AggregatorClient {
         client
             .get(base_url)
             .with_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
+            .with_header(KnownHeaderName::Accept, CONTENT_TYPE)
             .success_or_client_error()
             .await?
             .response_json()
