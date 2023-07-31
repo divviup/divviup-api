@@ -114,4 +114,8 @@ impl QueryTypeNameSet {
     pub fn intersect(&self, other: &QueryTypeNameSet) -> QueryTypeNameSet {
         self.0.intersection(&other.0).cloned().collect()
     }
+
+    pub fn contains(&self, name: &QueryTypeName) -> bool {
+        self.0.contains(name)
+    }
 }

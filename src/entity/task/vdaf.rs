@@ -1,4 +1,4 @@
-use crate::json_newtype;
+use crate::{entity::aggregator::VdafName, json_newtype};
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError, ValidationErrors};
 
@@ -70,6 +70,19 @@ pub enum Vdaf {
 
     #[serde(other)]
     Unrecognized,
+}
+
+impl Vdaf {
+    pub fn name(&self) -> VdafName {
+        match self {
+            Vdaf::Count => VdafName::Prio3Count,
+            Vdaf::Histogram(_) => VdafName::Prio3Histogram,
+            Vdaf::Sum(_) => VdafName::Prio3Sum,
+            Vdaf::CountVec(_) => VdafName::Prio3Count,
+            Vdaf::SumVec(_) => VdafName::Prio3SumVec,
+            Vdaf::Unrecognized => VdafName::Other("unsupported".into()),
+        }
+    }
 }
 
 json_newtype!(Vdaf);
