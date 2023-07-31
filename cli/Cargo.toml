@@ -22,7 +22,7 @@ time = { version = "0.3.23", features = [
     "serde-well-known",
     "local-offset",
 ] }
-serde_json = "1.0.103"
+serde_json = "1.0.104"
 serde_yaml = "0.9.25"
 env_logger = "0.10.0"
 colored = "2.0.4"
