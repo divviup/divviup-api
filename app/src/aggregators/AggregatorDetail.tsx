@@ -110,7 +110,21 @@ function AggregatorPropertyTable() {
         <TableRow label="Name" value="name" />
         <TableRow label="DAP url" value="dap_url" />
         <TableRow label="API url" value="api_url" />
-        <TableRow label="Role" value="role" />
+        <TableRow label="Supported roles" value="role" />
+        <TableRow
+          label="Supported VDAFs"
+          value={({ vdafs }) =>
+            vdafs.map((v) => v.replace(/^Prio3/, "").toLowerCase()).join(", ")
+          }
+        />
+        <TableRow
+          label="Supported query types"
+          value={({ query_types }) =>
+            query_types
+              .map((v) => v.replaceAll(/([A-Z])/g, " $1").toLowerCase())
+              .join(", ")
+          }
+        />
       </tbody>
     </Table>
   );
