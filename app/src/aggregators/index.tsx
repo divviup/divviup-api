@@ -2,7 +2,7 @@ import Aggregators from "./AggregatorList";
 import AggregatorForm from "./AggregatorForm";
 import AggregatorDetail from "./AggregatorDetail";
 import ApiClient from "../ApiClient";
-import { RouteObject, defer } from "react-router-dom";
+import { RouteObject, defer, redirect } from "react-router-dom";
 
 export default function aggregators(apiClient: ApiClient): RouteObject {
   return {
@@ -33,10 +33,13 @@ export default function aggregators(apiClient: ApiClient): RouteObject {
           let data = Object.fromEntries(await request.formData());
           switch (request.method) {
             case "PATCH":
-              return await apiClient.updateTask(
-                params.task_id as string,
-                data as { name: string }
+              return await apiClient.updateAggregator(
+                params.aggregator_id as string,
+                data as { name: string } | { bearer_token: string }
               );
+            case "DELETE":
+              await apiClient.deleteAggregator(params.aggregator_id as string);
+              return redirect("..");
             default:
               throw new Error(`unexpected method ${request.method}`);
           }

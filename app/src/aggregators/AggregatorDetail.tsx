@@ -1,15 +1,35 @@
-import { Await, useLoaderData, useParams } from "react-router-dom";
+import {
+  Await,
+  useFetcher,
+  useLoaderData,
+  useNavigation,
+  useParams,
+} from "react-router-dom";
 import { Aggregator } from "../ApiClient";
 import { AccountBreadcrumbs } from "../util";
 import { LinkContainer } from "react-router-bootstrap";
 import Breadcrumb from "react-bootstrap/Breadcrumb";
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import { CloudUpload } from "react-bootstrap-icons";
+import {
+  ArrowRepeat,
+  CloudUpload,
+  Pencil,
+  PencilSquare,
+  Trash,
+} from "react-bootstrap-icons";
 import Table from "react-bootstrap/Table";
 import D from "../logo/color/svg/small.svg";
 import Placeholder from "react-bootstrap/Placeholder";
+import {
+  Button,
+  ButtonGroup,
+  FormControl,
+  FormGroup,
+  FormLabel,
+  Modal,
+} from "react-bootstrap";
 
 function Breadcrumbs() {
   let { aggregator } = useLoaderData() as {
@@ -72,6 +92,11 @@ export default function AggregatorDetail() {
       <Row>
         <Col>
           <AggregatorPropertyTable />
+          <ButtonGroup>
+            <RenameAggregatorButton />
+            <RotateBearerTokenButton />
+            <DeleteAggregatorButton />
+          </ButtonGroup>
         </Col>
       </Row>
     </>
@@ -125,5 +150,173 @@ export function WithAggregator({
     <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
       <Await resolve={aggregator} children={children} />
     </Suspense>
+  );
+}
+
+function RenameAggregatorButton() {
+  const navigation = useNavigation();
+
+  const [show, setShow] = useState(false);
+  const close = React.useCallback(() => setShow(false), []);
+  const open = React.useCallback(() => setShow(true), []);
+  const fetcher = useFetcher();
+
+  useEffect(() => {
+    if (fetcher.data) close();
+  }, [fetcher, close]);
+
+  return (
+    <>
+      <Button
+        variant="outline-secondary"
+        className="ml-auto"
+        size="sm"
+        onClick={open}
+      >
+        <PencilSquare /> Rename
+      </Button>
+      <Modal show={show} onHide={close}>
+        <fetcher.Form method="PATCH">
+          <Modal.Header closeButton>
+            <Modal.Title>
+              Rename{" "}
+              <WithAggregator>{({ name }) => `"${name}"`}</WithAggregator>
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormGroup controlId="name">
+              <FormLabel>Name</FormLabel>
+              <WithAggregator>
+                {({ name }) => (
+                  <FormControl
+                    name="name"
+                    type="text"
+                    data-1p-ignore
+                    defaultValue={name}
+                  />
+                )}
+              </WithAggregator>
+            </FormGroup>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={close}>
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={navigation.state === "submitting"}
+            >
+              <Pencil /> Edit
+            </Button>
+          </Modal.Footer>
+        </fetcher.Form>
+      </Modal>
+    </>
+  );
+}
+
+function RotateBearerTokenButton() {
+  const navigation = useNavigation();
+
+  const [show, setShow] = useState(false);
+  const close = React.useCallback(() => setShow(false), []);
+  const open = React.useCallback(() => setShow(true), []);
+  const fetcher = useFetcher();
+
+  useEffect(() => {
+    if (fetcher.data) close();
+  }, [fetcher, close]);
+
+  return (
+    <>
+      <Button
+        variant="outline-secondary"
+        className="ml-auto"
+        size="sm"
+        onClick={open}
+      >
+        <ArrowRepeat /> Rotate Token
+      </Button>
+      <Modal show={show} onHide={close}>
+        <fetcher.Form method="PATCH">
+          <Modal.Header closeButton>
+            <Modal.Title>
+              Rotate Bearer Token for{" "}
+              <WithAggregator>{({ name }) => `"${name}"`}</WithAggregator>
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <FormGroup controlId="bearer_token">
+              <FormLabel>New Bearer Token</FormLabel>
+              <FormControl name="bearer_token" type="text" />
+            </FormGroup>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={close}>
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={navigation.state === "submitting"}
+            >
+              <ArrowRepeat /> Rotate
+            </Button>
+          </Modal.Footer>
+        </fetcher.Form>
+      </Modal>
+    </>
+  );
+}
+
+function DeleteAggregatorButton() {
+  const navigation = useNavigation();
+
+  const [show, setShow] = useState(false);
+  const close = React.useCallback(() => setShow(false), []);
+  const open = React.useCallback(() => setShow(true), []);
+  const fetcher = useFetcher();
+
+  useEffect(() => {
+    if (fetcher.data) close();
+  }, [fetcher, close]);
+
+  return (
+    <>
+      <Button
+        variant="outline-danger"
+        className="ml-auto"
+        size="sm"
+        onClick={open}
+      >
+        <Trash /> Delete
+      </Button>
+      <Modal show={show} onHide={close}>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Delete <WithAggregator>{({ name }) => `"${name}"`}</WithAggregator>?
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          This aggregator will immediately be removed from the interface and no
+          new tasks can be created with it.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={close}>
+            Close
+          </Button>
+          <fetcher.Form method="delete">
+            <Button
+              variant="danger"
+              type="submit"
+              disabled={navigation.state === "submitting"}
+            >
+              <Trash /> Delete
+            </Button>
+          </fetcher.Form>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 }
