@@ -1,24 +1,16 @@
 use crate::{
-    entity::{Account, Accounts, ApiToken, ApiTokenColumn, ApiTokens},
+    entity::{Account, ApiToken, ApiTokens},
     Db,
 };
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use sea_orm::{
-    ActiveModelTrait, ActiveValue, ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter,
-};
-use sha2::{Digest, Sha256};
-use time::OffsetDateTime;
-use trillium::Conn;
+use sea_orm::ActiveModelTrait;
+use trillium::{Conn, KnownHeaderName};
 use trillium_api::FromConn;
-use trillium_http::KnownHeaderName;
 
 #[derive(Clone, Debug)]
 pub struct AccountBearerToken {
     pub account: Account,
     pub api_token: ApiToken,
 }
-
-const BEARER: &str = "Bearer ";
 
 #[trillium::async_trait]
 impl FromConn for AccountBearerToken {
@@ -28,32 +20,13 @@ impl FromConn for AccountBearerToken {
         }
 
         let db: &Db = conn.state()?;
-        let header = conn
+        let token = conn
             .request_headers()
-            .get_str(KnownHeaderName::Authorization)?;
-
-        if !header.starts_with(BEARER) {
-            return None;
-        }
-
-        let header = &header[BEARER.len()..];
-        let bytes = URL_SAFE_NO_PAD.decode(header).ok()?;
-        let sha = Sha256::digest(bytes);
-        let (api_token, account) = ApiTokens::find()
-            .find_also_related(Accounts)
-            .filter(ApiTokenColumn::TokenHash.eq(&*sha))
-            .one(db)
-            .await
-            .ok()
-            .flatten()?;
-
-        let mut api_token = api_token.clone().into_active_model();
-        api_token.last_used_at = ActiveValue::Set(Some(OffsetDateTime::now_utc()));
-        let api_token = api_token.update(db).await.ok()?;
-
-        let account = account?;
+            .get_str(KnownHeaderName::Authorization)?
+            .strip_prefix("Bearer ")?;
+        let (api_token, account) = ApiTokens::load_and_check(token, db).await?;
+        let api_token = api_token.mark_last_used().update(db).await.ok()?;
         let account_bearer_token = Self { account, api_token };
-
         conn.set_state(account_bearer_token.clone());
         Some(account_bearer_token)
     }
