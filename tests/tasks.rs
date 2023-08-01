@@ -649,6 +649,8 @@ mod update {
 }
 
 mod collector_auth_tokens {
+    use divviup_api::clients::aggregator_client::api_types::AuthenticationToken;
+
     use super::{assert_eq, test, *};
 
     #[test(harness = with_client_logs)]
@@ -668,7 +670,7 @@ mod collector_auth_tokens {
             .unwrap();
 
         assert_ok!(conn);
-        let body: Vec<String> = conn.response_json().await;
+        let body: Vec<AuthenticationToken> = conn.response_json().await;
         assert_eq!(vec![auth_token], body);
         Ok(())
     }
@@ -705,7 +707,7 @@ mod collector_auth_tokens {
             .unwrap();
 
         assert_ok!(conn);
-        let body: Vec<String> = conn.response_json().await;
+        let body: Vec<AuthenticationToken> = conn.response_json().await;
         assert_eq!(vec![auth_token], body);
         Ok(())
     }
@@ -727,7 +729,7 @@ mod collector_auth_tokens {
             .unwrap();
 
         assert_ok!(conn);
-        let body: Vec<String> = conn.response_json().await;
+        let body: Vec<AuthenticationToken> = conn.response_json().await;
         assert_eq!(vec![auth_token], body);
         Ok(())
     }
@@ -749,7 +751,7 @@ mod collector_auth_tokens {
             .unwrap();
 
         assert_ok!(conn);
-        let body: Vec<String> = conn.response_json().await;
+        let body: Vec<AuthenticationToken> = conn.response_json().await;
         assert_eq!(vec![auth_token], body);
         Ok(())
     }

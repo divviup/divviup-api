@@ -1,5 +1,6 @@
 use super::{ActiveModel, *};
 use crate::{
+    clients::aggregator_client::api_types::AuthenticationToken,
     entity::{Account, Aggregator},
     handler::Error,
 };
@@ -84,7 +85,7 @@ impl ProvisionableTask {
             .provision_aggregator(client.clone(), self.helper_aggregator.clone())
             .await?;
 
-        self.aggregator_auth_token = helper.aggregator_auth_token;
+        self.aggregator_auth_token = helper.aggregator_auth_token.map(AuthenticationToken::token);
 
         let _leader = self
             .provision_aggregator(client, self.leader_aggregator.clone())

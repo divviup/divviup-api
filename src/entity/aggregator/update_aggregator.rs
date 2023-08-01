@@ -1,6 +1,6 @@
 use crate::{
     clients::{AggregatorClient, ClientError},
-    entity::{validators::base64, Aggregator},
+    entity::Aggregator,
     Error,
 };
 use sea_orm::{ActiveModelTrait, ActiveValue, IntoActiveModel};
@@ -14,8 +14,6 @@ use validator::{Validate, ValidationError, ValidationErrors};
 pub struct UpdateAggregator {
     #[validate(length(min = 1))]
     pub name: Option<String>,
-
-    #[validate(custom = "base64", length(min = 8))]
     pub bearer_token: Option<String>,
 }
 
