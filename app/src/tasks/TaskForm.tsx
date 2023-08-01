@@ -423,6 +423,7 @@ function LeaderAggregator(props: Props) {
   const { aggregators } = useLoaderData() as {
     aggregators: Promise<Aggregator[]>;
   };
+  let { helper_aggregator_id } = props.values;
 
   return (
     <TaskFormGroup controlId="leader_aggregator_id">
@@ -444,9 +445,13 @@ function LeaderAggregator(props: Props) {
           <Await resolve={aggregators}>
             {(aggregators: Aggregator[]) =>
               aggregators
-                .filter((a) => a.role === "Leader" || a.role === "Either")
+                .filter(({ role }) => role === "Leader" || role === "Either")
                 .map((aggregator) => (
-                  <option key={aggregator.id} value={aggregator.id}>
+                  <option
+                    key={aggregator.id}
+                    value={aggregator.id}
+                    disabled={aggregator.id === helper_aggregator_id}
+                  >
                     {aggregator.name}
                   </option>
                 ))
@@ -465,6 +470,7 @@ function HelperAggregator(props: Props) {
   const { aggregators } = useLoaderData() as {
     aggregators: Promise<Aggregator[]>;
   };
+  let { leader_aggregator_id } = props.values;
   return (
     <TaskFormGroup>
       <ShortHelpAndLabel
@@ -484,9 +490,13 @@ function HelperAggregator(props: Props) {
           <Await resolve={aggregators}>
             {(aggregators: Aggregator[]) =>
               aggregators
-                .filter((a) => a.role === "Helper" || a.role === "Either")
+                .filter(({ role }) => role === "Helper" || role === "Either")
                 .map((aggregator) => (
-                  <option key={aggregator.id} value={aggregator.id}>
+                  <option
+                    key={aggregator.id}
+                    value={aggregator.id}
+                    disabled={aggregator.id === leader_aggregator_id}
+                  >
                     {aggregator.name}
                   </option>
                 ))
@@ -506,7 +516,30 @@ function QueryType(props: Props) {
     setFieldValue,
     values: { max_batch_size, min_batch_size },
   } = props;
-  const timeInterval = typeof max_batch_size !== "number";
+  const { aggregators } = useLoaderData() as {
+    aggregators: Promise<Aggregator[]>;
+  };
+
+  const { leader_aggregator_id, helper_aggregator_id } = props.values;
+  const [aggregatorsResolved, setAggregatorsResolved] = React.useState<
+    Aggregator[]
+  >([]);
+  React.useEffect(() => {
+    aggregators.then((a) => setAggregatorsResolved(a));
+  }, [setAggregatorsResolved, aggregators]);
+  const leader = leader_aggregator_id
+    ? aggregatorsResolved.find(({ id }) => id === leader_aggregator_id) || null
+    : null;
+  const helper = helper_aggregator_id
+    ? aggregatorsResolved.find(({ id }) => id === helper_aggregator_id) || null
+    : null;
+  const queryTypes =
+    leader && helper
+      ? leader.query_types.filter((qt) => helper.query_types.includes(qt))
+      : ["TimeInterval", "FixedSize"];
+
+  const timeInterval =
+    queryTypes.includes("TimeInterval") && typeof max_batch_size !== "number";
 
   const checkboxChange = React.useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -536,6 +569,7 @@ function QueryType(props: Props) {
         checked={timeInterval}
         onChange={checkboxChange}
         label="Time Interval"
+        disabled={!queryTypes.includes("TimeInterval")}
         value="time"
       />
       <FormCheck
@@ -545,6 +579,7 @@ function QueryType(props: Props) {
         checked={!timeInterval}
         onChange={checkboxChange}
         label="Fixed Size"
+        disabled={!queryTypes.includes("FixedSize")}
         value="fixed"
       />
       <MaxBatchSize {...props} />
@@ -745,6 +780,32 @@ function TimePrecisionSeconds(props: Props) {
 }
 
 function VdafType(props: Props) {
+  const { aggregators } = useLoaderData() as {
+    aggregators: Promise<Aggregator[]>;
+  };
+
+  const { leader_aggregator_id, helper_aggregator_id } = props.values;
+  const [aggregatorsResolved, setAggregatorsResolved] = React.useState<
+    Aggregator[]
+  >([]);
+  React.useEffect(() => {
+    aggregators.then((a) => setAggregatorsResolved(a));
+  }, [setAggregatorsResolved, aggregators]);
+  const leader = leader_aggregator_id
+    ? aggregatorsResolved.find(({ id }) => id === leader_aggregator_id) || null
+    : null;
+  const helper = helper_aggregator_id
+    ? aggregatorsResolved.find(({ id }) => id === helper_aggregator_id) || null
+    : null;
+
+  let vdafs = new Set(
+    leader && helper
+      ? leader.vdafs
+          .filter((vdaf) => helper.vdafs.includes(vdaf))
+          .map((vdaf) => vdaf.replace(/^Prio3/, "").toLowerCase())
+      : ["sum", "histogram", "count"]
+  );
+
   return (
     <TaskFormGroup controlId="vdaf.type">
       <ShortHelpAndLabel
@@ -759,9 +820,11 @@ function VdafType(props: Props) {
         isInvalid={typeof props.errors.vdaf === "string"}
       >
         <option></option>
-        <option value="sum">sum</option>
-        <option value="histogram">histogram</option>
-        <option value="count">count</option>
+        {["sum", "histogram", "count"].map((vdaf) => (
+          <option key={vdaf} value={vdaf} disabled={!vdafs.has(vdaf)}>
+            {vdaf}
+          </option>
+        ))}
       </FormSelect>
       <FormControl.Feedback type="invalid">
         {typeof props.errors.vdaf === "string" ? props.errors.vdaf : null}

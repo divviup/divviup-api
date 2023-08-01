@@ -125,4 +125,8 @@ impl VdafNameSet {
     pub fn intersect(&self, other: &VdafNameSet) -> VdafNameSet {
         self.0.intersection(&other.0).cloned().collect()
     }
+
+    pub fn contains(&self, name: &VdafName) -> bool {
+        self.0.contains(name)
+    }
 }

@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    clients::aggregator_client::api_types::{Decode, HpkeConfig},
+    clients::aggregator_client::api_types::{Decode, HpkeConfig, QueryType},
     entity::{aggregator::Role, Account, Aggregator, Aggregators},
     handler::Error,
 };
@@ -11,7 +11,7 @@ use base64::{
 use rand::Rng;
 use sha2::{Digest, Sha256};
 use std::io::Cursor;
-use validator::ValidationErrors;
+use validator::{ValidationErrors, ValidationErrorsKind};
 
 fn in_the_future(time: &OffsetDateTime) -> Result<(), ValidationError> {
     if time < &OffsetDateTime::now_utc() {
@@ -184,6 +184,40 @@ impl NewTask {
         }
     }
 
+    fn validate_vdaf_is_supported(
+        &self,
+        leader: &Aggregator,
+        helper: &Aggregator,
+        errors: &mut ValidationErrors,
+    ) {
+        let Some(vdaf) = self.vdaf.as_ref() else {
+            return;
+        };
+        let name = vdaf.name();
+        if leader.vdafs.contains(&name) && helper.vdafs.contains(&name) {
+            return;
+        }
+        if let ValidationErrorsKind::Struct(errors) = errors
+            .errors_mut()
+            .entry("vdaf")
+            .or_insert_with(|| ValidationErrorsKind::Struct(Box::new(ValidationErrors::new())))
+        {
+            errors.add("type", ValidationError::new("not-supported"));
+        }
+    }
+
+    fn validate_query_type_is_supported(
+        &self,
+        leader: &Aggregator,
+        helper: &Aggregator,
+        errors: &mut ValidationErrors,
+    ) {
+        let name = QueryType::from(self.max_batch_size).name();
+        if !leader.query_types.contains(&name) || !helper.query_types.contains(&name) {
+            errors.add("max_batch_size", ValidationError::new("not-supported"));
+        }
+    }
+
     pub async fn validate(
         &self,
         account: Account,
@@ -193,6 +227,10 @@ impl NewTask {
         self.validate_min_lte_max(&mut errors);
         let hpke_config = self.validate_hpke_config(&mut errors);
         let aggregators = self.validate_aggregators(&account, db, &mut errors).await;
+        if let Some((leader, helper)) = aggregators.as_ref() {
+            self.validate_vdaf_is_supported(leader, helper, &mut errors);
+            self.validate_query_type_is_supported(leader, helper, &mut errors);
+        }
 
         if errors.is_empty() {
             // Unwrap safety: All of these unwraps below have previously

@@ -114,6 +114,8 @@ export interface Aggregator {
   role: Role;
   name: string;
   is_first_party: boolean;
+  vdafs: string[];
+  query_types: string[];
 }
 
 export interface NewAggregator {

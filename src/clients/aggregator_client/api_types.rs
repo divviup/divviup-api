@@ -1,6 +1,6 @@
 use crate::{
     entity::{
-        aggregator::{QueryTypeNameSet, Role as AggregatorRole, VdafNameSet},
+        aggregator::{QueryTypeName, QueryTypeNameSet, Role as AggregatorRole, VdafNameSet},
         task::vdaf::{CountVec, Histogram, Sum, SumVec, Vdaf},
         Aggregator, ProvisionableTask,
     },
@@ -71,6 +71,15 @@ impl From<Vdaf> for VdafInstance {
 pub enum QueryType {
     TimeInterval,
     FixedSize { max_batch_size: u64 },
+}
+
+impl QueryType {
+    pub fn name(&self) -> QueryTypeName {
+        match self {
+            QueryType::TimeInterval => QueryTypeName::TimeInterval,
+            QueryType::FixedSize { .. } => QueryTypeName::FixedSize,
+        }
+    }
 }
 
 impl From<QueryType> for Option<i64> {
