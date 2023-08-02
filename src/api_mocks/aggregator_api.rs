@@ -13,7 +13,6 @@ use trillium::{Conn, Handler, Status};
 use trillium_api::{api, Json};
 use trillium_http::KnownHeaderName;
 use trillium_router::{router, RouterConnExt};
-use uuid::Uuid;
 
 pub const BAD_BEARER_TOKEN: &str = "badbearertoken";
 
@@ -129,21 +128,17 @@ async fn task_ids(conn: &mut Conn, (): ()) -> Result<Json<TaskIds>, Status> {
     let query = QueryStrong::parse(conn.querystring()).map_err(|_| Status::InternalServerError)?;
     match query.get_str("pagination_token") {
         None => Ok(Json(TaskIds {
-            task_ids: repeat_with(|| Uuid::new_v4().to_string())
-                .take(10)
-                .collect(),
+            task_ids: repeat_with(random).take(10).collect(),
             pagination_token: Some("second".into()),
         })),
 
         Some("second") => Ok(Json(TaskIds {
-            task_ids: repeat_with(|| Uuid::new_v4().to_string())
-                .take(10)
-                .collect(),
+            task_ids: repeat_with(random).take(10).collect(),
             pagination_token: Some("last".into()),
         })),
 
         _ => Ok(Json(TaskIds {
-            task_ids: repeat_with(|| Uuid::new_v4().to_string()).take(5).collect(),
+            task_ids: repeat_with(random).take(5).collect(),
             pagination_token: None,
         })),
     }

@@ -1,9 +1,36 @@
 use divviup_api::{
     api_mocks::aggregator_api::{self, BAD_BEARER_TOKEN},
-    clients::AggregatorClient,
+    clients::{aggregator_client::TaskResponse, AggregatorClient},
 };
 use test_support::{assert_eq, test, *};
 use trillium::Handler;
+
+#[test(harness = with_client_logs)]
+async fn streaming_tasks(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+    use futures_lite::stream::StreamExt;
+    let aggregator = fixtures::aggregator(&app, None).await;
+    let client = aggregator.client(app.config().client.clone(), app.crypter())?;
+    let tasks: Vec<TaskResponse> = client.task_stream().try_collect().await?;
+    assert_eq!(tasks.len(), 25); // two pages of 10 plus a final page of 5
+
+    let logs = client_logs.logs();
+    assert!(logs.iter().all(|log| {
+        log.request_headers
+            .get_str(KnownHeaderName::Accept)
+            .unwrap()
+            == "application/vnd.janus.aggregator+json;version=0.1"
+    }));
+
+    assert!(logs.iter().all(|log| {
+        log.request_headers
+            .get_str(KnownHeaderName::Authorization)
+            .unwrap()
+            == &format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
+    }));
+
+    assert_eq!(logs.len(), 28); //  one per task plus three pages
+    Ok(())
+}
 
 #[test(harness = with_client_logs)]
 async fn get_task_ids(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
