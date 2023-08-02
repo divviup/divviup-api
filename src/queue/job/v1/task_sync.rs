@@ -3,7 +3,7 @@ use crate::{
     queue::job::{EnqueueJob, Job, JobError, SharedJobState, V1},
 };
 use futures_lite::StreamExt;
-use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, ModelTrait, PaginatorTrait, QueryFilter};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use time::Duration;
 
@@ -24,7 +24,9 @@ impl TaskSync {
             .await?;
 
         for aggregator in aggregators {
-            let client = aggregator.client(job_state.http_client.clone());
+            let client = aggregator
+                .client(job_state.http_client.clone(), &job_state.crypter)
+                .map_err(|e| JobError::ClientOther(e.to_string()))?;
             while let Some(task_from_aggregator) = client.task_stream().next().await.transpose()? {
                 let task_id = task_from_aggregator.task_id.to_string();
                 if let Some(_task_from_db) = Tasks::find_by_id(&task_id).one(db).await? {

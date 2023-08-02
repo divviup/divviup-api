@@ -21,11 +21,13 @@ async fn streaming_tasks(app: DivviupApi, client_logs: ClientLogs) -> TestResult
             == "application/vnd.janus.aggregator+json;version=0.1"
     }));
 
+    let expected_header = format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap());
     assert!(logs.iter().all(|log| {
-        log.request_headers
-            .get_str(KnownHeaderName::Authorization)
-            .unwrap()
-            == &format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
+        expected_header
+            == log
+                .request_headers
+                .get_str(KnownHeaderName::Authorization)
+                .unwrap()
     }));
 
     assert_eq!(logs.len(), 28); //  one per task plus three pages
@@ -41,23 +43,22 @@ async fn get_task_ids(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
 
     let logs = client_logs.logs();
     assert!(logs.iter().all(|log| {
-        log.request_headers
-            .get_str(KnownHeaderName::Accept)
-            .unwrap()
-            == "application/vnd.janus.aggregator+json;version=0.1"
+        log.request_headers.eq_ignore_ascii_case(
+            KnownHeaderName::Accept,
+            "application/vnd.janus.aggregator+json;version=0.1",
+        )
     }));
 
+    let expected_header = format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap());
     assert!(logs.iter().all(|log| {
-        log.request_headers
-            .get_str(KnownHeaderName::Authorization)
-            .unwrap()
-            == &format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
+        expected_header
+            == log
+                .request_headers
+                .get_str(KnownHeaderName::Authorization)
+                .unwrap()
     }));
 
-    let queries = logs
-        .iter()
-        .map(|log| log.url.query().clone())
-        .collect::<Vec<_>>();
+    let queries = logs.iter().map(|log| log.url.query()).collect::<Vec<_>>();
     assert_eq!(
         &queries,
         &[

@@ -81,6 +81,7 @@ pub struct SharedJobState {
     pub auth0_client: Auth0Client,
     pub postmark_client: PostmarkClient,
     pub http_client: Client,
+    pub crypter: crate::Crypter,
 }
 impl From<&Config> for SharedJobState {
     fn from(config: &Config) -> Self {
@@ -88,6 +89,7 @@ impl From<&Config> for SharedJobState {
             auth0_client: Auth0Client::new(config),
             postmark_client: PostmarkClient::new(config),
             http_client: config.client.clone(),
+            crypter: config.crypter.clone(),
         }
     }
 }

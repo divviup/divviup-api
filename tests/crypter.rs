@@ -15,7 +15,7 @@ fn round_trip_with_current_key() {
 #[test]
 fn round_trip_with_old_key() {
     let old_key = Crypter::generate_key();
-    let crypter = Crypter::from(old_key.clone());
+    let crypter = Crypter::from(old_key);
     let encrypted = crypter.encrypt(AAD, PLAINTEXT).unwrap();
 
     let crypter = Crypter::new(Crypter::generate_key(), [old_key]);
@@ -49,12 +49,10 @@ fn parsing() {
     let keys = std::iter::repeat_with(Crypter::generate_key)
         .take(5)
         .collect::<Vec<_>>();
-    let encrypted = Crypter::from(keys[0].clone())
-        .encrypt(AAD, PLAINTEXT)
-        .unwrap();
+    let encrypted = Crypter::from(keys[0]).encrypt(AAD, PLAINTEXT).unwrap();
     let crypter = keys
         .iter()
-        .map(|k| URL_SAFE_NO_PAD.encode(&k))
+        .map(|k| URL_SAFE_NO_PAD.encode(k))
         .collect::<Vec<_>>()
         .join(",")
         .parse::<Crypter>()

@@ -1,16 +1,15 @@
-use std::{
-    collections::VecDeque,
-    fmt::{self, Formatter},
-    pin::Pin,
-    task::{ready, Context, Poll},
-};
+mod task_id_stream;
+mod task_stream;
+
+use task_id_stream::TaskIdStream;
+use task_stream::TaskStream;
 
 use crate::{
     clients::{ClientConnExt, ClientError},
     entity::{task::ProvisionableTask, Aggregator},
     handler::Error,
 };
-use futures_lite::{stream::Stream, Future, StreamExt};
+use futures_lite::StreamExt;
 use serde::{de::DeserializeOwned, Serialize};
 use trillium::{HeaderValue, KnownHeaderName, Method};
 use trillium_client::{Client, Conn};
@@ -146,139 +145,5 @@ impl AggregatorClient {
 
     pub fn task_stream(&self) -> TaskStream<'_> {
         TaskStream::new(self)
-    }
-}
-
-#[derive(Clone, Debug)]
-struct Page {
-    task_ids: VecDeque<String>,
-    pagination_token: Option<String>,
-}
-
-impl From<TaskIds> for Page {
-    fn from(
-        TaskIds {
-            task_ids,
-            pagination_token,
-        }: TaskIds,
-    ) -> Self {
-        Page {
-            task_ids: task_ids.into_iter().map(|t| t.to_string()).collect(),
-            pagination_token,
-        }
-    }
-}
-
-pub struct TaskIdStream<'a> {
-    client: &'a AggregatorClient,
-    page: Option<Page>,
-    future: Option<Pin<Box<dyn Future<Output = Result<TaskIds, ClientError>> + Send + 'a>>>,
-}
-
-impl<'a> TaskIdStream<'a> {
-    fn new(client: &'a AggregatorClient) -> Self {
-        Self {
-            client,
-            page: None,
-            future: None,
-        }
-    }
-}
-
-impl<'a> fmt::Debug for TaskIdStream<'a> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("TaskIdStream")
-            .field("client", &self.client)
-            .field("current_page", &self.page)
-            .field("current_future", &"..")
-            .finish()
-    }
-}
-
-impl Stream for TaskIdStream<'_> {
-    type Item = Result<String, ClientError>;
-
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let Self {
-            client,
-            ref mut page,
-            ref mut future,
-        } = *self;
-
-        loop {
-            if let Some(page) = page {
-                if let Some(task_id) = page.task_ids.pop_front() {
-                    return Poll::Ready(Some(Ok(task_id)));
-                }
-
-                if page.pagination_token.is_none() {
-                    return Poll::Ready(None);
-                }
-            }
-
-            if let Some(fut) = future {
-                *page = Some(ready!(Pin::new(&mut *fut).poll(cx))?.into());
-                *future = None;
-            } else {
-                let pagination_token = page.as_ref().and_then(|page| page.pagination_token.clone());
-
-                *future = Some(Box::pin(async move {
-                    client.get_task_id_page(pagination_token.as_deref()).await
-                }));
-            };
-        }
-    }
-}
-
-pub struct TaskStream<'a> {
-    client: &'a AggregatorClient,
-    task_id_stream: TaskIdStream<'a>,
-    task_future: Option<
-        Pin<Box<dyn Future<Output = Option<Result<TaskResponse, ClientError>>> + Send + 'a>>,
-    >,
-}
-
-impl<'a> fmt::Debug for TaskStream<'a> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("TaskStream").field("future", &"..").finish()
-    }
-}
-
-impl<'a> TaskStream<'a> {
-    fn new(client: &'a AggregatorClient) -> Self {
-        Self {
-            task_id_stream: client.task_id_stream(),
-            client,
-            task_future: None,
-        }
-    }
-}
-
-impl Stream for TaskStream<'_> {
-    type Item = Result<TaskResponse, ClientError>;
-
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let Self {
-            client,
-            ref mut task_id_stream,
-            ref mut task_future,
-        } = *self;
-
-        loop {
-            if let Some(future) = task_future {
-                let res = ready!(Pin::new(&mut *future).poll(cx));
-                *task_future = None;
-                return Poll::Ready(res);
-            }
-
-            *task_future = match ready!(Pin::new(&mut *task_id_stream).poll_next(cx)) {
-                Some(Ok(task_id)) => Some(Box::pin(async move {
-                    let task_id = task_id;
-                    Some(client.get_task(&task_id).await)
-                })),
-                None => return Poll::Ready(None),
-                Some(Err(e)) => return Poll::Ready(Some(Err(e))),
-            };
-        }
     }
 }
