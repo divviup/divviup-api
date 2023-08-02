@@ -8,7 +8,7 @@ use trillium::Handler;
 #[test(harness = with_client_logs)]
 async fn get_task_ids(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
     let aggregator = fixtures::aggregator(&app, None).await;
-    let client = aggregator.client(app.config().client.clone());
+    let client = aggregator.client(app.config().client.clone(), app.crypter())?;
     let task_ids = client.get_task_ids().await?;
     assert_eq!(task_ids.len(), 25); // two pages of 10 plus a final page of 5
 
@@ -24,7 +24,7 @@ async fn get_task_ids(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         log.request_headers
             .get_str(KnownHeaderName::Authorization)
             .unwrap()
-            == &format!("Bearer {}", aggregator.bearer_token)
+            == &format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
     }));
 
     let queries = logs
@@ -46,7 +46,7 @@ async fn get_task_ids(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
 #[test(harness = with_client_logs)]
 async fn get_task_metrics(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
     let aggregator = fixtures::aggregator(&app, None).await;
-    let client = aggregator.client(app.config().client.clone());
+    let client = aggregator.client(app.config().client.clone(), app.crypter())?;
     assert!(client.get_task_metrics("fake-task-id").await.is_ok());
 
     let log = client_logs.last();
@@ -60,7 +60,7 @@ async fn get_task_metrics(app: DivviupApi, client_logs: ClientLogs) -> TestResul
         log.request_headers
             .get_str(KnownHeaderName::Authorization)
             .unwrap(),
-        &format!("Bearer {}", aggregator.bearer_token)
+        &format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
     );
 
     assert_eq!(
@@ -74,7 +74,7 @@ async fn get_task_metrics(app: DivviupApi, client_logs: ClientLogs) -> TestResul
 #[test(harness = with_client_logs)]
 async fn delete_task(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
     let aggregator = fixtures::aggregator(&app, None).await;
-    let client = aggregator.client(app.config().client.clone());
+    let client = aggregator.client(app.config().client.clone(), app.crypter())?;
     assert!(client.delete_task("fake-task-id").await.is_ok());
 
     let log = client_logs.last();
@@ -88,7 +88,7 @@ async fn delete_task(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         log.request_headers
             .get_str(KnownHeaderName::Authorization)
             .unwrap(),
-        &format!("Bearer {}", aggregator.bearer_token)
+        &format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
     );
 
     assert_eq!(
@@ -167,6 +167,14 @@ mod prefixes {
             let mut app = DivviupApi::new(config(api_mocks)).await;
             set_up_schema(app.db()).await;
             let mut aggregator = fixtures::aggregator(&app, None).await.into_active_model();
+            aggregator.encrypted_bearer_token = ActiveValue::Set(
+                app.crypter()
+                    .encrypt(
+                        api_url.as_ref().as_bytes(),
+                        fixtures::random_name().as_bytes(),
+                    )
+                    .unwrap(),
+            );
             aggregator.api_url = ActiveValue::Set(api_url.into());
             let aggregator = aggregator.update(app.db()).await.unwrap();
             let mut info = "testing".into();
@@ -182,7 +190,7 @@ mod prefixes {
         client_logs: ClientLogs,
         aggregator: Aggregator,
     ) -> TestResult {
-        let client = aggregator.client(app.config().client.clone());
+        let client = aggregator.client(app.config().client.clone(), app.crypter())?;
         let task_ids = client.get_task_ids().await?;
 
         assert_eq!(
@@ -208,7 +216,7 @@ mod prefixes {
         client_logs: ClientLogs,
         aggregator: Aggregator,
     ) -> TestResult {
-        let client = aggregator.client(app.config().client.clone());
+        let client = aggregator.client(app.config().client.clone(), app.crypter())?;
         let metrics = client.get_task_metrics("fake-task-id").await?;
         assert_eq!(client_logs.last().response_json::<TaskMetrics>(), metrics);
         assert_eq!(client_logs.last().method, Method::Get);
@@ -226,7 +234,7 @@ mod prefixes {
         client_logs: ClientLogs,
         aggregator: Aggregator,
     ) -> TestResult {
-        let client = aggregator.client(app.config().client.clone());
+        let client = aggregator.client(app.config().client.clone(), app.crypter())?;
         client.delete_task("fake-task-id").await?;
         assert_eq!(client_logs.last().url.path_segments().unwrap().count(), 3);
         assert_eq!(

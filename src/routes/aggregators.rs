@@ -1,15 +1,14 @@
 use crate::{
     entity::{Account, Aggregator, AggregatorColumn, Aggregators, NewAggregator, UpdateAggregator},
-    handler::Error,
-    Db, Permissions, PermissionsActor,
+    Db, Error, Permissions, PermissionsActor,
 };
 use sea_orm::{
     sea_query::{all, any},
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter,
 };
 use trillium::{Conn, Handler, Status};
-use trillium_api::{FromConn, Json, State};
-use trillium_client::Client;
+use trillium_api::{FromConn, Json};
+
 use trillium_router::RouterConnExt;
 use uuid::Uuid;
 
@@ -82,16 +81,14 @@ pub async fn index(
 }
 
 pub async fn create(
-    _: &mut Conn,
-    (db, account, Json(new_aggregator), State(client)): (
-        Db,
-        Account,
-        Json<NewAggregator>,
-        State<Client>,
-    ),
+    conn: &mut Conn,
+    (db, account, Json(new_aggregator)): (Db, Account, Json<NewAggregator>),
 ) -> Result<impl Handler, Error> {
+    let client = conn.take_state().unwrap();
+    let crypter = conn.take_state().unwrap();
+
     new_aggregator
-        .build(Some(&account), client)
+        .build(Some(&account), client, &crypter)
         .await?
         .insert(&db)
         .await
@@ -105,16 +102,13 @@ pub async fn delete(_: &mut Conn, (db, aggregator): (Db, Aggregator)) -> Result<
 }
 
 pub async fn update(
-    _: &mut Conn,
-    (db, aggregator, Json(update_aggregator), State(client)): (
-        Db,
-        Aggregator,
-        Json<UpdateAggregator>,
-        State<Client>,
-    ),
+    conn: &mut Conn,
+    (db, aggregator, Json(update_aggregator)): (Db, Aggregator, Json<UpdateAggregator>),
 ) -> Result<Json<Aggregator>, Error> {
+    let client = conn.take_state().unwrap();
+    let crypter = conn.state().unwrap();
     update_aggregator
-        .build(aggregator, client)
+        .build(aggregator, client, crypter)
         .await?
         .update(&db)
         .await
@@ -123,11 +117,13 @@ pub async fn update(
 }
 
 pub async fn admin_create(
-    _: &mut Conn,
-    (db, Json(new_aggregator), State(client)): (Db, Json<NewAggregator>, State<Client>),
+    conn: &mut Conn,
+    (db, Json(new_aggregator)): (Db, Json<NewAggregator>),
 ) -> Result<impl Handler, Error> {
+    let client = conn.take_state().unwrap();
+    let crypter = conn.state().unwrap();
     new_aggregator
-        .build(None, client)
+        .build(None, client, crypter)
         .await?
         .insert(&db)
         .await

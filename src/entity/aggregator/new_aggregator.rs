@@ -1,7 +1,7 @@
 use super::ActiveModel;
 use crate::{
     clients::{AggregatorClient, ClientError},
-    entity::{Account, Aggregator},
+    entity::{url::Url, Account, Aggregator},
     handler::Error,
 };
 use sea_orm::IntoActiveModel;
@@ -37,6 +37,7 @@ impl NewAggregator {
         self,
         account: Option<&Account>,
         client: Client,
+        crypter: &crate::Crypter,
     ) -> Result<ActiveModel, Error> {
         self.validate()?;
         let aggregator_config = AggregatorClient::get_config(
@@ -80,12 +81,19 @@ impl NewAggregator {
         // of the scope of this repository, we work around this by
         // double-checking these Options -- once in validate, and
         // again in the conversion to non-optional fields.
+
+        let api_url: Url = self.api_url.as_ref().unwrap().parse()?;
+        let encrypted_bearer_token = crypter.encrypt(
+            api_url.as_ref().as_bytes(),
+            self.bearer_token.as_ref().unwrap().as_bytes(),
+        )?;
+
         Ok(Aggregator {
             role: aggregator_config.role,
             name: self.name.unwrap(),
             api_url: self.api_url.unwrap().parse()?,
             dap_url: aggregator_config.dap_url.into(),
-            bearer_token: self.bearer_token.unwrap(),
+            encrypted_bearer_token,
             id: Uuid::new_v4(),
             account_id: account.map(|account| account.id),
             created_at: OffsetDateTime::now_utc(),

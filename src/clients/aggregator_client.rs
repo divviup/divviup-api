@@ -15,9 +15,9 @@ const CONTENT_TYPE: &str = "application/vnd.janus.aggregator+json;version=0.1";
 #[derive(Debug, Clone)]
 pub struct AggregatorClient {
     client: Client,
-    base_url: Url,
     auth_header: HeaderValue,
     aggregator: Aggregator,
+    base_url: Url,
 }
 
 impl AsRef<Client> for AggregatorClient {
@@ -27,7 +27,7 @@ impl AsRef<Client> for AggregatorClient {
 }
 
 impl AggregatorClient {
-    pub fn new(client: Client, aggregator: Aggregator) -> Self {
+    pub fn new(client: Client, aggregator: Aggregator, bearer_token: &str) -> Self {
         let mut base_url: Url = aggregator.api_url.clone().into();
         if !base_url.path().ends_with('/') {
             base_url.set_path(&format!("{}/", base_url.path()));
@@ -35,9 +35,9 @@ impl AggregatorClient {
 
         Self {
             client,
-            base_url,
-            auth_header: HeaderValue::from(format!("Bearer {}", &aggregator.bearer_token)),
+            auth_header: format!("Bearer {bearer_token}").into(),
             aggregator,
+            base_url,
         }
     }
 

@@ -1,7 +1,7 @@
 use crate::{
     clients::{AggregatorClient, ClientError},
     entity::Aggregator,
-    Error,
+    Crypter, Error,
 };
 use sea_orm::{ActiveModelTrait, ActiveValue, IntoActiveModel};
 use serde::Deserialize;
@@ -22,7 +22,8 @@ impl UpdateAggregator {
         self,
         aggregator: Aggregator,
         client: Client,
-    ) -> Result<super::ActiveModel, crate::handler::Error> {
+        crypter: &Crypter,
+    ) -> Result<super::ActiveModel, Error> {
         self.validate()?;
         let api_url = aggregator.api_url.clone().into();
         let mut aggregator = aggregator.into_active_model();
@@ -49,7 +50,10 @@ impl UpdateAggregator {
 
             aggregator.query_types = ActiveValue::Set(aggregator_config.query_types);
             aggregator.vdafs = ActiveValue::Set(aggregator_config.vdafs);
-            aggregator.bearer_token = ActiveValue::Set(bearer_token);
+            aggregator.encrypted_bearer_token = ActiveValue::Set(crypter.encrypt(
+                aggregator.api_url.as_ref().as_ref().as_bytes(),
+                bearer_token.as_bytes(),
+            )?);
         }
 
         if aggregator.is_changed() {

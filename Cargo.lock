@@ -1042,6 +1042,7 @@ dependencies = [
 name = "divviup-api"
 version = "0.0.16"
 dependencies = [
+ "aes-gcm",
  "async-lock",
  "async-session",
  "base64 0.21.2",
@@ -1088,6 +1089,7 @@ dependencies = [
  "trillium-static-compiled",
  "trillium-testing",
  "trillium-tokio",
+ "typenum",
  "url",
  "uuid",
  "validator",

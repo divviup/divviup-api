@@ -1,4 +1,4 @@
-use crate::handler::oauth2::Oauth2Config;
+use crate::{handler::oauth2::Oauth2Config, Crypter};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use email_address::EmailAddress;
 use std::{collections::VecDeque, env::VarError, error::Error, str::FromStr};
@@ -17,6 +17,7 @@ pub struct Config {
     pub auth_client_secret: String,
     pub auth_url: Url,
     pub client: Client,
+    pub crypter: Crypter,
     pub database_url: Url,
     pub email_address: EmailAddress,
     pub postmark_token: String,
@@ -95,6 +96,7 @@ impl Config {
             auth_client_secret: var("AUTH_CLIENT_SECRET")?,
             auth_url: var("AUTH_URL")?,
             client: build_client(),
+            crypter: var("DATABASE_ENCRYPTION_KEYS")?,
             database_url: var("DATABASE_URL")?,
             email_address: var("EMAIL_ADDRESS")?,
             postmark_token: var("POSTMARK_TOKEN")?,

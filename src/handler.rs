@@ -80,6 +80,10 @@ impl DivviupApi {
     pub fn config(&self) -> &Config {
         &self.config
     }
+
+    pub fn crypter(&self) -> &crate::Crypter {
+        &self.config.crypter
+    }
 }
 
 impl AsRef<Db> for DivviupApi {
@@ -101,6 +105,7 @@ fn api(db: &Db, config: &Config) -> impl Handler {
         .with_cookie_name("divviup.sid")
         .with_older_secrets(&config.session_secrets.older),
         state(config.client.clone()),
+        state(config.crypter.clone()),
         cors_headers(config),
         cache_control([Private, MustRevalidate]),
         db.clone(),

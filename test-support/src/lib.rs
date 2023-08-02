@@ -1,6 +1,6 @@
 use divviup_api::{
     clients::aggregator_client::api_types::{Encode, HpkeConfig},
-    Config, Db,
+    Config, Crypter, Db,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, future::Future, iter::repeat_with};
@@ -87,6 +87,7 @@ pub fn config(api_mocks: impl Handler) -> Config {
         email_address: "test@example.test".parse().unwrap(),
         postmark_url: POSTMARK_URL.parse().unwrap(),
         client: Client::new(trillium_testing::connector(api_mocks)),
+        crypter: Crypter::from(Crypter::generate_key()),
     }
 }
 

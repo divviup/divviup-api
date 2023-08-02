@@ -3,6 +3,7 @@ use crate::{
     clients::aggregator_client::api_types::AuthenticationToken,
     entity::{Account, Aggregator},
     handler::Error,
+    Crypter,
 };
 use janus_messages::HpkeConfig;
 use trillium_client::Client;
@@ -49,8 +50,12 @@ impl ProvisionableTask {
         &self,
         http_client: Client,
         aggregator: Aggregator,
+        crypter: &Crypter,
     ) -> Result<TaskResponse, Error> {
-        let response = aggregator.client(http_client).create_task(self).await?;
+        let response = aggregator
+            .client(http_client, crypter)?
+            .create_task(self)
+            .await?;
 
         assert_same(&self.vdaf, &response.vdaf.clone().into(), "vdaf")?;
         assert_same(
@@ -80,15 +85,19 @@ impl ProvisionableTask {
         Ok(response)
     }
 
-    pub async fn provision(mut self, client: Client) -> Result<ActiveModel, Error> {
+    pub async fn provision(
+        mut self,
+        client: Client,
+        crypter: &Crypter,
+    ) -> Result<ActiveModel, Error> {
         let helper = self
-            .provision_aggregator(client.clone(), self.helper_aggregator.clone())
+            .provision_aggregator(client.clone(), self.helper_aggregator.clone(), crypter)
             .await?;
 
         self.aggregator_auth_token = helper.aggregator_auth_token.map(AuthenticationToken::token);
 
         let _leader = self
-            .provision_aggregator(client, self.leader_aggregator.clone())
+            .provision_aggregator(client, self.leader_aggregator.clone(), crypter)
             .await?;
 
         Ok(super::Model {
