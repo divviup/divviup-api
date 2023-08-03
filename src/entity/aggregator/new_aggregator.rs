@@ -85,7 +85,7 @@ impl NewAggregator {
         let api_url: Url = self.api_url.as_ref().unwrap().parse()?;
         let encrypted_bearer_token = crypter.encrypt(
             api_url.as_ref().as_bytes(),
-            self.bearer_token.as_ref().unwrap().as_bytes(),
+            self.bearer_token.as_deref().unwrap_or_default().as_bytes(),
         )?;
 
         Ok(Aggregator {
