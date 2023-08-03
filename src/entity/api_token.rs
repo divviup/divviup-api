@@ -1,15 +1,19 @@
 use super::{Account, AccountColumn, AccountRelation, Accounts, Memberships};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use rand::Rng;
+use rand::random;
 use sea_orm::{
-    ActiveModelBehavior, DeriveEntityModel, DerivePrimaryKey, DeriveRelation, EntityTrait,
-    EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef, RelationTrait,
+    ActiveModelBehavior, ActiveValue, ConnectionTrait, DeriveEntityModel, DerivePrimaryKey,
+    DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef,
+    RelationTrait,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fmt::Debug;
+use subtle::ConstantTimeEq;
 use time::OffsetDateTime;
 use uuid::Uuid;
+
+const TOKEN_IDENTIFIER: &str = "DUAT";
 
 #[derive(Clone, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "api_token")]
@@ -109,14 +113,34 @@ impl Related<Memberships> for Entity {
 
 impl ActiveModelBehavior for ActiveModel {}
 
+fn encode_token(id: Uuid, token: &[u8; 32]) -> String {
+    format!(
+        "{TOKEN_IDENTIFIER}{}",
+        URL_SAFE_NO_PAD.encode(
+            id.as_bytes()
+                .iter()
+                .chain(token.iter())
+                .copied()
+                .collect::<Vec<u8>>(),
+        )
+    )
+}
+
+fn decode_token(token: &str) -> Option<(Uuid, [u8; 32])> {
+    let token = token.strip_prefix(TOKEN_IDENTIFIER)?;
+    let bytes: [u8; 48] = URL_SAFE_NO_PAD.decode(token).ok()?.try_into().ok()?;
+    let id = Uuid::from_slice(&bytes[0..16]).ok()?;
+    Some((id, bytes[16..].try_into().ok()?))
+}
+
 impl Model {
     pub fn build(account: &Account) -> (ActiveModel, String) {
-        let mut token = [0u8; 32];
-        rand::thread_rng().fill(&mut token);
+        let token: [u8; 32] = random();
+        let id = Uuid::new_v4();
         let token_hash = Sha256::digest(token).to_vec();
         (
             Self {
-                id: Uuid::new_v4(),
+                id,
                 account_id: account.id,
                 token_hash,
                 created_at: OffsetDateTime::now_utc(),
@@ -127,19 +151,45 @@ impl Model {
                 name: None,
             }
             .into_active_model(),
-            URL_SAFE_NO_PAD.encode(token),
+            encode_token(id, &token),
         )
+    }
+
+    pub fn mark_last_used(self) -> ActiveModel {
+        let mut api_token = self.into_active_model();
+        api_token.last_used_at = ActiveValue::Set(Some(OffsetDateTime::now_utc()));
+        api_token
     }
 
     pub fn tombstone(self) -> ActiveModel {
         let mut api_token = self.into_active_model();
-        api_token.deleted_at = sea_orm::ActiveValue::Set(Some(OffsetDateTime::now_utc()));
-        api_token.updated_at = sea_orm::ActiveValue::Set(OffsetDateTime::now_utc());
+        api_token.deleted_at = ActiveValue::Set(Some(OffsetDateTime::now_utc()));
+        api_token.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
         api_token
     }
 
     pub fn is_tombstoned(&self) -> bool {
         self.deleted_at.is_some()
+    }
+}
+
+impl Entity {
+    pub async fn load_and_check(
+        token: &str,
+        db: &impl ConnectionTrait,
+    ) -> Option<(Model, Account)> {
+        let (id, token) = decode_token(token)?;
+        let sha = Sha256::digest(token);
+        let (api_token, account) = Self::find_by_id(id)
+            .find_also_related(Accounts)
+            .one(db)
+            .await
+            .ok()??;
+        if api_token.token_hash.ct_eq(&sha).into() {
+            Some((api_token, account?))
+        } else {
+            None
+        }
     }
 }
 
@@ -150,12 +200,12 @@ pub struct UpdateApiToken {
 impl UpdateApiToken {
     pub fn build(self, model: Model) -> Result<ActiveModel, crate::handler::Error> {
         let mut api_token = model.into_active_model();
-        api_token.name = sea_orm::ActiveValue::Set(match self.name {
+        api_token.name = ActiveValue::Set(match self.name {
             Some(token) if token.is_empty() => None,
             token => token,
         });
 
-        api_token.updated_at = sea_orm::ActiveValue::Set(OffsetDateTime::now_utc());
+        api_token.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
         Ok(api_token)
     }
 }

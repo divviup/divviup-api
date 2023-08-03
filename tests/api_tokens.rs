@@ -143,8 +143,6 @@ mod index {
 
 mod create {
     use super::{assert_eq, test, *};
-    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-    use sha2::{Digest, Sha256};
 
     #[test(harness = set_up)]
     async fn success(app: DivviupApi) -> TestResult {
@@ -156,21 +154,16 @@ mod create {
             .run_async(&app)
             .await;
         assert_response!(conn, 201);
-        let mut response: ApiToken = conn.response_json().await;
-        let api_token = response.reload(app.db()).await?.unwrap();
+        let mut api_token: ApiToken = conn.response_json().await;
+        let api_token_from_db = api_token.reload(app.db()).await?.unwrap();
+        let (api_token_from_token, account_from_token) =
+            ApiTokens::load_and_check(&api_token.token.take().unwrap(), app.db())
+                .await
+                .unwrap();
 
-        assert_eq!(&api_token.token_hash, &response.token_hash);
-
-        assert_eq!(
-            &*Sha256::digest(
-                URL_SAFE_NO_PAD
-                    .decode(response.token.take().unwrap())
-                    .unwrap()
-            ),
-            &*api_token.token_hash
-        );
-
-        assert_same_json_representation(&response, &api_token);
+        assert_eq!(api_token, api_token_from_token);
+        assert_eq!(account, account_from_token);
+        assert_same_json_representation(&api_token, &api_token_from_db);
         Ok(())
     }
 
@@ -224,18 +217,14 @@ mod create {
         assert_response!(conn, 201);
         let mut api_token: ApiToken = conn.response_json().await;
         let api_token_from_db = api_token.reload(app.db()).await?.unwrap();
+        let (api_token_from_token, account_from_token) =
+            ApiTokens::load_and_check(&api_token.token.take().unwrap(), app.db())
+                .await
+                .unwrap();
 
-        assert_eq!(
-            &*Sha256::digest(
-                URL_SAFE_NO_PAD
-                    .decode(api_token.token.take().unwrap())
-                    .unwrap()
-            ),
-            &*api_token_from_db.token_hash
-        );
-
+        assert_eq!(api_token, api_token_from_token);
+        assert_eq!(account, account_from_token);
         assert_same_json_representation(&api_token, &api_token_from_db);
-
         Ok(())
     }
 
@@ -252,18 +241,14 @@ mod create {
         assert_response!(conn, 201);
         let mut api_token: ApiToken = conn.response_json().await;
         let api_token_from_db = api_token.reload(app.db()).await?.unwrap();
+        let (api_token_from_token, account_from_token) =
+            ApiTokens::load_and_check(&api_token.token.take().unwrap(), app.db())
+                .await
+                .unwrap();
 
-        assert_eq!(
-            &*Sha256::digest(
-                URL_SAFE_NO_PAD
-                    .decode(api_token.token.take().unwrap())
-                    .unwrap()
-            ),
-            &*api_token_from_db.token_hash
-        );
-
+        assert_eq!(api_token, api_token_from_token);
+        assert_eq!(account, account_from_token);
         assert_same_json_representation(&api_token, &api_token_from_db);
-
         Ok(())
     }
 
@@ -280,16 +265,13 @@ mod create {
         assert_response!(conn, 201);
         let mut api_token: ApiToken = conn.response_json().await;
         let api_token_from_db = api_token.reload(app.db()).await?.unwrap();
+        let (api_token_from_token, account_from_token) =
+            ApiTokens::load_and_check(&api_token.token.take().unwrap(), app.db())
+                .await
+                .unwrap();
 
-        assert_eq!(
-            &*Sha256::digest(
-                URL_SAFE_NO_PAD
-                    .decode(api_token.token.take().unwrap())
-                    .unwrap()
-            ),
-            &*api_token_from_db.token_hash
-        );
-
+        assert_eq!(api_token, api_token_from_token);
+        assert_eq!(account, account_from_token);
         assert_same_json_representation(&api_token, &api_token_from_db);
 
         Ok(())
