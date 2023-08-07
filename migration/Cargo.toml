@@ -15,7 +15,7 @@ clap = { version = "4.3.19", features = ["env", "derive"] }
 sea-orm = "0.12.1"
 serde_json = "1.0.104"
 thiserror = "1.0.44"
-time = "0.3.24"
+time = "0.3.25"
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
 
