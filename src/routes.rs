@@ -47,6 +47,7 @@ pub fn routes(config: &Config) -> impl Handler {
                 redirect(config.app_url.to_string()),
             ),
         )
+        .get("/tasks/:task_id", api(tasks::public_show))
         .any(
             &[Get, Post, Delete, Patch],
             "/api/*",

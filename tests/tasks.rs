@@ -774,3 +774,29 @@ mod collector_auth_tokens {
         Ok(())
     }
 }
+
+mod public_show {
+    use divviup_api::entity::task::vdaf::{Sum, Vdaf};
+    use test_support::{assert_eq, test, *};
+    #[test(harness = set_up)]
+    async fn as_completely_unauthenticated_user(app: DivviupApi) -> TestResult {
+        let account = fixtures::account(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut task = task.into_active_model();
+        task.vdaf = ActiveValue::Set(Vdaf::Sum(Sum { bits: Some(8) }));
+        let task = task.update(app.db()).await?;
+        let [leader, helper] = task.aggregators(app.db()).await?;
+        assert_ok!(
+            get(format!("/tasks/{}", task.id)).run_async(&app).await,
+            serde_json::to_string(&json!({
+                "id": task.id,
+                "leader": leader.dap_url,
+                "helper": helper.dap_url,
+                "time_precision_seconds": task.time_precision_seconds,
+                "vdaf": { "type":"sum", "bits": 8 }
+            }))
+            .unwrap()
+        );
+        Ok(())
+    }
+}

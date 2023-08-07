@@ -3,6 +3,7 @@ use crate::{
     Crypter, Db, Error, Permissions, PermissionsActor,
 };
 use sea_orm::{ActiveModelTrait, EntityTrait, ModelTrait};
+use serde_json::json;
 use std::time::Duration;
 use time::OffsetDateTime;
 use trillium::{Conn, Handler, Status};
@@ -88,6 +89,22 @@ pub async fn show(
     let task = refresh_metrics_if_needed(task, db, client, crypter).await?;
     conn.set_last_modified(task.updated_at.into());
     Ok(Json(task))
+}
+
+pub async fn public_show(conn: &mut Conn, db: Db) -> Result<impl Handler, Error> {
+    let task_id = conn.param("task_id").ok_or(Error::NotFound)?;
+    let task = Tasks::find_by_id(task_id)
+        .one(&db)
+        .await?
+        .ok_or(Error::NotFound)?;
+    let [leader, helper] = task.aggregators(&db).await?;
+    Ok(Json(json!({
+        "id": task.id,
+        "vdaf": task.vdaf,
+        "leader": leader.dap_url,
+        "helper": helper.dap_url,
+        "time_precision_seconds": task.time_precision_seconds,
+    })))
 }
 
 pub async fn update(
