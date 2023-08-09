@@ -17,6 +17,7 @@ import aggregators from "./aggregators";
 import { Spinner } from "react-bootstrap";
 import queue from "./queue";
 import sharedAggregators from "./shared-aggregators";
+import hpkeConfigs from "./hpke-configs";
 
 function buildRouter(apiClient: ApiClient) {
   return createBrowserRouter([
@@ -29,6 +30,7 @@ function buildRouter(apiClient: ApiClient) {
         apiTokens(apiClient),
         memberships(apiClient),
         tasks(apiClient),
+        hpkeConfigs(apiClient),
       ]),
     ]),
   ]);
