@@ -1,7 +1,11 @@
+use crate::{
+    entity::{Aggregators, ApiTokens, HpkeConfigs, Memberships, Tasks},
+    PermissionsActor,
+};
 use sea_orm::{
     ActiveModelBehavior, ActiveValue, ColumnTrait, DeriveEntityModel, DerivePrimaryKey,
     DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, QueryFilter, Related,
-    RelationDef, RelationTrait,
+    RelationDef, RelationTrait, Select,
 };
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -26,7 +30,7 @@ pub struct Model {
 }
 
 impl Entity {
-    pub fn for_actor(actor: &crate::PermissionsActor) -> sea_orm::Select<Self> {
+    pub fn for_actor(actor: &PermissionsActor) -> Select<Self> {
         if actor.is_admin() {
             Self::find()
         } else {
@@ -37,37 +41,45 @@ impl Entity {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::Memberships")]
+    #[sea_orm(has_many = "Memberships")]
     Memberships,
-    #[sea_orm(has_many = "super::Tasks")]
+    #[sea_orm(has_many = "Tasks")]
     Tasks,
-    #[sea_orm(has_many = "super::Aggregators")]
+    #[sea_orm(has_many = "Aggregators")]
     Aggregators,
-    #[sea_orm(has_many = "super::ApiTokens")]
+    #[sea_orm(has_many = "ApiTokens")]
     ApiTokens,
+    #[sea_orm(has_many = "HpkeConfigs")]
+    HpkeConfigs,
 }
 
-impl Related<super::Memberships> for Entity {
+impl Related<Memberships> for Entity {
     fn to() -> RelationDef {
         Relation::Memberships.def()
     }
 }
 
-impl Related<super::Aggregators> for Entity {
+impl Related<Aggregators> for Entity {
     fn to() -> RelationDef {
         Relation::Aggregators.def()
     }
 }
 
-impl Related<super::Tasks> for Entity {
+impl Related<Tasks> for Entity {
     fn to() -> RelationDef {
         Relation::Tasks.def()
     }
 }
 
-impl Related<super::ApiTokens> for Entity {
+impl Related<ApiTokens> for Entity {
     fn to() -> RelationDef {
         Relation::ApiTokens.def()
+    }
+}
+
+impl Related<HpkeConfigs> for Entity {
+    fn to() -> RelationDef {
+        Relation::HpkeConfigs.def()
     }
 }
 

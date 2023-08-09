@@ -146,7 +146,7 @@ impl Queue {
                         reschedule.map_or(JobStatus::Failed, |_| JobStatus::Pending),
                     );
                     queue_item.scheduled_at = ActiveValue::Set(reschedule);
-                    queue_item.error_message = ActiveValue::Set(Some(e));
+                    queue_item.error_message = ActiveValue::Set(Some(e.into()));
                 }
 
                 Err(e) => {
@@ -154,7 +154,7 @@ impl Queue {
                         ActiveValue::Set(queue_item.failure_count.as_ref() + 1);
                     queue_item.scheduled_at = ActiveValue::Set(None);
                     queue_item.status = ActiveValue::Set(JobStatus::Failed);
-                    queue_item.error_message = ActiveValue::Set(Some(e));
+                    queue_item.error_message = ActiveValue::Set(Some(e.into()));
                 }
             }
 

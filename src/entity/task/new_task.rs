@@ -1,16 +1,13 @@
 use super::*;
 use crate::{
-    clients::aggregator_client::api_types::{Decode, HpkeConfig, QueryType},
-    entity::{aggregator::Role, Account, Aggregator, Aggregators},
+    clients::aggregator_client::api_types::QueryType,
+    entity::{aggregator::Role, Account, Aggregator, Aggregators, HpkeConfig, HpkeConfigColumn},
     handler::Error,
 };
-use base64::{
-    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
-    Engine,
-};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::Rng;
+use sea_orm::{ColumnTrait, QueryFilter};
 use sha2::{Digest, Sha256};
-use std::io::Cursor;
 use validator::{ValidationErrors, ValidationErrorsKind};
 
 fn in_the_future(time: &OffsetDateTime) -> Result<(), ValidationError> {
@@ -56,24 +53,7 @@ pub struct NewTask {
     pub time_precision_seconds: Option<u64>,
 
     #[validate(required)]
-    pub hpke_config: Option<String>,
-}
-
-fn hpke_config(base64: &str) -> Result<HpkeConfig, ValidationError> {
-    if base64.is_empty() {
-        return Err(ValidationError::new("required"));
-    }
-    let bytes = STANDARD
-        .decode(base64)
-        .map_err(|_| ValidationError::new("base64"))?;
-    let mut cursor = Cursor::new(bytes.as_slice());
-    let hpke_config = HpkeConfig::decode(&mut cursor).map_err(|e| ValidationError {
-        code: "hpke_config".into(),
-        message: Some(e.to_string().into()),
-        params: Default::default(),
-    })?;
-
-    Ok(hpke_config)
+    pub hpke_config_id: Option<String>,
 }
 
 async fn load_aggregator(
@@ -117,11 +97,30 @@ impl NewTask {
         }
     }
 
-    fn validate_hpke_config(&self, errors: &mut ValidationErrors) -> Option<HpkeConfig> {
-        match hpke_config(self.hpke_config.as_ref()?) {
-            Ok(hpke_config) => Some(hpke_config),
-            Err(e) => {
-                errors.add("hpke_config", e);
+    async fn load_hpke_config(
+        &self,
+        account: &Account,
+        db: &impl ConnectionTrait,
+    ) -> Option<HpkeConfig> {
+        let id = Uuid::parse_str(self.hpke_config_id.as_deref()?).ok()?;
+        HpkeConfigs::find_by_id(id)
+            .filter(HpkeConfigColumn::AccountId.eq(account.id))
+            .one(db)
+            .await
+            .ok()
+            .flatten()
+    }
+
+    async fn validate_hpke_config(
+        &self,
+        account: &Account,
+        db: &impl ConnectionTrait,
+        errors: &mut ValidationErrors,
+    ) -> Option<HpkeConfig> {
+        match self.load_hpke_config(account, db).await {
+            Some(hpke_config) => Some(hpke_config),
+            None => {
+                errors.add("hpke_config_id", ValidationError::new("required"));
                 None
             }
         }
@@ -225,7 +224,7 @@ impl NewTask {
     ) -> Result<ProvisionableTask, ValidationErrors> {
         let mut errors = Validate::validate(self).err().unwrap_or_default();
         self.validate_min_lte_max(&mut errors);
-        let hpke_config = self.validate_hpke_config(&mut errors);
+        let hpke_config = self.validate_hpke_config(&account, db, &mut errors).await;
         let aggregators = self.validate_aggregators(&account, db, &mut errors).await;
         if let Some((leader, helper)) = aggregators.as_ref() {
             self.validate_vdaf_is_supported(leader, helper, &mut errors);

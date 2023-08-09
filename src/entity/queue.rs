@@ -1,7 +1,5 @@
-use crate::{
-    json_newtype,
-    queue::{EnqueueJob, Job, JobError},
-};
+use super::json::Json;
+use crate::queue::{EnqueueJob, Job, JobError};
 use sea_orm::{
     sea_query::{all, any, LockBehavior, LockType},
     ActiveModelBehavior, ActiveValue, ColumnTrait, DatabaseTransaction, DbErr, DeriveActiveEnum,
@@ -12,9 +10,6 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use time::OffsetDateTime;
 use uuid::Uuid;
-
-json_newtype!(JobError);
-json_newtype!(Job);
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "queue")]
@@ -29,8 +24,8 @@ pub struct Model {
     pub scheduled_at: Option<OffsetDateTime>,
     pub failure_count: i32,
     pub status: JobStatus,
-    pub job: Job,
-    pub error_message: Option<JobError>,
+    pub job: Json<Job>,
+    pub error_message: Option<Json<JobError>>,
     pub parent_id: Option<Uuid>,
     pub child_id: Option<Uuid>,
 }
@@ -60,7 +55,7 @@ impl From<Job> for ActiveModel {
             scheduled_at: ActiveValue::Set(None),
             failure_count: ActiveValue::Set(0),
             status: ActiveValue::Set(JobStatus::Pending),
-            job: ActiveValue::Set(job),
+            job: ActiveValue::Set(job.into()),
             error_message: ActiveValue::Set(None),
             parent_id: ActiveValue::Set(None),
             child_id: ActiveValue::Set(None),

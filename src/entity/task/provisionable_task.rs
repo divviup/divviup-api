@@ -1,11 +1,10 @@
 use super::{ActiveModel, *};
 use crate::{
     clients::aggregator_client::api_types::AuthenticationToken,
-    entity::{Account, Aggregator},
+    entity::{Account, Aggregator, HpkeConfig, Task},
     handler::Error,
     Crypter,
 };
-use janus_messages::HpkeConfig;
 use trillium_client::Client;
 
 #[derive(thiserror::Error, Debug, Clone, Copy)]
@@ -100,11 +99,11 @@ impl ProvisionableTask {
             .provision_aggregator(client, self.leader_aggregator.clone(), crypter)
             .await?;
 
-        Ok(super::Model {
+        Ok(Task {
             id: self.id,
             account_id: self.account.id,
             name: self.name,
-            vdaf: self.vdaf,
+            vdaf: self.vdaf.into(),
             min_batch_size: self.min_batch_size.try_into()?,
             max_batch_size: self.max_batch_size.map(TryInto::try_into).transpose()?,
             created_at: OffsetDateTime::now_utc(),
@@ -115,6 +114,7 @@ impl ProvisionableTask {
             expiration: self.expiration,
             leader_aggregator_id: self.leader_aggregator.id,
             helper_aggregator_id: self.helper_aggregator.id,
+            hpke_config_id: self.hpke_config.id,
         }
         .into_active_model())
     }

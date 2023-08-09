@@ -3,6 +3,7 @@ mod admin;
 mod aggregators;
 mod api_tokens;
 mod health_check;
+mod hpke_configs;
 mod memberships;
 mod tasks;
 mod users;
@@ -79,6 +80,8 @@ fn api_routes() -> impl Handler {
             )
             .delete("/api_tokens/:api_token_id", api(api_tokens::delete))
             .patch("/api_tokens/:api_token_id", api(api_tokens::update))
+            .delete("/hpke_configs/:hpke_config_id", api(hpke_configs::delete))
+            .patch("/hpke_configs/:hpke_config_id", api(hpke_configs::update))
             .any(
                 &[Patch, Get, Post],
                 "/accounts/:account_id/*",
@@ -100,4 +103,6 @@ fn accounts_routes() -> impl Handler {
         .get("/aggregators", api(aggregators::index))
         .post("/api_tokens", api(api_tokens::create))
         .get("/api_tokens", api(api_tokens::index))
+        .get("/hpke_configs", api(hpke_configs::index))
+        .post("/hpke_configs", api(hpke_configs::create))
 }

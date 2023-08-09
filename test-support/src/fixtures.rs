@@ -77,15 +77,32 @@ pub async fn member(app: &DivviupApi) -> (User, Account, Membership) {
     (user, account, membership)
 }
 
+pub async fn hpke_config(app: &DivviupApi, account: &Account) -> HpkeConfig {
+    HpkeConfig {
+        contents: random_hpke_config().into(),
+        created_at: OffsetDateTime::now_utc(),
+        updated_at: OffsetDateTime::now_utc(),
+        id: Uuid::new_v4(),
+        account_id: account.id,
+        deleted_at: None,
+        name: Some(random_name()),
+    }
+    .into_active_model()
+    .insert(app.db())
+    .await
+    .unwrap()
+}
+
 pub async fn task(app: &DivviupApi, account: &Account) -> Task {
     let leader_aggregator = aggregator(app, Some(account)).await;
     let helper_aggregator = aggregator(app, None).await;
+    let hpke_config = hpke_config(app, account).await;
 
     Task {
         id: random::<TaskId>().to_string(),
         account_id: account.id,
         name: random_name(),
-        vdaf: task::vdaf::Vdaf::Count,
+        vdaf: task::vdaf::Vdaf::Count.into(),
         min_batch_size: 100,
         max_batch_size: Some(200),
         created_at: OffsetDateTime::now_utc(),
@@ -96,6 +113,7 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         expiration: None,
         leader_aggregator_id: leader_aggregator.id,
         helper_aggregator_id: helper_aggregator.id,
+        hpke_config_id: hpke_config.id,
     }
     .into_active_model()
     .insert(app.db())

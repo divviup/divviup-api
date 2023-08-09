@@ -84,6 +84,14 @@ pub enum Error {
     Utf8Error(#[from] std::string::FromUtf8Error),
     #[error("{0}")]
     String(&'static str),
+    #[error(transparent)]
+    Codec(Arc<janus_messages::codec::CodecError>),
+}
+
+impl From<janus_messages::codec::CodecError> for Error {
+    fn from(error: janus_messages::codec::CodecError) -> Self {
+        Self::Codec(Arc::new(error))
+    }
 }
 
 impl From<aes_gcm::Error> for Error {

@@ -177,7 +177,7 @@ impl TaskCreate {
             }),
             min_batch_size: new_task.min_batch_size,
             time_precision: new_task.time_precision_seconds,
-            collector_hpke_config: new_task.hpke_config.clone(),
+            collector_hpke_config: new_task.hpke_config.contents().clone(),
             vdaf_verify_key: new_task.vdaf_verify_key.clone(),
             aggregator_auth_token: new_task
                 .aggregator_auth_token

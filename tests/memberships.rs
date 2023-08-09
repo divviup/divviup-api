@@ -27,7 +27,7 @@ mod create {
         let queue = queue::Entity::find().all(app.db()).await?;
         assert_eq!(queue.len(), 1);
         let queue_job = &queue[0];
-        assert_eq!(queue_job.job, CreateUser { membership_id });
+        assert_eq!(*queue_job.job, CreateUser { membership_id });
         // the rest of the invitation process is tested elsewhere
         Ok(())
     }

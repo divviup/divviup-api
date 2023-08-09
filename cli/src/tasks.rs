@@ -1,11 +1,8 @@
 use crate::{CliResult, Output};
-use base64::{engine::general_purpose::STANDARD, Engine};
 use clap::Subcommand;
 use divviup_client::{NewTask, Uuid, Vdaf};
 use humantime::{Duration, Timestamp};
-use std::path::PathBuf;
 use time::{OffsetDateTime, UtcOffset};
-use trillium_tokio::tokio::fs;
 
 #[derive(clap::ValueEnum, Clone, Debug)]
 pub enum VdafName {
@@ -36,10 +33,8 @@ pub enum TaskAction {
         expiration: Option<Timestamp>,
         #[arg(long)]
         time_precision: Duration,
-        #[arg(long, required_unless_present("hpke_config_base64"))]
-        hpke_config_path: Option<PathBuf>,
-        #[arg(long, required_unless_present("hpke_config_path"))]
-        hpke_config_base64: Option<String>,
+        #[arg(long)]
+        hpke_config_id: Uuid,
         #[arg(long, required_if_eq("vdaf", "histogram"), value_delimiter = ',')]
         buckets: Option<Vec<u64>>,
         #[arg(long, required_if_eq_any([("vdaf", "count_vec"), ("vdaf", "sum_vec")]))]
@@ -74,19 +69,12 @@ impl TaskAction {
                 min_batch_size,
                 max_batch_size,
                 expiration,
-                hpke_config_path,
-                hpke_config_base64,
+                hpke_config_id,
                 buckets,
                 length,
                 bits,
                 time_precision,
             } => {
-                let hpke_config = match (hpke_config_base64, hpke_config_path) {
-                    (Some(base64), _) => STANDARD.decode(base64)?,
-                    (_, Some(path)) => fs::read(path).await?,
-                    _ => unreachable!(),
-                };
-
                 let vdaf = match vdaf {
                     VdafName::Count => Vdaf::Count,
                     VdafName::Histogram => Vdaf::Histogram {
@@ -105,7 +93,7 @@ impl TaskAction {
                 };
 
                 let expiration = expiration.map(|e| {
-                    OffsetDateTime::from(e.as_ref().clone())
+                    OffsetDateTime::from(*e.as_ref())
                         .replace_offset(UtcOffset::current_local_offset().unwrap())
                 });
                 let time_precision_seconds = time_precision.as_secs();
@@ -119,7 +107,7 @@ impl TaskAction {
                     max_batch_size,
                     expiration,
                     time_precision_seconds,
-                    hpke_config,
+                    hpke_config_id,
                 };
 
                 output.display(client.create_task(account_id, task).await?)

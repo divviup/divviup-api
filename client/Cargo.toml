@@ -2,6 +2,10 @@
 name = "divviup-client"
 version = "0.0.1"
 edition = "2021"
+license = "MPL-2.0"
+homepage = "https://divviup.org"
+repository = "https://github.com/divviup/divviup-api"
+publish = false
 
 [dependencies]
 base64 = "0.21.2"
@@ -16,6 +20,7 @@ uuid = { version = "1.4.1", features = ["v4", "fast-rng", "serde"] }
 time = { version = "0.3.25", features = ["serde", "serde-well-known"] }
 log = "0.4.19"
 pad-adapter = "0.1.1"
+janus_messages = "0.5.12"
 
 [dev-dependencies]
 divviup-api = { version = "*", path = ".." }

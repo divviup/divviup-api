@@ -2,6 +2,7 @@ use crate::{
     clients::aggregator_client::{api_types::TaskResponse, TaskMetrics},
     entity::{
         account, membership, AccountColumn, Accounts, Aggregator, AggregatorColumn, Aggregators,
+        HpkeConfigColumn, HpkeConfigs,
     },
 };
 use sea_orm::{
@@ -23,6 +24,8 @@ pub use update_task::UpdateTask;
 mod provisionable_task;
 pub use provisionable_task::{ProvisionableTask, TaskProvisioningError};
 
+use super::json::Json;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "task")]
 pub struct Model {
@@ -30,7 +33,7 @@ pub struct Model {
     pub id: String,
     pub account_id: Uuid,
     pub name: String,
-    pub vdaf: Vdaf,
+    pub vdaf: Json<Vdaf>,
     pub min_batch_size: i64,
     pub max_batch_size: Option<i64>,
     #[serde(with = "time::serde::iso8601")]
@@ -44,6 +47,7 @@ pub struct Model {
     pub expiration: Option<OffsetDateTime>,
     pub leader_aggregator_id: Uuid,
     pub helper_aggregator_id: Uuid,
+    pub hpke_config_id: Uuid,
 }
 
 impl Model {
@@ -119,6 +123,13 @@ pub enum Relation {
         to = "AggregatorColumn::Id"
     )]
     LeaderAggregator,
+
+    #[sea_orm(
+        belongs_to = "HpkeConfigs",
+        from = "Column::HpkeConfigId",
+        to = "HpkeConfigColumn::Id"
+    )]
+    HpkeConfig,
 }
 
 impl Related<account::Entity> for Entity {
@@ -134,6 +145,12 @@ impl Related<membership::Entity> for Entity {
 
     fn via() -> Option<RelationDef> {
         Some(account::Relation::Tasks.def().rev())
+    }
+}
+
+impl Related<HpkeConfigs> for Entity {
+    fn to() -> RelationDef {
+        Relation::HpkeConfig.def()
     }
 }
 

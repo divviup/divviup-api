@@ -1,4 +1,4 @@
-use crate::{entity::aggregator::VdafName, json_newtype};
+use crate::entity::aggregator::VdafName;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError, ValidationErrors};
 
@@ -84,8 +84,6 @@ impl Vdaf {
         }
     }
 }
-
-json_newtype!(Vdaf);
 
 impl Validate for Vdaf {
     fn validate(&self) -> Result<(), ValidationErrors> {
