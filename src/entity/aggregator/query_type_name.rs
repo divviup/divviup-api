@@ -1,4 +1,3 @@
-use crate::json_newtype;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{
@@ -99,8 +98,6 @@ impl Default for QueryTypeNameSet {
         Self::from_iter([QueryTypeName::TimeInterval, QueryTypeName::FixedSize])
     }
 }
-
-json_newtype!(QueryTypeNameSet);
 
 impl QueryTypeNameSet {
     pub fn len(&self) -> usize {

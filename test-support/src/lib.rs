@@ -1,7 +1,13 @@
-use divviup_api::{
-    clients::aggregator_client::api_types::{Encode, HpkeConfig},
-    Config, Crypter, Db,
-};
+#![forbid(unsafe_code)]
+#![deny(
+    clippy::dbg_macro,
+    missing_copy_implementations,
+    missing_debug_implementations,
+    nonstandard_style
+)]
+#![warn(clippy::perf, clippy::cargo)]
+
+use divviup_api::{clients::aggregator_client::api_types, Config, Crypter, Db};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, future::Future, iter::repeat_with};
 use trillium::Handler;
@@ -44,10 +50,9 @@ pub use api_mocks::ApiMocks;
 const POSTMARK_URL: &str = "https://postmark.example";
 const AUTH0_URL: &str = "https://auth.example";
 
-pub fn encode_hpke_config(hpke_config: HpkeConfig) -> String {
-    let mut vec = Vec::new();
-    hpke_config.encode(&mut vec);
-    STANDARD.encode(vec)
+pub fn encode_hpke_config(hpke_config: api_types::HpkeConfig) -> String {
+    use divviup_api::clients::aggregator_client::api_types::Encode;
+    STANDARD.encode(hpke_config.get_encoded())
 }
 
 async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
@@ -66,6 +71,7 @@ pub async fn set_up_schema(db: &Db) {
     set_up_schema_for(&schema, db, queue::Entity).await;
     set_up_schema_for(&schema, db, Aggregators).await;
     set_up_schema_for(&schema, db, ApiTokens).await;
+    set_up_schema_for(&schema, db, HpkeConfigs).await;
 }
 
 pub fn config(api_mocks: impl Handler) -> Config {
@@ -229,6 +235,7 @@ impl_reload!(Membership, Memberships);
 impl_reload!(Task, Tasks);
 impl_reload!(Aggregator, Aggregators);
 impl_reload!(ApiToken, ApiTokens);
+impl_reload!(HpkeConfig, HpkeConfigs);
 
 #[track_caller]
 pub fn assert_same_json_representation<Actual, Expected>(actual: &Actual, expected: &Expected)

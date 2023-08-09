@@ -6,13 +6,13 @@
     nonstandard_style
 )]
 #![warn(clippy::perf, clippy::cargo)]
+#![allow(clippy::needless_pass_by_ref_mut)]
 
 pub mod clients;
 mod config;
-mod db;
-#[macro_use]
-pub mod entity;
 mod crypter;
+mod db;
+pub mod entity;
 pub mod handler;
 pub mod permissions;
 pub mod queue;

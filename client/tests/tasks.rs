@@ -1,5 +1,4 @@
 mod harness;
-use divviup_api::clients::aggregator_client::api_types::Encode;
 use divviup_client::{DivviupClient, NewTask, Vdaf};
 use harness::with_configured_client;
 use std::sync::Arc;
@@ -19,6 +18,7 @@ async fn task_list(app: Arc<DivviupApi>, account: Account, client: DivviupClient
 #[test(harness = with_configured_client)]
 async fn create_task(app: Arc<DivviupApi>, account: Account, client: DivviupClient) -> TestResult {
     let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+    let hpke_config = fixtures::hpke_config(&app, &account).await;
     let response_task = client
         .create_task(
             account.id,
@@ -31,7 +31,7 @@ async fn create_task(app: Arc<DivviupApi>, account: Account, client: DivviupClie
                 max_batch_size: None,
                 expiration: None,
                 time_precision_seconds: fastrand::u64(60..2592000),
-                hpke_config: fixtures::random_hpke_config().get_encoded(),
+                hpke_config_id: hpke_config.id,
             },
         )
         .await?;

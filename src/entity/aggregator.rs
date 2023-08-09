@@ -4,7 +4,7 @@ mod role;
 mod update_aggregator;
 mod vdaf_name;
 
-use super::{url::Url, AccountColumn, AccountRelation, Accounts, Memberships};
+use super::{json::Json, url::Url, AccountColumn, AccountRelation, Accounts, Memberships};
 use crate::{clients::AggregatorClient, Crypter, Error};
 use sea_orm::{
     ActiveModelBehavior, ActiveValue, DeriveEntityModel, DerivePrimaryKey, DeriveRelation,
@@ -40,8 +40,8 @@ pub struct Model {
     pub dap_url: Url,
     pub api_url: Url,
     pub is_first_party: bool,
-    pub query_types: QueryTypeNameSet,
-    pub vdafs: VdafNameSet,
+    pub query_types: Json<QueryTypeNameSet>,
+    pub vdafs: Json<VdafNameSet>,
     #[serde(skip)]
     pub encrypted_bearer_token: Vec<u8>,
 }

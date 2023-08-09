@@ -46,7 +46,7 @@ impl Display for ValidationErrors {
             }
             ValidationErrors::List(errors) => {
                 for value in errors {
-                    write!(pad_adapter, "* {value}\n")?;
+                    writeln!(pad_adapter, "* {value}")?;
                 }
             }
         }

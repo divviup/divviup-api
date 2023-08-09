@@ -1,6 +1,16 @@
+#![forbid(unsafe_code)]
+#![deny(
+    clippy::dbg_macro,
+    missing_copy_implementations,
+    missing_debug_implementations,
+    nonstandard_style
+)]
+#![warn(clippy::perf, clippy::cargo)]
+
 mod accounts;
 mod aggregators;
 mod api_tokens;
+mod hpke_configs;
 mod memberships;
 mod tasks;
 
@@ -11,6 +21,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
 use const_format::concatcp;
 use divviup_client::{Client, DivviupClient, HeaderValue, KnownHeaderName, Url, Uuid};
+use hpke_configs::HpkeConfigAction;
 use memberships::MembershipAction;
 use serde::Serialize;
 use std::{
@@ -103,6 +114,9 @@ enum Resource {
 
     #[command(subcommand)]
     Membership(MembershipAction),
+
+    #[command(subcommand)]
+    HpkeConfig(HpkeConfigAction),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -118,6 +132,9 @@ pub enum Error {
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error("{0}")]
+    Other(String),
 }
 
 pub type CliResult<T = ()> = Result<T, Error>;
@@ -189,6 +206,7 @@ impl Resource {
             Resource::Task(action) => action.run(account_id, client, output).await,
             Resource::Aggregator(action) => action.run(account_id, client, output).await,
             Resource::Membership(action) => action.run(account_id, client, output).await,
+            Resource::HpkeConfig(action) => action.run(account_id, client, output).await,
         }
     }
 }

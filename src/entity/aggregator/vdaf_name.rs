@@ -1,4 +1,3 @@
-use crate::json_newtype;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{
@@ -110,8 +109,6 @@ impl Default for VdafNameSet {
         ])
     }
 }
-
-json_newtype!(VdafNameSet);
 
 impl VdafNameSet {
     pub fn len(&self) -> usize {

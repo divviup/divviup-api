@@ -142,9 +142,13 @@ mod index {
 
 mod create {
     use super::{assert_eq, test, *};
-    use divviup_api::{api_mocks::aggregator_api::random_hpke_config, entity::task::vdaf::Vdaf};
+    use divviup_api::entity::task::vdaf::Vdaf;
 
-    fn valid_task_json(leader_aggregator: &Aggregator, helper_aggregator: &Aggregator) -> Value {
+    fn valid_task_json(
+        hpke_config: &HpkeConfig,
+        leader_aggregator: &Aggregator,
+        helper_aggregator: &Aggregator,
+    ) -> Value {
         json!({
             "name": "my task name",
             "leader_aggregator_id": leader_aggregator.id,
@@ -152,7 +156,7 @@ mod create {
             "vdaf": { "type": "count" },
             "min_batch_size": 500,
             "time_precision_seconds": 60,
-            "hpke_config": encode_hpke_config(random_hpke_config())
+            "hpke_config_id": hpke_config.id
         })
     }
 
@@ -160,11 +164,12 @@ mod create {
     async fn success(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let hpke_config = fixtures::hpke_config(&app, &account).await;
 
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
-            .with_request_json(valid_task_json(&leader, &helper))
+            .with_request_json(valid_task_json(&hpke_config, &leader, &helper))
             .run_async(&app)
             .await;
 
@@ -212,11 +217,12 @@ mod create {
         let user = fixtures::user();
         let account = fixtures::account(&app).await; // no membership
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let hpke_config = fixtures::hpke_config(&app, &account).await;
 
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
-            .with_request_json(valid_task_json(&leader, &helper))
+            .with_request_json(valid_task_json(&hpke_config, &leader, &helper))
             .run_async(&app)
             .await;
 
@@ -230,11 +236,12 @@ mod create {
         let user = fixtures::user();
         let account = fixtures::account(&app).await;
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let hpke_config = fixtures::hpke_config(&app, &account).await;
 
         let mut conn = post("/api/accounts/does-not-exist/tasks")
             .with_api_headers()
             .with_state(user)
-            .with_request_json(valid_task_json(&leader, &helper))
+            .with_request_json(valid_task_json(&hpke_config, &leader, &helper))
             .run_async(&app)
             .await;
 
@@ -248,11 +255,12 @@ mod create {
         let (admin, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let hpke_config = fixtures::hpke_config(&app, &account).await;
 
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(admin)
-            .with_request_json(valid_task_json(&leader, &helper))
+            .with_request_json(valid_task_json(&hpke_config, &leader, &helper))
             .run_async(&app)
             .await;
 
@@ -267,10 +275,12 @@ mod create {
         let token = fixtures::admin_token(&app).await;
         let account = fixtures::account(&app).await;
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let hpke_config = fixtures::hpke_config(&app, &account).await;
+
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_auth_header(token)
-            .with_request_json(valid_task_json(&leader, &helper))
+            .with_request_json(valid_task_json(&hpke_config, &leader, &helper))
             .run_async(&app)
             .await;
 
@@ -285,11 +295,12 @@ mod create {
         let account = fixtures::account(&app).await;
         let (_, token) = fixtures::api_token(&app, &account).await;
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let hpke_config = fixtures::hpke_config(&app, &account).await;
         let count_before = Tasks::find().count(app.db()).await?;
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_auth_header(token)
-            .with_request_json(valid_task_json(&leader, &helper))
+            .with_request_json(valid_task_json(&hpke_config, &leader, &helper))
             .run_async(&app)
             .await;
         let count_after = Tasks::find().count(app.db()).await?;
@@ -307,11 +318,13 @@ mod create {
 
         let account = fixtures::account(&app).await;
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let hpke_config = fixtures::hpke_config(&app, &account).await;
+
         let count_before = Tasks::find().count(app.db()).await?;
         let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_auth_header(token)
-            .with_request_json(valid_task_json(&leader, &helper))
+            .with_request_json(valid_task_json(&hpke_config, &leader, &helper))
             .run_async(&app)
             .await;
 

@@ -1,6 +1,16 @@
+#![forbid(unsafe_code)]
+#![deny(
+    clippy::dbg_macro,
+    missing_copy_implementations,
+    missing_debug_implementations,
+    nonstandard_style
+)]
+#![warn(clippy::perf, clippy::cargo)]
+
 mod account;
 mod aggregator;
 mod api_token;
+mod hpke_configs;
 mod membership;
 mod task;
 mod validation_errors;
@@ -10,11 +20,12 @@ pub const DEFAULT_URL: &str = "https://api.staging.divviup.org/";
 pub const USER_AGENT: &str = concat!("divviup-client/", env!("CARGO_PKG_VERSION"));
 
 use aggregator::CollectorAuthenticationToken;
+use base64::{engine::general_purpose::STANDARD, Engine};
+use hpke_configs::HpkeConfig;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use std::{future::Future, pin::Pin};
 use trillium_http::{HeaderName, HeaderValues};
-pub use trillium_http::{HeaderValue, Headers, KnownHeaderName, Method, Status};
 
 pub use account::Account;
 pub use aggregator::{Aggregator, NewAggregator, Role};
@@ -25,6 +36,7 @@ pub use time::OffsetDateTime;
 pub use trillium_client;
 pub use trillium_client::Client;
 pub use trillium_client::Conn;
+pub use trillium_http::{HeaderValue, Headers, KnownHeaderName, Method, Status};
 pub use url::Url;
 pub use uuid::Uuid;
 pub use validation_errors::ValidationErrors;
@@ -277,6 +289,44 @@ impl DivviupClient {
 
     pub async fn delete_api_token(&self, api_token_id: Uuid) -> ClientResult {
         self.delete(&format!("api/api_tokens/{api_token_id}")).await
+    }
+
+    pub async fn hpke_configs(&self, account_id: Uuid) -> ClientResult<Vec<HpkeConfig>> {
+        self.get(&format!("api/accounts/{account_id}/hpke_configs"))
+            .await
+    }
+
+    pub async fn rename_hpke_config(
+        &self,
+        hpke_config_id: Uuid,
+        new_name: &str,
+    ) -> ClientResult<HpkeConfig> {
+        self.patch(
+            &format!("api/hpke_configs/{hpke_config_id}"),
+            &json!({"name": new_name}),
+        )
+        .await
+    }
+
+    pub async fn create_hpke_config(
+        &self,
+        account_id: Uuid,
+        hpke_config: impl AsRef<[u8]>,
+        name: Option<&str>,
+    ) -> ClientResult<HpkeConfig> {
+        self.post(
+            &format!("api/accounts/{account_id}/hpke_configs"),
+            Some(&json!({
+                "name": name,
+                "contents": STANDARD.encode(hpke_config)
+            })),
+        )
+        .await
+    }
+
+    pub async fn delete_hpke_config(&self, hpke_config_id: Uuid) -> ClientResult {
+        self.delete(&format!("api/hpke_configs/{hpke_config_id}"))
+            .await
     }
 }
 
