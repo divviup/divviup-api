@@ -1,9 +1,17 @@
 use crate::{CliResult, Error, Output};
-use base64::{engine::general_purpose::STANDARD, Engine};
+use base64::{
+    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
+    Engine,
+};
 use clap::Subcommand;
 use divviup_client::{DivviupClient, Uuid};
+use janus_messages::codec::Encode;
+use serde_json::json;
 use std::{borrow::Cow, path::PathBuf};
 use trillium_tokio::tokio::fs;
+
+mod generate;
+use generate::*;
 
 #[derive(Subcommand, Debug)]
 pub enum HpkeConfigAction {
@@ -17,6 +25,18 @@ pub enum HpkeConfigAction {
     },
     Delete {
         hpke_config_id: Uuid,
+    },
+    Generate {
+        #[arg(long, default_value = "X25519HkdfSha256")]
+        kem: Kem,
+        #[arg(long, default_value = "HkdfSha256")]
+        kdf: Kdf,
+        #[arg(long, default_value = "Aes128Gcm")]
+        aead: Aead,
+        #[arg(long)]
+        id: Option<u8>,
+        #[arg(long, short)]
+        name: Option<String>,
     },
 }
 
@@ -59,6 +79,44 @@ impl HpkeConfigAction {
 
             HpkeConfigAction::Delete { hpke_config_id } => {
                 client.delete_hpke_config(hpke_config_id).await?;
+            }
+
+            HpkeConfigAction::Generate {
+                kem,
+                kdf,
+                aead,
+                name,
+                id,
+            } => {
+                let hpke_dispatch::Keypair {
+                    private_key,
+                    public_key,
+                } = kem.gen_keypair();
+
+                let config_id = id.unwrap_or_else(|| rand::random());
+
+                let hpke_config = janus_messages::HpkeConfig::new(
+                    config_id.into(),
+                    (kem.0 as u16).try_into().unwrap(),
+                    (kdf.0 as u16).try_into().unwrap(),
+                    (aead.0 as u16).try_into().unwrap(),
+                    janus_messages::HpkePublicKey::from(public_key.clone()),
+                );
+
+                let name = name.unwrap_or_else(|| format!("hpke-config-{config_id}"));
+                output.display(
+                    client
+                        .create_hpke_config(account_id, hpke_config.get_encoded(), Some(&name))
+                        .await?,
+                );
+                output.display(json!({
+                    "id": config_id,
+                    "public_key": URL_SAFE_NO_PAD.encode(public_key),
+                    "private_key": URL_SAFE_NO_PAD.encode(private_key),
+                    "kem": kem.0,
+                    "kdf": kdf.0,
+                    "aead": aead.0
+                }));
             }
         }
         Ok(())
