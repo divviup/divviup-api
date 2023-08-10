@@ -12,7 +12,7 @@ import Col from "react-bootstrap/Col";
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 import Row from "react-bootstrap/Row";
 import { LinkContainer } from "react-router-bootstrap";
-import { Task, Aggregator } from "../ApiClient";
+import { Task, Aggregator, HpkeConfig } from "../ApiClient";
 import humanizeDuration from "humanize-duration";
 import {
   FileEarmarkBarGraph,
@@ -177,11 +177,13 @@ export function WithTask({
 
 function TaskPropertyTable() {
   let { account_id } = useParams();
-  let { task, leaderAggregator, helperAggregator } = useLoaderData() as {
-    task: Promise<Task>;
-    leaderAggregator: Promise<Aggregator>;
-    helperAggregator: Promise<Aggregator>;
-  };
+  let { task, leaderAggregator, helperAggregator, hpkeConfig } =
+    useLoaderData() as {
+      task: Promise<Task>;
+      leaderAggregator: Promise<Aggregator>;
+      helperAggregator: Promise<Aggregator>;
+      hpkeConfig: Promise<HpkeConfig>;
+    };
 
   return (
     <Col>
@@ -276,6 +278,18 @@ function TaskPropertyTable() {
                     .toLocal()
                     .toLocaleString(DateTime.DATETIME_SHORT)
                 }
+              </Await>
+            </Suspense>
+          </ListGroup.Item>
+          <ListGroup.Item>
+            HPKE Config:{" "}
+            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
+              <Await resolve={hpkeConfig}>
+                {(hpkeConfig) => (
+                  <Link to={`/accounts/${account_id}/hpke_configs`}>
+                    {hpkeConfig.name}
+                  </Link>
+                )}
               </Await>
             </Suspense>
           </ListGroup.Item>

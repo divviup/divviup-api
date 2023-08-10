@@ -9,6 +9,7 @@ import {
   Building,
   CloudUpload,
   FileEarmarkCode,
+  KeyFill,
   PencilFill,
   People,
   ShieldLock,
@@ -123,6 +124,12 @@ export default function AccountSummary() {
             <LinkContainer to="api_tokens">
               <ListGroup.Item action>
                 <ShieldLock /> API Tokens
+              </ListGroup.Item>
+            </LinkContainer>
+
+            <LinkContainer to="hpke_configs">
+              <ListGroup.Item action>
+                <KeyFill /> HPKE Configs
               </ListGroup.Item>
             </LinkContainer>
           </ListGroup>

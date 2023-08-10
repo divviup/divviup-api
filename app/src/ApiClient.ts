@@ -66,6 +66,7 @@ export interface Task {
   max_batch_size: number | null;
   report_count: number;
   aggregate_collection_count: number;
+  hpke_config_id: string;
 }
 
 export type NewTask = Omit<
@@ -78,8 +79,6 @@ export type NewTask = Omit<
   | "updated_at"
   | "vdaf"
 > & {
-  hpke_config: string;
-  partner_url: string;
   vdaf: {
     type: "sum" | "count" | "histogram";
     bits?: number;
@@ -138,6 +137,21 @@ export interface ApiToken {
   deleted_at?: string;
   name?: string;
   last_used_at?: string;
+}
+
+export interface HpkeConfig {
+  id: string;
+  contents: {
+    id: number;
+    kem_id: string;
+    kdf_id: string;
+    aead_id: string;
+    public_key: string;
+  };
+  created_at: string;
+  deleted_at: null | string;
+  updated_at: string;
+  name: null | string;
 }
 
 const mime = "application/vnd.divviup+json;version=0.1";
@@ -406,6 +420,49 @@ export class ApiClient {
     const res = await this.get(`/api/admin/queue/${id}`);
     return res.data as QueueJob;
   }
+
+  async deleteHpkeConfig(hpkeConfigId: string) {
+    await this.delete(`/api/hpke_configs/${hpkeConfigId}`);
+    return null;
+  }
+
+  async updateHpkeConfig(hpkeConfigId: string, hpkeConfig: { name: string }) {
+    await this.patch(`/api/hpke_configs/${hpkeConfigId}`, hpkeConfig);
+    return null;
+  }
+
+  async hpkeConfig(hpkeConfigId: string): Promise<HpkeConfig> {
+    const res = await this.get(`/api/hpke_configs/${hpkeConfigId}`);
+    return res.data as HpkeConfig;
+  }
+
+  async createHpkeConfig(
+    accountId: string,
+    hpkeConfig: { contents: string; name: string }
+  ): Promise<
+    | HpkeConfig
+    | { error: ValidationErrorsFor<{ contents: string; name: string }> }
+  > {
+    const res = await this.post(
+      `/api/accounts/${accountId}/hpke_configs`,
+      hpkeConfig
+    );
+    switch (res.status) {
+      case 201:
+        return res.data as HpkeConfig;
+      case 400:
+        return { error: res.data } as {
+          error: ValidationErrorsFor<{ contents: string; name: string }>;
+        };
+      default:
+        throw res;
+    }
+  }
+
+  async accountHpkeConfigs(accountId: string): Promise<HpkeConfig[]> {
+    const res = await this.get(`/api/accounts/${accountId}/hpke_configs`);
+    return res.data as HpkeConfig[];
+  }
 }
 
 function errorToMessage({ message, code, params }: ValidationError) {
@@ -476,8 +533,8 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-    ? ValidationErrorsFor<T[K]>
-    : ValidationError[];
+  ? ValidationErrorsFor<T[K]>
+  : ValidationError[];
 };
 
 export interface ValidationError {

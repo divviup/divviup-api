@@ -5,6 +5,7 @@ use crate::{
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter};
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
+use trillium_caching_headers::CachingHeadersExt;
 use trillium_router::RouterConnExt;
 use uuid::Uuid;
 
@@ -39,6 +40,11 @@ impl Permissions for HpkeConfig {
     fn allow_write(&self, actor: &PermissionsActor) -> bool {
         actor.is_admin() || actor.account_ids().contains(&self.account_id)
     }
+}
+
+pub async fn show(conn: &mut Conn, hpke_config: HpkeConfig) -> Result<Json<HpkeConfig>, Error> {
+    conn.set_last_modified(hpke_config.updated_at.into());
+    Ok(Json(hpke_config))
 }
 
 pub async fn create(

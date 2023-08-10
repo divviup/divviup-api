@@ -20,6 +20,7 @@ import Row from "react-bootstrap/Row";
 import { ApiClientContext } from "../ApiClientContext";
 import { LinkContainer } from "react-router-bootstrap";
 import ApiClient, {
+  HpkeConfig,
   Account,
   Aggregator,
   NewTask,
@@ -108,7 +109,7 @@ export default function TaskForm() {
                 max_batch_size: null,
                 time_precision_seconds: 3600,
                 expiration: null,
-                hpke_config: "",
+                hpke_config_id: null,
               } as unknown as NewTask
             }
             onSubmit={handleSubmit}
@@ -131,7 +132,7 @@ export default function TaskForm() {
                   <VdafDetails {...props} />
                   <QueryType {...props} />
                   <MinBatchSize {...props} />
-                  <HpkeConfig {...props} />
+                  <HpkeConfigSelect {...props} />
                   <TimePrecisionSeconds {...props} />
                   <Expiration {...props} />
                   <TaskFormGroup>
@@ -303,7 +304,7 @@ const helps: {
     ),
   },
 
-  hpke_config: {
+  hpke_config_id: {
     title: "DAP-encoded HPKE file",
     short:
       "The collector's public key. Results will be encrypted using this key.",
@@ -621,40 +622,30 @@ function MaxBatchSize(props: Props) {
   );
 }
 
-function HpkeConfig({ setFieldValue, errors, setFocusedField }: Props) {
-  let reader = React.useMemo(() => {
-    let reader = new FileReader();
-    reader.addEventListener("load", () => {
-      if (typeof reader.result === "string") {
-        setFieldValue("hpke_config", reader.result.split(",")[1]);
-      }
-    });
-    return reader;
-  }, [setFieldValue]);
-  let onChange: ChangeEventHandler<HTMLInputElement> = React.useCallback(
-    (event) => {
-      let files = event.target.files;
-      if (files && files[0]) {
-        reader.readAsDataURL(files[0]);
-      }
-    },
-    [reader]
-  );
+function HpkeConfigSelect(props: Props) {
+  const { hpkeConfigs } = useLoaderData() as {
+    hpkeConfigs: Promise<HpkeConfig[]>;
+  };
 
   return (
-    <TaskFormGroup controlId="hpke_config">
+    <TaskFormGroup controlId="hpke_config_id">
       <ShortHelpAndLabel
-        fieldKey="hpke_config"
-        setFocusedField={setFocusedField}
+        fieldKey="hpke_config_id"
+        setFocusedField={props.setFocusedField}
       />
-      <FormControl
-        type="file"
-        onChange={onChange}
-        isInvalid={!!errors.hpke_config}
-      />
-      <FormControl.Feedback type="invalid">
-        {errors.hpke_config}
-      </FormControl.Feedback>
+      <FormSelect isInvalid={!!props.errors.hpke_config_id} id="hpke-config-id">
+        <Suspense fallback={<option>...</option>}>
+          <Await resolve={hpkeConfigs}>
+            {(hpkeConfigs: HpkeConfig[]) =>
+              hpkeConfigs.map((hpkeConfig) => (
+                <option key={hpkeConfig.id} value={hpkeConfig.id}>
+                  {hpkeConfig.name}
+                </option>
+              ))
+            }
+          </Await>
+        </Suspense>
+      </FormSelect>
     </TaskFormGroup>
   );
 }

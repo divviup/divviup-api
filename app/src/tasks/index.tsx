@@ -29,10 +29,14 @@ export default function tasks(apiClient: ApiClient): RouteObject {
           let helperAggregator = task.then((t) =>
             apiClient.aggregator(t.helper_aggregator_id)
           );
+          let hpkeConfig = task.then((t) =>
+            apiClient.hpkeConfig(t.hpke_config_id)
+          );
           return defer({
             task,
             leaderAggregator,
             helperAggregator,
+            hpkeConfig,
           });
         },
 
@@ -55,6 +59,9 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         loader({ params }) {
           return defer({
             aggregators: apiClient.accountAggregators(
+              params.account_id as string
+            ),
+            hpkeConfigs: apiClient.accountHpkeConfigs(
               params.account_id as string
             ),
           });

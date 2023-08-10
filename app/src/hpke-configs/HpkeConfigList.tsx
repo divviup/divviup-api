@@ -3,25 +3,16 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import { AccountBreadcrumbs, WithAccount } from "../util";
-import {
-  Check,
-  Clipboard,
-  ClipboardCheckFill,
-  PencilFill,
-  ShieldLock,
-  ShieldLockFill,
-  Trash,
-} from "react-bootstrap-icons";
+import { Check, PencilFill, Key, KeyFill, Trash } from "react-bootstrap-icons";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   Await,
   Form,
-  useActionData,
   useFetcher,
   useLoaderData,
   useNavigation,
 } from "react-router-dom";
-import { ApiToken } from "../ApiClient";
+import { HpkeConfig } from "../ApiClient";
 import Table from "react-bootstrap/Table";
 import React from "react";
 import { DateTime } from "luxon";
@@ -30,10 +21,9 @@ import FormGroup from "react-bootstrap/FormGroup";
 import InputGroup from "react-bootstrap/InputGroup";
 import Modal from "react-bootstrap/Modal";
 import Placeholder from "react-bootstrap/Placeholder";
-import OverlayTrigger from "react-bootstrap/OverlayTrigger";
-import Tooltip from "react-bootstrap/Tooltip";
+import HpkeConfigForm from "./HpkeConfigForm";
 
-export default function ApiTokens() {
+export default function HpkeConfigs() {
   const navigation = useNavigation();
   return (
     <>
@@ -41,30 +31,22 @@ export default function ApiTokens() {
       <Row>
         <Col>
           <h1>
-            <ShieldLock />{" "}
+            <Key />{" "}
             <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <WithAccount>{(account) => account.name}</WithAccount>
             </Suspense>{" "}
-            API Tokens
+            HPKE Configs
           </h1>
         </Col>
       </Row>
       <Row className="mb-3">
         <Col>
-          <Form method="post">
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={navigation.state === "submitting"}
-            >
-              <ShieldLockFill /> Create Token
-            </Button>
-          </Form>
+          <HpkeConfigForm />
         </Col>
       </Row>
       <Row>
         <Col>
-          <ApiTokenList />
+          <HpkeConfigList />
         </Col>
       </Row>
     </>
@@ -74,33 +56,34 @@ export default function ApiTokens() {
 function Breadcrumbs() {
   return (
     <AccountBreadcrumbs>
-      <Breadcrumb.Item active>API Tokens</Breadcrumb.Item>
+      <Breadcrumb.Item active>HPKE Configs</Breadcrumb.Item>
     </AccountBreadcrumbs>
   );
 }
 
-function ApiTokenList() {
-  let { apiTokens } = useLoaderData() as {
-    apiTokens: Promise<ApiToken[]>;
+function HpkeConfigList() {
+  let { hpkeConfigs } = useLoaderData() as {
+    hpkeConfigs: Promise<HpkeConfig[]>;
   };
 
   return (
     <Table>
       <thead>
         <tr>
-          <td>Token Name</td>
-          <td></td>
-          <td>Last Used</td>
+          <td>Name</td>
+          <td>KEM</td>
+          <td>KDF</td>
+          <td>AEAD</td>
           <td>Created</td>
           <td></td>
         </tr>
       </thead>
       <tbody>
         <Suspense>
-          <Await resolve={apiTokens}>
-            {(apiTokens: ApiToken[]) =>
-              apiTokens.map((apiToken) => (
-                <ApiTokenRow key={apiToken.id} apiToken={apiToken} />
+          <Await resolve={hpkeConfigs}>
+            {(hpkeConfigs: HpkeConfig[]) =>
+              hpkeConfigs.map((hpkeConfig) => (
+                <HpkeConfigRow key={hpkeConfig.id} hpkeConfig={hpkeConfig} />
               ))
             }
           </Await>
@@ -110,7 +93,7 @@ function ApiTokenList() {
   );
 }
 
-function TokenName({ apiToken }: { apiToken: ApiToken }) {
+function Name({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
   let [isEditing, setEditing] = useState(false);
   let edit = useCallback(() => setEditing(true), [setEditing]);
   let fetcher = useFetcher();
@@ -119,13 +102,13 @@ function TokenName({ apiToken }: { apiToken: ApiToken }) {
   }, [fetcher, setEditing]);
   if (isEditing) {
     return (
-      <fetcher.Form action={apiToken.id} method="patch">
+      <fetcher.Form action={hpkeConfig.id} method="patch">
         <FormGroup>
           <InputGroup>
             <FormControl
               type="text"
               name="name"
-              defaultValue={apiToken.name}
+              defaultValue={hpkeConfig.name || ""}
               data-1p-ignore
               autoFocus
             />
@@ -139,7 +122,7 @@ function TokenName({ apiToken }: { apiToken: ApiToken }) {
   } else {
     return (
       <span onClick={edit}>
-        {apiToken.name || `Token ${apiToken.token_hash.slice(0, 5)}`}{" "}
+        {hpkeConfig.name || `HPKE Config ${hpkeConfig.contents.id}`}{" "}
         <Button
           variant="outline-secondary"
           onClick={edit}
@@ -163,7 +146,7 @@ function RelativeTime({ time, missing }: { time?: string; missing?: string }) {
   );
 }
 
-function DeleteButton({ apiToken }: { apiToken: ApiToken }) {
+function DeleteButton({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
   const navigation = useNavigation();
 
   const [show, setShow] = useState(false);
@@ -187,23 +170,19 @@ function DeleteButton({ apiToken }: { apiToken: ApiToken }) {
       </Button>
       <Modal show={show} onHide={close}>
         <Modal.Header closeButton>
-          <Modal.Title>Confirm Token Deletion {apiToken.name}</Modal.Title>
+          <Modal.Title>
+            Confirm HPKE Config Deletion {hpkeConfig.name}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          This token will immediately be revoked.{" "}
-          {apiToken.last_used_at ? (
-            <>
-              It was last used <RelativeTime time={apiToken.last_used_at} />
-            </>
-          ) : (
-            <>It has never been used</>
-          )}
+          This HPKE Config will immediately be inactivated and cannot be used to
+          create new tasks. Existing tasks will continue to function.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={close}>
             Close
           </Button>
-          <fetcher.Form method="delete" action={apiToken.id}>
+          <fetcher.Form method="delete" action={hpkeConfig.id}>
             <Button
               variant="danger"
               type="submit"
@@ -218,51 +197,20 @@ function DeleteButton({ apiToken }: { apiToken: ApiToken }) {
   );
 }
 
-function Token({ token }: { token: string | null }) {
-  if (!token) return null;
-  const [copied, setCopied] = useState(false);
-  const copy = useCallback(() => {
-    navigator.clipboard.writeText(token).then(() => {
-      setCopied(true);
-    });
-  }, [setCopied, token]);
-
+function HpkeConfigRow({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
   return (
-    <OverlayTrigger
-      overlay={<Tooltip>{copied ? "Copied!" : "Click to copy"}</Tooltip>}
-    >
-      <span onClick={copy} style={{ cursor: "pointer" }}>
-        <code className="user-select-all">{token}</code>{" "}
-        <Button size="sm" variant="outline-secondary" className="ml-auto">
-          {copied ? <ClipboardCheckFill /> : <Clipboard />}
-        </Button>
-      </span>
-    </OverlayTrigger>
-  );
-}
-
-function ApiTokenRow({ apiToken }: { apiToken: ApiToken }) {
-  const actionData = useActionData() as
-    | undefined
-    | (ApiToken & { token: string });
-  const token = actionData?.id == apiToken.id ? actionData?.token : null;
-
-  return (
-    <tr className={token ? "table-success" : ""}>
+    <tr>
       <td>
-        <TokenName apiToken={apiToken} />
+        <Name hpkeConfig={hpkeConfig} />
+      </td>
+      <td>{hpkeConfig.contents.kem_id}</td>
+      <td>{hpkeConfig.contents.kdf_id}</td>
+      <td>{hpkeConfig.contents.aead_id}</td>
+      <td>
+        <RelativeTime time={hpkeConfig.created_at} />
       </td>
       <td>
-        <Token token={token} />
-      </td>
-      <td>
-        <RelativeTime time={apiToken.last_used_at} />
-      </td>
-      <td>
-        <RelativeTime time={apiToken.created_at} />
-      </td>
-      <td>
-        <DeleteButton apiToken={apiToken} />
+        <DeleteButton hpkeConfig={hpkeConfig} />
       </td>
     </tr>
   );

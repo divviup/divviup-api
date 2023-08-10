@@ -81,6 +81,7 @@ fn api_routes() -> impl Handler {
             .delete("/api_tokens/:api_token_id", api(api_tokens::delete))
             .patch("/api_tokens/:api_token_id", api(api_tokens::update))
             .delete("/hpke_configs/:hpke_config_id", api(hpke_configs::delete))
+            .get("/hpke_configs/:hpke_config_id", api(hpke_configs::show))
             .patch("/hpke_configs/:hpke_config_id", api(hpke_configs::update))
             .any(
                 &[Patch, Get, Post],
