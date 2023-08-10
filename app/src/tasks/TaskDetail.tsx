@@ -6,13 +6,14 @@ import {
   Form,
   useActionData,
   Link,
+  useFetcher,
 } from "react-router-dom";
 import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Col from "react-bootstrap/Col";
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 import Row from "react-bootstrap/Row";
 import { LinkContainer } from "react-router-bootstrap";
-import { Task, Aggregator, HpkeConfig } from "../ApiClient";
+import { Task, Aggregator, HpkeConfig, CollectorAuthToken } from "../ApiClient";
 import humanizeDuration from "humanize-duration";
 import {
   FileEarmarkBarGraph,
@@ -33,6 +34,7 @@ import { DateTime } from "luxon";
 import "@github/relative-time-element";
 import { AccountBreadcrumbs } from "../util";
 import Placeholder from "react-bootstrap/Placeholder";
+import { Badge } from "react-bootstrap";
 
 function TaskTitle() {
   let { task } = useLoaderData() as {
@@ -234,8 +236,8 @@ function TaskPropertyTable() {
                 {(task) =>
                   task.expiration
                     ? DateTime.fromISO(task.expiration)
-                        .toLocal()
-                        .toLocaleString(DateTime.DATETIME_SHORT)
+                      .toLocal()
+                      .toLocaleString(DateTime.DATETIME_SHORT)
                     : "never"
                 }
               </Await>
@@ -312,11 +314,63 @@ export default function TaskDetail() {
 
       <Row>
         <TaskPropertyTable />
-        <Metrics />
         <ClientConfig />
+        <Metrics />
+        <CollectorAuthTokens />
       </Row>
     </>
   );
+}
+
+function CollectorAuthTokens() {
+  let fetcher = useFetcher();
+  let callback = React.useCallback(() => {
+    if (fetcher.state === "idle" && !fetcher.data)
+      fetcher.load("collector_auth_tokens");
+  }, [fetcher]);
+
+  if (fetcher.data) {
+    let { collectorAuthTokens } = fetcher.data as {
+      collectorAuthTokens: CollectorAuthToken[];
+    };
+
+    return (
+      <Col md="6" xl="4">
+        <Card className="my-3">
+          <Card.Body>
+            <Card.Title>Collector Auth Tokens</Card.Title>
+          </Card.Body>
+          <ListGroup variant="flush">
+            {collectorAuthTokens.map((collectorAuthToken) => (
+              <ListGroup.Item key={collectorAuthToken.token}>
+                <Badge bg="primary" pill className="mx-1">
+                  {collectorAuthToken.type}
+                </Badge>
+                <span>{collectorAuthToken.token}</span>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Card>
+      </Col>
+    );
+  } else {
+    return (
+      <Col md="6" xl="4">
+        <Card className="my-3">
+          <Card.Body>
+            <Card.Title>Collector Auth Tokens</Card.Title>
+            <Button
+              variant="warning"
+              onClick={callback}
+              disabled={fetcher.state === "loading"}
+            >
+              Reveal
+            </Button>
+          </Card.Body>
+        </Card>
+      </Col>
+    );
+  }
 }
 
 function Metrics() {
@@ -325,7 +379,7 @@ function Metrics() {
   };
 
   return (
-    <Col>
+    <Col md="6" xl="4">
       <Card className="my-3">
         <Card.Body>
           <Card.Title>Metrics</Card.Title>
@@ -386,7 +440,7 @@ function ClientConfig() {
           };
 
           return (
-            <Col>
+            <Col md="6" xl="4">
               <Card className="my-3">
                 <Card.Body>
                   <Card.Title>Client Config</Card.Title>

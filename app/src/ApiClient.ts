@@ -69,6 +69,11 @@ export interface Task {
   hpke_config_id: string;
 }
 
+export interface CollectorAuthToken {
+  type: string;
+  token: string;
+}
+
 export type NewTask = Omit<
   Task,
   | "id"
@@ -271,6 +276,11 @@ export class ApiClient {
   async task(taskId: string): Promise<Task> {
     const res = await this.get(`/api/tasks/${taskId}`);
     return res.data as Task;
+  }
+
+  async taskCollectorAuthTokens(taskId: string): Promise<CollectorAuthToken[]> {
+    const res = await this.get(`/api/tasks/${taskId}/collector_auth_tokens`);
+    return res.data as CollectorAuthToken[];
   }
 
   async deleteMembership(membershipId: string): Promise<null> {
