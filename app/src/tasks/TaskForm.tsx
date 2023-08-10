@@ -15,7 +15,12 @@ import FormControl from "react-bootstrap/FormControl";
 import FormGroup from "react-bootstrap/FormGroup";
 import FormLabel from "react-bootstrap/FormLabel";
 import FormSelect from "react-bootstrap/FormSelect";
-import React, { ChangeEvent, ChangeEventHandler, Suspense } from "react";
+import React, {
+  ChangeEvent,
+  ChangeEventHandler,
+  Suspense,
+  useEffect,
+} from "react";
 import Row from "react-bootstrap/Row";
 import { ApiClientContext } from "../ApiClientContext";
 import { LinkContainer } from "react-router-bootstrap";
@@ -626,6 +631,13 @@ function HpkeConfigSelect(props: Props) {
   const { hpkeConfigs } = useLoaderData() as {
     hpkeConfigs: Promise<HpkeConfig[]>;
   };
+  const { setFieldValue } = props;
+
+  useEffect(() => {
+    hpkeConfigs.then((configs) => {
+      if (configs.length === 1) setFieldValue("hpke_config_id", configs[0].id);
+    });
+  }, [hpkeConfigs, setFieldValue]);
 
   return (
     <TaskFormGroup controlId="hpke_config_id">
@@ -633,8 +645,13 @@ function HpkeConfigSelect(props: Props) {
         fieldKey="hpke_config_id"
         setFocusedField={props.setFocusedField}
       />
-      <FormSelect isInvalid={!!props.errors.hpke_config_id} id="hpke-config-id">
-        <Suspense fallback={<option>...</option>}>
+      <FormSelect
+        isInvalid={!!props.errors.hpke_config_id}
+        id="hpke-config-id"
+        name="hpke_config_id"
+      >
+        <option disabled></option>
+        <Suspense fallback={<option disabled>...</option>}>
           <Await resolve={hpkeConfigs}>
             {(hpkeConfigs: HpkeConfig[]) =>
               hpkeConfigs.map((hpkeConfig) => (
@@ -646,6 +663,9 @@ function HpkeConfigSelect(props: Props) {
           </Await>
         </Suspense>
       </FormSelect>
+      <FormControl.Feedback type="invalid">
+        {props.errors.hpke_config_id}
+      </FormControl.Feedback>
     </TaskFormGroup>
   );
 }
