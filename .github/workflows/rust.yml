@@ -42,3 +42,5 @@ jobs:
         run: cargo fmt --all -- --check
       - name: check --features api-mocks
         run: cargo check --features api-mocks
+      - name: check cli --no-default-features
+        run: cargo check -p divviup-cli --no-default-features

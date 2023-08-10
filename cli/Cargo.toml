@@ -7,6 +7,11 @@ homepage = "https://divviup.org"
 repository = "https://github.com/divviup/divviup-api"
 publish = false
 
+[features]
+default = ["hpke"]
+hpke = ["dep:hpke-dispatch", "dep:rand", "dep:janus_messages"]
+admin = []
+
 [[bin]]
 name = "divviup"
 path = "src/main.rs"
@@ -31,6 +36,6 @@ serde_yaml = "0.9.25"
 env_logger = "0.10.0"
 colored = "2.0.4"
 const_format = "0.2.31"
-hpke-dispatch = { version = "0.5.0", features = ["serde"] }
-rand = "0.8.5"
-janus_messages = "0.5.12"
+hpke-dispatch = { version = "0.5.0", features = ["serde"], optional = true }
+rand = { version = "0.8.5", optional = true }
+janus_messages = { version = "0.5.12", optional = true }
