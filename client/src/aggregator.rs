@@ -39,6 +39,14 @@ pub struct NewAggregator {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+pub struct NewSharedAggregator {
+    pub name: String,
+    pub api_url: Url,
+    pub is_first_party: bool,
+    pub bearer_token: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 #[serde(tag = "type")]
 // Currently, Janus collector authentication tokens are always bearer tokens.
 pub enum CollectorAuthenticationToken {

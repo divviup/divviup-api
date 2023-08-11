@@ -40,7 +40,11 @@ jobs:
         continue-on-error: true
       - name: Format
         run: cargo fmt --all -- --check
-      - name: check --features api-mocks
+      - name: check +api-mocks
         run: cargo check --features api-mocks
-      - name: check cli --no-default-features
+      - name: check cli -default
         run: cargo check -p divviup-cli --no-default-features
+      - name: check cli -default +admin
+        run: cargo check -p divviup-cli --no-default-features --features admin
+      - name: check cli +default +admin
+        run: cargo check -p divviup-cli --features admin

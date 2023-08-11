@@ -10,7 +10,7 @@ publish = false
 [features]
 default = ["hpke"]
 hpke = ["dep:hpke-dispatch", "dep:rand", "dep:janus_messages"]
-admin = []
+admin = ["divviup-client/admin"]
 
 [[bin]]
 name = "divviup"

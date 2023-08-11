@@ -1,4 +1,4 @@
-use crate::{CliResult, Error, Output};
+use crate::{CliResult, DetermineAccountId, Error, Output};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use clap::Subcommand;
 use divviup_client::{DivviupClient, Uuid};
@@ -12,27 +12,58 @@ use generate::*;
 
 #[derive(Subcommand, Debug)]
 pub enum HpkeConfigAction {
+    /// list hpke configs for the target account
     List,
+    /// list hpke configs for the target account
     Create {
-        #[arg(long, short, required_unless_present("base64"))]
+        #[arg(
+            long,
+            short,
+            required_unless_present("base64"),
+            conflicts_with("base64")
+        )]
+        /// filesystem path to a dap-encoded hpke config file
         file: Option<PathBuf>,
-        #[arg(long, short, required_unless_present("file"))]
+
+        #[arg(long, short, required_unless_present("file"), conflicts_with("file"))]
+        /// standard-base64 dap-encoded hpke config
         base64: Option<String>,
+
+        #[arg(short, long)]
+        /// optional display name for this hpke config
+        ///
+        /// if `file` is provided and `name` is not, the filename will be used
         name: Option<String>,
     },
-    Delete {
-        hpke_config_id: Uuid,
-    },
+    /// delete a hpke config by id
+    Delete { hpke_config_id: Uuid },
+
     #[cfg(feature = "hpke")]
+    /// create a new hpke config and upload the public key to divviup
+    ///
+    /// the private key will be output to stdout
+    /// but not recorded anywhere else
     Generate {
-        #[arg(long, default_value = "X25519HkdfSha256")]
+        #[arg(short, long, default_value = "x25519-sha256")]
+        /// key encapsulation mechanism
         kem: Kem,
-        #[arg(long, default_value = "HkdfSha256")]
+
+        /// key derivation function
+        #[arg(long, default_value = "sha256")]
         kdf: Kdf,
-        #[arg(long, default_value = "Aes128Gcm")]
+
+        /// authenticated encryption with additional data
+        #[arg(long, default_value = "aes128-gcm")]
         aead: Aead,
+
+        /// an optional u8 identifier to distinguish from other hpke configs in the dap protocol
+        ///
+        /// note that this is distinct from the uuid used to represent this hpke config in the
+        /// divviup api
         #[arg(long)]
         id: Option<u8>,
+
+        /// an optional display name to identify this hpke config
         #[arg(long, short)]
         name: Option<String>,
     },
@@ -41,16 +72,18 @@ pub enum HpkeConfigAction {
 impl HpkeConfigAction {
     pub(crate) async fn run(
         self,
-        account_id: Uuid,
+        account_id: DetermineAccountId,
         client: DivviupClient,
         output: Output,
     ) -> CliResult {
         match self {
             HpkeConfigAction::List => {
+                let account_id = account_id.await?;
                 output.display(client.hpke_configs(account_id).await?);
             }
 
             HpkeConfigAction::Create { file, base64, name } => {
+                let account_id = account_id.await?;
                 let bytes = match (&file, base64) {
                     (Some(path), None) => fs::read(path).await?,
                     (None, Some(base64)) => STANDARD.decode(base64)?,
@@ -90,6 +123,7 @@ impl HpkeConfigAction {
                 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
                 use janus_messages::{codec::Encode, HpkeConfig, HpkePublicKey};
                 use serde_json::json;
+                let account_id = account_id.await?;
 
                 let hpke_dispatch::Keypair {
                     private_key,
