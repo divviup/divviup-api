@@ -1,6 +1,6 @@
-use crate::{CliResult, Output};
+use crate::{CliResult, DetermineAccountId, Output};
 use clap::Subcommand;
-use divviup_client::{NewTask, Uuid, Vdaf};
+use divviup_client::{DivviupClient, NewTask, Uuid, Vdaf};
 use humantime::{Duration, Timestamp};
 use time::{OffsetDateTime, UtcOffset};
 
@@ -15,7 +15,10 @@ pub enum VdafName {
 
 #[derive(Subcommand, Debug)]
 pub enum TaskAction {
+    /// list all tasks for the target account
     List,
+
+    /// create a new task for the target account
     Create {
         #[arg(long)]
         name: String,
@@ -42,23 +45,23 @@ pub enum TaskAction {
         #[arg(long, required_if_eq_any([("vdaf", "sum"), ("vdaf", "sum_vec")]))]
         bits: Option<u8>,
     },
-    Rename {
-        task_id: String,
-        name: String,
-    },
 
-    CollectorAuthTokens {
-        task_id: String,
-    },
+    /// rename a task
+    Rename { task_id: String, name: String },
+
+    /// retrieve the collector auth tokens for a task
+    CollectorAuthTokens { task_id: String },
 }
 
 impl TaskAction {
     pub(crate) async fn run(
         self,
-        account_id: divviup_client::Uuid,
-        client: divviup_client::DivviupClient,
+        account_id: DetermineAccountId,
+        client: DivviupClient,
         output: Output,
     ) -> CliResult {
+        let account_id = account_id.await?;
+
         match self {
             TaskAction::List => output.display(client.tasks(account_id).await?),
             TaskAction::Create {

@@ -19,7 +19,6 @@ pub const CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
 pub const DEFAULT_URL: &str = "https://api.staging.divviup.org/";
 pub const USER_AGENT: &str = concat!("divviup-client/", env!("CARGO_PKG_VERSION"));
 
-use aggregator::CollectorAuthenticationToken;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use hpke_configs::HpkeConfig;
 use serde::{de::DeserializeOwned, Serialize};
@@ -28,7 +27,7 @@ use std::{future::Future, pin::Pin};
 use trillium_http::{HeaderName, HeaderValues};
 
 pub use account::Account;
-pub use aggregator::{Aggregator, NewAggregator, Role};
+pub use aggregator::{Aggregator, CollectorAuthenticationToken, NewAggregator, Role};
 pub use api_token::ApiToken;
 pub use membership::Membership;
 pub use task::{NewTask, Task, Vdaf};
@@ -40,6 +39,9 @@ pub use trillium_http::{HeaderValue, Headers, KnownHeaderName, Method, Status};
 pub use url::Url;
 pub use uuid::Uuid;
 pub use validation_errors::ValidationErrors;
+
+#[cfg(feature = "admin")]
+pub use aggregator::NewSharedAggregator;
 
 trait ErrInto<T, E1, E2> {
     fn err_into(self) -> Result<T, E2>;
@@ -169,11 +171,6 @@ impl DivviupClient {
 
     pub async fn accounts(&self) -> ClientResult<Vec<Account>> {
         self.get("api/accounts").await
-    }
-
-    pub async fn create_account(&self, name: &str) -> ClientResult<Account> {
-        self.post("api/accounts", Some(&json!({ "name": name })))
-            .await
     }
 
     pub async fn rename_account(&self, account_id: Uuid, new_name: &str) -> ClientResult<Account> {
@@ -326,6 +323,26 @@ impl DivviupClient {
 
     pub async fn delete_hpke_config(&self, hpke_config_id: Uuid) -> ClientResult {
         self.delete(&format!("api/hpke_configs/{hpke_config_id}"))
+            .await
+    }
+
+    pub async fn shared_aggregators(&self) -> ClientResult<Vec<Aggregator>> {
+        self.get("api/aggregators").await
+    }
+}
+
+#[cfg(feature = "admin")]
+impl DivviupClient {
+    pub async fn create_account(&self, name: &str) -> ClientResult<Account> {
+        self.post("api/accounts", Some(&json!({ "name": name })))
+            .await
+    }
+
+    pub async fn create_shared_aggregator(
+        &self,
+        aggregator: NewSharedAggregator,
+    ) -> ClientResult<Aggregator> {
+        self.post(&format!("api/aggregators"), Some(&aggregator))
             .await
     }
 }

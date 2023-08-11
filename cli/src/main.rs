@@ -26,7 +26,9 @@ use memberships::MembershipAction;
 use serde::Serialize;
 use std::{
     fmt::{Debug, Display},
+    future::Future,
     io::IsTerminal,
+    pin::Pin,
     process::ExitCode,
 };
 use tasks::TaskAction;
@@ -100,21 +102,27 @@ struct ClientBin {
 
 #[derive(Subcommand, Debug)]
 enum Resource {
+    /// manage accounts
     #[command(subcommand)]
     Account(AccountAction),
 
+    /// secret keys used to access the divviup api programmatically
     #[command(subcommand)]
     ApiToken(ApiTokenAction),
 
+    /// privacy-preserving metrics in the divviup system
     #[command(subcommand)]
     Task(TaskAction),
 
+    /// dap servers that have been paired to divviup for your account
     #[command(subcommand)]
     Aggregator(AggregatorAction),
 
+    /// collaborate with others and manage access
     #[command(subcommand)]
     Membership(MembershipAction),
 
+    /// manage asymmetrical encryption keys for collecting task aggregates later
     #[command(subcommand)]
     HpkeConfig(HpkeConfigAction),
 }
@@ -176,6 +184,8 @@ pub fn main() -> ExitCode {
     trillium_tokio::block_on(async move { args.run().await })
 }
 
+type DetermineAccountId = Pin<Box<dyn Future<Output = Result<Uuid, Error>> + Send + 'static>>;
+
 impl Resource {
     pub async fn run(
         self,
@@ -183,25 +193,25 @@ impl Resource {
         client: DivviupClient,
         output: Output,
     ) -> Result<(), Error> {
-        let (accounts, account_id) = match account_id {
-            None => {
-                let accounts = client.accounts().await?;
-                if accounts.len() == 1 {
-                    let id = accounts[0].id;
-                    (Some(accounts), Some(id))
+        let account_id = {
+            let client = client.clone();
+            Box::pin(async move {
+                if let Some(account_id) = account_id {
+                    Ok(account_id)
                 } else {
-                    (Some(accounts), None)
+                    let accounts = client.accounts().await?;
+                    if accounts.len() == 1 {
+                        let id = accounts[0].id;
+                        Ok(id)
+                    } else {
+                        Err(Error::CouldNotDetermineAccountId)
+                    }
                 }
-            }
-            Some(account_id) => (None, Some(account_id)),
-        };
-
-        let Some(account_id) = account_id else {
-            return Err(Error::CouldNotDetermineAccountId);
+            })
         };
 
         match self {
-            Resource::Account(action) => action.run(account_id, client, accounts, output).await,
+            Resource::Account(action) => action.run(account_id, client, output).await,
             Resource::ApiToken(action) => action.run(account_id, client, output).await,
             Resource::Task(action) => action.run(account_id, client, output).await,
             Resource::Aggregator(action) => action.run(account_id, client, output).await,
