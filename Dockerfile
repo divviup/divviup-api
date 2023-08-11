@@ -47,4 +47,5 @@ ENV HOST=0.0.0.0
 COPY --from=builder /src/target/release/migration /migration
 COPY --from=builder /src/target/release/migrate_to /migrate_to
 COPY --from=builder /src/target/release/divviup_api_bin /divviup_api_bin
+COPY --from=builder /src/target/release/divviup /divviup
 ENTRYPOINT ["/divviup_api_bin"]
