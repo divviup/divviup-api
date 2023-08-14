@@ -18,7 +18,7 @@ members = [".", "migration", "client", "test-support", "cli"]
 
 [dependencies]
 aes-gcm = "0.10.2"
-async-lock = "2.7.0"
+async-lock = "2.8.0"
 async-session = "3.0.0"
 base64 = "0.21.2"
 email_address = "0.2.4"
