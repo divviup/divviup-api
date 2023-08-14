@@ -1,3 +1,4 @@
+use crate::HpkeConfigContents;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -5,7 +6,7 @@ use uuid::Uuid;
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct HpkeConfig {
     pub id: Uuid,
-    pub contents: janus_messages::HpkeConfig,
+    pub contents: HpkeConfigContents,
     #[serde(with = "::time::serde::iso8601")]
     pub created_at: OffsetDateTime,
     #[serde(default, with = "::time::serde::iso8601::option")]

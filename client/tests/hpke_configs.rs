@@ -1,7 +1,5 @@
 mod harness;
-use divviup_api::{
-    api_mocks::aggregator_api::random_hpke_config, clients::aggregator_client::api_types::Encode,
-};
+use divviup_api::api_mocks::aggregator_api::random_hpke_config;
 use divviup_client::DivviupClient;
 use harness::with_configured_client;
 use std::sync::Arc;
@@ -26,9 +24,7 @@ async fn create_hpke_config(
     client: DivviupClient,
 ) -> TestResult {
     let config = random_hpke_config();
-    let hpke_config = client
-        .create_hpke_config(account.id, config.get_encoded(), None)
-        .await?;
+    let hpke_config = client.create_hpke_config(account.id, &config, None).await?;
     assert_eq!(config, hpke_config.contents);
     Ok(())
 }
@@ -42,7 +38,7 @@ async fn create_hpke_config_with_name(
     let config = random_hpke_config();
     let name = fixtures::random_name();
     let hpke_config = client
-        .create_hpke_config(account.id, config.get_encoded(), Some(&name))
+        .create_hpke_config(account.id, &config, Some(&name))
         .await?;
     assert_eq!(config, hpke_config.contents);
     assert_eq!(name, hpke_config.name.unwrap());

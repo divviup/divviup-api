@@ -20,7 +20,6 @@ pub const DEFAULT_URL: &str = "https://api.staging.divviup.org/";
 pub const USER_AGENT: &str = concat!("divviup-client/", env!("CARGO_PKG_VERSION"));
 
 use base64::{engine::general_purpose::STANDARD, Engine};
-use hpke_configs::HpkeConfig;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use std::{future::Future, pin::Pin};
@@ -29,6 +28,11 @@ use trillium_http::{HeaderName, HeaderValues};
 pub use account::Account;
 pub use aggregator::{Aggregator, CollectorAuthenticationToken, NewAggregator, Role};
 pub use api_token::ApiToken;
+pub use hpke_configs::HpkeConfig;
+pub use janus_messages::{
+    codec::{CodecError, Decode, Encode},
+    HpkeConfig as HpkeConfigContents, HpkePublicKey,
+};
 pub use membership::Membership;
 pub use task::{NewTask, Task, Vdaf};
 pub use time::OffsetDateTime;
@@ -80,6 +84,11 @@ impl DivviupClient {
         }
     }
 
+    pub fn with_default_pool(mut self) -> Self {
+        self.http_client = self.http_client.with_default_pool();
+        self
+    }
+
     pub fn with_header(
         mut self,
         name: impl Into<HeaderName<'static>>,
@@ -103,6 +112,11 @@ impl DivviupClient {
 
     pub fn headers_mut(&mut self) -> &mut Headers {
         &mut self.headers
+    }
+
+    pub fn with_url(mut self, url: Url) -> Self {
+        self.set_url(url);
+        self
     }
 
     pub fn set_url(&mut self, url: Url) {
@@ -308,14 +322,14 @@ impl DivviupClient {
     pub async fn create_hpke_config(
         &self,
         account_id: Uuid,
-        hpke_config: impl AsRef<[u8]>,
+        hpke_config: &HpkeConfigContents,
         name: Option<&str>,
     ) -> ClientResult<HpkeConfig> {
         self.post(
             &format!("api/accounts/{account_id}/hpke_configs"),
             Some(&json!({
                 "name": name,
-                "contents": STANDARD.encode(hpke_config)
+                "contents": STANDARD.encode(hpke_config.get_encoded())
             })),
         )
         .await
