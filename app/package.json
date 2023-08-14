@@ -47,7 +47,7 @@
     ]
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/jest-dom": "^6.0.0",
     "@types/humanize-duration": "^3.27.1",
     "@types/jest": "^29.5.3",
     "@types/luxon": "^3.3.1",
