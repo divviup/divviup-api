@@ -20,7 +20,7 @@ use api_tokens::ApiTokenAction;
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
 use const_format::concatcp;
-use divviup_client::{Client, DivviupClient, HeaderValue, KnownHeaderName, Url, Uuid};
+use divviup_client::{Client, CodecError, DivviupClient, HeaderValue, KnownHeaderName, Url, Uuid};
 use hpke_configs::HpkeConfigAction;
 use memberships::MembershipAction;
 use serde::Serialize;
@@ -143,6 +143,9 @@ pub enum Error {
 
     #[error("{0}")]
     Other(String),
+
+    #[error(transparent)]
+    CodecError(#[from] CodecError),
 }
 
 pub type CliResult<T = ()> = Result<T, Error>;

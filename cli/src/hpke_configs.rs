@@ -1,7 +1,7 @@
 use crate::{CliResult, DetermineAccountId, Error, Output};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use clap::Subcommand;
-use divviup_client::{DivviupClient, Uuid};
+use divviup_client::{Decode, DivviupClient, HpkeConfigContents, Uuid};
 use std::{borrow::Cow, path::PathBuf};
 use trillium_tokio::tokio::fs;
 
@@ -101,9 +101,11 @@ impl HpkeConfigAction {
                     _ => None,
                 };
 
+                let hpke_config = HpkeConfigContents::get_decoded(&bytes)?;
+
                 output.display(
                     client
-                        .create_hpke_config(account_id, bytes, name.as_deref())
+                        .create_hpke_config(account_id, &hpke_config, name.as_deref())
                         .await?,
                 );
             }
@@ -121,7 +123,6 @@ impl HpkeConfigAction {
                 id,
             } => {
                 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-                use janus_messages::{codec::Encode, HpkeConfig, HpkePublicKey};
                 use serde_json::json;
                 let account_id = account_id.await?;
 
@@ -132,18 +133,18 @@ impl HpkeConfigAction {
 
                 let config_id = id.unwrap_or_else(|| rand::random());
 
-                let hpke_config = HpkeConfig::new(
+                let hpke_config = HpkeConfigContents::new(
                     config_id.into(),
                     (kem.0 as u16).try_into().unwrap(),
                     (kdf.0 as u16).try_into().unwrap(),
                     (aead.0 as u16).try_into().unwrap(),
-                    HpkePublicKey::from(public_key.clone()),
+                    public_key.clone().into(),
                 );
 
                 let name = name.unwrap_or_else(|| format!("hpke-config-{config_id}"));
                 output.display(
                     client
-                        .create_hpke_config(account_id, hpke_config.get_encoded(), Some(&name))
+                        .create_hpke_config(account_id, &hpke_config, Some(&name))
                         .await?,
                 );
                 output.display(json!({

@@ -9,7 +9,7 @@ publish = false
 
 [features]
 default = ["hpke"]
-hpke = ["dep:hpke-dispatch", "dep:rand", "dep:janus_messages"]
+hpke = ["dep:hpke-dispatch", "dep:rand"]
 admin = ["divviup-client/admin"]
 
 [[bin]]
@@ -38,4 +38,4 @@ colored = "2.0.4"
 const_format = "0.2.31"
 hpke-dispatch = { version = "0.5.0", features = ["serde"], optional = true }
 rand = { version = "0.8.5", optional = true }
-janus_messages = { version = "0.5.14", optional = true }
+
