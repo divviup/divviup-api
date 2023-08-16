@@ -13,7 +13,7 @@ info:
   license:
     name: MPL-2.0
     url: https://www.mozilla.org/en-US/MPL/2.0/
-  version: 1.0.11
+  version: 0.1
 externalDocs:
   description: The DivviUp API repository
   url: https://github.com/divviup/divviup-api
