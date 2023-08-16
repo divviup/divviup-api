@@ -1,0 +1,921 @@
+openapi: 3.1.0
+info:
+  title: Divvi Up API
+  description: |-
+    Divvi Up is a privacy-respecting system for aggregate statistics.
+
+    Some useful links:
+    - [The DivviUp API repository](https://github.com/divviup/divviup-api)
+    - [The source API definition](https://github.com/divviup/divviup-api/blob/main/documentation/openapi.yml)
+  termsOfService: http://divviup.org/terms/ # this doesn't exist yet
+  contact:
+    email: team@divviup.org # this isn't real
+  license:
+    name: MPL-2.0
+    url: https://www.mozilla.org/en-US/MPL/2.0/
+  version: 1.0.11
+externalDocs:
+  description: The DivviUp API repository
+  url: https://github.com/divviup/divviup-api
+servers:
+  - url: https://api.divviup.org/api
+  - url: https://api.staging.divviup.org/api
+
+tags:
+  - name: aggregators
+    description: aggregators represent DAP servers that have been paired with divvi up
+  - name: api tokens
+    description: api tokens allow for programmatic interactions with the divvi up api
+  - name: memberships
+    description: collaborate with others and manage access
+  - name: tasks
+    description: privacy-preserving metrics in the divvi up system
+  - name: hpke configs
+    description: manage asymmetrical encryption keys for collecting task aggregates later
+  - name: accounts
+    description: manage accounts
+
+paths:
+  /accounts:
+    get:
+      tags: [accounts]
+      summary: List all visible accounts
+      description: List all visible accounts
+      operationId: listAccounts
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema:
+                type: array
+                items: 
+                  $ref: "#/components/schemas/Account"
+      security:
+        - ApiToken: []
+  /accounts/{account_id}:
+    parameters: 
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [accounts]
+      summary: Retrieve an account by id
+      description: Retrieve an account by id
+      operationId: showAccount
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - ApiToken: []
+    patch:
+      tags: [accounts]
+      summary: Modify an account by id
+      description: Modify an account by id
+      operationId: updateAccount
+      requestBody: 
+        required: true
+        content:
+          application/vnd.divviup+json;version=0.1:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  examples: ["My Company, llc"]
+      responses:
+        "202":
+          description: Successful operation
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - ApiToken: []
+  /memberships/{membership_id}:
+    parameters: 
+      - in: path
+        name: membership_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: "UUID of the membership"
+    delete:
+      tags: [memberships]
+      summary: remove a member by id
+      description: remove a member by id
+      operationId: deleteMembership
+      responses:
+        "204":
+          description: Successful operation
+        "403":
+          description: Forbidden
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /accounts/{account_id}/memberships:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: [memberships]
+      summary: Get memberships associated with a particular account
+      description: Get memberships associated with a particular account
+      operationId: listMemberships
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema:
+                type: array
+                items:
+                    $ref: "#/components/schemas/Membership"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [memberships]
+      summary: Create a new membership
+      description: Create a new membership
+      operationId: createMembership
+      requestBody: 
+        required: true
+        content:
+          application/vnd.divviup+json;version=0.1:
+            schema:
+              type: object
+              properties:
+                user_email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema:
+                type: array
+                items:
+                    $ref: "#/components/schemas/Membership"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/Invalid"
+
+  /tasks/{task_id}:
+    parameters:
+    - in: path
+      name: task_id
+      schema:
+        type: string
+      required: true
+      description: id of the task
+    get:
+      tags: ["tasks"]
+      summary: retrieve a task by id
+      description: retrieve a task by id
+      operationId: showTask
+      responses:
+        "200":
+          description: Success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema:
+                $ref: '#/components/schemas/Task'
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: ["tasks"]
+      summary: update a task by id
+      description: update a task by id
+      operationId: updateTask
+      requestBody: 
+        required: true
+        content:
+          application/vnd.divviup+json;version=0.1:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  examples: ["My Task Name"]
+      responses:
+        "200":
+          description: Success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema:
+                $ref: '#/components/schemas/Task'
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /tasks/{task_id}/collector_auth_tokens:
+    get:
+      parameters:
+      - in: path
+        name: task_id
+        schema:
+          type: string
+        required: true
+        description: UUID of the task
+      tags: ["tasks"]
+      summary: retrieve the collector auth tokens for the task specified by `task_id`
+      description: retrieve the collector auth tokens for the task specified by `task_id`
+      operationId: showTaskCollectorAuthTokens
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [bearer]
+                    token:
+                      type: string
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /accounts/{account_id}/tasks:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: ["tasks"]
+      summary: retrieve all tasks associated with the account
+      description: retrieve all tasks associated with the account
+      operationId: listTasks
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: ["tasks"]
+      summary: create a new task
+      description: create a new task
+      operationId: createTask
+      requestBody: 
+        required: true
+        content:
+          application/vnd.divviup+json;version=0.1:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                leader_aggregator_id:
+                  type: string
+                  format: uuid
+                helper_aggregator_id:
+                  type: string
+                  format: uuid
+                vdaf:
+                  $ref: "#/components/schemas/Vdaf"
+                min_batch_size:
+                  type: number
+                max_batch_size:
+                  type: number
+                expiration:
+                  type: string
+                  format: date-time
+                hpke_config_id:
+                  type: string
+                  format: uuid
+                time_precision_seconds:
+                  type: number
+                  min: 60
+                  max: 2592000
+              required:
+                - helper_aggregator_id
+                - leader_aggregator_id
+                - name
+                - vdaf
+                - min_batch_size
+                - time_precision_seconds
+                - hpke_config_id
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/Invalid"
+
+  /aggregators/{aggregator_id}:
+    parameters: 
+      - in: path
+        name: aggregator_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: UUID of the aggregator
+    get:
+      tags: [aggregators]
+      summary: get an aggregator by id
+      description: get an aggregator by id
+      operationId: showAggregator
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                $ref: '#/components/schemas/Aggregator'
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [aggregators]
+      summary: update an aggregator
+      description: update an aggregator
+      operationId: updateAggregator
+      requestBody: 
+        required: true
+        content:
+          application/vnd.divviup+json;version=0.1:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                bearer_token:
+                  type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                type: array
+                items:
+                  $ref: '#/components/schemas/Aggregator'
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags: [aggregators]
+      operationId: deleteAggregator
+      summary: delete an aggregator
+      description: delete an aggregator
+      responses:
+        "204":
+          description: Successful operation
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+  /aggregators:
+    get:
+      tags: [aggregators]
+      summary: list shared aggregators
+      description: list shared aggregators
+      operationId: listSharedAggregators
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                type: array
+                items:
+                  $ref: '#/components/schemas/Aggregator'
+  /accounts/{account_id}/aggregators:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+
+    get:
+      tags: [aggregators]
+      summary: get aggregators associated with a given account
+      description: get aggregators associated with a given account
+      operationId: listAggregators
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                type: array
+                items:
+                  $ref: '#/components/schemas/Aggregator'
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [aggregators]
+      summary: pair an aggregator with a given account
+      description: pair an aggregator with a given account
+      operationId: createAggregator
+      requestBody: 
+        required: true
+        content:
+          application/vnd.divviup+json;version=0.1:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                bearer_token:
+                  type: string
+                  format: base64
+                api_url:
+                  type: string
+                  format: url
+              required:
+                - name
+                - api_url
+                - bearer_token
+      responses:
+        "201":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                $ref: '#/components/schemas/Aggregator'
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/Invalid"
+
+
+
+
+  /accounts/{account_id}/hpke_configs:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: ["hpke configs"]
+      summary: list hpke configs for a given account
+      description: list hpke configs for a given account
+      operationId: listHpkeConfigs
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HpkeConfig'
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      tags: ["hpke configs"]
+      summary: create a new reusable hpke config for the account
+      description: create a new reusable hpke config for the account
+      operationId: createHpkeConfig
+      requestBody: 
+        required: true
+        content:
+          application/vnd.divviup+json;version=0.1:
+            schema:
+              type: object
+              properties:
+                contents:
+                  type: string
+                  format: base64
+                name:
+                  type: string
+              required: [contents]
+      responses:
+        "201":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                $ref: '#/components/schemas/HpkeConfig'
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/Invalid"
+
+  /hpke_configs/{hpke_config_id}:
+    parameters:
+      - in: path
+        name: hpke_config_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: UUID of the hpke config
+    get:
+      tags: ["hpke configs"]
+      summary: retrieve the hpke config by id
+      description: retrieve the hpke config by id
+      operationId: showHpkeConfig
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                $ref: '#/components/schemas/HpkeConfig'
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: ["hpke configs"]
+      summary: update the hpke config by id
+      description: update the hpke config by id
+      operationId: updateHpkeConfig
+      requestBody: 
+        required: true
+        content:
+          application/vnd.divviup+json;version=0.1:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                $ref: '#/components/schemas/HpkeConfig'
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: ["hpke configs"]
+      summary: delete a hpke config by id
+      description: delete a hpke config by id
+      operationId: deleteHpkeConfig
+      responses:
+        "204":
+          description: Successful operation
+        "403":
+          description: Forbidden
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+
+  /accounts/{account_id}/api_tokens:
+    parameters:
+      - $ref: "#/components/parameters/AccountId"
+    get:
+      tags: ["api tokens"]
+      summary: list api tokens for a given account
+      description: list api tokens for a given account
+      operationId: listApiTokens
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiToken'
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: ["api tokens"]
+      summary: create a new reusable api tokens for the account
+      description: create a new reusable api tokens for the account
+      operationId: createApiToken
+      responses:
+        "201":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                allOf:
+                  - $ref: '#/components/schemas/ApiToken'
+                  - type: object
+                    properties:
+                      token:
+                        type: string
+                        examples: ["DUATv2d0Lax_QkaZJYV2XehWUSsdRipH5Gy3Fvnj92GXIH_6JwI6a6GECJ7kvhVAfEyj"]
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/Invalid"
+
+
+  /api_tokens/{api_token_id}:
+    parameters:
+      - in: path
+        name: api_token_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: UUID of the api token
+    patch:
+      tags: ["api tokens"]
+      summary: update the api token by id
+      description: update the api token by id
+      operationId: updateApiToken
+      requestBody: 
+        required: true
+        content:
+          application/vnd.divviup+json;version=0.1:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/vnd.divviup+json;version=0.1:
+              schema: 
+                $ref: '#/components/schemas/ApiToken'
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags: ["api tokens"]
+      summary: delete an api token by id
+      description: delete an api token by id
+      operationId: deleteApiToken
+      responses:
+        "204":
+          description: Successful operation
+        "403":
+          description: Forbidden
+        "404":
+          $ref: "#/components/responses/NotFound"
+      
+components:
+  parameters:
+    AccountId:
+      in: path
+      name: account_id
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: UUID of the account
+
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          examples: ["My Company, llc."]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        admin:
+          type: boolean
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          examples: ["my task name"]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        account_id:
+          type: string
+          format: uuid
+        vdaf:
+          $ref: "#/components/schemas/Vdaf"
+        min_batch_size:
+          type: number
+        max_batch_size:
+          type: number
+          nullable: true
+        time_precision_seconds:
+          type: number
+        report_count:
+          type: number
+        aggregate_collection-count:
+          type: number
+        expiration:
+          type: string
+          format: date-time
+          nullable: true
+        leader_aggregator_id:
+          type: string
+          format: uuid
+        helper_aggregator_id:
+          type: string
+          format: uuid
+        hpke_config_id:
+          type: string
+          format: uuid
+    Membership:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        user_email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+    Vdaf:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [sum, count, histogram, count_vec, sum_vec]
+        length:
+          type: number
+        bits:
+          type: number
+        buckets:
+          type: array
+          item: number
+      required: [type]
+    ApiToken:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        token_hash:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+    ValidationError:
+      type: object
+      properties:
+        code:
+          type: string
+          examples:
+            - range
+            - required
+            - url
+            - https-url
+            - no-first-party
+            - base64
+            - same
+            - token-not-recognized
+            - http-error
+            - enum
+            - length
+        message:
+          type: string
+          examples:
+            - "must be between 1 minute and 4 weeks"
+        params:
+          type: object
+          examples:
+            - min: 60
+              max: 2592000
+    ValidationErrors:
+      type: object
+      additionalProperties:
+        oneOf:
+          - type: array
+            items:
+              $ref: "#/components/schemas/ValidationError"
+          - $ref: "#/components/schemas/ValidationError"
+      examples:
+        - some_property_of_the_request_body:
+          - code: required
+            message:
+            params: {}
+    HpkeConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        contents:
+          type: object
+          properties:
+            kem_id:
+              type: string
+            kdf_id:
+              type: string
+            aead_id:
+              type: string
+            public_key:
+              type: string
+              format: base64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        name:
+          type: string
+          nullable: true
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+    Aggregator:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+        role:
+          type: string
+          enum: [helper, leader, either]
+        name:
+          type: string
+        dap_url:
+          type: string
+          format: url
+        api_url:
+          type: string
+          format: url
+        is_first_party:
+          type: boolean
+        query_types:
+          type: string
+          enum: [TimeInterval, FixedSize]
+        vdafs:
+          type: string
+          examples: [Prio3Count, Prio3Sum, Prio3Histogram, Prio3CountVec, Prio3SumVec, Poplar1]
+  responses:
+    NotFound:
+      description: "Not found"
+      content:
+        application/vnd.divviup+json;version=0.1:
+          schema:
+            type: string
+            enum: []
+            examples: [""]
+    Invalid:
+      description: Validation error
+      content:
+        application/vnd.divviup+json;version=0.1:
+          schema:
+            $ref: "#/components/schemas/ValidationErrors"
+
+  securitySchemes:
+    ApiToken:
+      type: http
+      scheme: bearer
