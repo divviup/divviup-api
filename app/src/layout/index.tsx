@@ -6,7 +6,7 @@ import Layout from "./Layout";
 
 export default function layout(
   apiClient: ApiClient,
-  children: RouteObject[]
+  children: RouteObject[],
 ): RouteObject {
   return {
     path: "/",

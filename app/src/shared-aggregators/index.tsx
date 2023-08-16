@@ -25,7 +25,9 @@ export default function sharedAggregators(apiClient: ApiClient): RouteObject {
             case "PATCH":
               return apiClient.updateAggregator(
                 params.aggregator_id as string,
-                Object.fromEntries(await request.formData()) as UpdateAggregator
+                Object.fromEntries(
+                  await request.formData(),
+                ) as UpdateAggregator,
               );
             default:
               throw new Error(`unexpected method ${request.method}`);

@@ -259,11 +259,11 @@ export class ApiClient {
 
   async createMembership(
     accountId: string,
-    membership: CreateMembership
+    membership: CreateMembership,
   ): Promise<Membership | { error: ValidationErrorsFor<CreateMembership> }> {
     const res = await this.post(
       `/api/accounts/${accountId}/memberships`,
-      membership
+      membership,
     );
     return res.data as Membership;
   }
@@ -295,11 +295,11 @@ export class ApiClient {
 
   async createAggregator(
     accountId: string,
-    aggregator: NewAggregator
+    aggregator: NewAggregator,
   ): Promise<Aggregator | { error: ValidationErrorsFor<NewAggregator> }> {
     const res = await this.post(
       `/api/accounts/${accountId}/aggregators`,
-      aggregator
+      aggregator,
     );
     switch (res.status) {
       case 201:
@@ -315,11 +315,11 @@ export class ApiClient {
 
   async updateAggregator(
     aggregatorId: string,
-    aggregator: UpdateAggregator
+    aggregator: UpdateAggregator,
   ): Promise<Aggregator | { error: ValidationErrorsFor<UpdateAggregator> }> {
     const res = await this.patch(
       `/api/aggregators/${aggregatorId}`,
-      aggregator
+      aggregator,
     );
     switch (res.status) {
       case 200:
@@ -349,7 +349,7 @@ export class ApiClient {
   }
 
   async createSharedAggregator(
-    aggregator: NewAggregator
+    aggregator: NewAggregator,
   ): Promise<Aggregator | { error: ValidationErrorsFor<NewAggregator> }> {
     const res = await this.post(`/api/aggregators`, aggregator);
     switch (res.status) {
@@ -366,7 +366,7 @@ export class ApiClient {
 
   async updateTask(
     taskId: string,
-    task: UpdateTask
+    task: UpdateTask,
   ): Promise<Task | { error: ValidationErrorsFor<UpdateTask> }> {
     const res = await this.patch(`/api/tasks/${taskId}`, task);
     switch (res.status) {
@@ -383,7 +383,7 @@ export class ApiClient {
 
   async createTask(
     accountId: string,
-    task: NewTask
+    task: NewTask,
   ): Promise<Task | { error: ValidationErrorsFor<NewTask> }> {
     const res = await this.post(`/api/accounts/${accountId}/tasks`, task);
     switch (res.status) {
@@ -402,7 +402,7 @@ export class ApiClient {
   }
 
   async createApiToken(
-    accountId: string
+    accountId: string,
   ): Promise<ApiToken & { token: string }> {
     const res = await this.post(`/api/accounts/${accountId}/api_tokens`);
     return res.data as ApiToken & { token: string };
@@ -415,7 +415,7 @@ export class ApiClient {
 
   async updateApiToken(
     tokenId: string,
-    token: { name: string }
+    token: { name: string },
   ): Promise<null> {
     await this.patch(`/api/api_tokens/${tokenId}`, token);
     return null;
@@ -448,14 +448,14 @@ export class ApiClient {
 
   async createHpkeConfig(
     accountId: string,
-    hpkeConfig: { contents: string; name: string }
+    hpkeConfig: { contents: string; name: string },
   ): Promise<
     | HpkeConfig
     | { error: ValidationErrorsFor<{ contents: string; name: string }> }
   > {
     const res = await this.post(
       `/api/accounts/${accountId}/hpke_configs`,
-      hpkeConfig
+      hpkeConfig,
     );
     switch (res.status) {
       case 201:
@@ -528,7 +528,7 @@ function formikErrors_(v: ValidationErrors): FormikLikeErrors {
 }
 
 export function formikErrors<T extends object>(
-  v: ValidationErrorsFor<T>
+  v: ValidationErrorsFor<T>,
 ): FormikErrors<T> {
   return formikErrors_(v as ValidationErrors) as unknown as FormikErrors<T>;
 }
@@ -543,8 +543,8 @@ export interface FormikLikeErrors {
 
 export type ValidationErrorsFor<T extends object> = {
   [K in keyof T]?: T[K] extends object
-  ? ValidationErrorsFor<T[K]>
-  : ValidationError[];
+    ? ValidationErrorsFor<T[K]>
+    : ValidationError[];
 };
 
 export interface ValidationError {

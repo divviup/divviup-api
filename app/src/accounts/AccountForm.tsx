@@ -12,7 +12,7 @@ export default function AccountForm() {
     (event: ChangeEvent<HTMLInputElement>) => {
       setName(event.target.value);
     },
-    [setName]
+    [setName],
   );
 
   return (

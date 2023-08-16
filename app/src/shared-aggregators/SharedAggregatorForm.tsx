@@ -9,7 +9,7 @@ async function submit(
   apiClient: ApiClient,
   newAggregator: NewAggregator,
   actions: FormikHelpers<NewAggregator>,
-  revalidate: () => void
+  revalidate: () => void,
 ) {
   try {
     let aggregator = await apiClient.createSharedAggregator(newAggregator);
@@ -32,7 +32,7 @@ export default function SharedAggreatorForm() {
   const handleSubmit = React.useCallback(
     (values: NewAggregator, actions: FormikHelpers<NewAggregator>) =>
       submit(apiClient, values, actions, revalidate),
-    [apiClient, navigate, revalidate]
+    [apiClient, navigate, revalidate],
   );
 
   return (

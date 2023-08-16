@@ -25,7 +25,7 @@ export default function memberships(apiClient: ApiClient): RouteObject {
         case "POST":
           return await apiClient.createMembership(
             params.account_id as string,
-            data as { user_email: string }
+            data as { user_email: string },
           );
         default:
           throw new Error(`unexpected method ${request.method}`);

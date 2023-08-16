@@ -12,7 +12,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
         loader({ params }) {
           return defer({
             hpkeConfigs: apiClient.accountHpkeConfigs(
-              params.account_id as string
+              params.account_id as string,
             ),
           });
         },
@@ -29,7 +29,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
                 Object.fromEntries(await request.formData()) as {
                   name: string;
                   contents: string;
-                }
+                },
               );
             default:
               throw new Error(`unexpected method ${request.method}`);
@@ -46,7 +46,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
                 params.api_token_id as string,
                 Object.fromEntries(await request.formData()) as {
                   name: string;
-                }
+                },
               );
               return true;
             case "DELETE":

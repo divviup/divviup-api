@@ -7,7 +7,7 @@ import { ApiClient } from "./ApiClient";
 import Router from "./router";
 
 const root = ReactDOM.createRoot(
-  document.getElementById("root") as HTMLElement
+  document.getElementById("root") as HTMLElement,
 );
 
 function App() {

@@ -24,13 +24,13 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         loader({ params }) {
           let task = apiClient.task(params.task_id as string);
           let leaderAggregator = task.then((t) =>
-            apiClient.aggregator(t.leader_aggregator_id)
+            apiClient.aggregator(t.leader_aggregator_id),
           );
           let helperAggregator = task.then((t) =>
-            apiClient.aggregator(t.helper_aggregator_id)
+            apiClient.aggregator(t.helper_aggregator_id),
           );
           let hpkeConfig = task.then((t) =>
-            apiClient.hpkeConfig(t.hpke_config_id)
+            apiClient.hpkeConfig(t.hpke_config_id),
           );
           return defer({
             task,
@@ -46,7 +46,7 @@ export default function tasks(apiClient: ApiClient): RouteObject {
             case "PATCH":
               return await apiClient.updateTask(
                 params.task_id as string,
-                data as { name: string }
+                data as { name: string },
               );
             default:
               throw new Error(`unexpected method ${request.method}`);
@@ -58,7 +58,7 @@ export default function tasks(apiClient: ApiClient): RouteObject {
             loader({ params }) {
               return defer({
                 collectorAuthTokens: apiClient.taskCollectorAuthTokens(
-                  params.task_id as string
+                  params.task_id as string,
                 ),
               });
             },
@@ -71,10 +71,10 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         loader({ params }) {
           return defer({
             aggregators: apiClient.accountAggregators(
-              params.account_id as string
+              params.account_id as string,
             ),
             hpkeConfigs: apiClient.accountHpkeConfigs(
-              params.account_id as string
+              params.account_id as string,
             ),
           });
         },

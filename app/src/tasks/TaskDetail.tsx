@@ -236,8 +236,8 @@ function TaskPropertyTable() {
                 {(task) =>
                   task.expiration
                     ? DateTime.fromISO(task.expiration)
-                      .toLocal()
-                      .toLocaleString(DateTime.DATETIME_SHORT)
+                        .toLocal()
+                        .toLocaleString(DateTime.DATETIME_SHORT)
                     : "never"
                 }
               </Await>
