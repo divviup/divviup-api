@@ -96,7 +96,7 @@ function AddMembershipForm() {
             onChange={React.useCallback(
               (event: React.ChangeEvent<HTMLInputElement>) =>
                 setEmail(event.target.value),
-              [setEmail]
+              [setEmail],
             )}
           />
         </Col>

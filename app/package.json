@@ -26,7 +26,8 @@
     "analyze": "source-map-explorer 'build/assets/*.js'",
     "start": "vite",
     "build": "vite build",
-    "check": "tsc --noEmit -p ./tsconfig.json"
+    "check": "tsc --noEmit -p ./tsconfig.json",
+    "lint": "prettier -c src"
   },
   "eslintConfig": {
     "extends": [
@@ -59,6 +60,7 @@
     "@types/react-router-bootstrap": "^0.26.2",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.0.4",
+    "prettier": "^3.0.2",
     "source-map-explorer": "^2.5.3",
     "typescript": "^5.1.6",
     "vite": "^4.4.9"

@@ -37,7 +37,7 @@ export default function HpkeConfigForm() {
         reader.readAsDataURL(files[0]);
       }
     },
-    [reader, setName, name]
+    [reader, setName, name],
   );
 
   let ref = useRef<HTMLInputElement | null>(null);
@@ -54,7 +54,7 @@ export default function HpkeConfigForm() {
   let errors = formikErrors<{ contents?: string; name?: string }>(
     fetcher.data && "error" in fetcher.data
       ? fetcher.data.error
-      : { name: undefined, contents: undefined }
+      : { name: undefined, contents: undefined },
   );
 
   return (
@@ -87,7 +87,7 @@ export default function HpkeConfigForm() {
               onChange={React.useCallback(
                 (event: ChangeEvent<HTMLInputElement>) =>
                   setName(event.target.value),
-                [setName]
+                [setName],
               )}
               isInvalid={!!errors.name}
             />

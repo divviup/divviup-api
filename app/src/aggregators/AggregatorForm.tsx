@@ -29,7 +29,7 @@ async function submit(
   accountId: string,
   newAggregator: NewAggregator,
   actions: FormikHelpers<NewAggregator>,
-  navigate: NavigateFunction
+  navigate: NavigateFunction,
 ) {
   try {
     let aggregator = await apiClient.createAggregator(accountId, newAggregator);
@@ -50,7 +50,7 @@ export function AggregatorForm({
 }: {
   handleSubmit: (
     aggregator: NewAggregator,
-    helpers: FormikHelpers<NewAggregator>
+    helpers: FormikHelpers<NewAggregator>,
   ) => void;
   showIsFirstParty?: boolean;
 }) {
@@ -109,7 +109,7 @@ export default function AggregatorFormPage() {
   const handleSubmit = React.useCallback(
     (values: NewAggregator, actions: FormikHelpers<NewAggregator>) =>
       submit(apiClient, accountId as string, values, actions, navigate),
-    [apiClient, accountId, navigate]
+    [apiClient, accountId, navigate],
   );
 
   return (

@@ -25,7 +25,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
           switch (request.method) {
             case "POST":
               return await apiClient.createApiToken(
-                params.account_id as string
+                params.account_id as string,
               );
             default:
               throw new Error(`unexpected method ${request.method}`);
@@ -42,7 +42,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
                 params.api_token_id as string,
                 Object.fromEntries(await request.formData()) as {
                   name: string;
-                }
+                },
               );
               return true;
             case "DELETE":

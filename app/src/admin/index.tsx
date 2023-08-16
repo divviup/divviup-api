@@ -3,7 +3,7 @@ import ApiClient from "../ApiClient";
 
 export default function admin(
   _apiClient: ApiClient,
-  children: RouteObject[]
+  children: RouteObject[],
 ): RouteObject {
   return {
     path: "admin",

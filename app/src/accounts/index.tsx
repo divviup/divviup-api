@@ -6,7 +6,7 @@ import AccountList from "./AccountList";
 
 export default function accounts(
   apiClient: ApiClient,
-  children: RouteObject[]
+  children: RouteObject[],
 ): RouteObject {
   return {
     path: "accounts",
@@ -28,7 +28,7 @@ export default function accounts(
           switch (request.method) {
             case "POST":
               const account = await apiClient.createAccount(
-                data as unknown as PartialAccount
+                data as unknown as PartialAccount,
               );
               return redirect(`/accounts/${account.id}`);
             default:
@@ -53,7 +53,7 @@ export default function accounts(
               return {
                 account: await apiClient.updateAccount(
                   params.account_id as string,
-                  data as unknown as PartialAccount
+                  data as unknown as PartialAccount,
                 ),
               };
             default:

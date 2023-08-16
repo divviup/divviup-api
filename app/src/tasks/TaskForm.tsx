@@ -43,7 +43,7 @@ async function submit(
   accountId: string,
   newTask: NewTask,
   actions: FormikHelpers<NewTask>,
-  navigate: NavigateFunction
+  navigate: NavigateFunction,
 ) {
   try {
     let task = await apiClient.createTask(accountId, newTask);
@@ -83,19 +83,19 @@ export default function TaskForm() {
   const handleSubmit = React.useCallback(
     (values: NewTask, actions: FormikHelpers<NewTask>) =>
       submit(apiClient, account_id as string, values, actions, navigate),
-    [apiClient, account_id, navigate]
+    [apiClient, account_id, navigate],
   );
   const navigation = useNavigation();
 
   const [focusedField, setFocusedField] = React.useState<Field<NewTask> | null>(
-    null
+    null,
   );
 
   const focus = React.useCallback(
     (event: React.FocusEvent<HTMLFormElement>) => {
       setFocusedField(event.target.name as unknown as Field<NewTask>);
     },
-    [setFocusedField, navigate]
+    [setFocusedField, navigate],
   );
 
   return (
@@ -400,7 +400,7 @@ function ShortHelpText({
       setFocusedField(fieldKey);
       e.preventDefault();
     },
-    [setFocusedField, fieldKey]
+    [setFocusedField, fieldKey],
   );
 
   let help = helps[fieldKey];
@@ -556,10 +556,10 @@ function QueryType(props: Props) {
           : /*jbr: I have no idea what a good
              * default is, but it needs to be
              * greater than min*/
-            null
+            null,
       );
     },
-    [setFieldValue, min_batch_size]
+    [setFieldValue, min_batch_size],
   );
 
   return (
@@ -603,7 +603,7 @@ function MaxBatchSize(props: Props) {
         setFieldValue("max_batch_size", event.target.valueAsNumber);
       }
     },
-    [setFieldValue]
+    [setFieldValue],
   );
 
   if (typeof max_batch_size !== "number") return null;
@@ -741,14 +741,14 @@ function TimePrecisionSeconds(props: Props) {
     (event: ChangeEvent<HTMLSelectElement>) => {
       setUnit(event.target.value as Unit);
     },
-    [setUnit]
+    [setUnit],
   );
 
   const changeCount = React.useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       setCount(event.target.valueAsNumber);
     },
-    [setCount]
+    [setCount],
   );
 
   return (
@@ -814,7 +814,7 @@ function VdafType(props: Props) {
       ? leader.vdafs
           .filter((vdaf) => helper.vdafs.includes(vdaf))
           .map((vdaf) => vdaf.replace(/^Prio3/, "").toLowerCase())
-      : ["sum", "histogram", "count"]
+      : ["sum", "histogram", "count"],
   );
 
   return (
@@ -862,7 +862,7 @@ function HistogramBucketSelection(props: Props) {
   let [input, setInput] = React.useState(
     props.values.vdaf?.type === "histogram"
       ? (props.values.vdaf?.buckets || []).join(", ")
-      : ""
+      : "",
   );
 
   let cb = React.useCallback(
@@ -874,7 +874,7 @@ function HistogramBucketSelection(props: Props) {
             input
               .split(/, */)
               .map((n) => parseInt(n, 10))
-              .filter((n) => !isNaN(n))
+              .filter((n) => !isNaN(n)),
           );
         }
         setInput(change.target.value);
@@ -883,7 +883,7 @@ function HistogramBucketSelection(props: Props) {
         change.preventDefault();
       }
     },
-    [input, setInput, setFieldValue]
+    [input, setInput, setFieldValue],
   );
 
   let blur = React.useCallback(() => {
@@ -929,7 +929,7 @@ function SumBits(props: Props) {
   let handleChange = React.useCallback(
     (event: ChangeEvent<HTMLSelectElement>) =>
       setFieldValue("vdaf.bits", parseInt(event.target.value, 10)),
-    [setFieldValue]
+    [setFieldValue],
   );
   if (props.values.vdaf?.type !== "sum") return <></>;
 
@@ -967,7 +967,7 @@ function Expiration(props: Props) {
       setEnabled(event.target.checked);
       if (!event.target.checked) setFieldValue("expiration", null);
     },
-    [setEnabled, setFieldValue]
+    [setEnabled, setFieldValue],
   );
 
   const handleChange = React.useCallback(
@@ -980,13 +980,13 @@ function Expiration(props: Props) {
             suppressSeconds: true,
             suppressMilliseconds: true,
             includeOffset: true,
-          })
+          }),
         );
       } else {
         setFieldValue("expiration", null);
       }
     },
-    [setFieldValue]
+    [setFieldValue],
   );
 
   let min = React.useMemo(
@@ -996,7 +996,7 @@ function Expiration(props: Props) {
         suppressSeconds: true,
         suppressMilliseconds: true,
       }),
-    []
+    [],
   );
 
   const formValue = expiration

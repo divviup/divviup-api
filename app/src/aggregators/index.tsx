@@ -15,7 +15,7 @@ export default function aggregators(apiClient: ApiClient): RouteObject {
         loader({ params }) {
           return defer({
             aggregators: apiClient.accountAggregators(
-              params.account_id as string
+              params.account_id as string,
             ),
           });
         },
@@ -35,7 +35,7 @@ export default function aggregators(apiClient: ApiClient): RouteObject {
             case "PATCH":
               return await apiClient.updateAggregator(
                 params.aggregator_id as string,
-                data as { name: string } | { bearer_token: string }
+                data as { name: string } | { bearer_token: string },
               );
             case "DELETE":
               await apiClient.deleteAggregator(params.aggregator_id as string);
