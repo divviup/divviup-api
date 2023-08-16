@@ -13,7 +13,7 @@ info:
   license:
     name: MPL-2.0
     url: https://www.mozilla.org/en-US/MPL/2.0/
-  version: 0.1
+  version: "0.1"
 externalDocs:
   description: The DivviUp API repository
   url: https://github.com/divviup/divviup-api
@@ -49,12 +49,12 @@ paths:
             application/vnd.divviup+json;version=0.1:
               schema:
                 type: array
-                items: 
+                items:
                   $ref: "#/components/schemas/Account"
       security:
         - ApiToken: []
   /accounts/{account_id}:
-    parameters: 
+    parameters:
       - $ref: "#/components/parameters/AccountId"
     get:
       tags: [accounts]
@@ -77,7 +77,7 @@ paths:
       summary: Modify an account by id
       description: Modify an account by id
       operationId: updateAccount
-      requestBody: 
+      requestBody:
         required: true
         content:
           application/vnd.divviup+json;version=0.1:
@@ -99,7 +99,7 @@ paths:
       security:
         - ApiToken: []
   /memberships/{membership_id}:
-    parameters: 
+    parameters:
       - in: path
         name: membership_id
         schema:
@@ -135,7 +135,7 @@ paths:
               schema:
                 type: array
                 items:
-                    $ref: "#/components/schemas/Membership"
+                  $ref: "#/components/schemas/Membership"
         "404":
           $ref: "#/components/responses/NotFound"
     post:
@@ -143,7 +143,7 @@ paths:
       summary: Create a new membership
       description: Create a new membership
       operationId: createMembership
-      requestBody: 
+      requestBody:
         required: true
         content:
           application/vnd.divviup+json;version=0.1:
@@ -161,7 +161,7 @@ paths:
               schema:
                 type: array
                 items:
-                    $ref: "#/components/schemas/Membership"
+                  $ref: "#/components/schemas/Membership"
         "404":
           $ref: "#/components/responses/NotFound"
         "400":
@@ -169,12 +169,12 @@ paths:
 
   /tasks/{task_id}:
     parameters:
-    - in: path
-      name: task_id
-      schema:
-        type: string
-      required: true
-      description: id of the task
+      - in: path
+        name: task_id
+        schema:
+          type: string
+        required: true
+        description: id of the task
     get:
       tags: ["tasks"]
       summary: retrieve a task by id
@@ -186,7 +186,7 @@ paths:
           content:
             application/vnd.divviup+json;version=0.1:
               schema:
-                $ref: '#/components/schemas/Task'
+                $ref: "#/components/schemas/Task"
         "404":
           $ref: "#/components/responses/NotFound"
     patch:
@@ -194,7 +194,7 @@ paths:
       summary: update a task by id
       description: update a task by id
       operationId: updateTask
-      requestBody: 
+      requestBody:
         required: true
         content:
           application/vnd.divviup+json;version=0.1:
@@ -210,19 +210,19 @@ paths:
           content:
             application/vnd.divviup+json;version=0.1:
               schema:
-                $ref: '#/components/schemas/Task'
+                $ref: "#/components/schemas/Task"
         "404":
           $ref: "#/components/responses/NotFound"
 
   /tasks/{task_id}/collector_auth_tokens:
     get:
       parameters:
-      - in: path
-        name: task_id
-        schema:
-          type: string
-        required: true
-        description: UUID of the task
+        - in: path
+          name: task_id
+          schema:
+            type: string
+          required: true
+          description: UUID of the task
       tags: ["tasks"]
       summary: retrieve the collector auth tokens for the task specified by `task_id`
       description: retrieve the collector auth tokens for the task specified by `task_id`
@@ -232,7 +232,7 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
+              schema:
                 type: array
                 items:
                   type: object
@@ -258,10 +258,10 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
+              schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Task'
+                  $ref: "#/components/schemas/Task"
         "404":
           $ref: "#/components/responses/NotFound"
     post:
@@ -269,7 +269,7 @@ paths:
       summary: create a new task
       description: create a new task
       operationId: createTask
-      requestBody: 
+      requestBody:
         required: true
         content:
           application/vnd.divviup+json;version=0.1:
@@ -313,17 +313,17 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
+              schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Task'
+                  $ref: "#/components/schemas/Task"
         "404":
           $ref: "#/components/responses/NotFound"
         "400":
           $ref: "#/components/responses/Invalid"
 
   /aggregators/{aggregator_id}:
-    parameters: 
+    parameters:
       - in: path
         name: aggregator_id
         schema:
@@ -341,8 +341,8 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
-                $ref: '#/components/schemas/Aggregator'
+              schema:
+                $ref: "#/components/schemas/Aggregator"
         "404":
           $ref: "#/components/responses/NotFound"
     patch:
@@ -350,7 +350,7 @@ paths:
       summary: update an aggregator
       description: update an aggregator
       operationId: updateAggregator
-      requestBody: 
+      requestBody:
         required: true
         content:
           application/vnd.divviup+json;version=0.1:
@@ -366,10 +366,10 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
+              schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Aggregator'
+                  $ref: "#/components/schemas/Aggregator"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -396,10 +396,10 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
+              schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Aggregator'
+                  $ref: "#/components/schemas/Aggregator"
   /accounts/{account_id}/aggregators:
     parameters:
       - $ref: "#/components/parameters/AccountId"
@@ -414,10 +414,10 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
+              schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Aggregator'
+                  $ref: "#/components/schemas/Aggregator"
         "404":
           $ref: "#/components/responses/NotFound"
     post:
@@ -425,7 +425,7 @@ paths:
       summary: pair an aggregator with a given account
       description: pair an aggregator with a given account
       operationId: createAggregator
-      requestBody: 
+      requestBody:
         required: true
         content:
           application/vnd.divviup+json;version=0.1:
@@ -449,15 +449,12 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
-                $ref: '#/components/schemas/Aggregator'
+              schema:
+                $ref: "#/components/schemas/Aggregator"
         "404":
           $ref: "#/components/responses/NotFound"
         "400":
           $ref: "#/components/responses/Invalid"
-
-
-
 
   /accounts/{account_id}/hpke_configs:
     parameters:
@@ -475,7 +472,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/HpkeConfig'
+                  $ref: "#/components/schemas/HpkeConfig"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -484,7 +481,7 @@ paths:
       summary: create a new reusable hpke config for the account
       description: create a new reusable hpke config for the account
       operationId: createHpkeConfig
-      requestBody: 
+      requestBody:
         required: true
         content:
           application/vnd.divviup+json;version=0.1:
@@ -502,8 +499,8 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
-                $ref: '#/components/schemas/HpkeConfig'
+              schema:
+                $ref: "#/components/schemas/HpkeConfig"
         "404":
           $ref: "#/components/responses/NotFound"
         "400":
@@ -528,8 +525,8 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
-                $ref: '#/components/schemas/HpkeConfig'
+              schema:
+                $ref: "#/components/schemas/HpkeConfig"
         "404":
           $ref: "#/components/responses/NotFound"
     patch:
@@ -537,7 +534,7 @@ paths:
       summary: update the hpke config by id
       description: update the hpke config by id
       operationId: updateHpkeConfig
-      requestBody: 
+      requestBody:
         required: true
         content:
           application/vnd.divviup+json;version=0.1:
@@ -551,8 +548,8 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
-                $ref: '#/components/schemas/HpkeConfig'
+              schema:
+                $ref: "#/components/schemas/HpkeConfig"
         "404":
           $ref: "#/components/responses/NotFound"
     delete:
@@ -568,7 +565,6 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-
   /accounts/{account_id}/api_tokens:
     parameters:
       - $ref: "#/components/parameters/AccountId"
@@ -582,10 +578,10 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
+              schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ApiToken'
+                  $ref: "#/components/schemas/ApiToken"
         "404":
           $ref: "#/components/responses/NotFound"
     post:
@@ -598,19 +594,19 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
+              schema:
                 allOf:
-                  - $ref: '#/components/schemas/ApiToken'
+                  - $ref: "#/components/schemas/ApiToken"
                   - type: object
                     properties:
                       token:
                         type: string
-                        examples: ["DUATv2d0Lax_QkaZJYV2XehWUSsdRipH5Gy3Fvnj92GXIH_6JwI6a6GECJ7kvhVAfEyj"]
+                        examples:
+                          - DUATv2d0Lax_QkaZJYV2XehWUSsdRipH5Gy3Fvnj92GXIH_6JwI6a6GECJ7kvhVAfEyj
         "404":
           $ref: "#/components/responses/NotFound"
         "400":
           $ref: "#/components/responses/Invalid"
-
 
   /api_tokens/{api_token_id}:
     parameters:
@@ -626,7 +622,7 @@ paths:
       summary: update the api token by id
       description: update the api token by id
       operationId: updateApiToken
-      requestBody: 
+      requestBody:
         required: true
         content:
           application/vnd.divviup+json;version=0.1:
@@ -640,8 +636,8 @@ paths:
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
-              schema: 
-                $ref: '#/components/schemas/ApiToken'
+              schema:
+                $ref: "#/components/schemas/ApiToken"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -657,7 +653,7 @@ paths:
           description: Forbidden
         "404":
           $ref: "#/components/responses/NotFound"
-      
+
 components:
   parameters:
     AccountId:
@@ -823,9 +819,9 @@ components:
           - $ref: "#/components/schemas/ValidationError"
       examples:
         - some_property_of_the_request_body:
-          - code: required
-            message:
-            params: {}
+            - code: required
+              message:
+              params: {}
     HpkeConfig:
       type: object
       properties:
@@ -898,7 +894,13 @@ components:
           enum: [TimeInterval, FixedSize]
         vdafs:
           type: string
-          examples: [Prio3Count, Prio3Sum, Prio3Histogram, Prio3CountVec, Prio3SumVec, Poplar1]
+          examples:
+            - Prio3Count
+            - Prio3Sum
+            - Prio3Histogram
+            - Prio3CountVec
+            - Prio3SumVec
+            - Poplar1
   responses:
     NotFound:
       description: "Not found"
