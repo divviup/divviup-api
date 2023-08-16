@@ -18,9 +18,11 @@ import { Spinner } from "react-bootstrap";
 import queue from "./queue";
 import sharedAggregators from "./shared-aggregators";
 import hpkeConfigs from "./hpke-configs";
+import swaggerUi from "./swagger-ui";
 
 function buildRouter(apiClient: ApiClient) {
   return createBrowserRouter([
+    swaggerUi(),
     layout(apiClient, [
       logout(apiClient),
       root(apiClient),
