@@ -19,9 +19,9 @@ import { WithAccount } from "../util";
 import Placeholder from "react-bootstrap/Placeholder";
 
 function AccountName() {
-  let [isEditingName, setIsEditingName] = useState(false);
-  let edit = useCallback(() => setIsEditingName(true), [setIsEditingName]);
-  let actionData = useActionData();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const edit = useCallback(() => setIsEditingName(true), [setIsEditingName]);
+  const actionData = useActionData();
   useEffect(() => {
     if (actionData) setIsEditingName(false);
   }, [actionData]);

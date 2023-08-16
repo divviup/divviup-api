@@ -20,8 +20,8 @@ export default function HpkeConfigForm() {
   const fetcher = useFetcher();
   const [name, setName] = React.useState("");
   const [hpke, setHpke] = React.useState("");
-  let reader = React.useMemo(() => {
-    let reader = new FileReader();
+  const reader = React.useMemo(() => {
+    const reader = new FileReader();
     reader.addEventListener("load", () => {
       if (typeof reader.result === "string") {
         setHpke(reader.result.split(",")[1]);
@@ -29,9 +29,9 @@ export default function HpkeConfigForm() {
     });
     return reader;
   }, [setHpke]);
-  let onChange: ChangeEventHandler<HTMLInputElement> = React.useCallback(
+  const onChange: ChangeEventHandler<HTMLInputElement> = React.useCallback(
     (event) => {
-      let files = event.target.files;
+      const files = event.target.files;
       if (files && files[0]) {
         if (!name) setName(files[0].name);
         reader.readAsDataURL(files[0]);
@@ -40,7 +40,7 @@ export default function HpkeConfigForm() {
     [reader, setName, name],
   );
 
-  let ref = useRef<HTMLInputElement | null>(null);
+  const ref = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
     if (typeof fetcher.data === "object" && !("error" in fetcher.data)) {
       setName("");
@@ -51,7 +51,7 @@ export default function HpkeConfigForm() {
     }
   }, [fetcher, setName, setHpke, ref]);
 
-  let errors = formikErrors<{ contents?: string; name?: string }>(
+  const errors = formikErrors<{ contents?: string; name?: string }>(
     fetcher.data && "error" in fetcher.data
       ? fetcher.data.error
       : { name: undefined, contents: undefined },

@@ -37,8 +37,8 @@ function buildRouter(apiClient: ApiClient) {
 }
 
 export default function Router() {
-  let apiClient = React.useContext(ApiClientContext);
-  let router = React.useMemo(() => buildRouter(apiClient), [apiClient]);
+  const apiClient = React.useContext(ApiClientContext);
+  const router = React.useMemo(() => buildRouter(apiClient), [apiClient]);
   return <RouterProvider router={router} />;
 }
 

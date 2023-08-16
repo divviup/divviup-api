@@ -30,7 +30,7 @@ export default function aggregators(apiClient: ApiClient): RouteObject {
         },
 
         async action({ params, request }) {
-          let data = Object.fromEntries(await request.formData());
+          const data = Object.fromEntries(await request.formData());
           switch (request.method) {
             case "PATCH":
               return await apiClient.updateAggregator(

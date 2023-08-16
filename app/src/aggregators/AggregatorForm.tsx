@@ -11,7 +11,6 @@ import Form from "react-bootstrap/Form";
 import FormControl from "react-bootstrap/FormControl";
 import FormGroup from "react-bootstrap/FormGroup";
 import FormLabel from "react-bootstrap/FormLabel";
-import FormSelect from "react-bootstrap/FormSelect";
 import ApiClient, { NewAggregator, formikErrors } from "../ApiClient";
 import {
   NavigateFunction,
@@ -32,7 +31,10 @@ async function submit(
   navigate: NavigateFunction,
 ) {
   try {
-    let aggregator = await apiClient.createAggregator(accountId, newAggregator);
+    const aggregator = await apiClient.createAggregator(
+      accountId,
+      newAggregator,
+    );
 
     if ("error" in aggregator) {
       actions.setErrors(formikErrors(aggregator.error));
@@ -102,7 +104,7 @@ export function AggregatorForm({
 }
 
 export default function AggregatorFormPage() {
-  let params = useParams();
+  const params = useParams();
   const accountId = params.account_id as string;
   const navigate = useNavigate();
   const apiClient = React.useContext(ApiClientContext);

@@ -7,7 +7,7 @@ import { Form } from "react-router-dom";
 import { BuildingAdd } from "react-bootstrap-icons";
 
 export default function AccountForm() {
-  let [name, setName] = useState<string>("");
+  const [name, setName] = useState<string>("");
   const updateName = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       setName(event.target.value);

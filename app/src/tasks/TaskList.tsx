@@ -21,7 +21,7 @@ function Breadcrumbs() {
 }
 
 export default function AccountDetailFull() {
-  let { tasks } = useLoaderData() as {
+  const { tasks } = useLoaderData() as {
     tasks: Promise<Task[]>;
   };
   return (
@@ -59,7 +59,7 @@ export default function AccountDetailFull() {
 }
 
 function TaskList() {
-  let tasks = useAsyncValue() as Task[];
+  const tasks = useAsyncValue() as Task[];
   if (tasks.length === 0) {
     return (
       <Alert variant="warning">

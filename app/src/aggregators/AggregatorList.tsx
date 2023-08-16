@@ -52,7 +52,7 @@ function Breadcrumbs() {
 }
 
 function AggregatorList() {
-  let { aggregators } = useLoaderData() as {
+  const { aggregators } = useLoaderData() as {
     aggregators: Promise<Aggregator[]>;
   };
   return (
