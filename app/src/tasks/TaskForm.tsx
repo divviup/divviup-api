@@ -3,7 +3,6 @@ import {
   useNavigate,
   useNavigation,
   useParams,
-  useRouteLoaderData,
   NavigateFunction,
   useLoaderData,
 } from "react-router-dom";
@@ -15,18 +14,12 @@ import FormControl from "react-bootstrap/FormControl";
 import FormGroup from "react-bootstrap/FormGroup";
 import FormLabel from "react-bootstrap/FormLabel";
 import FormSelect from "react-bootstrap/FormSelect";
-import React, {
-  ChangeEvent,
-  ChangeEventHandler,
-  Suspense,
-  useEffect,
-} from "react";
+import React, { ChangeEvent, Suspense, useEffect } from "react";
 import Row from "react-bootstrap/Row";
 import { ApiClientContext } from "../ApiClientContext";
 import { LinkContainer } from "react-router-bootstrap";
 import ApiClient, {
   HpkeConfig,
-  Account,
   Aggregator,
   NewTask,
   formikErrors,
@@ -46,7 +39,7 @@ async function submit(
   navigate: NavigateFunction,
 ) {
   try {
-    let task = await apiClient.createTask(accountId, newTask);
+    const task = await apiClient.createTask(accountId, newTask);
 
     if ("error" in task) {
       actions.setErrors(formikErrors(task.error));
@@ -125,7 +118,7 @@ export default function TaskForm() {
                 <Form
                   className="mb-5"
                   method="post"
-                  onSubmit={props.handleSubmit}
+                  onSubmit={formikProps.handleSubmit}
                   noValidate
                   autoComplete="off"
                   onFocus={focus}
@@ -355,7 +348,7 @@ const helps: {
 };
 
 function LongHelpText({ field }: { field: Field<NewTask> }) {
-  let help = helps[field];
+  const help = helps[field];
   if (help && help.long) {
     return (
       <Alert>
@@ -377,7 +370,7 @@ function ShortHelpAndLabel({
   fieldKey: Field<NewTask>;
   setFocusedField(field: Field<NewTask>): void;
 }) {
-  let help = helps[fieldKey];
+  const help = helps[fieldKey];
   if (help && help.title) {
     return (
       <>
@@ -403,7 +396,7 @@ function ShortHelpText({
     [setFocusedField, fieldKey],
   );
 
-  let help = helps[fieldKey];
+  const help = helps[fieldKey];
   if (help) {
     return (
       <div>
@@ -429,7 +422,7 @@ function LeaderAggregator(props: Props) {
   const { aggregators } = useLoaderData() as {
     aggregators: Promise<Aggregator[]>;
   };
-  let { helper_aggregator_id } = props.values;
+  const { helper_aggregator_id } = props.values;
 
   return (
     <TaskFormGroup controlId="leader_aggregator_id">
@@ -476,7 +469,7 @@ function HelperAggregator(props: Props) {
   const { aggregators } = useLoaderData() as {
     aggregators: Promise<Aggregator[]>;
   };
-  let { leader_aggregator_id } = props.values;
+  const { leader_aggregator_id } = props.values;
   return (
     <TaskFormGroup>
       <ShortHelpAndLabel
@@ -725,7 +718,7 @@ const seconds = {
 };
 type Unit = keyof typeof seconds;
 function TimePrecisionSeconds(props: Props) {
-  let { setFieldValue } = props;
+  const { setFieldValue } = props;
   const [count, setCount] = React.useState<number | undefined>(undefined);
   const [unit, setUnit] = React.useState<Unit>("minute");
 
@@ -809,7 +802,7 @@ function VdafType(props: Props) {
     ? aggregatorsResolved.find(({ id }) => id === helper_aggregator_id) || null
     : null;
 
-  let vdafs = new Set(
+  const vdafs = new Set(
     leader && helper
       ? leader.vdafs
           .filter((vdaf) => helper.vdafs.includes(vdaf))
@@ -858,14 +851,14 @@ function VdafDetails(props: Props) {
 }
 
 function HistogramBucketSelection(props: Props) {
-  let { setFieldValue } = props;
-  let [input, setInput] = React.useState(
+  const { setFieldValue } = props;
+  const [input, setInput] = React.useState(
     props.values.vdaf?.type === "histogram"
       ? (props.values.vdaf?.buckets || []).join(", ")
       : "",
   );
 
-  let cb = React.useCallback(
+  const cb = React.useCallback(
     (change: ChangeEvent<HTMLInputElement>) => {
       if (/^([0-9]+, *)*[0-9]*$/.test(change.target.value)) {
         if (input.length) {
@@ -886,7 +879,7 @@ function HistogramBucketSelection(props: Props) {
     [input, setInput, setFieldValue],
   );
 
-  let blur = React.useCallback(() => {
+  const blur = React.useCallback(() => {
     let value = input
       .split(/, */)
       .map((n) => parseInt(n, 10))
@@ -925,8 +918,8 @@ function HistogramBucketSelection(props: Props) {
 }
 
 function SumBits(props: Props) {
-  let { setFieldValue } = props;
-  let handleChange = React.useCallback(
+  const { setFieldValue } = props;
+  const handleChange = React.useCallback(
     (event: ChangeEvent<HTMLSelectElement>) =>
       setFieldValue("vdaf.bits", parseInt(event.target.value, 10)),
     [setFieldValue],
@@ -957,8 +950,8 @@ function SumBits(props: Props) {
 }
 
 function Expiration(props: Props) {
-  let { setFieldValue, values } = props;
-  let { expiration } = values;
+  const { setFieldValue, values } = props;
+  const { expiration } = values;
 
   const [enabled, setEnabled] = React.useState(false);
 
@@ -973,7 +966,7 @@ function Expiration(props: Props) {
   const handleChange = React.useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       if (event.target.value) {
-        let datetime = DateTime.fromISO(event.target.value);
+        const datetime = DateTime.fromISO(event.target.value);
         setFieldValue(
           "expiration",
           datetime.toISO({
@@ -989,7 +982,7 @@ function Expiration(props: Props) {
     [setFieldValue],
   );
 
-  let min = React.useMemo(
+  const min = React.useMemo(
     () =>
       DateTime.now().set({ second: 0, millisecond: 0 }).toISO({
         includeOffset: false,
@@ -1042,7 +1035,7 @@ function Expiration(props: Props) {
 }
 
 function Breadcrumbs() {
-  let { account_id } = useParams();
+  const { account_id } = useParams();
 
   return (
     <AccountBreadcrumbs>

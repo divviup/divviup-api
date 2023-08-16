@@ -12,11 +12,11 @@ export function WithAccount({
 }: {
   children: (data: Awaited<Account>) => React.ReactNode;
 }) {
-  let { account } = useRouteLoaderData("account") as {
+  const { account } = useRouteLoaderData("account") as {
     account: Promise<Account>;
   };
 
-  return <Await resolve={account} children={children} />;
+  return <Await resolve={account}>{children}</Await>;
 }
 
 export function AccountBreadcrumbs({

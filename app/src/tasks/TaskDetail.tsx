@@ -37,16 +37,16 @@ import Placeholder from "react-bootstrap/Placeholder";
 import { Badge } from "react-bootstrap";
 
 function TaskTitle() {
-  let { task } = useLoaderData() as {
+  const { task } = useLoaderData() as {
     task: Promise<Task>;
   };
 
-  let [isEditingName, setIsEditingName] = useState(false);
-  let actionData = useActionData();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const actionData = useActionData();
   useEffect(() => {
     if (actionData) setIsEditingName(false);
   }, [actionData]);
-  let edit = useCallback(() => setIsEditingName(true), [setIsEditingName]);
+  const edit = useCallback(() => setIsEditingName(true), [setIsEditingName]);
   if (isEditingName) {
     return (
       <React.Suspense>
@@ -146,10 +146,10 @@ export function VdafIcon({
 }
 
 function Breadcrumbs() {
-  let { task } = useLoaderData() as {
+  const { task } = useLoaderData() as {
     task: Promise<Task>;
   };
-  let { account_id } = useParams();
+  const { account_id } = useParams();
 
   return (
     <AccountBreadcrumbs>
@@ -170,16 +170,16 @@ export function WithTask({
 }: {
   children: (data: Awaited<Task>) => React.ReactNode;
 }) {
-  let { task } = useRouteLoaderData("task") as {
+  const { task } = useRouteLoaderData("task") as {
     task: Promise<Task>;
   };
 
-  return <Await resolve={task} children={children} />;
+  return <Await resolve={task}>{children}</Await>;
 }
 
 function TaskPropertyTable() {
-  let { account_id } = useParams();
-  let { task, leaderAggregator, helperAggregator, hpkeConfig } =
+  const { account_id } = useParams();
+  const { task, leaderAggregator, helperAggregator, hpkeConfig } =
     useLoaderData() as {
       task: Promise<Task>;
       leaderAggregator: Promise<Aggregator>;
@@ -323,14 +323,14 @@ export default function TaskDetail() {
 }
 
 function CollectorAuthTokens() {
-  let fetcher = useFetcher();
-  let callback = React.useCallback(() => {
+  const fetcher = useFetcher();
+  const callback = React.useCallback(() => {
     if (fetcher.state === "idle" && !fetcher.data)
       fetcher.load("collector_auth_tokens");
   }, [fetcher]);
 
   if (fetcher.data) {
-    let { collectorAuthTokens } = fetcher.data as {
+    const { collectorAuthTokens } = fetcher.data as {
       collectorAuthTokens: CollectorAuthToken[];
     };
 
@@ -374,7 +374,7 @@ function CollectorAuthTokens() {
 }
 
 function Metrics() {
-  let { task } = useLoaderData() as {
+  const { task } = useLoaderData() as {
     task: Promise<Task>;
   };
 
@@ -420,12 +420,12 @@ function Metrics() {
 }
 
 function ClientConfig() {
-  let { task, leaderAggregator, helperAggregator } = useLoaderData() as {
+  const { task, leaderAggregator, helperAggregator } = useLoaderData() as {
     task: Promise<Task>;
     leaderAggregator: Promise<Aggregator>;
     helperAggregator: Promise<Aggregator>;
   };
-  let all = Promise.all([task, leaderAggregator, helperAggregator]);
+  const all = Promise.all([task, leaderAggregator, helperAggregator]);
 
   return (
     <React.Suspense>

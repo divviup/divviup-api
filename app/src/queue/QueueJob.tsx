@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 export const Component = JobQueue;
 
 export function JobQueue() {
-  let job = useLoaderData() as QueueJob;
+  const job = useLoaderData() as QueueJob;
 
   return (
     <Col xs="8">

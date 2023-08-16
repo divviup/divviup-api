@@ -27,7 +27,7 @@ import React from "react";
 export const Component = JobQueue;
 
 export function JobQueue() {
-  let { aggregators } = useLoaderData() as {
+  const { aggregators } = useLoaderData() as {
     aggregators: Promise<Aggregator[]>;
   };
 
@@ -63,7 +63,7 @@ export function JobQueue() {
 }
 
 function AggregatorRow({ aggregator }: { aggregator: Aggregator }) {
-  let aggForDisplay = { ...aggregator } as Partial<Aggregator>;
+  const aggForDisplay = { ...aggregator } as Partial<Aggregator>;
   delete aggForDisplay.account_id;
   delete aggForDisplay.name;
   return (
@@ -72,7 +72,7 @@ function AggregatorRow({ aggregator }: { aggregator: Aggregator }) {
       <pre>
         <code>
           {JSON.stringify(aggForDisplay, null, 2)
-            .replaceAll(/"|,|\{|\}|  /g, "")
+            .replaceAll(/"|,|\{|\}| {2}/g, "")
             .trim()}
         </code>
       </pre>

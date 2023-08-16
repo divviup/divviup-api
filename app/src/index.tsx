@@ -11,7 +11,7 @@ const root = ReactDOM.createRoot(
 );
 
 function App() {
-  let apiClient = React.useMemo(() => new ApiClient(), []);
+  const apiClient = React.useMemo(() => new ApiClient(), []);
   return (
     <ApiClientContext.Provider value={apiClient}>
       <Router />

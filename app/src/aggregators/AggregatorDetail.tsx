@@ -32,10 +32,10 @@ import {
 } from "react-bootstrap";
 
 function Breadcrumbs() {
-  let { aggregator } = useLoaderData() as {
+  const { aggregator } = useLoaderData() as {
     aggregator: Promise<Aggregator>;
   };
-  let { account_id } = useParams();
+  const { account_id } = useParams();
 
   return (
     <AccountBreadcrumbs>
@@ -52,7 +52,7 @@ function Breadcrumbs() {
 }
 
 export default function AggregatorDetail() {
-  let { aggregator } = useLoaderData() as {
+  const { aggregator } = useLoaderData() as {
     aggregator: Promise<Aggregator>;
   };
 
@@ -156,13 +156,13 @@ export function WithAggregator({
 }: {
   children: (data: Awaited<Aggregator>) => React.ReactNode;
 }) {
-  let { aggregator } = useLoaderData() as {
+  const { aggregator } = useLoaderData() as {
     aggregator: Promise<Aggregator>;
   };
 
   return (
     <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
-      <Await resolve={aggregator} children={children} />
+      <Await resolve={aggregator}>{children}</Await>
     </Suspense>
   );
 }

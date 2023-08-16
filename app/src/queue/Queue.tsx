@@ -18,8 +18,8 @@ import { DateTime } from "luxon";
 export const Component = JobQueue;
 
 function TabLink({ search, text }: { search: string; text: string }) {
-  let [params] = useSearchParams();
-  let active = params.toString() === search;
+  const [params] = useSearchParams();
+  const active = params.toString() === search;
   return (
     <Nav.Item>
       <LinkContainer to={{ search }}>
@@ -32,7 +32,7 @@ function TabLink({ search, text }: { search: string; text: string }) {
 }
 
 export function JobQueue() {
-  let revalidator = useRevalidator();
+  const revalidator = useRevalidator();
 
   useInterval(() => {
     if (revalidator.state === "idle") {
@@ -40,7 +40,7 @@ export function JobQueue() {
     }
   }, 1000);
 
-  let queue = useLoaderData() as QueueJob[];
+  const queue = useLoaderData() as QueueJob[];
 
   return (
     <>

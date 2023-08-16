@@ -165,14 +165,14 @@ export class ApiClient {
   private client?: Promise<AxiosInstance> | AxiosInstance;
 
   static async fetchBaseUrl(): Promise<URL> {
-    let url = new URL(window.location.href);
+    const url = new URL(window.location.href);
     url.pathname = "/api_url";
-    let contents = await axios.get(url.toString());
+    const contents = await axios.get(url.toString());
     return new URL(await contents.data);
   }
 
   private async buildClient(): Promise<AxiosInstance> {
-    let baseUrl = await ApiClient.fetchBaseUrl();
+    const baseUrl = await ApiClient.fetchBaseUrl();
     return axios.create({
       baseURL: baseUrl.toString(),
       withCredentials: true,
@@ -198,7 +198,7 @@ export class ApiClient {
   }
 
   async redirectToLogin(): Promise<null> {
-    let loginUrl = await this.loginUrl();
+    const loginUrl = await this.loginUrl();
     window.location.href = loginUrl;
     return null;
   }
@@ -208,37 +208,37 @@ export class ApiClient {
   }
 
   async getCurrentUser(): Promise<User> {
-    let res = await this.get("/api/users/me");
+    const res = await this.get("/api/users/me");
     return res.data as User;
   }
 
   private async get(path: string): Promise<AxiosResponse> {
-    let client = await this.populateClient();
+    const client = await this.populateClient();
     return client.get(path);
   }
 
   private async post(path: string, body?: unknown): Promise<AxiosResponse> {
-    let client = await this.populateClient();
+    const client = await this.populateClient();
     return client.post(path, body);
   }
 
   private async delete(path: string): Promise<AxiosResponse> {
-    let client = await this.populateClient();
+    const client = await this.populateClient();
     return client.delete(path);
   }
 
   private async patch(path: string, body: unknown): Promise<AxiosResponse> {
-    let client = await this.populateClient();
+    const client = await this.populateClient();
     return client.patch(path, body);
   }
 
   async accounts(): Promise<Account[]> {
-    let res = await this.get("/api/accounts");
+    const res = await this.get("/api/accounts");
     return res.data as Account[];
   }
 
   async account(id: string): Promise<Account> {
-    let res = await this.get(`/api/accounts/${id}`);
+    const res = await this.get(`/api/accounts/${id}`);
     return res.data as Account;
   }
 
@@ -514,9 +514,9 @@ function errorsToMessage(validationErrors: ValidationError[]) {
 }
 
 function formikErrors_(v: ValidationErrors): FormikLikeErrors {
-  let o = {} as FormikLikeErrors;
-  for (let key in v) {
-    let e = v[key] as ValidationError[] | ValidationErrors;
+  const o = {} as FormikLikeErrors;
+  for (const key in v) {
+    const e = v[key] as ValidationError[] | ValidationErrors;
     if (Array.isArray(e)) {
       o[key] = errorsToMessage(e);
     } else if (typeof e === "object" && e !== null) {

@@ -39,12 +39,12 @@ export default function Memberships() {
 }
 
 function DeleteMembershipButton({ membership }: { membership: Membership }) {
-  let submit = useSubmit();
+  const submit = useSubmit();
   const [show, setShow] = useState(false);
   const close = React.useCallback(() => setShow(false), []);
   const open = React.useCallback(() => setShow(true), []);
 
-  let deleteMembership = React.useCallback(() => {
+  const deleteMembership = React.useCallback(() => {
     submit({ membershipId: membership.id }, { method: "delete" });
   }, [membership, submit]);
 
@@ -75,7 +75,7 @@ function DeleteMembershipButton({ membership }: { membership: Membership }) {
 }
 
 function AddMembershipForm() {
-  let [email, setEmail] = React.useState("");
+  const [email, setEmail] = React.useState("");
 
   return (
     <Form
@@ -111,10 +111,10 @@ function AddMembershipForm() {
 }
 
 function MembershipList() {
-  let { memberships } = useLoaderData() as {
+  const { memberships } = useLoaderData() as {
     memberships: Promise<Membership[]>;
   };
-  let { currentUser } = useRouteLoaderData("currentUser") as {
+  const { currentUser } = useRouteLoaderData("currentUser") as {
     currentUser: Promise<User>;
   };
 

@@ -1,3 +1,4 @@
+import React from "react";
 import TaskList from "./TaskList";
 import TaskForm from "./TaskForm";
 import TaskDetail from "./TaskDetail";
@@ -22,14 +23,14 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         path: ":task_id",
         element: <TaskDetail />,
         loader({ params }) {
-          let task = apiClient.task(params.task_id as string);
-          let leaderAggregator = task.then((t) =>
+          const task = apiClient.task(params.task_id as string);
+          const leaderAggregator = task.then((t) =>
             apiClient.aggregator(t.leader_aggregator_id),
           );
-          let helperAggregator = task.then((t) =>
+          const helperAggregator = task.then((t) =>
             apiClient.aggregator(t.helper_aggregator_id),
           );
-          let hpkeConfig = task.then((t) =>
+          const hpkeConfig = task.then((t) =>
             apiClient.hpkeConfig(t.hpke_config_id),
           );
           return defer({
@@ -41,7 +42,7 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         },
 
         async action({ params, request }) {
-          let data = Object.fromEntries(await request.formData());
+          const data = Object.fromEntries(await request.formData());
           switch (request.method) {
             case "PATCH":
               return await apiClient.updateTask(

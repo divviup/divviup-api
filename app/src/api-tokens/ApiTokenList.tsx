@@ -80,7 +80,7 @@ function Breadcrumbs() {
 }
 
 function ApiTokenList() {
-  let { apiTokens } = useLoaderData() as {
+  const { apiTokens } = useLoaderData() as {
     apiTokens: Promise<ApiToken[]>;
   };
 
@@ -111,9 +111,9 @@ function ApiTokenList() {
 }
 
 function TokenName({ apiToken }: { apiToken: ApiToken }) {
-  let [isEditing, setEditing] = useState(false);
-  let edit = useCallback(() => setEditing(true), [setEditing]);
-  let fetcher = useFetcher();
+  const [isEditing, setEditing] = useState(false);
+  const edit = useCallback(() => setEditing(true), [setEditing]);
+  const fetcher = useFetcher();
   useEffect(() => {
     if (fetcher.data) setEditing(false);
   }, [fetcher, setEditing]);

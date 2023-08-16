@@ -10,7 +10,7 @@ import { Button, Placeholder } from "react-bootstrap";
 import { BuildingAdd } from "react-bootstrap-icons";
 
 export default function AccountList() {
-  let { accounts } = useLoaderData() as { accounts: Promise<Account[]> };
+  const { accounts } = useLoaderData() as { accounts: Promise<Account[]> };
   return (
     <Container>
       <Row>
@@ -49,7 +49,7 @@ export default function AccountList() {
 }
 
 function LoadedAccounts() {
-  let tasks = useAsyncValue() as Account[];
+  const tasks = useAsyncValue() as Account[];
   return (
     <ListGroup>
       {tasks.map((t) => (

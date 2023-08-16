@@ -12,7 +12,7 @@ async function submit(
   revalidate: () => void,
 ) {
   try {
-    let aggregator = await apiClient.createSharedAggregator(newAggregator);
+    const aggregator = await apiClient.createSharedAggregator(newAggregator);
 
     if ("error" in aggregator) {
       actions.setErrors(formikErrors(aggregator.error));

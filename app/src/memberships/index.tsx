@@ -17,7 +17,7 @@ export default function memberships(apiClient: ApiClient): RouteObject {
     },
 
     async action({ params, request }) {
-      let data = Object.fromEntries(await request.formData());
+      const data = Object.fromEntries(await request.formData());
       switch (request.method) {
         case "DELETE":
           await apiClient.deleteMembership(data.membershipId as string);

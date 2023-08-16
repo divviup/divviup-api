@@ -24,13 +24,14 @@ export default function accounts(
         path: "new",
         element: <AccountForm />,
         async action({ request }) {
-          let data = Object.fromEntries(await request.formData());
+          const data = Object.fromEntries(await request.formData());
           switch (request.method) {
-            case "POST":
+            case "POST": {
               const account = await apiClient.createAccount(
                 data as unknown as PartialAccount,
               );
               return redirect(`/accounts/${account.id}`);
+            }
             default:
               throw new Error(`unexpected method ${request.method}`);
           }
@@ -47,7 +48,7 @@ export default function accounts(
         },
 
         async action({ params, request }) {
-          let data = Object.fromEntries(await request.formData());
+          const data = Object.fromEntries(await request.formData());
           switch (request.method) {
             case "PATCH":
               return {

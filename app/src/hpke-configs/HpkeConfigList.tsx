@@ -3,11 +3,10 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import { AccountBreadcrumbs, WithAccount } from "../util";
-import { Check, PencilFill, Key, KeyFill, Trash } from "react-bootstrap-icons";
+import { Check, PencilFill, Key, Trash } from "react-bootstrap-icons";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   Await,
-  Form,
   useFetcher,
   useLoaderData,
   useNavigation,
@@ -24,7 +23,6 @@ import Placeholder from "react-bootstrap/Placeholder";
 import HpkeConfigForm from "./HpkeConfigForm";
 
 export default function HpkeConfigs() {
-  const navigation = useNavigation();
   return (
     <>
       <Breadcrumbs />
@@ -62,7 +60,7 @@ function Breadcrumbs() {
 }
 
 function HpkeConfigList() {
-  let { hpkeConfigs } = useLoaderData() as {
+  const { hpkeConfigs } = useLoaderData() as {
     hpkeConfigs: Promise<HpkeConfig[]>;
   };
 
@@ -94,9 +92,9 @@ function HpkeConfigList() {
 }
 
 function Name({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
-  let [isEditing, setEditing] = useState(false);
-  let edit = useCallback(() => setEditing(true), [setEditing]);
-  let fetcher = useFetcher();
+  const [isEditing, setEditing] = useState(false);
+  const edit = useCallback(() => setEditing(true), [setEditing]);
+  const fetcher = useFetcher();
   useEffect(() => {
     if (fetcher.data) setEditing(false);
   }, [fetcher, setEditing]);

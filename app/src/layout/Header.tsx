@@ -29,7 +29,7 @@ function HeaderPlaceholder() {
 }
 
 function LoggedInHeader() {
-  let user = useAsyncValue() as User;
+  const user = useAsyncValue() as User;
 
   return (
     <Navbar bg="light" expand="lg">
@@ -64,7 +64,7 @@ function LoggedInHeader() {
 }
 
 export default function Header() {
-  let { currentUser } = useRouteLoaderData("currentUser") as {
+  const { currentUser } = useRouteLoaderData("currentUser") as {
     currentUser: Promise<User>;
   };
   return (

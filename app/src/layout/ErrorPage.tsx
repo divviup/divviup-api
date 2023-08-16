@@ -19,8 +19,8 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
             <Alert variant="warning">Not Found</Alert>
           </Layout>
         );
-      case 500:
-        let body = error.response?.data;
+      case 500: {
+        const body = error.response?.data;
         return (
           <Layout>
             <Alert variant="danger">
@@ -29,6 +29,7 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
             </Alert>
           </Layout>
         );
+      }
     }
   }
 
