@@ -5,7 +5,6 @@ export default function swaggerUi(): RouteObject {
     path: "swagger-ui",
     async lazy() {
       const { default: SwaggerUI } = await import("swagger-ui-react");
-      console.log(SwaggerUI);
       await import("swagger-ui-react/swagger-ui.css");
       return {
         Component() {
