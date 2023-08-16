@@ -2,6 +2,7 @@ FROM node:alpine as assets
 WORKDIR /src/app
 COPY app/package.json /src/app/package.json
 COPY app/package-lock.json /src/app/package-lock.json
+COPY documentation /src/documentation
 RUN npm ci
 COPY app /src/app
 RUN npm ci
