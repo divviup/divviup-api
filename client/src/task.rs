@@ -1,3 +1,4 @@
+use crate::Protocol;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -22,6 +23,7 @@ pub struct Task {
     pub leader_aggregator_id: Uuid,
     pub helper_aggregator_id: Uuid,
     pub hpke_config_id: Uuid,
+    pub protocol: Protocol,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -45,7 +47,7 @@ pub enum Vdaf {
     Count,
 
     #[serde(rename = "histogram")]
-    Histogram { buckets: Vec<u64> },
+    Histogram(Histogram),
 
     #[serde(rename = "sum")]
     Sum { bits: u8 },
@@ -55,4 +57,12 @@ pub enum Vdaf {
 
     #[serde(rename = "sum_vec")]
     SumVec { bits: u8, length: u64 },
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[serde(untagged)]
+pub enum Histogram {
+    Categorical { buckets: Vec<String> },
+    Continuous { buckets: Vec<u64> },
+    Length { length: u64 },
 }

@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+pub use super::protocol::{Protocol, UnrecognizedProtocol};
 pub use new_aggregator::NewAggregator;
 pub use query_type_name::{QueryTypeName, QueryTypeNameSet};
 pub use role::{Role, UnrecognizedRole};
@@ -42,6 +43,7 @@ pub struct Model {
     pub is_first_party: bool,
     pub query_types: Json<QueryTypeNameSet>,
     pub vdafs: Json<VdafNameSet>,
+    pub protocol: Protocol,
     #[serde(skip)]
     pub encrypted_bearer_token: Vec<u8>,
 }

@@ -1,6 +1,6 @@
 use super::{ActiveModel, *};
 use crate::{
-    clients::aggregator_client::api_types::AuthenticationToken,
+    clients::aggregator_client::api_types::{AggregatorVdaf, AuthenticationToken},
     entity::{Account, Aggregator, HpkeConfig, Task},
     handler::Error,
     Crypter,
@@ -24,12 +24,14 @@ pub struct ProvisionableTask {
     pub leader_aggregator: Aggregator,
     pub helper_aggregator: Aggregator,
     pub vdaf: Vdaf,
+    pub aggregator_vdaf: AggregatorVdaf,
     pub min_batch_size: u64,
     pub max_batch_size: Option<u64>,
     pub expiration: Option<OffsetDateTime>,
     pub time_precision_seconds: u64,
     pub hpke_config: HpkeConfig,
     pub aggregator_auth_token: Option<String>,
+    pub protocol: Protocol,
 }
 
 fn assert_same<T: Eq>(
@@ -56,7 +58,7 @@ impl ProvisionableTask {
             .create_task(self)
             .await?;
 
-        assert_same(&self.vdaf, &response.vdaf.clone().into(), "vdaf")?;
+        assert_same(&self.aggregator_vdaf, &response.vdaf, "vdaf")?;
         assert_same(
             self.min_batch_size,
             response.min_batch_size,
@@ -115,6 +117,7 @@ impl ProvisionableTask {
             leader_aggregator_id: self.leader_aggregator.id,
             helper_aggregator_id: self.helper_aggregator.id,
             hpke_config_id: self.hpke_config.id,
+            protocol: self.protocol,
         }
         .into_active_model())
     }

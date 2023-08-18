@@ -1,3 +1,4 @@
+use crate::Protocol;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use url::Url;
@@ -29,6 +30,7 @@ pub struct Aggregator {
     pub is_first_party: bool,
     pub vdafs: Vec<String>,
     pub query_types: Vec<String>,
+    pub protocol: Protocol,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]

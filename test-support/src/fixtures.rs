@@ -114,6 +114,7 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         leader_aggregator_id: leader_aggregator.id,
         helper_aggregator_id: helper_aggregator.id,
         hpke_config_id: hpke_config.id,
+        protocol: Protocol::Dap05,
     }
     .into_active_model()
     .insert(app.db())
@@ -160,6 +161,7 @@ pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregat
         role: Role::Either,
         query_types: Default::default(),
         vdafs: Default::default(),
+        protocol: Protocol::Dap05,
     }
     .into_active_model()
     .insert(app.db())

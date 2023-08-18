@@ -5,6 +5,7 @@ mod codec;
 pub mod hpke_config;
 mod json;
 pub mod membership;
+pub mod protocol;
 pub mod queue;
 pub mod session;
 pub mod task;
@@ -28,6 +29,7 @@ pub use hpke_config::{
 pub use membership::{
     Column as MembershipColumn, CreateMembership, Entity as Memberships, Model as Membership,
 };
+pub use protocol::{Protocol, UnrecognizedProtocol};
 pub use session::{Column as SessionColumn, Entity as Sessions, Model as Session};
 pub use task::{
     Column as TaskColumn, Entity as Tasks, Model as Task, NewTask, ProvisionableTask, UpdateTask,

@@ -1,8 +1,8 @@
 use crate::{
     entity::{
         aggregator::{QueryTypeName, QueryTypeNameSet, Role as AggregatorRole, VdafNameSet},
-        task::vdaf::{CountVec, Histogram, Sum, SumVec, Vdaf},
-        Aggregator, ProvisionableTask,
+        task::vdaf::{BucketLength, ContinuousBuckets, CountVec, Histogram, Sum, SumVec, Vdaf},
+        Aggregator, Protocol, ProvisionableTask,
     },
     handler::Error,
 };
@@ -16,53 +16,83 @@ pub use janus_messages::{
     HpkeKemId, HpkePublicKey, Role, TaskId, Time as JanusTime,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[non_exhaustive]
-pub enum VdafInstance {
+pub enum AggregatorVdaf {
     Prio3Count,
     Prio3Sum { bits: u8 },
-    Prio3Histogram { buckets: Vec<u64> },
+    Prio3Histogram(HistogramType),
     Prio3CountVec { length: u64 },
     Prio3SumVec { bits: u8, length: u64 },
 }
 
-impl From<VdafInstance> for Vdaf {
-    fn from(value: VdafInstance) -> Self {
-        match value {
-            VdafInstance::Prio3Count => Self::Count,
-            VdafInstance::Prio3Sum { bits } => Self::Sum(Sum { bits: Some(bits) }),
-            VdafInstance::Prio3Histogram { buckets } => Self::Histogram(Histogram {
-                buckets: Some(buckets),
-            }),
-            VdafInstance::Prio3CountVec { length } => Self::CountVec(CountVec {
-                length: Some(length),
-            }),
-            VdafInstance::Prio3SumVec { bits, length } => Self::SumVec(SumVec {
-                length: Some(length),
-                bits: Some(bits),
-            }),
+impl PartialEq<Vdaf> for AggregatorVdaf {
+    fn eq(&self, other: &Vdaf) -> bool {
+        other.eq(self)
+    }
+}
+
+impl PartialEq<AggregatorVdaf> for Vdaf {
+    fn eq(&self, other: &AggregatorVdaf) -> bool {
+        match (self, other) {
+            (Vdaf::Count, AggregatorVdaf::Prio3Count) => true,
+            (
+                Vdaf::Histogram(histogram),
+                AggregatorVdaf::Prio3Histogram(HistogramType::Opaque { length }),
+            ) => histogram.length() == *length,
+            (
+                Vdaf::Histogram(Histogram::Continuous(ContinuousBuckets { buckets: Some(lhs) })),
+                AggregatorVdaf::Prio3Histogram(HistogramType::Buckets { buckets: rhs }),
+            ) => lhs == rhs,
+            (Vdaf::Sum(Sum { bits: Some(lhs) }), AggregatorVdaf::Prio3Sum { bits: rhs }) => {
+                lhs == rhs
+            }
+            (
+                Vdaf::CountVec(CountVec { length: Some(lhs) }),
+                AggregatorVdaf::Prio3CountVec { length: rhs },
+            ) => lhs == rhs,
+            (
+                Vdaf::SumVec(SumVec {
+                    bits: Some(lhs_bits),
+                    length: Some(lhs_length),
+                }),
+                AggregatorVdaf::Prio3SumVec {
+                    bits: rhs_bits,
+                    length: rhs_length,
+                },
+            ) => lhs_bits == rhs_bits && lhs_length == rhs_length,
+            _ => false,
         }
     }
 }
 
-impl From<Vdaf> for VdafInstance {
-    fn from(value: Vdaf) -> Self {
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[serde(untagged)]
+pub enum HistogramType {
+    Opaque { length: u64 },
+    Buckets { buckets: Vec<u64> },
+}
+
+impl From<AggregatorVdaf> for Vdaf {
+    fn from(value: AggregatorVdaf) -> Self {
         match value {
-            Vdaf::Count => Self::Prio3Count,
-            Vdaf::Histogram(Histogram { buckets }) => Self::Prio3Histogram {
-                buckets: buckets.unwrap(),
-            },
-            Vdaf::Sum(Sum { bits }) => Self::Prio3Sum {
-                bits: bits.unwrap(),
-            },
-            Vdaf::CountVec(CountVec { length }) => Self::Prio3CountVec {
-                length: length.unwrap(),
-            },
-            Vdaf::SumVec(SumVec { length, bits }) => Self::Prio3SumVec {
-                bits: bits.unwrap(),
-                length: length.unwrap(),
-            },
-            Vdaf::Unrecognized => unreachable!(),
+            AggregatorVdaf::Prio3Count => Self::Count,
+            AggregatorVdaf::Prio3Sum { bits } => Self::Sum(Sum { bits: Some(bits) }),
+            AggregatorVdaf::Prio3Histogram(HistogramType::Buckets { buckets }) => {
+                Self::Histogram(Histogram::Continuous(ContinuousBuckets {
+                    buckets: Some(buckets),
+                }))
+            }
+            AggregatorVdaf::Prio3Histogram(HistogramType::Opaque { length }) => {
+                Self::Histogram(Histogram::Opaque(BucketLength { length }))
+            }
+            AggregatorVdaf::Prio3CountVec { length } => Self::CountVec(CountVec {
+                length: Some(length),
+            }),
+            AggregatorVdaf::Prio3SumVec { bits, length } => Self::SumVec(SumVec {
+                length: Some(length),
+                bits: Some(bits),
+            }),
         }
     }
 }
@@ -142,7 +172,7 @@ pub struct TaskCreate {
     pub collector_auth_token: Option<AuthenticationToken>,
     pub peer_aggregator_endpoint: Url,
     pub query_type: QueryType,
-    pub vdaf: VdafInstance,
+    pub vdaf: AggregatorVdaf,
     pub role: Role,
     pub max_batch_query_count: u64,
     pub task_expiration: Option<JanusTime>,
@@ -169,7 +199,7 @@ impl TaskCreate {
                 new_task.leader_aggregator.dap_url.clone().into()
             },
             query_type: new_task.max_batch_size.into(),
-            vdaf: new_task.vdaf.clone().into(),
+            vdaf: new_task.aggregator_vdaf.clone(),
             role,
             max_batch_query_count: 1,
             task_expiration: new_task.expiration.map(|expiration| {
@@ -193,7 +223,7 @@ pub struct TaskResponse {
     pub task_id: TaskId,
     pub peer_aggregator_endpoint: Url,
     pub query_type: QueryType,
-    pub vdaf: VdafInstance,
+    pub vdaf: AggregatorVdaf,
     pub role: Role,
     pub vdaf_verify_key: String,
     pub max_batch_query_count: u64,
@@ -236,6 +266,8 @@ pub struct AggregatorApiConfig {
     pub role: AggregatorRole,
     pub vdafs: VdafNameSet,
     pub query_types: QueryTypeNameSet,
+    #[serde(default)]
+    pub protocol: Protocol,
 }
 
 #[cfg(test)]
