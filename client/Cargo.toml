@@ -24,7 +24,7 @@ uuid = { version = "1.4.1", features = ["v4", "fast-rng", "serde"] }
 time = { version = "0.3.25", features = ["serde", "serde-well-known"] }
 log = "0.4.20"
 pad-adapter = "0.1.1"
-janus_messages = "0.5.14"
+janus_messages = "0.5.16"
 
 [dev-dependencies]
 divviup-api = { version = "*", path = ".." }
