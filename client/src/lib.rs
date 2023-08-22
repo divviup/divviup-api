@@ -16,7 +16,7 @@ mod task;
 mod validation_errors;
 
 pub const CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
-pub const DEFAULT_URL: &str = "https://api.staging.divviup.org/";
+pub const DEFAULT_URL: &str = "https://api.divviup.org/";
 pub const USER_AGENT: &str = concat!("divviup-client/", env!("CARGO_PKG_VERSION"));
 
 use base64::{engine::general_purpose::STANDARD, Engine};
