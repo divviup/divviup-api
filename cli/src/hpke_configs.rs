@@ -44,7 +44,7 @@ pub enum HpkeConfigAction {
     /// the private key will be output to stdout
     /// but not recorded anywhere else
     Generate {
-        #[arg(short, long, default_value = "x25519-sha256")]
+        #[arg(short, long, default_value = "x25519hkdfsha256")]
         /// key encapsulation mechanism
         kem: Kem,
 
@@ -53,7 +53,7 @@ pub enum HpkeConfigAction {
         kdf: Kdf,
 
         /// authenticated encryption with additional data
-        #[arg(long, default_value = "aes128-gcm")]
+        #[arg(long, default_value = "aes128gcm")]
         aead: Aead,
 
         /// an optional u8 identifier to distinguish from other hpke configs in the dap protocol
