@@ -6,9 +6,7 @@ use std::{borrow::Cow, path::PathBuf};
 use trillium_tokio::tokio::fs;
 
 #[cfg(feature = "hpke")]
-mod generate;
-#[cfg(feature = "hpke")]
-use generate::*;
+use hpke_dispatch::{Aead, Kdf, Kem};
 
 #[derive(Subcommand, Debug)]
 pub enum HpkeConfigAction {
@@ -44,7 +42,7 @@ pub enum HpkeConfigAction {
     /// the private key will be output to stdout
     /// but not recorded anywhere else
     Generate {
-        #[arg(short, long, default_value = "x25519hkdfsha256")]
+        #[arg(short, long, default_value = "x25519-sha256")]
         /// key encapsulation mechanism
         kem: Kem,
 
@@ -53,7 +51,7 @@ pub enum HpkeConfigAction {
         kdf: Kdf,
 
         /// authenticated encryption with additional data
-        #[arg(long, default_value = "aes128gcm")]
+        #[arg(long, default_value = "aes128-gcm")]
         aead: Aead,
 
         /// an optional u8 identifier to distinguish from other hpke configs in the dap protocol
@@ -135,9 +133,9 @@ impl HpkeConfigAction {
 
                 let hpke_config = HpkeConfigContents::new(
                     config_id.into(),
-                    (kem.0 as u16).try_into().unwrap(),
-                    (kdf.0 as u16).try_into().unwrap(),
-                    (aead.0 as u16).try_into().unwrap(),
+                    (kem as u16).try_into().unwrap(),
+                    (kdf as u16).try_into().unwrap(),
+                    (aead as u16).try_into().unwrap(),
                     public_key.clone().into(),
                 );
 
@@ -151,9 +149,9 @@ impl HpkeConfigAction {
                     "id": config_id,
                     "public_key": URL_SAFE_NO_PAD.encode(public_key),
                     "private_key": URL_SAFE_NO_PAD.encode(private_key),
-                    "kem": kem.0,
-                    "kdf": kdf.0,
-                    "aead": aead.0
+                    "kem": kem,
+                    "kdf": kdf,
+                    "aead": aead
                 }));
             }
         }
