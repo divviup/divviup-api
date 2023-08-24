@@ -52,7 +52,7 @@ trillium-conn-id = "0.2.1"
 trillium-cookies = "0.4.0"
 trillium-forwarding = "0.2.1"
 trillium-http = { version = "0.3.3", features = ["http-compat", "serde"] }
-trillium-logger = "0.4.2"
+trillium-logger = "0.4.3"
 trillium-macros = "0.0.4"
 trillium-prometheus = "0.1.0"
 trillium-redirect = "0.1.0"
