@@ -26,7 +26,6 @@ import ApiClient, {
 } from "../ApiClient";
 import { Formik, FormikHelpers, FormikProps } from "formik";
 import FormCheck from "react-bootstrap/FormCheck";
-import { DateTime } from "luxon";
 import FormText from "react-bootstrap/FormText";
 import { Alert } from "react-bootstrap";
 import { AccountBreadcrumbs } from "../util";
@@ -106,7 +105,6 @@ export default function TaskForm() {
                 name: "",
                 max_batch_size: null,
                 time_precision_seconds: 3600,
-                expiration: null,
                 hpke_config_id: null,
               } as unknown as NewTask
             }
@@ -132,7 +130,6 @@ export default function TaskForm() {
                   <MinBatchSize {...props} />
                   <HpkeConfigSelect {...props} />
                   <TimePrecisionSeconds {...props} />
-                  <Expiration {...props} />
                   <TaskFormGroup>
                     <Button
                       variant="primary"
@@ -332,17 +329,6 @@ const helps: {
           end on multiples of the time precision as well.
         </p>
       </>
-    ),
-  },
-
-  expiration: {
-    title: "Expiration",
-    short: "Optional, pre-scheduled time to decommission this task.",
-    long: (
-      <p>
-        If set, then reports may no longer be uploaded for this task after its
-        expiration time.
-      </p>
     ),
   },
 };
@@ -945,91 +931,6 @@ function SumBits(props: Props) {
           </option>
         ))}
       </FormSelect>
-    </TaskFormGroup>
-  );
-}
-
-function Expiration(props: Props) {
-  const { setFieldValue, values } = props;
-  const { expiration } = values;
-
-  const [enabled, setEnabled] = React.useState(false);
-
-  const checkboxChange = React.useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setEnabled(event.target.checked);
-      if (!event.target.checked) setFieldValue("expiration", null);
-    },
-    [setEnabled, setFieldValue],
-  );
-
-  const handleChange = React.useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      if (event.target.value) {
-        const datetime = DateTime.fromISO(event.target.value);
-        setFieldValue(
-          "expiration",
-          datetime.toISO({
-            suppressSeconds: true,
-            suppressMilliseconds: true,
-            includeOffset: true,
-          }),
-        );
-      } else {
-        setFieldValue("expiration", null);
-      }
-    },
-    [setFieldValue],
-  );
-
-  const min = React.useMemo(
-    () =>
-      DateTime.now().set({ second: 0, millisecond: 0 }).toISO({
-        includeOffset: false,
-        suppressSeconds: true,
-        suppressMilliseconds: true,
-      }),
-    [],
-  );
-
-  const formValue = expiration
-    ? DateTime.fromISO(expiration)
-        .toLocal()
-        .set({ second: 0, millisecond: 0 })
-        .toISO({
-          includeOffset: false,
-          suppressSeconds: true,
-          suppressMilliseconds: true,
-        }) || ""
-    : "";
-
-  return (
-    <TaskFormGroup controlId="expiration">
-      <FormCheck
-        type="switch"
-        checked={enabled}
-        onChange={checkboxChange}
-        label="Expiration"
-      />
-      {enabled ? (
-        <FormControl
-          type="datetime-local"
-          name="expiration"
-          value={formValue}
-          onChange={handleChange}
-          onBlur={props.handleBlur}
-          step={60}
-          min={min || undefined}
-          isInvalid={!!props.errors.expiration}
-        />
-      ) : null}
-      <FormControl.Feedback type="invalid">
-        {props.errors.expiration}
-      </FormControl.Feedback>
-      <ShortHelpText
-        fieldKey="expiration"
-        setFocusedField={props.setFocusedField}
-      />
     </TaskFormGroup>
   );
 }

@@ -119,6 +119,7 @@ pub async fn build_test_app() -> (DivviupApi, ClientLogs) {
     (app, client_logs)
 }
 
+#[track_caller]
 pub fn set_up<F, Fut>(f: F)
 where
     F: FnOnce(DivviupApi) -> Fut,

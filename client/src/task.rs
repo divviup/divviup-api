@@ -32,8 +32,6 @@ pub struct NewTask {
     pub vdaf: Vdaf,
     pub min_batch_size: u64,
     pub max_batch_size: Option<u64>,
-    #[serde(default, with = "time::serde::iso8601::option")]
-    pub expiration: Option<OffsetDateTime>,
     pub time_precision_seconds: u64,
     pub hpke_config_id: Uuid,
 }

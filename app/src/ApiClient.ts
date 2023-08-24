@@ -83,6 +83,7 @@ export type NewTask = Omit<
   | "created_at"
   | "updated_at"
   | "vdaf"
+  | "expiration"
 > & {
   vdaf: {
     type: "sum" | "count" | "histogram";

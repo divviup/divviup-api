@@ -12,14 +12,6 @@ use sea_orm::{ColumnTrait, QueryFilter};
 use sha2::{Digest, Sha256};
 use validator::{ValidationErrors, ValidationErrorsKind};
 
-fn in_the_future(time: &OffsetDateTime) -> Result<(), ValidationError> {
-    if time < &OffsetDateTime::now_utc() {
-        Err(ValidationError::new("past"))
-    } else {
-        Ok(())
-    }
-}
-
 #[derive(Deserialize, Validate, Debug, Clone, Default)]
 pub struct NewTask {
     #[validate(required, length(min = 1))]
@@ -39,10 +31,6 @@ pub struct NewTask {
 
     #[validate(range(min = 0))]
     pub max_batch_size: Option<u64>,
-
-    #[validate(custom = "in_the_future")]
-    #[serde(default, with = "time::serde::iso8601::option")]
-    pub expiration: Option<OffsetDateTime>,
 
     #[validate(
         required,
@@ -292,7 +280,7 @@ impl NewTask {
                 aggregator_vdaf: aggregator_vdaf.unwrap(),
                 min_batch_size: self.min_batch_size.unwrap(),
                 max_batch_size: self.max_batch_size,
-                expiration: self.expiration,
+                expiration: Some(OffsetDateTime::now_utc() + DEFAULT_EXPIRATION_DURATION),
                 time_precision_seconds: self.time_precision_seconds.unwrap(),
                 hpke_config: hpke_config.unwrap(),
                 aggregator_auth_token: None,
