@@ -22,7 +22,7 @@ impl Histogram {
             }) => buckets.len() as u64,
             Histogram::Continuous(ContinuousBuckets {
                 buckets: Some(buckets),
-            }) => buckets.len() as u64,
+            }) => buckets.len() as u64 + 1,
             Histogram::Opaque(BucketLength { length }) => *length,
             _ => 0,
         }
