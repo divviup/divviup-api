@@ -5,33 +5,33 @@ pub fn histogram_representations() {
     let scenarios = [
         (
             json!({"type": "histogram", "buckets": ["a", "b", "c"]}),
+            Protocol::Dap04,
+            Err(json!({"buckets": [{"code": "must-be-numbers", "message": null, "params": {}}]})),
+        ),
+        (
+            json!({"type": "histogram", "buckets": ["a", "b", "c"]}),
             Protocol::Dap05,
             Ok(json!({"Prio3Histogram": {"length": 3}})),
         ),
         (
-            json!({"type": "histogram", "buckets": ["a", "b", "c"]}),
+            json!({"type": "histogram", "buckets": [1, 2, 3]}),
             Protocol::Dap04,
-            Err(json!({"buckets": [{"code": "must-be-numbers", "message": null, "params":{}}]})),
+            Ok(json!({"Prio3Histogram": {"buckets": [1, 2, 3]}})),
         ),
         (
-            json!({"type": "histogram", "buckets": [1,2,3]}),
-            Protocol::Dap04,
-            Ok(json!({ "Prio3Histogram":{"buckets": [1,2,3]}})),
-        ),
-        (
-            json!({"type": "histogram", "buckets": [1,2,3]}),
+            json!({"type": "histogram", "buckets": [1, 2, 3]}),
             Protocol::Dap05,
-            Ok(json!({"Prio3Histogram": {"length" : 3 }})),
+            Ok(json!({"Prio3Histogram": {"length": 4}})),
         ),
         (
-            json!({"type": "histogram", "length": 3 }),
+            json!({"type": "histogram", "length": 3}),
             Protocol::Dap04,
             Err(json!({"buckets": [{"code": "required", "message": null, "params":{}}]})),
         ),
         (
-            json!({"type": "histogram", "length": 3 }),
+            json!({"type": "histogram", "length": 3}),
             Protocol::Dap05,
-            Ok(json!({"Prio3Histogram":{ "length" : 3} })),
+            Ok(json!({"Prio3Histogram": {"length": 3}})),
         ),
     ];
 
