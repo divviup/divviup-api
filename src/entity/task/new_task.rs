@@ -1,7 +1,9 @@
 use super::*;
 use crate::{
     clients::aggregator_client::api_types::{AggregatorVdaf, QueryType},
-    entity::{aggregator::Role, Account, Aggregator, Aggregators, HpkeConfig, HpkeConfigColumn},
+    entity::{
+        aggregator::Role, Account, Aggregator, Aggregators, HpkeConfig, HpkeConfigColumn, Protocol,
+    },
     handler::Error,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};

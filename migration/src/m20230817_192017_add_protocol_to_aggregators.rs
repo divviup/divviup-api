@@ -30,30 +30,6 @@ impl MigrationTrait for Migration {
         )
         .await?;
 
-        db.alter_table(
-            TableAlterStatement::new()
-                .table(Task::Table)
-                .add_column(ColumnDef::new(Task::Protocol).string().null())
-                .to_owned(),
-        )
-        .await?;
-
-        db.exec_stmt(
-            Query::update()
-                .table(Task::Table)
-                .value(Task::Protocol, "DAP-04")
-                .to_owned(),
-        )
-        .await?;
-
-        db.alter_table(
-            TableAlterStatement::new()
-                .table(Task::Table)
-                .modify_column(ColumnDef::new(Task::Protocol).not_null())
-                .to_owned(),
-        )
-        .await?;
-
         Ok(())
     }
 
@@ -65,25 +41,12 @@ impl MigrationTrait for Migration {
                 .to_owned(),
         )
         .await?;
-        db.alter_table(
-            TableAlterStatement::new()
-                .table(Task::Table)
-                .drop_column(Task::Protocol)
-                .to_owned(),
-        )
-        .await?;
         Ok(())
     }
 }
 
 #[derive(DeriveIden)]
 enum Aggregator {
-    Table,
-    Protocol,
-}
-
-#[derive(DeriveIden)]
-enum Task {
     Table,
     Protocol,
 }

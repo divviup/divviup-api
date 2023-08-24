@@ -1,7 +1,7 @@
 use super::{ActiveModel, *};
 use crate::{
     clients::aggregator_client::api_types::{AggregatorVdaf, AuthenticationToken},
-    entity::{Account, Aggregator, HpkeConfig, Task},
+    entity::{Account, Aggregator, HpkeConfig, Protocol, Task},
     handler::Error,
     Crypter,
 };
@@ -117,7 +117,6 @@ impl ProvisionableTask {
             leader_aggregator_id: self.leader_aggregator.id,
             helper_aggregator_id: self.helper_aggregator.id,
             hpke_config_id: self.hpke_config.id,
-            protocol: self.protocol,
         }
         .into_active_model())
     }

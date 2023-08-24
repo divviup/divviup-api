@@ -1,4 +1,3 @@
-use crate::Protocol;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -23,7 +22,6 @@ pub struct Task {
     pub leader_aggregator_id: Uuid,
     pub helper_aggregator_id: Uuid,
     pub hpke_config_id: Uuid,
-    pub protocol: Protocol,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]

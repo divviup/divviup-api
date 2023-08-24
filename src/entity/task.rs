@@ -22,7 +22,6 @@ pub use new_task::NewTask;
 mod update_task;
 pub use update_task::UpdateTask;
 mod provisionable_task;
-use super::Protocol;
 pub use provisionable_task::{ProvisionableTask, TaskProvisioningError};
 
 use super::json::Json;
@@ -49,7 +48,6 @@ pub struct Model {
     pub leader_aggregator_id: Uuid,
     pub helper_aggregator_id: Uuid,
     pub hpke_config_id: Uuid,
-    pub protocol: Protocol,
 }
 
 impl Model {

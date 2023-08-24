@@ -1,4 +1,5 @@
 mod new_aggregator;
+mod protocol;
 mod query_type_name;
 mod role;
 mod update_aggregator;
@@ -15,8 +16,8 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-pub use super::protocol::{Protocol, UnrecognizedProtocol};
 pub use new_aggregator::NewAggregator;
+pub use protocol::{Protocol, UnrecognizedProtocol};
 pub use query_type_name::{QueryTypeName, QueryTypeNameSet};
 pub use role::{Role, UnrecognizedRole};
 pub use update_aggregator::UpdateAggregator;
