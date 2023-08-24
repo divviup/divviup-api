@@ -1,7 +1,9 @@
 use super::*;
 use crate::{
-    clients::aggregator_client::api_types::QueryType,
-    entity::{aggregator::Role, Account, Aggregator, Aggregators, HpkeConfig, HpkeConfigColumn},
+    clients::aggregator_client::api_types::{AggregatorVdaf, QueryType},
+    entity::{
+        aggregator::Role, Account, Aggregator, Aggregators, HpkeConfig, HpkeConfigColumn, Protocol,
+    },
     handler::Error,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
@@ -131,7 +133,7 @@ impl NewTask {
         account: &Account,
         db: &impl ConnectionTrait,
         errors: &mut ValidationErrors,
-    ) -> Option<(Aggregator, Aggregator)> {
+    ) -> Option<(Aggregator, Aggregator, Protocol)> {
         let leader = load_aggregator(account, self.leader_aggregator_id.as_deref(), db)
             .await
             .ok()
@@ -168,6 +170,14 @@ impl NewTask {
             );
         }
 
+        let resolved_protocol = if leader.protocol == helper.protocol {
+            leader.protocol
+        } else {
+            errors.add("leader_aggregator_id", ValidationError::new("protocol"));
+            errors.add("helper_aggregator_id", ValidationError::new("protocol"));
+            return None;
+        };
+
         if leader.role == Role::Helper {
             errors.add("leader_aggregator_id", ValidationError::new("role"))
         }
@@ -177,7 +187,7 @@ impl NewTask {
         }
 
         if errors.is_empty() {
-            Some((leader, helper))
+            Some((leader, helper, resolved_protocol))
         } else {
             None
         }
@@ -187,22 +197,48 @@ impl NewTask {
         &self,
         leader: &Aggregator,
         helper: &Aggregator,
+        protocol: &Protocol,
         errors: &mut ValidationErrors,
-    ) {
+    ) -> Option<AggregatorVdaf> {
         let Some(vdaf) = self.vdaf.as_ref() else {
-            return;
+            return None;
         };
+
         let name = vdaf.name();
-        if leader.vdafs.contains(&name) && helper.vdafs.contains(&name) {
-            return;
+        let aggregator_vdaf = match vdaf.representation_for_protocol(protocol) {
+            Ok(vdaf) => vdaf,
+            Err(e) => {
+                let errors = errors.errors_mut().entry("vdaf").or_insert_with(|| {
+                    ValidationErrorsKind::Struct(Box::new(ValidationErrors::new()))
+                });
+                match errors {
+                    ValidationErrorsKind::Struct(errors) => {
+                        errors.errors_mut().extend(e.into_errors())
+                    }
+                    other => *other = ValidationErrorsKind::Struct(Box::new(e)),
+                };
+                return None;
+            }
+        };
+
+        if !leader.vdafs.contains(&name) || !helper.vdafs.contains(&name) {
+            let errors = errors
+                .errors_mut()
+                .entry("vdaf")
+                .or_insert_with(|| ValidationErrorsKind::Struct(Box::new(ValidationErrors::new())));
+            match errors {
+                ValidationErrorsKind::Struct(errors) => {
+                    errors.add("type", ValidationError::new("not-supported"));
+                }
+                other => {
+                    let mut e = ValidationErrors::new();
+                    e.add("type", ValidationError::new("not-supported"));
+                    *other = ValidationErrorsKind::Struct(Box::new(e));
+                }
+            };
         }
-        if let ValidationErrorsKind::Struct(errors) = errors
-            .errors_mut()
-            .entry("vdaf")
-            .or_insert_with(|| ValidationErrorsKind::Struct(Box::new(ValidationErrors::new())))
-        {
-            errors.add("type", ValidationError::new("not-supported"));
-        }
+
+        Some(aggregator_vdaf)
     }
 
     fn validate_query_type_is_supported(
@@ -226,10 +262,13 @@ impl NewTask {
         self.validate_min_lte_max(&mut errors);
         let hpke_config = self.validate_hpke_config(&account, db, &mut errors).await;
         let aggregators = self.validate_aggregators(&account, db, &mut errors).await;
-        if let Some((leader, helper)) = aggregators.as_ref() {
-            self.validate_vdaf_is_supported(leader, helper, &mut errors);
+
+        let aggregator_vdaf = if let Some((leader, helper, protocol)) = aggregators.as_ref() {
             self.validate_query_type_is_supported(leader, helper, &mut errors);
-        }
+            self.validate_vdaf_is_supported(leader, helper, protocol, &mut errors)
+        } else {
+            None
+        };
 
         if errors.is_empty() {
             // Unwrap safety: All of these unwraps below have previously
@@ -238,7 +277,7 @@ impl NewTask {
             // disharmonious combination of Validate and the fact that we
             // need to use options for all fields so serde doesn't bail on
             // the first error.
-            let (leader_aggregator, helper_aggregator) = aggregators.unwrap();
+            let (leader_aggregator, helper_aggregator, protocol) = aggregators.unwrap();
 
             let (vdaf_verify_key, id) = generate_vdaf_verify_key_and_expected_task_id();
 
@@ -250,12 +289,14 @@ impl NewTask {
                 leader_aggregator,
                 helper_aggregator,
                 vdaf: self.vdaf.clone().unwrap(),
+                aggregator_vdaf: aggregator_vdaf.unwrap(),
                 min_batch_size: self.min_batch_size.unwrap(),
                 max_batch_size: self.max_batch_size,
                 expiration: self.expiration,
                 time_precision_seconds: self.time_precision_seconds.unwrap(),
                 hpke_config: hpke_config.unwrap(),
                 aggregator_auth_token: None,
+                protocol,
             })
         } else {
             Err(errors)

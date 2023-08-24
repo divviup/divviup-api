@@ -160,6 +160,7 @@ pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregat
         role: Role::Either,
         query_types: Default::default(),
         vdafs: Default::default(),
+        protocol: Protocol::Dap05,
     }
     .into_active_model()
     .insert(app.db())

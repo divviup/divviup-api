@@ -16,7 +16,7 @@ pub use account::{
 };
 pub use aggregator::{
     Column as AggregatorColumn, Entity as Aggregators, Model as Aggregator, NewAggregator,
-    UpdateAggregator,
+    Protocol, Role, UnrecognizedProtocol, UnrecognizedRole, UpdateAggregator,
 };
 pub use api_token::{
     Column as ApiTokenColumn, Entity as ApiTokens, Model as ApiToken, UpdateApiToken,

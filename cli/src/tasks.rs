@@ -1,6 +1,6 @@
-use crate::{CliResult, DetermineAccountId, Output};
+use crate::{CliResult, DetermineAccountId, Error, Output};
 use clap::Subcommand;
-use divviup_client::{DivviupClient, NewTask, Uuid, Vdaf};
+use divviup_client::{DivviupClient, Histogram, NewTask, Uuid, Vdaf};
 use humantime::{Duration, Timestamp};
 use time::{OffsetDateTime, UtcOffset};
 
@@ -38,8 +38,10 @@ pub enum TaskAction {
         time_precision: Duration,
         #[arg(long)]
         hpke_config_id: Uuid,
-        #[arg(long, required_if_eq("vdaf", "histogram"), value_delimiter = ',')]
-        buckets: Option<Vec<u64>>,
+        #[arg(long, value_delimiter = ',')]
+        categorical_buckets: Option<Vec<String>>,
+        #[arg(long, value_delimiter = ',')]
+        continuous_buckets: Option<Vec<u64>>,
         #[arg(long, required_if_eq_any([("vdaf", "count_vec"), ("vdaf", "sum_vec")]))]
         length: Option<u64>,
         #[arg(long, required_if_eq_any([("vdaf", "sum"), ("vdaf", "sum_vec")]))]
@@ -73,16 +75,33 @@ impl TaskAction {
                 max_batch_size,
                 expiration,
                 hpke_config_id,
-                buckets,
+                categorical_buckets,
+                continuous_buckets,
                 length,
                 bits,
                 time_precision,
             } => {
                 let vdaf = match vdaf {
                     VdafName::Count => Vdaf::Count,
-                    VdafName::Histogram => Vdaf::Histogram {
-                        buckets: buckets.unwrap(),
-                    },
+                    VdafName::Histogram => {
+                        match (length, categorical_buckets, continuous_buckets) {
+                            (Some(length), None, None) => {
+                                Vdaf::Histogram(Histogram::Length { length })
+                            }
+                            (None, Some(buckets), None) => {
+                                Vdaf::Histogram(Histogram::Categorical { buckets })
+                            }
+                            (None, None, Some(buckets)) => {
+                                Vdaf::Histogram(Histogram::Continuous { buckets })
+                            }
+                            (None, None, None) => {
+                                return Err(Error::Other("continuous-buckets, categorical-buckets, or length are required for histogram vdaf".into()));
+                            }
+                            _ => {
+                                return Err(Error::Other("continuous-buckets, categorical-buckets, and length are mutually exclusive".into()));
+                            }
+                        }
+                    }
                     VdafName::Sum => Vdaf::Sum {
                         bits: bits.unwrap(),
                     },

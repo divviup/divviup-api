@@ -102,6 +102,7 @@ impl NewAggregator {
             is_first_party: account.is_none() && self.is_first_party.unwrap_or(true),
             query_types: aggregator_config.query_types.into(),
             vdafs: aggregator_config.vdafs.into(),
+            protocol: aggregator_config.protocol,
         }
         .into_active_model())
     }

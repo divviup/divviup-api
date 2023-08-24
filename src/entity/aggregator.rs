@@ -1,4 +1,5 @@
 mod new_aggregator;
+mod protocol;
 mod query_type_name;
 mod role;
 mod update_aggregator;
@@ -16,6 +17,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 pub use new_aggregator::NewAggregator;
+pub use protocol::{Protocol, UnrecognizedProtocol};
 pub use query_type_name::{QueryTypeName, QueryTypeNameSet};
 pub use role::{Role, UnrecognizedRole};
 pub use update_aggregator::UpdateAggregator;
@@ -42,6 +44,7 @@ pub struct Model {
     pub is_first_party: bool,
     pub query_types: Json<QueryTypeNameSet>,
     pub vdafs: Json<VdafNameSet>,
+    pub protocol: Protocol,
     #[serde(skip)]
     pub encrypted_bearer_token: Vec<u8>,
 }

@@ -1,8 +1,8 @@
 use super::random_chars;
 use crate::clients::aggregator_client::api_types::{
-    AggregatorApiConfig, AuthenticationToken, HpkeAeadId, HpkeConfig, HpkeKdfId, HpkeKemId,
-    HpkePublicKey, JanusDuration, QueryType, Role, TaskCreate, TaskId, TaskIds, TaskMetrics,
-    TaskResponse, VdafInstance,
+    AggregatorApiConfig, AggregatorVdaf, AuthenticationToken, HpkeAeadId, HpkeConfig, HpkeKdfId,
+    HpkeKemId, HpkePublicKey, JanusDuration, QueryType, Role, TaskCreate, TaskId, TaskIds,
+    TaskMetrics, TaskResponse,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use querystrong::QueryStrong;
@@ -30,6 +30,7 @@ pub fn mock() -> impl Handler {
                     role: random(),
                     vdafs: Default::default(),
                     query_types: Default::default(),
+                    protocol: random(),
                 }),
             )
             .post("/tasks", api(post_task))
@@ -70,7 +71,7 @@ async fn get_task(conn: &mut Conn, (): ()) -> Json<TaskResponse> {
         task_id: task_id.parse().unwrap(),
         peer_aggregator_endpoint: "https://_".parse().unwrap(),
         query_type: QueryType::TimeInterval,
-        vdaf: VdafInstance::Prio3Count,
+        vdaf: AggregatorVdaf::Prio3Count,
         role: Role::Leader,
         vdaf_verify_key: random_chars(10),
         max_batch_query_count: 100,

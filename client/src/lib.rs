@@ -12,6 +12,7 @@ mod aggregator;
 mod api_token;
 mod hpke_configs;
 mod membership;
+mod protocol;
 mod task;
 mod validation_errors;
 
@@ -34,7 +35,8 @@ pub use janus_messages::{
     HpkeConfig as HpkeConfigContents, HpkePublicKey,
 };
 pub use membership::Membership;
-pub use task::{NewTask, Task, Vdaf};
+pub use protocol::Protocol;
+pub use task::{Histogram, NewTask, Task, Vdaf};
 pub use time::OffsetDateTime;
 pub use trillium_client;
 pub use trillium_client::Client;
