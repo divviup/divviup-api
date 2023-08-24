@@ -42,7 +42,7 @@ pub enum TaskAction {
         categorical_buckets: Option<Vec<String>>,
         #[arg(long, value_delimiter = ',')]
         continuous_buckets: Option<Vec<u64>>,
-        #[arg(long, required_if_eq_any([("vdaf", "count_vec"), ("vdaf", "sum_vec"), ("vdaf", "histogram")]))]
+        #[arg(long, required_if_eq_any([("vdaf", "count_vec"), ("vdaf", "sum_vec")]))]
         length: Option<u64>,
         #[arg(long, required_if_eq_any([("vdaf", "sum"), ("vdaf", "sum_vec")]))]
         bits: Option<u8>,
@@ -98,7 +98,7 @@ impl TaskAction {
                                 return Err(Error::Other("continuous-buckets, categorical-buckets, or length are required for histogram vdaf".into()));
                             }
                             _ => {
-                                return Err(Error::Other("continuous-buckets, categorical-buckets, and length mutually exclusive".into()));
+                                return Err(Error::Other("continuous-buckets, categorical-buckets, and length are mutually exclusive".into()));
                             }
                         }
                     }
