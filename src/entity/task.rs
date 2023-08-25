@@ -11,7 +11,7 @@ use sea_orm::{
     Related, RelationDef, RelationTrait,
 };
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 use validator::{Validate, ValidationError};
 
@@ -23,6 +23,8 @@ mod update_task;
 pub use update_task::UpdateTask;
 mod provisionable_task;
 pub use provisionable_task::{ProvisionableTask, TaskProvisioningError};
+
+pub const DEFAULT_EXPIRATION_DURATION: Duration = Duration::days(365);
 
 use super::json::Json;
 

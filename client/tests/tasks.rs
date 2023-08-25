@@ -29,7 +29,6 @@ async fn create_task(app: Arc<DivviupApi>, account: Account, client: DivviupClie
                 vdaf: Vdaf::Count,
                 min_batch_size: fastrand::i64(100..).try_into().unwrap(),
                 max_batch_size: None,
-                expiration: None,
                 time_precision_seconds: fastrand::u64(60..2592000),
                 hpke_config_id: hpke_config.id,
             },

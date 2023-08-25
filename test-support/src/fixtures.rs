@@ -110,7 +110,9 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         time_precision_seconds: 60,
         report_count: 0,
         aggregate_collection_count: 0,
-        expiration: None,
+        expiration: Some(
+            OffsetDateTime::now_utc() + divviup_api::entity::task::DEFAULT_EXPIRATION_DURATION,
+        ),
         leader_aggregator_id: leader_aggregator.id,
         helper_aggregator_id: helper_aggregator.id,
         hpke_config_id: hpke_config.id,

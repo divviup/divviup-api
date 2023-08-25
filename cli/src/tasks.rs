@@ -1,8 +1,7 @@
 use crate::{CliResult, DetermineAccountId, Error, Output};
 use clap::Subcommand;
 use divviup_client::{DivviupClient, Histogram, NewTask, Uuid, Vdaf};
-use humantime::{Duration, Timestamp};
-use time::{OffsetDateTime, UtcOffset};
+use humantime::Duration;
 
 #[derive(clap::ValueEnum, Clone, Debug)]
 pub enum VdafName {
@@ -32,8 +31,6 @@ pub enum TaskAction {
         min_batch_size: u64,
         #[arg(long)]
         max_batch_size: Option<u64>,
-        #[arg(long)]
-        expiration: Option<Timestamp>,
         #[arg(long)]
         time_precision: Duration,
         #[arg(long)]
@@ -73,7 +70,6 @@ impl TaskAction {
                 vdaf,
                 min_batch_size,
                 max_batch_size,
-                expiration,
                 hpke_config_id,
                 categorical_buckets,
                 continuous_buckets,
@@ -114,10 +110,6 @@ impl TaskAction {
                     },
                 };
 
-                let expiration = expiration.map(|e| {
-                    OffsetDateTime::from(*e.as_ref())
-                        .replace_offset(UtcOffset::current_local_offset().unwrap())
-                });
                 let time_precision_seconds = time_precision.as_secs();
 
                 let task = NewTask {
@@ -127,7 +119,6 @@ impl TaskAction {
                     vdaf,
                     min_batch_size,
                     max_batch_size,
-                    expiration,
                     time_precision_seconds,
                     hpke_config_id,
                 };

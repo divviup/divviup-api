@@ -5,6 +5,7 @@ use crate::{
     handler::Error,
     Crypter,
 };
+use std::fmt::Debug;
 use trillium_client::Client;
 
 #[derive(thiserror::Error, Debug, Clone, Copy)]
@@ -34,7 +35,7 @@ pub struct ProvisionableTask {
     pub protocol: Protocol,
 }
 
-fn assert_same<T: Eq>(
+fn assert_same<T: Eq + Debug>(
     ours: T,
     theirs: T,
     property: &'static str,
@@ -42,6 +43,7 @@ fn assert_same<T: Eq>(
     if ours == theirs {
         Ok(())
     } else {
+        log::error!("{property} discrepancy. ours: {ours:?}, theirs: {theirs:?}");
         Err(TaskProvisioningError::Discrepancy(property))
     }
 }
@@ -70,7 +72,10 @@ impl ProvisionableTask {
             "query_type",
         )?;
         assert_same(
-            self.expiration,
+            // precision is lost in the round trip so we truncate our own
+            self.expiration
+                .map(|t| t.replace_millisecond(0))
+                .transpose()?,
             response.task_expiration()?,
             "task_expiration",
         )?;
