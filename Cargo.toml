@@ -83,7 +83,7 @@ features = [
 ]
 
 [dev-dependencies]
-regex = "1.9.3"
+regex = "1.9.4"
 test-support = { path = "./test-support" }
 
 [build-dependencies]
