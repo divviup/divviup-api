@@ -70,7 +70,7 @@
     "eslint-plugin-react": "^7.33.2",
     "prettier": "^3.0.2",
     "source-map-explorer": "^2.5.3",
-    "typescript": "^5.1.6",
+    "typescript": "^5.2.2",
     "typescript-eslint-language-service": "^5.0.5",
     "vite": "^4.4.9",
     "vite-plugin-eslint": "^1.8.1"
