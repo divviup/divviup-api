@@ -19,7 +19,7 @@ pub struct Model {
     pub id: Uuid,
     pub account_id: Uuid,
     pub user_email: String,
-    #[serde(with = "::time::serde::iso8601")]
+    #[serde(with = "::time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
 }
 

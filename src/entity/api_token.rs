@@ -23,13 +23,13 @@ pub struct Model {
     pub account_id: Uuid,
     #[serde(with = "url_safe_base64")]
     pub token_hash: Vec<u8>,
-    #[serde(with = "::time::serde::iso8601")]
+    #[serde(with = "::time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
-    #[serde(default, with = "::time::serde::iso8601::option")]
+    #[serde(default, with = "::time::serde::rfc3339::option")]
     pub deleted_at: Option<OffsetDateTime>,
-    #[serde(default, with = "::time::serde::iso8601::option")]
+    #[serde(default, with = "::time::serde::rfc3339::option")]
     pub last_used_at: Option<OffsetDateTime>,
-    #[serde(with = "::time::serde::iso8601")]
+    #[serde(with = "::time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     pub name: Option<String>,
     #[sea_orm(ignore)]

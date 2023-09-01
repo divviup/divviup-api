@@ -7,11 +7,11 @@ use uuid::Uuid;
 pub struct HpkeConfig {
     pub id: Uuid,
     pub contents: HpkeConfigContents,
-    #[serde(with = "::time::serde::iso8601")]
+    #[serde(with = "::time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
-    #[serde(default, with = "::time::serde::iso8601::option")]
+    #[serde(default, with = "::time::serde::rfc3339::option")]
     pub deleted_at: Option<OffsetDateTime>,
-    #[serde(with = "::time::serde::iso8601")]
+    #[serde(with = "::time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     pub name: Option<String>,
 }

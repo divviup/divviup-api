@@ -10,14 +10,14 @@ pub struct Task {
     pub vdaf: Vdaf,
     pub min_batch_size: u64,
     pub max_batch_size: Option<u64>,
-    #[serde(with = "time::serde::iso8601")]
+    #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
-    #[serde(with = "time::serde::iso8601")]
+    #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     pub time_precision_seconds: u32,
     pub report_count: u32,
     pub aggregate_collection_count: u32,
-    #[serde(default, with = "time::serde::iso8601::option")]
+    #[serde(default, with = "time::serde::rfc3339::option")]
     pub expiration: Option<OffsetDateTime>,
     pub leader_aggregator_id: Uuid,
     pub helper_aggregator_id: Uuid,
