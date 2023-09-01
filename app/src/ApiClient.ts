@@ -163,7 +163,12 @@ export interface HpkeConfig {
 const mime = "application/vnd.divviup+json;version=0.1";
 
 export class ApiClient {
-  private client?: Promise<AxiosInstance> | AxiosInstance;
+  #client: Promise<AxiosInstance>;
+  #currentUser?: Promise<User>;
+
+  constructor() {
+    this.#client = this.buildClient();
+  }
 
   static async fetchBaseUrl(): Promise<URL> {
     const url = new URL(window.location.href);
@@ -187,25 +192,12 @@ export class ApiClient {
     });
   }
 
-  private async populateClient(): Promise<AxiosInstance> {
-    if (!this.client) {
-      this.client = this.buildClient();
-    }
-    return this.client;
-  }
-
   async loginUrl(): Promise<string> {
-    return (await this.populateClient()).getUri({ url: "/login" });
-  }
-
-  async redirectToLogin(): Promise<null> {
-    const loginUrl = await this.loginUrl();
-    window.location.href = loginUrl;
-    return null;
+    return (await this.#client).getUri({ url: "/login" });
   }
 
   async logoutUrl(): Promise<string> {
-    return (await this.populateClient()).getUri({ url: "/logout" });
+    return (await this.#client).getUri({ url: "/logout" });
   }
 
   async getCurrentUser(): Promise<User> {
@@ -213,23 +205,27 @@ export class ApiClient {
     return res.data as User;
   }
 
+  async currentUser(): Promise<User> {
+    return (this.#currentUser ??= this.getCurrentUser());
+  }
+
   private async get(path: string): Promise<AxiosResponse> {
-    const client = await this.populateClient();
+    const client = await this.#client;
     return client.get(path);
   }
 
   private async post(path: string, body?: unknown): Promise<AxiosResponse> {
-    const client = await this.populateClient();
+    const client = await this.#client;
     return client.post(path, body);
   }
 
   private async delete(path: string): Promise<AxiosResponse> {
-    const client = await this.populateClient();
+    const client = await this.#client;
     return client.delete(path);
   }
 
   private async patch(path: string, body: unknown): Promise<AxiosResponse> {
-    const client = await this.populateClient();
+    const client = await this.#client;
     return client.patch(path, body);
   }
 

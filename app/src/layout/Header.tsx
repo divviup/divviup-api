@@ -1,9 +1,4 @@
-import {
-  Await,
-  Link,
-  useAsyncValue,
-  useRouteLoaderData,
-} from "react-router-dom";
+import { Await, Link, useAsyncValue, useLoaderData } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Navbar from "react-bootstrap/Navbar";
 import { User } from "../ApiClient";
@@ -64,7 +59,7 @@ function LoggedInHeader() {
 }
 
 export default function Header() {
-  const { currentUser } = useRouteLoaderData("currentUser") as {
+  const { currentUser } = useLoaderData() as {
     currentUser: Promise<User>;
   };
   return (

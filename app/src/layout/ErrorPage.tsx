@@ -3,22 +3,30 @@ import Alert from "react-bootstrap/Alert";
 import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 import ApiClient from "../ApiClient";
 import Layout from "./Layout";
+import React from "react";
 
 export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
   const error = useRouteError();
   if (error instanceof AxiosError) {
     switch (error.response?.status) {
-      case 403:
-        apiClient.loginUrl().then((url) => {
-          window.location.href = url;
-        });
-        break;
-      case 404:
+      case 403: {
+        React.useEffect(() => {
+          apiClient.loginUrl().then((url) => {
+            window.location.replace(url);
+          });
+        }, [error, apiClient]);
+
+        return <></>;
+      }
+
+      case 404: {
         return (
           <Layout>
             <Alert variant="warning">Not Found</Alert>
           </Layout>
         );
+      }
+
       case 500: {
         const body = error.response?.data;
         return (
@@ -40,8 +48,6 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
       </Layout>
     );
   }
-
-  console.error(error);
 
   return (
     <>
