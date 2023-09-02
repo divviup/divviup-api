@@ -1,0 +1,13 @@
+---
+variant 1: collector credentials first
+---
+
+flowchart TD
+    NewAccount[New Account] --> HpkeChoice{How do you want to generate\ncollector creds?}
+    HpkeChoice-->|I want to use the rust cli| ApiToken[create api token]
+    ApiToken --> UseCli[1. follow instructions at https://rustup.rs\n2. `cargo install divviup-cli`\n3. `divviup -t API_TOKEN collector-credentials generate`] --> PrivateAggregator{Do you need to pair\na private aggregator?}
+    HpkeChoice-->|I want to use web crypto| WebCryptoHpke["Click acknowledgement checkbox that this is\nless secure, click button to move forward"]
+    WebCryptoHpke --> PrivateAggregator
+    PrivateAggregator-->|Yes| PairPrivateAggregator[create private aggregator: name, url, bearer token]
+    PairPrivateAggregator-->NewTask[create your first task]
+    PrivateAggregator-->|No| NewTask
