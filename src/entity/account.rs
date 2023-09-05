@@ -20,10 +20,10 @@ pub struct Model {
 
     pub name: String,
 
-    #[serde(with = "::time::serde::iso8601")]
+    #[serde(with = "::time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
 
-    #[serde(with = "::time::serde::iso8601")]
+    #[serde(with = "::time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
 
     pub admin: bool,

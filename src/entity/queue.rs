@@ -16,11 +16,11 @@ use uuid::Uuid;
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
-    #[serde(with = "time::serde::iso8601")]
+    #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
-    #[serde(with = "time::serde::iso8601")]
+    #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
-    #[serde(default, with = "time::serde::iso8601::option")]
+    #[serde(default, with = "time::serde::rfc3339::option")]
     pub scheduled_at: Option<OffsetDateTime>,
     pub failure_count: i32,
     pub status: JobStatus,

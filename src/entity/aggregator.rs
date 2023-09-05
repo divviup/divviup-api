@@ -30,12 +30,12 @@ pub struct Model {
     pub id: Uuid,
     // an account_id of None indicates a shared Aggregator
     pub account_id: Option<Uuid>,
-    #[serde(with = "::time::serde::iso8601")]
+    #[serde(with = "::time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
-    #[serde(with = "::time::serde::iso8601")]
+    #[serde(with = "::time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     // a deleted_at of Some indicates a tombstoned/inactivated Aggregator
-    #[serde(default, with = "time::serde::iso8601::option")]
+    #[serde(default, with = "time::serde::rfc3339::option")]
     pub deleted_at: Option<OffsetDateTime>,
     pub role: Role,
     pub name: String,

@@ -21,7 +21,7 @@ pub struct User {
     pub nickname: String,
     pub picture: Option<String>,
     pub sub: String,
-    #[serde(with = "time::serde::iso8601")]
+    #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     pub admin: Option<bool>,
 }
