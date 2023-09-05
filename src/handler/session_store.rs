@@ -46,7 +46,7 @@ impl TryFrom<session::Model> for Session {
             "data": db_session.data,
         }))?;
         if let Some(x) = db_session.expiry {
-            session.set_expiry(DateTime::from_utc(
+            session.set_expiry(DateTime::from_naive_utc_and_offset(
                 NaiveDateTime::from_timestamp_opt(x.unix_timestamp(), x.nanosecond()).unwrap(),
                 Utc,
             ));
