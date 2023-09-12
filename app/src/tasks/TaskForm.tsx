@@ -300,15 +300,14 @@ const helps: {
   },
 
   hpke_config_id: {
-    title: "DAP-encoded HPKE file",
+    title: "Collector HPKE Config",
     short:
-      "The collector's public key. Results will be encrypted using this key.",
+      "The collector's HPKE config. Results will be encrypted using the config's public key.",
     long: (
       <p>
-        Upload a binary public key file in DAP "HpkeConfig" format. Do not
-        upload the corresponding private key. You will need to use the private
-        key when collecting aggregate results, to decrypt results from the
-        aggregators.
+        Select a previously uploaded HPKE configuration. You will need to use
+        the config's corresponding private key when collecting aggregate
+        results.
       </p>
     ),
   },
