@@ -1,8 +1,15 @@
+mod task_id_stream;
+mod task_stream;
+
+use task_id_stream::TaskIdStream;
+use task_stream::TaskStream;
+
 use crate::{
     clients::{ClientConnExt, ClientError},
     entity::{task::ProvisionableTask, Aggregator},
     handler::Error,
 };
+use futures_lite::StreamExt;
 use serde::{de::DeserializeOwned, Serialize};
 use trillium::{HeaderValue, KnownHeaderName, Method};
 use trillium_client::{Client, Conn};
@@ -57,24 +64,17 @@ impl AggregatorClient {
             .map_err(Into::into)
     }
 
+    pub async fn get_task_id_page(&self, page: Option<&str>) -> Result<TaskIds, ClientError> {
+        let path = if let Some(pagination_token) = page {
+            format!("task_ids?pagination_token={pagination_token}")
+        } else {
+            "task_ids".into()
+        };
+        self.get(&path).await
+    }
+
     pub async fn get_task_ids(&self) -> Result<Vec<String>, ClientError> {
-        let mut ids = vec![];
-        let mut path = String::from("task_ids");
-        loop {
-            let TaskIds {
-                task_ids,
-                pagination_token,
-            } = self.get(&path).await?;
-
-            ids.extend(task_ids);
-
-            match pagination_token {
-                Some(pagination_token) => {
-                    path = format!("task_ids?pagination_token={pagination_token}");
-                }
-                None => break Ok(ids),
-            }
-        }
+        self.task_id_stream().try_collect().await
     }
 
     pub async fn get_task(&self, task_id: &str) -> Result<TaskResponse, ClientError> {
@@ -137,5 +137,13 @@ impl AggregatorClient {
             .success_or_client_error()
             .await?;
         Ok(())
+    }
+
+    pub fn task_id_stream(&self) -> TaskIdStream<'_> {
+        TaskIdStream::new(self)
+    }
+
+    pub fn task_stream(&self) -> TaskStream<'_> {
+        TaskStream::new(self)
     }
 }

@@ -73,35 +73,27 @@ impl Queue {
     }
 
     pub async fn schedule_recurring_tasks_if_needed(&self) -> Result<(), DbErr> {
-        let tx = self.db.begin().await?;
+        let schedulable_jobs = [
+            (Job::from(SessionCleanup), "SessionCleanup"),
+            (Job::from(QueueCleanup), "QueueCleanup"),
+            (Job::from(TaskSync), "TaskSync"),
+        ];
 
-        let session_cleanup_jobs = Entity::find()
-            .filter(all![
-                Expr::cust_with_expr("job->>'type' = $1", "SessionCleanup"),
-                Column::ScheduledAt.gt(OffsetDateTime::now_utc()),
-            ])
-            .count(&tx)
-            .await?;
+        for (job, name) in schedulable_jobs {
+            let tx = self.db.begin().await?;
+            let existing_jobs = Entity::find()
+                .filter(all![
+                    Expr::cust_with_expr("job->>'type' = $1", name),
+                    Column::ScheduledAt.gt(OffsetDateTime::now_utc()),
+                ])
+                .count(&tx)
+                .await?;
 
-        if session_cleanup_jobs == 0 {
-            Job::from(SessionCleanup).insert(&tx).await?;
+            if existing_jobs == 0 {
+                job.insert(&tx).await?;
+                tx.commit().await?;
+            }
         }
-        tx.commit().await?;
-
-        let tx = self.db.begin().await?;
-        let queue_cleanup_jobs = Entity::find()
-            .filter(all![
-                Expr::cust_with_expr("job->>'type' = $1", "QueueCleanup"),
-                Column::ScheduledAt.gt(OffsetDateTime::now_utc()),
-            ])
-            .count(&tx)
-            .await?;
-
-        if queue_cleanup_jobs == 0 {
-            Job::from(QueueCleanup).insert(&tx).await?;
-        }
-        tx.commit().await?;
-
         Ok(())
     }
 

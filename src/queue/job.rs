@@ -8,10 +8,13 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use time::{Duration, OffsetDateTime};
 use trillium::{Method, Status};
+use trillium_client::Client;
 use url::Url;
 
 mod v1;
-pub use v1::{CreateUser, QueueCleanup, ResetPassword, SendInvitationEmail, SessionCleanup, V1};
+pub use v1::{
+    CreateUser, QueueCleanup, ResetPassword, SendInvitationEmail, SessionCleanup, TaskSync, V1,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(tag = "version")]
@@ -77,12 +80,16 @@ impl From<ClientError> for JobError {
 pub struct SharedJobState {
     pub auth0_client: Auth0Client,
     pub postmark_client: PostmarkClient,
+    pub http_client: Client,
+    pub crypter: crate::Crypter,
 }
 impl From<&Config> for SharedJobState {
     fn from(config: &Config) -> Self {
         Self {
             auth0_client: Auth0Client::new(config),
             postmark_client: PostmarkClient::new(config),
+            http_client: config.client.clone(),
+            crypter: config.crypter.clone(),
         }
     }
 }
