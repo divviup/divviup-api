@@ -262,12 +262,15 @@ const helps: {
 
   "vdaf.buckets": {
     title: "Histogram",
-    short: "Selects the number of histogram buckets or counters.",
+    short: "Specifies the boundaries between histogram buckets.",
     long: (
       <p>
-        Determines how many buckets the histogram has. Each client report can
-        only add one to a single bucket/counter. This parameter affects the size
-        of client reports.
+        A comma-separated list of numbers, in ascending order. Each client
+        measurement will only record whether it is below all bucket boundaries,
+        between a particular pair of bucket boundaries, or above all bucket
+        boundaries. Each bucket interval includes its upper boundary value, and
+        excludes its lower boundary value. This parameter affects the size of
+        client reports.
       </p>
     ),
   },
