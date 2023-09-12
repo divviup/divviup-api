@@ -68,7 +68,7 @@ uuid = { version = "1.4.1", features = ["v4", "fast-rng", "serde"] }
 validator = { version = "0.16.1", features = ["derive"] }
 
 [dependencies.oauth2]
-version = "4.4.1"
+version = "4.4.2"
 default-features = false
 features = ["pkce-plain"]
 
