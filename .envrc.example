@@ -1,8 +1,3 @@
-# optional
-export RUST_LOG=info
-export HOST=localhost
-export PORT=8080
-
 # mandatory
 export AUTH_URL=https://something.us.auth0.com
 export AUTH_CLIENT_ID=...
@@ -18,3 +13,9 @@ export POSTMARK_TOKEN=looks-like-a-uuid
 export EMAIL_ADDRESS=the@from.address
 export AGGREGATOR_API_URL=https://aggregator.divviup.test
 export AGGREGATOR_DAP_URL=https://aggregator.divviup.test
+
+# optional
+export RUST_LOG=info
+export HOST=localhost
+export PORT=8080
+export DIVVIUP_API_URL=$API_URL
