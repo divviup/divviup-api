@@ -42,8 +42,6 @@ pub const USER_AGENT: &str = concatcp!(
     divviup_client::USER_AGENT
 );
 
-pub const DEFAULT_DIVVIUP_API_URL: &str = "https://api.divviup.org";
-
 #[derive(ValueEnum, Debug, Default, Clone, Copy)]
 enum Output {
     #[default]
@@ -89,7 +87,7 @@ struct ClientBin {
     #[arg(short, long, env = "DIVVIUP_TOKEN", hide_env_values = true)]
     token: String,
 
-    #[arg(short, long, env = "DIVVIUP_API_URL", default_value = DEFAULT_DIVVIUP_API_URL)]
+    #[arg(short, long, env = "DIVVIUP_API_URL", default_value = divviup_client::DEFAULT_URL)]
     url: Url,
 
     #[arg(short, long, env = "DIVVIUP_ACCOUNT_ID")]
