@@ -42,6 +42,8 @@ pub const USER_AGENT: &str = concatcp!(
     divviup_client::USER_AGENT
 );
 
+pub const DEFAULT_DIVVIUP_API_URL: &str = "https://api.divviup.org";
+
 #[derive(ValueEnum, Debug, Default, Clone, Copy)]
 enum Output {
     #[default]
@@ -84,13 +86,13 @@ impl Output {
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 struct ClientBin {
-    #[arg(short, long, env)]
+    #[arg(short, long, env = "DIVVIUP_TOKEN", hide_env_values = true)]
     token: String,
 
-    #[arg(short, long, env = "API_URL")]
-    url: Option<Url>,
+    #[arg(short, long, env = "DIVVIUP_API_URL", default_value = DEFAULT_DIVVIUP_API_URL)]
+    url: Url,
 
-    #[arg(short, long, env = "ACCOUNT_ID")]
+    #[arg(short, long, env = "DIVVIUP_ACCOUNT_ID")]
     account_id: Option<Uuid>,
 
     #[arg(short, long, default_value_t)]
@@ -157,11 +159,7 @@ impl ClientBin {
             Client::new(RustlsConfig::<ClientConfig>::default()).with_default_pool(),
         )
         .with_header(KnownHeaderName::UserAgent, HeaderValue::from(USER_AGENT));
-
-        if let Some(url) = self.url.clone() {
-            client.set_url(url);
-        }
-
+        client.set_url(self.url.clone());
         client
     }
 
