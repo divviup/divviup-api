@@ -17,9 +17,9 @@ pub enum Protocol {
     #[default]
     Dap04,
 
-    #[sea_orm(string_value = "DAP-05")]
-    #[serde(rename = "DAP-05")]
-    Dap05,
+    #[sea_orm(string_value = "DAP-07")]
+    #[serde(rename = "DAP-07")]
+    Dap07,
 }
 
 impl Distribution<Protocol> for Standard {
@@ -27,7 +27,7 @@ impl Distribution<Protocol> for Standard {
         if rng.gen() {
             Protocol::Dap04
         } else {
-            Protocol::Dap05
+            Protocol::Dap07
         }
     }
 }
@@ -42,7 +42,7 @@ impl AsRef<str> for Protocol {
     fn as_ref(&self) -> &str {
         match self {
             Self::Dap04 => "DAP-04",
-            Self::Dap05 => "DAP-05",
+            Self::Dap07 => "DAP-07",
         }
     }
 }
@@ -60,7 +60,7 @@ impl FromStr for Protocol {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match &*s.to_lowercase() {
             "dap-04" => Ok(Self::Dap04),
-            "dap-05" => Ok(Self::Dap05),
+            "dap-07" => Ok(Self::Dap07),
             unrecognized => Err(UnrecognizedProtocol(unrecognized.to_string())),
         }
     }

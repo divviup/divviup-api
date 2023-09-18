@@ -10,7 +10,7 @@ pub fn histogram_representations() {
         ),
         (
             json!({"type": "histogram", "buckets": ["a", "b", "c"]}),
-            Protocol::Dap05,
+            Protocol::Dap07,
             Ok(json!({"Prio3Histogram": {"length": 3}})),
         ),
         (
@@ -20,7 +20,7 @@ pub fn histogram_representations() {
         ),
         (
             json!({"type": "histogram", "buckets": [1, 2, 3]}),
-            Protocol::Dap05,
+            Protocol::Dap07,
             Ok(json!({"Prio3Histogram": {"length": 4}})),
         ),
         (
@@ -30,7 +30,7 @@ pub fn histogram_representations() {
         ),
         (
             json!({"type": "histogram", "length": 3}),
-            Protocol::Dap05,
+            Protocol::Dap07,
             Ok(json!({"Prio3Histogram": {"length": 3}})),
         ),
     ];

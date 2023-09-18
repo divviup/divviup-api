@@ -33,7 +33,7 @@ impl Histogram {
         protocol: &Protocol,
     ) -> Result<AggregatorVdaf, ValidationErrors> {
         match (protocol, self) {
-            (Protocol::Dap05, histogram) => {
+            (Protocol::Dap07, histogram) => {
                 Ok(AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
                     length: histogram.length(),
                 }))
