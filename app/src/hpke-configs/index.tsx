@@ -12,10 +12,12 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
         loader({ params }) {
           return defer({
             hpkeConfigs: apiClient.accountHpkeConfigs(
-              params.account_id as string,
+              params.accountId as string,
             ),
           });
         },
+
+        id: "hpkeConfigs",
 
         shouldRevalidate(_) {
           return true;
@@ -25,7 +27,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
           switch (request.method) {
             case "POST":
               return await apiClient.createHpkeConfig(
-                params.account_id as string,
+                params.accountId as string,
                 Object.fromEntries(await request.formData()) as {
                   name: string;
                   contents: string;
@@ -38,19 +40,19 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
       },
 
       {
-        path: ":api_token_id",
+        path: ":apiTokenId",
         async action({ params, request }) {
           switch (request.method) {
             case "PATCH":
               await apiClient.updateHpkeConfig(
-                params.api_token_id as string,
+                params.apiTokenId as string,
                 Object.fromEntries(await request.formData()) as {
                   name: string;
                 },
               );
               return true;
             case "DELETE":
-              await apiClient.deleteHpkeConfig(params.api_token_id as string);
+              await apiClient.deleteHpkeConfig(params.apiTokenId as string);
               return true;
             default:
               throw new Error(`unexpected method ${request.method}`);

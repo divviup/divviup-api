@@ -3,9 +3,9 @@ use crate::{
     PermissionsActor,
 };
 use sea_orm::{
-    ActiveModelBehavior, ActiveValue, ColumnTrait, DeriveEntityModel, DerivePrimaryKey,
-    DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, QueryFilter, Related,
-    RelationDef, RelationTrait, Select,
+    ActiveModelBehavior, ActiveModelTrait, ActiveValue, ColumnTrait, DeriveEntityModel,
+    DerivePrimaryKey, DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait,
+    QueryFilter, Related, RelationDef, RelationTrait, Select,
 };
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -27,6 +27,8 @@ pub struct Model {
     pub updated_at: OffsetDateTime,
 
     pub admin: bool,
+
+    pub intends_to_use_shared_aggregators: Option<bool>,
 }
 
 impl Entity {
@@ -100,28 +102,36 @@ impl Model {
 impl NewAccount {
     pub fn build(self) -> Result<ActiveModel, ValidationErrors> {
         self.validate()?;
-        Ok(ActiveModel {
-            id: ActiveValue::Set(Uuid::new_v4()),
-            name: ActiveValue::Set(self.name.unwrap()),
-            created_at: ActiveValue::Set(OffsetDateTime::now_utc()),
-            updated_at: ActiveValue::Set(OffsetDateTime::now_utc()),
-            admin: ActiveValue::Set(false),
-        })
+        Ok(Model {
+            id: Uuid::new_v4(),
+            name: self.name.unwrap(),
+            created_at: OffsetDateTime::now_utc(),
+            updated_at: OffsetDateTime::now_utc(),
+            admin: false,
+            intends_to_use_shared_aggregators: None,
+        }
+        .into_active_model())
     }
 }
 
 #[derive(Validate, Serialize, Deserialize, Debug)]
 pub struct UpdateAccount {
-    #[validate(required, length(min = 3, max = 100))]
+    #[validate(length(min = 3, max = 100))]
     name: Option<String>,
+    intends_to_use_shared_aggregators: Option<bool>,
 }
 
 impl UpdateAccount {
     pub fn build(self, account: Model) -> Result<ActiveModel, ValidationErrors> {
         self.validate()?;
         let mut am = account.into_active_model();
-        am.name = ActiveValue::Set(self.name.unwrap());
-        am.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
+        am.name = self.name.map_or(ActiveValue::NotSet, ActiveValue::Set);
+        am.intends_to_use_shared_aggregators = self
+            .intends_to_use_shared_aggregators
+            .map_or(ActiveValue::NotSet, |b| ActiveValue::Set(Some(b)));
+        if am.is_changed() {
+            am.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
+        }
         Ok(am)
     }
 }

@@ -1,4 +1,3 @@
-import React from "react";
 import TaskList from "./TaskList";
 import TaskForm from "./TaskForm";
 import TaskDetail from "./TaskDetail";
@@ -15,15 +14,15 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         element: <TaskList />,
         loader({ params }) {
           return defer({
-            tasks: apiClient.accountTasks(params.account_id as string),
+            tasks: apiClient.accountTasks(params.accountId as string),
           });
         },
       },
       {
-        path: ":task_id",
+        path: ":taskId",
         element: <TaskDetail />,
         loader({ params }) {
-          const task = apiClient.task(params.task_id as string);
+          const task = apiClient.task(params.taskId as string);
           const leaderAggregator = task.then((t) =>
             apiClient.aggregator(t.leader_aggregator_id),
           );
@@ -42,13 +41,13 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         },
 
         async action({ params, request }) {
-          const data = Object.fromEntries(await request.formData());
           switch (request.method) {
-            case "PATCH":
-              return await apiClient.updateTask(
-                params.task_id as string,
-                data as { name: string },
+            case "PATCH": {
+              return apiClient.updateTask(
+                params.taskId as string,
+                (await request.json()) as { name: string },
               );
+            }
             default:
               throw new Error(`unexpected method ${request.method}`);
           }
@@ -59,7 +58,7 @@ export default function tasks(apiClient: ApiClient): RouteObject {
             loader({ params }) {
               return defer({
                 collectorAuthTokens: apiClient.taskCollectorAuthTokens(
-                  params.task_id as string,
+                  params.taskId as string,
                 ),
               });
             },
@@ -72,10 +71,10 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         loader({ params }) {
           return defer({
             aggregators: apiClient.accountAggregators(
-              params.account_id as string,
+              params.accountId as string,
             ),
             hpkeConfigs: apiClient.accountHpkeConfigs(
-              params.account_id as string,
+              params.accountId as string,
             ),
           });
         },

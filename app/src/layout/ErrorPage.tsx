@@ -21,7 +21,7 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
 
       case 404: {
         return (
-          <Layout>
+          <Layout error>
             <Alert variant="warning">Not Found</Alert>
           </Layout>
         );
@@ -30,7 +30,7 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
       case 500: {
         const body = error.response?.data;
         return (
-          <Layout>
+          <Layout error>
             <Alert variant="danger">
               <h1>Whoops!</h1>
               <p>{body}</p>
@@ -43,7 +43,7 @@ export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
 
   if (isRouteErrorResponse(error)) {
     return (
-      <Layout>
+      <Layout error>
         <Alert variant="warning">Not Found</Alert>
       </Layout>
     );

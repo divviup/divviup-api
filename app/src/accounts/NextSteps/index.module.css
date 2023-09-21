@@ -1,0 +1,11 @@
+.aggregatorSelection {
+  &,
+  & * {
+    cursor: pointer;
+  }
+
+  &:hover,
+  &:global(.border-primary) {
+    background-color: rgb(246, 248, 254);
+  }
+}

@@ -8,7 +8,7 @@ import { Task } from "../ApiClient";
 import { Alert, Button, Spinner } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { FileEarmarkCode } from "react-bootstrap-icons";
-import { VdafIcon } from "./TaskDetail";
+import { VdafIcon } from "./VdafIcon";
 import { AccountBreadcrumbs, WithAccount } from "../util";
 import Placeholder from "react-bootstrap/Placeholder";
 

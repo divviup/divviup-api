@@ -8,7 +8,7 @@ import logo from "../logo/color/svg/cropped.svg";
 import { LinkContainer } from "react-router-bootstrap";
 import { Nav } from "react-bootstrap";
 
-function HeaderPlaceholder() {
+export function HeaderPlaceholder() {
   return (
     <Navbar bg="light">
       <Container>

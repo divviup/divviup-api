@@ -35,11 +35,11 @@ function Breadcrumbs() {
   const { aggregator } = useLoaderData() as {
     aggregator: Promise<Aggregator>;
   };
-  const { account_id } = useParams();
+  const { accountId } = useParams();
 
   return (
     <AccountBreadcrumbs>
-      <LinkContainer to={`/accounts/${account_id}/aggregators`}>
+      <LinkContainer to={`/accounts/${accountId}/aggregators`}>
         <Breadcrumb.Item>Aggregators</Breadcrumb.Item>
       </LinkContainer>
       <Breadcrumb.Item active>
@@ -112,7 +112,7 @@ function AggregatorPropertyTable() {
         <TableRow label="API url" value="api_url" />
         <TableRow label="Supported roles" value="role" />
         <TableRow
-          label="Supported VDAFs"
+          label="Supported functions"
           value={({ vdafs }) =>
             vdafs.map((v) => v.replace(/^Prio3/, "").toLowerCase()).join(", ")
           }

@@ -11,17 +11,13 @@ async function submit(
   actions: FormikHelpers<NewAggregator>,
   revalidate: () => void,
 ) {
-  try {
-    const aggregator = await apiClient.createSharedAggregator(newAggregator);
+  const aggregator = await apiClient.createSharedAggregator(newAggregator);
 
-    if ("error" in aggregator) {
-      actions.setErrors(formikErrors(aggregator.error));
-    } else {
-      actions.resetForm();
-      revalidate();
-    }
-  } catch (e) {
-    console.log(e);
+  if ("error" in aggregator) {
+    actions.setErrors(formikErrors(aggregator.error));
+  } else {
+    actions.resetForm();
+    revalidate();
   }
 }
 

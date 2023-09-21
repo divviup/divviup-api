@@ -2,7 +2,7 @@ import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
-import { AccountBreadcrumbs, WithAccount } from "../util";
+import { AccountBreadcrumbs, Copy, WithAccount } from "../util";
 import {
   Check,
   Clipboard,
@@ -30,8 +30,6 @@ import FormGroup from "react-bootstrap/FormGroup";
 import InputGroup from "react-bootstrap/InputGroup";
 import Modal from "react-bootstrap/Modal";
 import Placeholder from "react-bootstrap/Placeholder";
-import OverlayTrigger from "react-bootstrap/OverlayTrigger";
-import Tooltip from "react-bootstrap/Tooltip";
 
 export default function ApiTokens() {
   const navigation = useNavigation();
@@ -220,24 +218,18 @@ function DeleteButton({ apiToken }: { apiToken: ApiToken }) {
 
 function Token({ token }: { token: string | null }) {
   if (!token) return null;
-  const [copied, setCopied] = useState(false);
-  const copy = useCallback(() => {
-    navigator.clipboard.writeText(token).then(() => {
-      setCopied(true);
-    });
-  }, [setCopied, token]);
 
   return (
-    <OverlayTrigger
-      overlay={<Tooltip>{copied ? "Copied!" : "Click to copy"}</Tooltip>}
-    >
-      <span onClick={copy} style={{ cursor: "pointer" }}>
-        <code className="user-select-all">{token}</code>{" "}
-        <Button size="sm" variant="outline-secondary" className="ml-auto">
-          {copied ? <ClipboardCheckFill /> : <Clipboard />}
-        </Button>
-      </span>
-    </OverlayTrigger>
+    <Copy clipboardContents={token}>
+      {(copy, copied) => (
+        <span onClick={copy} style={{ cursor: "pointer" }}>
+          <code className="user-select-all">{token}</code>{" "}
+          <Button size="sm" variant="outline-secondary" className="ml-auto">
+            {copied ? <ClipboardCheckFill /> : <Clipboard />}
+          </Button>
+        </span>
+      )}
+    </Copy>
   );
 }
 
