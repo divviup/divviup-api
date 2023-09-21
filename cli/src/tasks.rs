@@ -43,6 +43,8 @@ pub enum TaskAction {
         length: Option<u64>,
         #[arg(long, required_if_eq_any([("vdaf", "sum"), ("vdaf", "sum_vec")]))]
         bits: Option<u8>,
+        #[arg(long)]
+        chunk_length: Option<u64>,
     },
 
     /// rename a task
@@ -70,26 +72,32 @@ impl TaskAction {
                 vdaf,
                 min_batch_size,
                 max_batch_size,
+                time_precision,
                 hpke_config_id,
                 categorical_buckets,
                 continuous_buckets,
                 length,
                 bits,
-                time_precision,
+                chunk_length,
             } => {
                 let vdaf = match vdaf {
                     VdafName::Count => Vdaf::Count,
                     VdafName::Histogram => {
                         match (length, categorical_buckets, continuous_buckets) {
-                            (Some(length), None, None) => {
-                                Vdaf::Histogram(Histogram::Length { length })
-                            }
+                            (Some(length), None, None) => Vdaf::Histogram(Histogram::Length {
+                                length,
+                                chunk_length,
+                            }),
                             (None, Some(buckets), None) => {
-                                Vdaf::Histogram(Histogram::Categorical { buckets })
+                                Vdaf::Histogram(Histogram::Categorical {
+                                    buckets,
+                                    chunk_length,
+                                })
                             }
-                            (None, None, Some(buckets)) => {
-                                Vdaf::Histogram(Histogram::Continuous { buckets })
-                            }
+                            (None, None, Some(buckets)) => Vdaf::Histogram(Histogram::Continuous {
+                                buckets,
+                                chunk_length,
+                            }),
                             (None, None, None) => {
                                 return Err(Error::Other("continuous-buckets, categorical-buckets, or length are required for histogram vdaf".into()));
                             }
@@ -103,10 +111,12 @@ impl TaskAction {
                     },
                     VdafName::CountVec => Vdaf::CountVec {
                         length: length.unwrap(),
+                        chunk_length,
                     },
                     VdafName::SumVec => Vdaf::SumVec {
                         bits: bits.unwrap(),
                         length: length.unwrap(),
+                        chunk_length,
                     },
                 };
 
