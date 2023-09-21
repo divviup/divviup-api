@@ -229,6 +229,12 @@ impl NewTask {
         Some(aggregator_vdaf)
     }
 
+    fn populate_chunk_length(&mut self, protocol: &Protocol) {
+        if let Some(vdaf) = &mut self.vdaf {
+            vdaf.populate_chunk_length(protocol);
+        }
+    }
+
     fn validate_query_type_is_supported(
         &self,
         leader: &Aggregator,
@@ -241,8 +247,8 @@ impl NewTask {
         }
     }
 
-    pub async fn validate(
-        &self,
+    pub async fn normalize_and_validate(
+        &mut self,
         account: Account,
         db: &impl ConnectionTrait,
     ) -> Result<ProvisionableTask, ValidationErrors> {
@@ -253,6 +259,7 @@ impl NewTask {
 
         let aggregator_vdaf = if let Some((leader, helper, protocol)) = aggregators.as_ref() {
             self.validate_query_type_is_supported(leader, helper, &mut errors);
+            self.populate_chunk_length(protocol);
             self.validate_vdaf_is_supported(leader, helper, protocol, &mut errors)
         } else {
             None

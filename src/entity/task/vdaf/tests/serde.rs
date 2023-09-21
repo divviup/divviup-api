@@ -10,17 +10,43 @@ fn json_vdaf() {
             r#"{"type":"histogram","buckets":["A","B"]}"#,
             Vdaf::Histogram(Histogram::Categorical(CategoricalBuckets {
                 buckets: Some(Vec::from(["A".to_owned(), "B".to_owned()])),
+                chunk_length: None,
+            })),
+        ),
+        (
+            r#"{"type":"histogram","buckets":["A","B"],"chunk_length":2}"#,
+            Vdaf::Histogram(Histogram::Categorical(CategoricalBuckets {
+                buckets: Some(Vec::from(["A".to_owned(), "B".to_owned()])),
+                chunk_length: Some(2),
             })),
         ),
         (
             r#"{"type":"histogram","buckets":[1,10,100]}"#,
             Vdaf::Histogram(Histogram::Continuous(ContinuousBuckets {
                 buckets: Some(Vec::from([1, 10, 100])),
+                chunk_length: None,
+            })),
+        ),
+        (
+            r#"{"type":"histogram","buckets":[1,10,100],"chunk_length":2}"#,
+            Vdaf::Histogram(Histogram::Continuous(ContinuousBuckets {
+                buckets: Some(Vec::from([1, 10, 100])),
+                chunk_length: Some(2),
             })),
         ),
         (
             r#"{"type":"histogram","length":5}"#,
-            Vdaf::Histogram(Histogram::Opaque(BucketLength { length: 5 })),
+            Vdaf::Histogram(Histogram::Opaque(BucketLength {
+                length: 5,
+                chunk_length: None,
+            })),
+        ),
+        (
+            r#"{"type":"histogram","length":5,"chunk_length":2}"#,
+            Vdaf::Histogram(Histogram::Opaque(BucketLength {
+                length: 5,
+                chunk_length: Some(2),
+            })),
         ),
         (
             r#"{"type":"sum","bits":8}"#,
@@ -28,13 +54,32 @@ fn json_vdaf() {
         ),
         (
             r#"{"type":"count_vec","length":5}"#,
-            Vdaf::CountVec(CountVec { length: Some(5) }),
+            Vdaf::CountVec(CountVec {
+                length: Some(5),
+                chunk_length: None,
+            }),
+        ),
+        (
+            r#"{"type":"count_vec","length":5,"chunk_length":2}"#,
+            Vdaf::CountVec(CountVec {
+                length: Some(5),
+                chunk_length: Some(2),
+            }),
         ),
         (
             r#"{"type":"sum_vec","bits":8,"length":10}"#,
             Vdaf::SumVec(SumVec {
                 bits: Some(8),
                 length: Some(10),
+                chunk_length: None,
+            }),
+        ),
+        (
+            r#"{"type":"sum_vec","bits":8,"length":10,"chunk_length":12}"#,
+            Vdaf::SumVec(SumVec {
+                bits: Some(8),
+                length: Some(10),
+                chunk_length: Some(12),
             }),
         ),
         (r#"{"type":"wrong"}"#, Vdaf::Unrecognized),

@@ -1113,6 +1113,7 @@ dependencies = [
  "oauth2",
  "opentelemetry",
  "opentelemetry-prometheus",
+ "prio 0.15.2",
  "querystrong",
  "rand",
  "regex",
@@ -1900,7 +1901,7 @@ dependencies = [
  "derivative",
  "hex",
  "num_enum",
- "prio",
+ "prio 0.12.2",
  "rand",
  "serde",
  "thiserror",
@@ -2545,6 +2546,23 @@ dependencies = [
  "serde",
  "sha3",
  "static_assertions",
+ "subtle",
+ "thiserror",
+]
+
+[[package]]
+name = "prio"
+version = "0.15.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06023d4cf59f8c136ac9a11affa42d25f1ecf251a5065585be0b9d7a07c01217"
+dependencies = [
+ "aes",
+ "byteorder",
+ "ctr",
+ "getrandom",
+ "rand_core 0.6.4",
+ "serde",
+ "sha3",
  "subtle",
  "thiserror",
 ]

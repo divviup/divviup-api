@@ -20,10 +20,19 @@ pub use janus_messages::{
 #[non_exhaustive]
 pub enum AggregatorVdaf {
     Prio3Count,
-    Prio3Sum { bits: u8 },
+    Prio3Sum {
+        bits: u8,
+    },
     Prio3Histogram(HistogramType),
-    Prio3CountVec { length: u64 },
-    Prio3SumVec { bits: u8, length: u64 },
+    Prio3CountVec {
+        length: u64,
+        chunk_length: Option<u64>,
+    },
+    Prio3SumVec {
+        bits: u8,
+        length: u64,
+        chunk_length: Option<u64>,
+    },
 }
 
 impl PartialEq<Vdaf> for AggregatorVdaf {
@@ -38,29 +47,50 @@ impl PartialEq<AggregatorVdaf> for Vdaf {
             (Vdaf::Count, AggregatorVdaf::Prio3Count) => true,
             (
                 Vdaf::Histogram(histogram),
-                AggregatorVdaf::Prio3Histogram(HistogramType::Opaque { length }),
-            ) => histogram.length() == *length,
+                AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
+                    length,
+                    chunk_length,
+                }),
+            ) => histogram.length() == *length && histogram.chunk_length() == *chunk_length,
             (
-                Vdaf::Histogram(Histogram::Continuous(ContinuousBuckets { buckets: Some(lhs) })),
-                AggregatorVdaf::Prio3Histogram(HistogramType::Buckets { buckets: rhs }),
-            ) => lhs == rhs,
+                Vdaf::Histogram(Histogram::Continuous(ContinuousBuckets {
+                    buckets: Some(lhs_buckets),
+                    chunk_length: lhs_chunk_length,
+                })),
+                AggregatorVdaf::Prio3Histogram(HistogramType::Buckets {
+                    buckets: rhs_buckets,
+                    chunk_length: rhs_chunk_length,
+                }),
+            ) => lhs_buckets == rhs_buckets && lhs_chunk_length == rhs_chunk_length,
             (Vdaf::Sum(Sum { bits: Some(lhs) }), AggregatorVdaf::Prio3Sum { bits: rhs }) => {
                 lhs == rhs
             }
             (
-                Vdaf::CountVec(CountVec { length: Some(lhs) }),
-                AggregatorVdaf::Prio3CountVec { length: rhs },
-            ) => lhs == rhs,
+                Vdaf::CountVec(CountVec {
+                    length: Some(lhs_length),
+                    chunk_length: lhs_chunk_length,
+                }),
+                AggregatorVdaf::Prio3CountVec {
+                    length: rhs_length,
+                    chunk_length: rhs_chunk_length,
+                },
+            ) => lhs_length == rhs_length && lhs_chunk_length == rhs_chunk_length,
             (
                 Vdaf::SumVec(SumVec {
                     bits: Some(lhs_bits),
                     length: Some(lhs_length),
+                    chunk_length: lhs_chunk_length,
                 }),
                 AggregatorVdaf::Prio3SumVec {
                     bits: rhs_bits,
                     length: rhs_length,
+                    chunk_length: rhs_chunk_length,
                 },
-            ) => lhs_bits == rhs_bits && lhs_length == rhs_length,
+            ) => {
+                lhs_bits == rhs_bits
+                    && lhs_length == rhs_length
+                    && lhs_chunk_length == rhs_chunk_length
+            }
             _ => false,
         }
     }
@@ -69,8 +99,14 @@ impl PartialEq<AggregatorVdaf> for Vdaf {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(untagged)]
 pub enum HistogramType {
-    Opaque { length: u64 },
-    Buckets { buckets: Vec<u64> },
+    Opaque {
+        length: u64,
+        chunk_length: Option<u64>,
+    },
+    Buckets {
+        buckets: Vec<u64>,
+        chunk_length: Option<u64>,
+    },
 }
 
 impl From<AggregatorVdaf> for Vdaf {
@@ -78,20 +114,35 @@ impl From<AggregatorVdaf> for Vdaf {
         match value {
             AggregatorVdaf::Prio3Count => Self::Count,
             AggregatorVdaf::Prio3Sum { bits } => Self::Sum(Sum { bits: Some(bits) }),
-            AggregatorVdaf::Prio3Histogram(HistogramType::Buckets { buckets }) => {
-                Self::Histogram(Histogram::Continuous(ContinuousBuckets {
-                    buckets: Some(buckets),
-                }))
-            }
-            AggregatorVdaf::Prio3Histogram(HistogramType::Opaque { length }) => {
-                Self::Histogram(Histogram::Opaque(BucketLength { length }))
-            }
-            AggregatorVdaf::Prio3CountVec { length } => Self::CountVec(CountVec {
+            AggregatorVdaf::Prio3Histogram(HistogramType::Buckets {
+                buckets,
+                chunk_length,
+            }) => Self::Histogram(Histogram::Continuous(ContinuousBuckets {
+                buckets: Some(buckets),
+                chunk_length,
+            })),
+            AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
+                length,
+                chunk_length,
+            }) => Self::Histogram(Histogram::Opaque(BucketLength {
+                length,
+                chunk_length,
+            })),
+            AggregatorVdaf::Prio3CountVec {
+                length,
+                chunk_length,
+            } => Self::CountVec(CountVec {
                 length: Some(length),
+                chunk_length,
             }),
-            AggregatorVdaf::Prio3SumVec { bits, length } => Self::SumVec(SumVec {
+            AggregatorVdaf::Prio3SumVec {
+                bits,
+                length,
+                chunk_length,
+            } => Self::SumVec(SumVec {
                 length: Some(length),
                 bits: Some(bits),
+                chunk_length,
             }),
         }
     }
@@ -283,7 +334,8 @@ mod test {
   },
   "vdaf": {
     "Prio3CountVec": {
-      "length": 5
+      "length": 5,
+      "chunk_length": null
     }
   },
   "role": "Leader",
@@ -320,7 +372,8 @@ mod test {
   },
   "vdaf": {
     "Prio3CountVec": {
-      "length": 5
+      "length": 5,
+      "chunk_length": null
     }
   },
   "role": "Leader",
