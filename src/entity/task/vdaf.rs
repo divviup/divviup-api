@@ -206,6 +206,8 @@ mod tests {
     use super::*;
     use crate::test::assert_errors;
 
+    mod serde;
+
     #[test]
     fn validate_continuous_histogram() {
         assert!(ContinuousBuckets {
