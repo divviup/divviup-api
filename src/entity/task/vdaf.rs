@@ -2,6 +2,7 @@ use crate::{
     clients::aggregator_client::api_types::{AggregatorVdaf, HistogramType},
     entity::{aggregator::VdafName, Protocol},
 };
+use prio::vdaf::prio3::optimal_chunk_length;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, hash::Hash};
 use validator::{Validate, ValidationError, ValidationErrors};
@@ -19,12 +20,22 @@ impl Histogram {
         match self {
             Histogram::Categorical(CategoricalBuckets {
                 buckets: Some(buckets),
+                ..
             }) => buckets.len() as u64,
             Histogram::Continuous(ContinuousBuckets {
                 buckets: Some(buckets),
+                ..
             }) => buckets.len() as u64 + 1,
-            Histogram::Opaque(BucketLength { length }) => *length,
+            Histogram::Opaque(BucketLength { length, .. }) => *length,
             _ => 0,
+        }
+    }
+
+    pub fn chunk_length(&self) -> Option<u64> {
+        match self {
+            Histogram::Categorical(CategoricalBuckets { chunk_length, .. })
+            | Histogram::Continuous(ContinuousBuckets { chunk_length, .. })
+            | Histogram::Opaque(BucketLength { chunk_length, .. }) => *chunk_length,
         }
     }
 
@@ -34,19 +45,38 @@ impl Histogram {
     ) -> Result<AggregatorVdaf, ValidationErrors> {
         match (protocol, self) {
             (Protocol::Dap07, histogram) => {
-                Ok(AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
-                    length: histogram.length(),
-                }))
+                if let Some(chunk_length) = histogram.chunk_length() {
+                    Ok(AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
+                        length: histogram.length(),
+                        chunk_length: Some(chunk_length),
+                    }))
+                } else {
+                    panic!("chunk_length was not populated");
+                }
             }
 
             (
                 Protocol::Dap04,
                 Self::Continuous(ContinuousBuckets {
                     buckets: Some(buckets),
+                    chunk_length: None,
                 }),
             ) => Ok(AggregatorVdaf::Prio3Histogram(HistogramType::Buckets {
                 buckets: buckets.clone(),
+                chunk_length: None,
             })),
+
+            (
+                Protocol::Dap04,
+                Self::Continuous(ContinuousBuckets {
+                    buckets: _,
+                    chunk_length: Some(_),
+                }),
+            ) => {
+                let mut errors = ValidationErrors::new();
+                errors.add("chunk_length", ValidationError::new("not-allowed"));
+                Err(errors)
+            }
 
             (Protocol::Dap04, Self::Categorical(_)) => {
                 let mut errors = ValidationErrors::new();
@@ -67,18 +97,27 @@ impl Histogram {
 pub struct ContinuousBuckets {
     #[validate(required, length(min = 1), custom = "increasing", custom = "unique")]
     pub buckets: Option<Vec<u64>>,
+
+    #[validate(range(min = 1))]
+    pub chunk_length: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq)]
 pub struct CategoricalBuckets {
     #[validate(required, length(min = 1), custom = "unique")]
     pub buckets: Option<Vec<String>>,
+
+    #[validate(range(min = 1))]
+    pub chunk_length: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq, Copy)]
 pub struct BucketLength {
     #[validate(range(min = 1))]
     pub length: u64,
+
+    #[validate(range(min = 1))]
+    pub chunk_length: Option<u64>,
 }
 
 fn unique<T: Hash + Eq>(buckets: &[T]) -> Result<(), ValidationError> {
@@ -114,6 +153,9 @@ pub struct Sum {
 pub struct CountVec {
     #[validate(required)]
     pub length: Option<u64>,
+
+    #[validate(range(min = 1))]
+    pub chunk_length: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Copy, Eq, PartialEq)]
@@ -123,6 +165,9 @@ pub struct SumVec {
 
     #[validate(required)]
     pub length: Option<u64>,
+
+    #[validate(range(min = 1))]
+    pub chunk_length: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
@@ -170,14 +215,103 @@ impl Vdaf {
             Self::SumVec(SumVec {
                 length: Some(length),
                 bits: Some(bits),
+                chunk_length,
             }) => Ok(AggregatorVdaf::Prio3SumVec {
                 bits: *bits,
                 length: *length,
+                chunk_length: *chunk_length,
             }),
             Self::CountVec(CountVec {
                 length: Some(length),
-            }) => Ok(AggregatorVdaf::Prio3CountVec { length: *length }),
+                chunk_length,
+            }) => Ok(AggregatorVdaf::Prio3CountVec {
+                length: *length,
+                chunk_length: *chunk_length,
+            }),
             _ => Err(ValidationErrors::new()),
+        }
+    }
+
+    pub fn populate_chunk_length(&mut self, protocol: &Protocol) {
+        match (self, protocol) {
+            // Chunk length was already populated, don't change it.
+            (
+                Self::Histogram(Histogram::Continuous(ContinuousBuckets {
+                    chunk_length: Some(_),
+                    ..
+                })),
+                _,
+            )
+            | (
+                Self::Histogram(Histogram::Opaque(BucketLength {
+                    chunk_length: Some(_),
+                    ..
+                })),
+                _,
+            )
+            | (
+                Self::Histogram(Histogram::Categorical(CategoricalBuckets {
+                    chunk_length: Some(_),
+                    ..
+                })),
+                _,
+            )
+            | (
+                Self::CountVec(CountVec {
+                    chunk_length: Some(_),
+                    ..
+                }),
+                _,
+            )
+            | (
+                Self::SumVec(SumVec {
+                    chunk_length: Some(_),
+                    ..
+                }),
+                _,
+            ) => {}
+
+            // Select a chunk length if the protocol version needs it and it isn't set yet.
+            (Self::Histogram(histogram), Protocol::Dap07) => {
+                let length = histogram.length();
+                match histogram {
+                    Histogram::Opaque(BucketLength { chunk_length, .. })
+                    | Histogram::Categorical(CategoricalBuckets { chunk_length, .. })
+                    | Histogram::Continuous(ContinuousBuckets { chunk_length, .. }) => {
+                        *chunk_length = Some(optimal_chunk_length(length as usize) as u64)
+                    }
+                }
+            }
+
+            (
+                Self::CountVec(CountVec {
+                    length: Some(length),
+                    chunk_length: chunk_length @ None,
+                }),
+                Protocol::Dap07,
+            ) => *chunk_length = Some(optimal_chunk_length(*length as usize) as u64),
+
+            (
+                Self::SumVec(SumVec {
+                    bits: Some(bits),
+                    length: Some(length),
+                    chunk_length: chunk_length @ None,
+                }),
+                Protocol::Dap07,
+            ) => {
+                *chunk_length = Some(optimal_chunk_length(*bits as usize * *length as usize) as u64)
+            }
+
+            // Invalid, missing parameters, do nothing.
+            (Self::CountVec(CountVec { length: None, .. }), Protocol::Dap07)
+            | (Self::SumVec(SumVec { bits: None, .. }), Protocol::Dap07)
+            | (Self::SumVec(SumVec { length: None, .. }), Protocol::Dap07) => {}
+
+            // Chunk length is not applicable, either due to VDAF choice or protocol version.
+            (Self::Count, _)
+            | (Self::Sum { .. }, _)
+            | (Self::Unrecognized, _)
+            | (_, Protocol::Dap04) => {}
         }
     }
 }
@@ -206,10 +340,13 @@ mod tests {
     use super::*;
     use crate::test::assert_errors;
 
+    mod serde;
+
     #[test]
     fn validate_continuous_histogram() {
         assert!(ContinuousBuckets {
-            buckets: Some(vec![0, 1, 2])
+            buckets: Some(vec![0, 1, 2]),
+            chunk_length: None,
         }
         .validate()
         .is_ok());
@@ -217,6 +354,7 @@ mod tests {
         assert_errors(
             ContinuousBuckets {
                 buckets: Some(vec![0, 2, 1]),
+                chunk_length: None,
             },
             "buckets",
             &["sorted"],
@@ -225,6 +363,7 @@ mod tests {
         assert_errors(
             ContinuousBuckets {
                 buckets: Some(vec![0, 0, 2]),
+                chunk_length: None,
             },
             "buckets",
             &["unique"],
@@ -234,7 +373,8 @@ mod tests {
     #[test]
     fn validate_categorical_histogram() {
         assert!(CategoricalBuckets {
-            buckets: Some(vec!["a".into(), "b".into()])
+            buckets: Some(vec!["a".into(), "b".into()]),
+            chunk_length: None,
         }
         .validate()
         .is_ok());
@@ -242,6 +382,7 @@ mod tests {
         assert_errors(
             CategoricalBuckets {
                 buckets: Some(vec!["a".into(), "a".into()]),
+                chunk_length: None,
             },
             "buckets",
             &["unique"],

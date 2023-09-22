@@ -752,8 +752,15 @@ components:
         bits:
           type: number
         buckets:
-          type: array
-          item: number
+          oneOf:
+            - type: array
+              items:
+                type: number
+            - type: array
+              items:
+                type: string
+        chunk_length:
+          type: number
       required: [type]
     ApiToken:
       type: object

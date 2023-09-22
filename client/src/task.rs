@@ -49,16 +49,32 @@ pub enum Vdaf {
     Sum { bits: u8 },
 
     #[serde(rename = "count_vec")]
-    CountVec { length: u64 },
+    CountVec {
+        length: u64,
+        chunk_length: Option<u64>,
+    },
 
     #[serde(rename = "sum_vec")]
-    SumVec { bits: u8, length: u64 },
+    SumVec {
+        bits: u8,
+        length: u64,
+        chunk_length: Option<u64>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 #[serde(untagged)]
 pub enum Histogram {
-    Categorical { buckets: Vec<String> },
-    Continuous { buckets: Vec<u64> },
-    Length { length: u64 },
+    Categorical {
+        buckets: Vec<String>,
+        chunk_length: Option<u64>,
+    },
+    Continuous {
+        buckets: Vec<u64>,
+        chunk_length: Option<u64>,
+    },
+    Length {
+        length: u64,
+        chunk_length: Option<u64>,
+    },
 }

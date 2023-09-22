@@ -47,10 +47,10 @@ impl FromConn for Task {
 type CreateArgs = (Account, Json<NewTask>, State<Client>, Db);
 pub async fn create(
     conn: &mut Conn,
-    (account, task, State(client), db): CreateArgs,
+    (account, mut task, State(client), db): CreateArgs,
 ) -> Result<impl Handler, Error> {
     let crypter = conn.state().unwrap();
-    task.validate(account, &db)
+    task.normalize_and_validate(account, &db)
         .await?
         .provision(client, crypter)
         .await?

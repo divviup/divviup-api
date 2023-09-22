@@ -1,11 +1,11 @@
 use divviup_api::entity::aggregator::Role;
 use test_support::{assert_eq, test, *};
 
-pub async fn assert_errors(app: &DivviupApi, new_task: &NewTask, field: &str, codes: &[&str]) {
+pub async fn assert_errors(app: &DivviupApi, new_task: &mut NewTask, field: &str, codes: &[&str]) {
     let account = fixtures::account(app).await;
     assert_eq!(
         new_task
-            .validate(account, app.db())
+            .normalize_and_validate(account, app.db())
             .await
             .unwrap_err()
             .field_errors()
@@ -20,7 +20,7 @@ pub async fn assert_errors(app: &DivviupApi, new_task: &NewTask, field: &str, co
 async fn batch_size(app: DivviupApi) -> TestResult {
     assert_errors(
         &app,
-        &NewTask {
+        &mut NewTask {
             min_batch_size: Some(100),
             max_batch_size: Some(50),
             ..Default::default()
@@ -32,7 +32,7 @@ async fn batch_size(app: DivviupApi) -> TestResult {
 
     assert_errors(
         &app,
-        &NewTask {
+        &mut NewTask {
             min_batch_size: Some(100),
             max_batch_size: Some(50),
             ..Default::default()
@@ -58,7 +58,7 @@ async fn aggregator_roles(app: DivviupApi) -> TestResult {
 
     assert_errors(
         &app,
-        &NewTask {
+        &mut NewTask {
             leader_aggregator_id: Some(helper.id.to_string()),
             helper_aggregator_id: Some(either.id.to_string()),
             ..Default::default()
@@ -70,7 +70,7 @@ async fn aggregator_roles(app: DivviupApi) -> TestResult {
 
     assert_errors(
         &app,
-        &NewTask {
+        &mut NewTask {
             helper_aggregator_id: Some(leader.id.to_string()),
             leader_aggregator_id: Some(either.id.to_string()),
             ..Default::default()
@@ -80,13 +80,13 @@ async fn aggregator_roles(app: DivviupApi) -> TestResult {
     )
     .await;
 
-    let ok_aggregators = NewTask {
+    let mut ok_aggregators = NewTask {
         helper_aggregator_id: Some(helper.id.to_string()),
         leader_aggregator_id: Some(leader.id.to_string()),
         ..Default::default()
     };
 
-    assert_errors(&app, &ok_aggregators, "helper_aggregator_id", &[]).await;
-    assert_errors(&app, &ok_aggregators, "leader_aggregator_id", &[]).await;
+    assert_errors(&app, &mut ok_aggregators, "helper_aggregator_id", &[]).await;
+    assert_errors(&app, &mut ok_aggregators, "leader_aggregator_id", &[]).await;
     Ok(())
 }
