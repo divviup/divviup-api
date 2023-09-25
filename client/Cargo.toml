@@ -21,7 +21,7 @@ trillium-client = { version = "0.4.5", features = ["json"] }
 trillium-http = "0.3.3"
 url = { version = "2.4.1", features = ["serde"] }
 uuid = { version = "1.4.1", features = ["v4", "fast-rng", "serde"] }
-time = { version = "0.3.28", features = ["serde", "serde-well-known"] }
+time = { version = "0.3.29", features = ["serde", "serde-well-known"] }
 log = "0.4.20"
 pad-adapter = "0.1.1"
 janus_messages = "0.5.20"
