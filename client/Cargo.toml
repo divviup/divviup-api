@@ -28,7 +28,7 @@ janus_messages = "0.5.21"
 
 [dev-dependencies]
 divviup-api = { version = "*", path = ".." }
-fastrand = "2.0.0"
+fastrand = "2.0.1"
 futures-lite = "1.13.0"
 test-support = { path = "../test-support" }
 trillium = "0.2.9"

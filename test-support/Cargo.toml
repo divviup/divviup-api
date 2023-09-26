@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-fastrand = "2.0.0"
+fastrand = "2.0.1"
 time = "0.3.29"
 trillium = "0.2.9"
 trillium-macros = "0.0.4"
