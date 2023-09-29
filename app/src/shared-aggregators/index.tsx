@@ -16,15 +16,15 @@ export default function sharedAggregators(apiClient: ApiClient): RouteObject {
         },
       },
       {
-        path: ":aggregator_id",
+        path: ":aggregatorId",
         async action({ request, params }) {
           switch (request.method) {
             case "DELETE":
-              await apiClient.deleteAggregator(params.aggregator_id as string);
+              await apiClient.deleteAggregator(params.aggregatorId as string);
               return null;
             case "PATCH":
               return apiClient.updateAggregator(
-                params.aggregator_id as string,
+                params.aggregatorId as string,
                 Object.fromEntries(
                   await request.formData(),
                 ) as UpdateAggregator,

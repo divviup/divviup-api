@@ -14,14 +14,14 @@ export default function queue(apiClient: ApiClient): RouteObject {
 
     children: [
       {
-        path: ":job_id",
+        path: ":jobId",
         async lazy() {
           return import("./QueueJob");
         },
 
         async loader({ params }) {
-          if ("job_id" in params && typeof params.job_id === "string")
-            return apiClient.queueJob(params.job_id);
+          if ("jobId" in params && typeof params.jobId === "string")
+            return apiClient.queueJob(params.jobId);
         },
       },
     ],

@@ -1,11 +1,14 @@
 import { Outlet } from "react-router-dom";
 import Container from "react-bootstrap/Container";
-import Header from "./Header";
+import Header, { HeaderPlaceholder } from "./Header";
 
-export default function Layout({ children }: React.PropsWithChildren) {
+export default function Layout({
+  error = false,
+  children,
+}: React.PropsWithChildren & { error?: boolean }) {
   return (
     <main>
-      <Header />
+      {error ? <HeaderPlaceholder /> : <Header />}
       <Container>
         {children}
         <Outlet />

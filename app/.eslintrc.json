@@ -20,7 +20,7 @@
     "react/no-unescaped-entities": "off",
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
-      "error",
+      "warn",
       {
         "argsIgnorePattern": "^_",
         "varsIgnorePattern": "^_"
@@ -32,7 +32,8 @@
       {
         "allowEmptyCatch": true
       }
-    ]
+    ],
+    "no-console": "warn"
   },
   "settings": {
     "react": {

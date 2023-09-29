@@ -2,7 +2,7 @@ import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
-import { AccountBreadcrumbs, WithAccount } from "../util";
+import { AccountBreadcrumbs } from "../util";
 import { CloudUpload } from "react-bootstrap-icons";
 import React from "react";
 import { LinkContainer } from "react-router-bootstrap";
@@ -20,8 +20,6 @@ import {
   useParams,
 } from "react-router-dom";
 import { ApiClientContext } from "../ApiClientContext";
-const { Suspense } = React;
-import Placeholder from "react-bootstrap/Placeholder";
 
 async function submit(
   apiClient: ApiClient,
@@ -30,19 +28,12 @@ async function submit(
   actions: FormikHelpers<NewAggregator>,
   navigate: NavigateFunction,
 ) {
-  try {
-    const aggregator = await apiClient.createAggregator(
-      accountId,
-      newAggregator,
-    );
+  const aggregator = await apiClient.createAggregator(accountId, newAggregator);
 
-    if ("error" in aggregator) {
-      actions.setErrors(formikErrors(aggregator.error));
-    } else {
-      return navigate(`/accounts/${accountId}/aggregators/${aggregator.id}`);
-    }
-  } catch (e) {
-    console.log(e);
+  if ("error" in aggregator) {
+    actions.setErrors(formikErrors(aggregator.error));
+  } else {
+    return navigate(`/accounts/${accountId}/aggregators/${aggregator.id}`);
   }
 }
 
@@ -105,7 +96,7 @@ export function AggregatorForm({
 
 export default function AggregatorFormPage() {
   const params = useParams();
-  const accountId = params.account_id as string;
+  const accountId = params.accountId as string;
   const navigate = useNavigate();
   const apiClient = React.useContext(ApiClientContext);
   const handleSubmit = React.useCallback(
@@ -120,11 +111,7 @@ export default function AggregatorFormPage() {
       <Row>
         <Col>
           <h1>
-            <CloudUpload />{" "}
-            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
-              <WithAccount>{(account) => account.name}</WithAccount>
-            </Suspense>{" "}
-            Aggregators
+            <CloudUpload /> Pair Private Aggregator
           </h1>
         </Col>
       </Row>

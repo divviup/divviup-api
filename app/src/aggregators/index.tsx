@@ -15,17 +15,17 @@ export default function aggregators(apiClient: ApiClient): RouteObject {
         loader({ params }) {
           return defer({
             aggregators: apiClient.accountAggregators(
-              params.account_id as string,
+              params.accountId as string,
             ),
           });
         },
       },
       {
-        path: ":aggregator_id",
+        path: ":aggregatorId",
         element: <AggregatorDetail />,
         loader({ params }) {
           return defer({
-            aggregator: apiClient.aggregator(params.aggregator_id as string),
+            aggregator: apiClient.aggregator(params.aggregatorId as string),
           });
         },
 
@@ -34,11 +34,11 @@ export default function aggregators(apiClient: ApiClient): RouteObject {
           switch (request.method) {
             case "PATCH":
               return await apiClient.updateAggregator(
-                params.aggregator_id as string,
+                params.aggregatorId as string,
                 data as { name: string } | { bearer_token: string },
               );
             case "DELETE":
-              await apiClient.deleteAggregator(params.aggregator_id as string);
+              await apiClient.deleteAggregator(params.aggregatorId as string);
               return redirect("..");
             default:
               throw new Error(`unexpected method ${request.method}`);

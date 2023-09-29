@@ -5,6 +5,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { ApiClientContext } from "./ApiClientContext";
 import { ApiClient } from "./ApiClient";
 import Router from "./router";
+import { PrimeReactProvider } from "primereact/api";
+import "primereact/resources/themes/lara-light-indigo/theme.css";
+import "primereact/resources/primereact.min.css";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
@@ -14,7 +17,9 @@ function App() {
   const apiClient = React.useMemo(() => new ApiClient(), []);
   return (
     <ApiClientContext.Provider value={apiClient}>
-      <Router />
+      <PrimeReactProvider>
+        <Router />
+      </PrimeReactProvider>
     </ApiClientContext.Provider>
   );
 }

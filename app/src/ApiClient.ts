@@ -17,9 +17,17 @@ export interface Account {
   id: string;
   created_at: string;
   updated_at: string;
+  intends_to_use_shared_aggregators: boolean;
+  admin: boolean;
 }
-export interface PartialAccount {
+
+export interface NewAccount {
   name: string;
+}
+
+export interface UpdateAccount {
+  name?: string;
+  intends_to_use_shared_aggregators?: boolean;
 }
 
 export interface Membership {
@@ -239,12 +247,12 @@ export class ApiClient {
     return res.data as Account;
   }
 
-  async createAccount(account: PartialAccount): Promise<Account> {
+  async createAccount(account: NewAccount): Promise<Account> {
     const res = await this.post("/api/accounts", account);
     return res.data as Account;
   }
 
-  async updateAccount(id: string, account: PartialAccount): Promise<Account> {
+  async updateAccount(id: string, account: UpdateAccount): Promise<Account> {
     const res = await this.patch(`/api/accounts/${id}`, account);
     return res.data as Account;
   }
@@ -367,7 +375,7 @@ export class ApiClient {
   ): Promise<Task | { error: ValidationErrorsFor<UpdateTask> }> {
     const res = await this.patch(`/api/tasks/${taskId}`, task);
     switch (res.status) {
-      case 201:
+      case 200:
         return res.data as Task;
       case 400:
         return { error: res.data } as {
@@ -501,7 +509,8 @@ function errorToMessage({ message, code, params }: ValidationError) {
     if ("min" in params) return `must be greater than ${params.min}`;
     if ("max" in params) return `must be less than ${params.max}`;
   } else {
-    console.log({ code, params });
+    // eslint-disable-next-line no-console
+    console.error({ code, params });
     return code;
   }
 }

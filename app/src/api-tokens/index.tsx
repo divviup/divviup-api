@@ -1,6 +1,7 @@
 import { RouteObject, defer } from "react-router-dom";
 import ApiClient from "../ApiClient";
 import ApiTokenList from "./ApiTokenList";
+
 export default function apiTokens(apiClient: ApiClient): RouteObject {
   return {
     path: "api_tokens",
@@ -12,7 +13,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
         loader({ params }) {
           return defer({
             apiTokens: apiClient
-              .accountApiTokens(params.account_id as string)
+              .accountApiTokens(params.accountId as string)
               .then((tokens) => tokens.reverse()),
           });
         },
@@ -24,9 +25,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
         async action({ params, request }) {
           switch (request.method) {
             case "POST":
-              return await apiClient.createApiToken(
-                params.account_id as string,
-              );
+              return await apiClient.createApiToken(params.accountId as string);
             default:
               throw new Error(`unexpected method ${request.method}`);
           }
@@ -34,19 +33,19 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
       },
 
       {
-        path: ":api_token_id",
+        path: ":apiTokenId",
         async action({ params, request }) {
           switch (request.method) {
             case "PATCH":
               await apiClient.updateApiToken(
-                params.api_token_id as string,
+                params.apiTokenId as string,
                 Object.fromEntries(await request.formData()) as {
                   name: string;
                 },
               );
               return true;
             case "DELETE":
-              await apiClient.deleteApiToken(params.api_token_id as string);
+              await apiClient.deleteApiToken(params.apiTokenId as string);
               return true;
             default:
               throw new Error(`unexpected method ${request.method}`);

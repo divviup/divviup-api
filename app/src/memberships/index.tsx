@@ -8,7 +8,7 @@ export default function memberships(apiClient: ApiClient): RouteObject {
     element: <Memberships />,
     loader({ params }) {
       return defer({
-        memberships: apiClient.accountMemberships(params.account_id as string),
+        memberships: apiClient.accountMemberships(params.accountId as string),
       });
     },
 
@@ -24,7 +24,7 @@ export default function memberships(apiClient: ApiClient): RouteObject {
           return { deleted: data.membershipId };
         case "POST":
           return await apiClient.createMembership(
-            params.account_id as string,
+            params.accountId as string,
             data as { user_email: string },
           );
         default:
