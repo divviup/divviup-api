@@ -40,7 +40,7 @@ COPY --from=assets /src/app/build /src/app/build
 ARG RUST_FEATURES=default
 RUN ASSET_DIR=/src/app/build cargo build --workspace --release --features ${RUST_FEATURES}
 
-FROM alpine:3.18.3 AS final
+FROM alpine:3.18.4 AS final
 ARG GIT_REVISION=unknown
 LABEL revision ${GIT_REVISION}
 EXPOSE 8080
