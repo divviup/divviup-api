@@ -1892,16 +1892,16 @@ checksum = "af150ab688ff2122fcef229be89cb50dd66af9e01a4ff320cc137eecc9bacc38"
 
 [[package]]
 name = "janus_messages"
-version = "0.5.21"
+version = "0.5.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f47df94bc0ecd0ec7991986a83dcdc98e54629905d293aafe9cd850c0aeea419"
+checksum = "da2a78055bc2ec559fe0b3341ef031e12d656422915073567d72a3ba3eb9733e"
 dependencies = [
  "anyhow",
  "base64 0.21.4",
  "derivative",
  "hex",
  "num_enum",
- "prio 0.12.2",
+ "prio 0.12.3",
  "rand",
  "serde",
  "thiserror",
@@ -2536,9 +2536,9 @@ dependencies = [
 
 [[package]]
 name = "prio"
-version = "0.12.2"
+version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9028a8aba9ba6b647c6d6931c20473d1119079a68d9898c07a488c5180dccb58"
+checksum = "56d6fbe33c4d999c3ba5e5f2673cfeadffd2c8e1ffd58ab67a3cf06cd576d834"
 dependencies = [
  "base64 0.21.4",
  "byteorder",
