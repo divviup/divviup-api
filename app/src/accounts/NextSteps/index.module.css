@@ -9,3 +9,9 @@
     background-color: rgb(246, 248, 254);
   }
 }
+
+.fixBootstrapUnderline {
+  a {
+    text-decoration: none;
+  }
+}

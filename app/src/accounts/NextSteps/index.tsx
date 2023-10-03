@@ -1,13 +1,12 @@
 import { Steps } from "primereact/steps";
-
 import { Button, Card, Col, Row } from "react-bootstrap";
 import { useLoaderData } from "react-router-dom";
 import { Account, Aggregator, HpkeConfig, Task } from "../../ApiClient";
-import React from "react";
 import { LinkContainer } from "react-router-bootstrap";
 import AggregatorTypeSelection from "./AggregatorTypeSelection";
 import InlineCollectorCredentials from "./InlineCollectorCredentials";
 import { usePromise, usePromiseAll } from "../../util";
+import css from "./index.module.css";
 
 const STEPS = [
   { label: "Create account" },
@@ -76,7 +75,11 @@ export default function NextSteps() {
             Set up your Divvi Up in just a few steps. Here’s what you can do
             next:
           </h3>
-          <Steps className="my-3" model={STEPS} activeIndex={activeIndex} />
+          <Steps
+            className={`my-3 ${css.fixBootstrapUnderline}`}
+            model={STEPS}
+            activeIndex={activeIndex}
+          />
           <hr />
           <NextInner activeIndex={activeIndex} />
         </Card>
