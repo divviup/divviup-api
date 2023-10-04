@@ -63,36 +63,44 @@ export function Copy({
   children,
   clipboardContents,
 }: {
-  children(copy: () => void, copied: boolean): React.ReactElement;
+  children(copy: undefined | (() => void), copied: boolean): React.ReactElement;
   clipboardContents: string;
 }) {
-  const [copied, setCopied] = React.useState(false);
-  const copy = React.useCallback(() => {
-    navigator.clipboard.writeText(clipboardContents).then(() => {
-      setCopied(true);
-    });
-  }, [setCopied, clipboardContents]);
+  if ("clipboard" in navigator) {
+    const [copied, setCopied] = React.useState(false);
+    const copy = React.useCallback(() => {
+      navigator.clipboard.writeText(clipboardContents).then(() => {
+        setCopied(true);
+      });
+    }, [setCopied, clipboardContents]);
 
-  return (
-    <OverlayTrigger
-      overlay={<Tooltip>{copied ? "Copied!" : "Click to copy"}</Tooltip>}
-    >
-      {children(copy, copied)}
-    </OverlayTrigger>
-  );
+    return (
+      <OverlayTrigger
+        overlay={<Tooltip>{copied ? "Copied!" : "Click to copy"}</Tooltip>}
+      >
+        {children(copy, copied)}
+      </OverlayTrigger>
+    );
+  } else {
+    return children(undefined, false);
+  }
 }
 
 export function CopyCode({ code }: { code: string }) {
   return (
     <Copy clipboardContents={code}>
-      {(copy, copied) => (
-        <span onClick={copy} style={{ cursor: "pointer" }}>
-          <code className="user-select-all">{code}</code>{" "}
-          <Button size="sm" variant="outline-secondary" className="ml-auto">
-            {copied ? <ClipboardCheckFill /> : <Clipboard />}
-          </Button>
-        </span>
-      )}
+      {(copy, copied) =>
+        copy ? (
+          <span onClick={copy} style={{ cursor: "pointer" }}>
+            <code className="user-select-all">{code}</code>{" "}
+            <Button size="sm" variant="outline-secondary" className="ml-auto">
+              {copied ? <ClipboardCheckFill /> : <Clipboard />}
+            </Button>
+          </span>
+        ) : (
+          <code className="user-select-all">{code}</code>
+        )
+      }
     </Copy>
   );
 }
