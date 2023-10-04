@@ -28,7 +28,7 @@ pub struct Model {
 
     pub admin: bool,
 
-    pub intends_to_use_shared_aggregators: Option<bool>,
+    pub intends_to_use_shared_aggregators: bool,
 }
 
 impl Entity {
@@ -108,7 +108,7 @@ impl NewAccount {
             created_at: OffsetDateTime::now_utc(),
             updated_at: OffsetDateTime::now_utc(),
             admin: false,
-            intends_to_use_shared_aggregators: None,
+            intends_to_use_shared_aggregators: false,
         }
         .into_active_model())
     }
@@ -128,7 +128,7 @@ impl UpdateAccount {
         am.name = self.name.map_or(ActiveValue::NotSet, ActiveValue::Set);
         am.intends_to_use_shared_aggregators = self
             .intends_to_use_shared_aggregators
-            .map_or(ActiveValue::NotSet, |b| ActiveValue::Set(Some(b)));
+            .map_or(ActiveValue::NotSet, ActiveValue::Set);
         if am.is_changed() {
             am.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
         }
