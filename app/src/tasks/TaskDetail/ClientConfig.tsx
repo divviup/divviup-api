@@ -83,7 +83,11 @@ await task.sendMeasurement(...); // your measurement here`;
 
       <Copy clipboardContents={contents}>
         {(copy) => (
-          <div onClick={copy} style={{ cursor: "pointer" }} className="my-3">
+          <div
+            onClick={copy}
+            style={copy && { cursor: "pointer" }}
+            className="my-3"
+          >
             <SyntaxHighlighter
               language="javascript"
               style={syntaxStyle}
