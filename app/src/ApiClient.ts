@@ -155,7 +155,7 @@ export interface ApiToken {
 
 export interface CollectorCredential {
   id: string;
-  contents: {
+  hpke_config: {
     id: number;
     kem_id: string;
     kdf_id: string;
@@ -166,6 +166,7 @@ export interface CollectorCredential {
   deleted_at: null | string;
   updated_at: string;
   name: null | string;
+  token_hash: null | string;
 }
 
 const mime = "application/vnd.divviup+json;version=0.1";
@@ -463,10 +464,10 @@ export class ApiClient {
 
   async createCollectorCredential(
     accountId: string,
-    collectorCredential: { contents: string; name: string },
+    collectorCredential: { hpke_config: string; name: string },
   ): Promise<
     | CollectorCredential
-    | { error: ValidationErrorsFor<{ contents: string; name: string }> }
+    | { error: ValidationErrorsFor<{ hpke_config: string; name: string }> }
   > {
     const res = await this.post(
       `/api/accounts/${accountId}/collector_credentials`,
@@ -477,7 +478,7 @@ export class ApiClient {
         return res.data as CollectorCredential;
       case 400:
         return { error: res.data } as {
-          error: ValidationErrorsFor<{ contents: string; name: string }>;
+          error: ValidationErrorsFor<{ hpke_config: string; name: string }>;
         };
       default:
         throw res;

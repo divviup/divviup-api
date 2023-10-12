@@ -6,7 +6,7 @@ use uuid::Uuid;
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct CollectorCredential {
     pub id: Uuid,
-    pub contents: HpkeConfig,
+    pub hpke_config: HpkeConfig,
     #[serde(with = "::time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
     #[serde(default, with = "::time::serde::rfc3339::option")]
@@ -14,4 +14,7 @@ pub struct CollectorCredential {
     #[serde(with = "::time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     pub name: Option<String>,
+    pub token_hash: Option<String>,
+    #[serde(default)]
+    pub token: Option<String>,
 }

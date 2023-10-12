@@ -51,10 +51,10 @@ export default function CollectorCredentialForm() {
     }
   }, [fetcher, setName, setCollectorCredential, ref]);
 
-  const errors = formikErrors<{ contents?: string; name?: string }>(
+  const errors = formikErrors<{ hpke_config?: string; name?: string }>(
     fetcher.data && "error" in fetcher.data
       ? fetcher.data.error
-      : { name: undefined, contents: undefined },
+      : { name: undefined, hpke_config: undefined },
   );
 
   return (
@@ -66,12 +66,12 @@ export default function CollectorCredentialForm() {
             <FormControl
               type="file"
               onChange={onChange}
-              isInvalid={!!errors.contents}
+              isInvalid={!!errors.hpke_config}
               ref={ref}
             />
-            {errors.contents ? (
+            {errors.hpke_config ? (
               <FormControl.Feedback type="invalid">
-                {errors.contents}
+                {errors.hpke_config}
               </FormControl.Feedback>
             ) : null}
           </FormGroup>
@@ -97,7 +97,7 @@ export default function CollectorCredentialForm() {
               </FormControl.Feedback>
             ) : null}
           </FormGroup>
-          <input type="hidden" name="contents" value={collectorCredential} />
+          <input type="hidden" name="hpke_config" value={collectorCredential} />
         </Col>
         <Col sm="2">
           <FormGroup controlId="submit" className="my-3">

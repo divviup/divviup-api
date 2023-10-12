@@ -1,12 +1,17 @@
 use super::codec::Codec;
 use crate::entity::{AccountColumn, Accounts, Tasks};
-use base64::{engine::general_purpose::STANDARD, Engine};
+use base64::{
+    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
+    Engine,
+};
 use janus_messages::codec::Decode;
+use rand::random;
 use sea_orm::{
     ActiveModelBehavior, ActiveValue, DeriveEntityModel, DerivePrimaryKey, DeriveRelation,
     EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef, RelationTrait,
 };
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::fmt::Debug;
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -18,7 +23,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub account_id: Uuid,
-    pub contents: Codec<janus_messages::HpkeConfig>,
+    pub hpke_config: Codec<janus_messages::HpkeConfig>,
     #[serde(with = "::time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
     #[serde(default, with = "::time::serde::rfc3339::option")]
@@ -26,6 +31,10 @@ pub struct Model {
     #[serde(with = "::time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     pub name: Option<String>,
+    pub token_hash: Option<String>,
+    #[sea_orm(ignore)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
 }
 
 impl Model {
@@ -40,8 +49,15 @@ impl Model {
         self.deleted_at.is_some()
     }
 
-    pub fn contents(&self) -> &janus_messages::HpkeConfig {
-        &self.contents
+    pub fn hpke_config(&self) -> &janus_messages::HpkeConfig {
+        &self.hpke_config
+    }
+
+    pub fn new_token() -> (String, String) {
+        let token_bytes: [u8; 16] = random();
+        let token_hash = URL_SAFE_NO_PAD.encode(Sha256::digest(token_bytes));
+        let token = URL_SAFE_NO_PAD.encode(token_bytes);
+        (token, token_hash)
     }
 }
 
@@ -74,21 +90,24 @@ impl ActiveModelBehavior for ActiveModel {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewCollectorCredential {
-    contents: Option<String>,
+    hpke_config: Option<String>,
     name: Option<String>,
 }
 
 impl NewCollectorCredential {
-    pub fn build(self, account: &crate::entity::Account) -> Result<ActiveModel, crate::Error> {
-        let string = self.contents.ok_or_else(|| {
+    pub fn build(
+        self,
+        account: &crate::entity::Account,
+    ) -> Result<(ActiveModel, String), crate::Error> {
+        let string = self.hpke_config.ok_or_else(|| {
             let mut validation_errors = ValidationErrors::new();
-            validation_errors.add("contents", ValidationError::new("base64"));
+            validation_errors.add("hpke_config", ValidationError::new("base64"));
             validation_errors
         })?;
 
         let bytes = STANDARD.decode(string).map_err(|_| {
             let mut validation_errors = ValidationErrors::new();
-            validation_errors.add("contents", ValidationError::new("base64"));
+            validation_errors.add("hpke_config", ValidationError::new("base64"));
             validation_errors
         })?;
 
@@ -96,7 +115,7 @@ impl NewCollectorCredential {
             janus_messages::HpkeConfig::get_decoded(&bytes).map_err(|e| {
                 let mut validation_errors = ValidationErrors::new();
                 validation_errors.add(
-                    "contents",
+                    "hpke_config",
                     ValidationError {
                         code: "collector_credential".into(),
                         message: Some(e.to_string().into()),
@@ -106,16 +125,22 @@ impl NewCollectorCredential {
                 validation_errors
             })?;
 
-        Ok(Model {
-            id: Uuid::new_v4(),
-            account_id: account.id,
-            created_at: OffsetDateTime::now_utc(),
-            updated_at: OffsetDateTime::now_utc(),
-            deleted_at: None,
-            contents: collector_credential.into(),
-            name: self.name,
-        }
-        .into_active_model())
+        let (token, token_hash) = Model::new_token();
+        Ok((
+            Model {
+                id: Uuid::new_v4(),
+                account_id: account.id,
+                created_at: OffsetDateTime::now_utc(),
+                updated_at: OffsetDateTime::now_utc(),
+                deleted_at: None,
+                hpke_config: collector_credential.into(),
+                name: self.name,
+                token_hash: Some(token_hash),
+                token: None,
+            }
+            .into_active_model(),
+            token,
+        ))
     }
 }
 

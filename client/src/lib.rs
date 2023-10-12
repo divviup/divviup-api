@@ -334,7 +334,7 @@ impl DivviupClient {
             &format!("api/accounts/{account_id}/collector_credentials"),
             Some(&json!({
                 "name": name,
-                "contents": STANDARD.encode(hpke_config.get_encoded())
+                "hpke_config": STANDARD.encode(hpke_config.get_encoded())
             })),
         )
         .await

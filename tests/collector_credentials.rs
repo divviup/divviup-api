@@ -178,14 +178,14 @@ mod create {
     fn valid_collector_credential_json(hpke_config: api_types::HpkeConfig) -> Value {
         json!({
             "name": fixtures::random_name(),
-            "contents": encode_hpke_config(hpke_config)
+            "hpke_config": encode_hpke_config(hpke_config)
         })
     }
 
     #[test(harness = set_up)]
     async fn success(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
-        let contents = random_hpke_config();
+        let hpke_config = random_hpke_config();
 
         let mut conn = post(format!(
             "/api/accounts/{}/collector_credentials",
@@ -193,13 +193,16 @@ mod create {
         ))
         .with_api_headers()
         .with_state(user)
-        .with_request_json(valid_collector_credential_json(contents.clone()))
+        .with_request_json(valid_collector_credential_json(hpke_config.clone()))
         .run_async(&app)
         .await;
         assert_response!(conn, 201);
-        let collector_credential: CollectorCredential = conn.response_json().await;
+        let mut collector_credential: CollectorCredential = conn.response_json().await;
+        let token = collector_credential.token.take();
+        assert!(token.is_some());
+        assert!(collector_credential.token_hash.is_some());
         let collector_credential_from_db = collector_credential.reload(app.db()).await?.unwrap();
-        assert_eq!(collector_credential.contents, contents);
+        assert_eq!(collector_credential.hpke_config, hpke_config);
         assert_same_json_representation(&collector_credential, &collector_credential_from_db);
         Ok(())
     }
@@ -269,7 +272,10 @@ mod create {
         .await;
 
         assert_response!(conn, 201);
-        let collector_credential: CollectorCredential = conn.response_json().await;
+        let mut collector_credential: CollectorCredential = conn.response_json().await;
+        let token = collector_credential.token.take();
+        assert!(token.is_some());
+        assert!(collector_credential.token_hash.is_some());
         let collector_credential_from_db = collector_credential.reload(app.db()).await?.unwrap();
         assert_same_json_representation(&collector_credential, &collector_credential_from_db);
         Ok(())
@@ -290,7 +296,10 @@ mod create {
         .await;
 
         assert_response!(conn, 201);
-        let collector_credential: CollectorCredential = conn.response_json().await;
+        let mut collector_credential: CollectorCredential = conn.response_json().await;
+        let token = collector_credential.token.take();
+        assert!(token.is_some());
+        assert!(collector_credential.token_hash.is_some());
         let collector_credential_from_db = collector_credential.reload(app.db()).await?.unwrap();
         assert_same_json_representation(&collector_credential, &collector_credential_from_db);
         Ok(())
@@ -311,10 +320,12 @@ mod create {
         .await;
 
         assert_response!(conn, 201);
-        let collector_credential: CollectorCredential = conn.response_json().await;
+        let mut collector_credential: CollectorCredential = conn.response_json().await;
+        let token = collector_credential.token.take();
+        assert!(token.is_some());
+        assert!(collector_credential.token_hash.is_some());
         let collector_credential_from_db = collector_credential.reload(app.db()).await?.unwrap();
         assert_same_json_representation(&collector_credential, &collector_credential_from_db);
-
         Ok(())
     }
 

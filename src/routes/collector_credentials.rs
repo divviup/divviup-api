@@ -60,7 +60,9 @@ pub async fn create(
     _: &mut Conn,
     (account, db, Json(collector_credential)): (Account, Db, Json<NewCollectorCredential>),
 ) -> Result<impl Handler, Error> {
-    let collector_credential = collector_credential.build(&account)?.insert(&db).await?;
+    let (collector_credential, token) = collector_credential.build(&account)?;
+    let mut collector_credential = collector_credential.insert(&db).await?;
+    collector_credential.token = Some(token);
     Ok((Status::Created, Json(collector_credential)))
 }
 
