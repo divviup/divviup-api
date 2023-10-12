@@ -1,5 +1,8 @@
 use super::*;
-use divviup_api::{clients::aggregator_client::api_types::TaskId, entity::aggregator::Role};
+use divviup_api::{
+    clients::aggregator_client::api_types::TaskId,
+    entity::aggregator::{Feature, Features, Role},
+};
 use rand::random;
 use trillium::HeaderValue;
 
@@ -163,6 +166,7 @@ pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregat
         query_types: Default::default(),
         vdafs: Default::default(),
         protocol: Protocol::Dap07,
+        features: Features::from(Feature::TokenHash).into(),
     }
     .into_active_model()
     .insert(app.db())
