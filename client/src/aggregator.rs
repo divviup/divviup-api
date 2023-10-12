@@ -31,6 +31,7 @@ pub struct Aggregator {
     pub vdafs: Vec<String>,
     pub query_types: Vec<String>,
     pub protocol: Protocol,
+    pub features: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
