@@ -2,8 +2,8 @@ mod accounts;
 mod admin;
 mod aggregators;
 mod api_tokens;
+mod collector_credentials;
 mod health_check;
-mod hpke_configs;
 mod memberships;
 mod tasks;
 mod users;
@@ -80,9 +80,18 @@ fn api_routes() -> impl Handler {
             )
             .delete("/api_tokens/:api_token_id", api(api_tokens::delete))
             .patch("/api_tokens/:api_token_id", api(api_tokens::update))
-            .delete("/hpke_configs/:hpke_config_id", api(hpke_configs::delete))
-            .get("/hpke_configs/:hpke_config_id", api(hpke_configs::show))
-            .patch("/hpke_configs/:hpke_config_id", api(hpke_configs::update))
+            .delete(
+                "/collector_credentials/:collector_credential_id",
+                api(collector_credentials::delete),
+            )
+            .get(
+                "/collector_credentials/:collector_credential_id",
+                api(collector_credentials::show),
+            )
+            .patch(
+                "/collector_credentials/:collector_credential_id",
+                api(collector_credentials::update),
+            )
             .any(
                 &[Patch, Get, Post],
                 "/accounts/:account_id/*",
@@ -104,6 +113,6 @@ fn accounts_routes() -> impl Handler {
         .get("/aggregators", api(aggregators::index))
         .post("/api_tokens", api(api_tokens::create))
         .get("/api_tokens", api(api_tokens::index))
-        .get("/hpke_configs", api(hpke_configs::index))
-        .post("/hpke_configs", api(hpke_configs::create))
+        .get("/collector_credentials", api(collector_credentials::index))
+        .post("/collector_credentials", api(collector_credentials::create))
 }

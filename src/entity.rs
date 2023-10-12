@@ -2,7 +2,7 @@ pub mod account;
 pub mod aggregator;
 pub mod api_token;
 mod codec;
-pub mod hpke_config;
+pub mod collector_credential;
 mod json;
 pub mod membership;
 pub mod queue;
@@ -21,9 +21,9 @@ pub use aggregator::{
 pub use api_token::{
     Column as ApiTokenColumn, Entity as ApiTokens, Model as ApiToken, UpdateApiToken,
 };
-pub use hpke_config::{
-    Column as HpkeConfigColumn, Entity as HpkeConfigs, Model as HpkeConfig, NewHpkeConfig,
-    UpdateHpkeConfig,
+pub use collector_credential::{
+    Column as CollectorCredentialColumn, Entity as CollectorCredentials,
+    Model as CollectorCredential, NewCollectorCredential, UpdateCollectorCredential,
 };
 pub use membership::{
     Column as MembershipColumn, CreateMembership, Entity as Memberships, Model as Membership,

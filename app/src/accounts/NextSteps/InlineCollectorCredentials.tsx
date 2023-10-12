@@ -57,24 +57,27 @@ function SaveApiToken({ onToken }: { onToken: (token: string) => void }) {
 export default function InlineCollectorCredentials() {
   const apiClient = React.useContext(ApiClientContext);
   const { accountId } = useParams() as { accountId: string };
-  const [anyHpkeConfigs, setAnyHpkeConfigs] = React.useState(false);
+  const [anyCollectorCredentials, setAnyCollectorCredentials] =
+    React.useState(false);
   const [inFlight, setInFlight] = React.useState(false);
   useInterval(
     React.useCallback(() => {
-      if (inFlight || anyHpkeConfigs) return;
+      if (inFlight || anyCollectorCredentials) return;
       setInFlight(true);
-      apiClient.accountHpkeConfigs(accountId).then((hpkeConfigs) => {
-        setAnyHpkeConfigs(hpkeConfigs.length > 0);
-        setInFlight(false);
-      });
-    }, [apiClient, setInFlight, setAnyHpkeConfigs]),
+      apiClient
+        .accountCollectorCredentials(accountId)
+        .then((collectorCredentials) => {
+          setAnyCollectorCredentials(collectorCredentials.length > 0);
+          setInFlight(false);
+        });
+    }, [apiClient, setInFlight, setAnyCollectorCredentials]),
     1000,
   );
 
   const [token, setToken] = React.useState<string>("«TOKEN»");
   const { revalidate, state } = useRevalidator();
 
-  if (anyHpkeConfigs) {
+  if (anyCollectorCredentials) {
     return (
       <>
         <h1>Success</h1>
@@ -84,7 +87,7 @@ export default function InlineCollectorCredentials() {
       </>
     );
   } else {
-    const command = `divviup -t ${token} hpke-config generate`;
+    const command = `divviup -t ${token} collector-credential generate`;
     return (
       <>
         <ol className="list-unstyled">

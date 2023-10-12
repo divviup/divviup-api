@@ -81,7 +81,8 @@ export default function accounts(
               return defer({
                 apiTokens: apiClient.accountApiTokens(accountId),
                 tasks: apiClient.accountTasks(accountId),
-                hpkeConfigs: apiClient.accountHpkeConfigs(accountId),
+                collectorCredentials:
+                  apiClient.accountCollectorCredentials(accountId),
                 aggregators: apiClient.accountAggregators(accountId),
                 account: apiClient.account(accountId),
               });

@@ -74,7 +74,7 @@ export interface Task {
   max_batch_size: number | null;
   report_count: number;
   aggregate_collection_count: number;
-  hpke_config_id: string;
+  collector_credential_id: string;
 }
 
 export interface CollectorAuthToken {
@@ -153,7 +153,7 @@ export interface ApiToken {
   last_used_at?: string;
 }
 
-export interface HpkeConfig {
+export interface CollectorCredential {
   id: string;
   contents: {
     id: number;
@@ -436,35 +436,45 @@ export class ApiClient {
     return res.data as QueueJob;
   }
 
-  async deleteHpkeConfig(hpkeConfigId: string) {
-    await this.delete(`/api/hpke_configs/${hpkeConfigId}`);
+  async deleteCollectorCredential(collectorCredentialId: string) {
+    await this.delete(`/api/collector_credentials/${collectorCredentialId}`);
     return null;
   }
 
-  async updateHpkeConfig(hpkeConfigId: string, hpkeConfig: { name: string }) {
-    await this.patch(`/api/hpke_configs/${hpkeConfigId}`, hpkeConfig);
+  async updateCollectorCredential(
+    collectorCredentialId: string,
+    collectorCredential: { name: string },
+  ) {
+    await this.patch(
+      `/api/collector_credentials/${collectorCredentialId}`,
+      collectorCredential,
+    );
     return null;
   }
 
-  async hpkeConfig(hpkeConfigId: string): Promise<HpkeConfig> {
-    const res = await this.get(`/api/hpke_configs/${hpkeConfigId}`);
-    return res.data as HpkeConfig;
+  async collectorCredential(
+    collectorCredentialId: string,
+  ): Promise<CollectorCredential> {
+    const res = await this.get(
+      `/api/collector_credentials/${collectorCredentialId}`,
+    );
+    return res.data as CollectorCredential;
   }
 
-  async createHpkeConfig(
+  async createCollectorCredential(
     accountId: string,
-    hpkeConfig: { contents: string; name: string },
+    collectorCredential: { contents: string; name: string },
   ): Promise<
-    | HpkeConfig
+    | CollectorCredential
     | { error: ValidationErrorsFor<{ contents: string; name: string }> }
   > {
     const res = await this.post(
-      `/api/accounts/${accountId}/hpke_configs`,
-      hpkeConfig,
+      `/api/accounts/${accountId}/collector_credentials`,
+      collectorCredential,
     );
     switch (res.status) {
       case 201:
-        return res.data as HpkeConfig;
+        return res.data as CollectorCredential;
       case 400:
         return { error: res.data } as {
           error: ValidationErrorsFor<{ contents: string; name: string }>;
@@ -474,9 +484,13 @@ export class ApiClient {
     }
   }
 
-  async accountHpkeConfigs(accountId: string): Promise<HpkeConfig[]> {
-    const res = await this.get(`/api/accounts/${accountId}/hpke_configs`);
-    return res.data as HpkeConfig[];
+  async accountCollectorCredentials(
+    accountId: string,
+  ): Promise<CollectorCredential[]> {
+    const res = await this.get(
+      `/api/accounts/${accountId}/collector_credentials`,
+    );
+    return res.data as CollectorCredential[];
   }
 }
 

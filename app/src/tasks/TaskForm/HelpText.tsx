@@ -150,7 +150,7 @@ export const HELPS: {
     ),
   },
 
-  hpke_config_id: {
+  collector_credential_id: {
     title: "Collector HPKE Config",
     short:
       "The collector's HPKE config. Results will be encrypted using the config's public key.",

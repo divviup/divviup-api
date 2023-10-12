@@ -13,7 +13,7 @@ use uuid::Uuid;
 use validator::{ValidationError, ValidationErrors};
 
 #[derive(Clone, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize, Debug)]
-#[sea_orm(table_name = "hpke_config")]
+#[sea_orm(table_name = "collector_credential")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
@@ -73,12 +73,12 @@ impl Related<Accounts> for Entity {
 impl ActiveModelBehavior for ActiveModel {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NewHpkeConfig {
+pub struct NewCollectorCredential {
     contents: Option<String>,
     name: Option<String>,
 }
 
-impl NewHpkeConfig {
+impl NewCollectorCredential {
     pub fn build(self, account: &crate::entity::Account) -> Result<ActiveModel, crate::Error> {
         let string = self.contents.ok_or_else(|| {
             let mut validation_errors = ValidationErrors::new();
@@ -92,18 +92,19 @@ impl NewHpkeConfig {
             validation_errors
         })?;
 
-        let hpke_config = janus_messages::HpkeConfig::get_decoded(&bytes).map_err(|e| {
-            let mut validation_errors = ValidationErrors::new();
-            validation_errors.add(
-                "contents",
-                ValidationError {
-                    code: "hpke_config".into(),
-                    message: Some(e.to_string().into()),
-                    params: Default::default(),
-                },
-            );
-            validation_errors
-        })?;
+        let collector_credential =
+            janus_messages::HpkeConfig::get_decoded(&bytes).map_err(|e| {
+                let mut validation_errors = ValidationErrors::new();
+                validation_errors.add(
+                    "contents",
+                    ValidationError {
+                        code: "collector_credential".into(),
+                        message: Some(e.to_string().into()),
+                        params: Default::default(),
+                    },
+                );
+                validation_errors
+            })?;
 
         Ok(Model {
             id: Uuid::new_v4(),
@@ -111,7 +112,7 @@ impl NewHpkeConfig {
             created_at: OffsetDateTime::now_utc(),
             updated_at: OffsetDateTime::now_utc(),
             deleted_at: None,
-            contents: hpke_config.into(),
+            contents: collector_credential.into(),
             name: self.name,
         }
         .into_active_model())
@@ -119,15 +120,15 @@ impl NewHpkeConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdateHpkeConfig {
+pub struct UpdateCollectorCredential {
     name: Option<String>,
 }
 
-impl UpdateHpkeConfig {
-    pub fn build(self, hpke_config: Model) -> Result<ActiveModel, crate::Error> {
-        let mut hpke_config = hpke_config.into_active_model();
-        hpke_config.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
-        hpke_config.name = ActiveValue::Set(self.name);
-        Ok(hpke_config)
+impl UpdateCollectorCredential {
+    pub fn build(self, collector_credential: Model) -> Result<ActiveModel, crate::Error> {
+        let mut collector_credential = collector_credential.into_active_model();
+        collector_credential.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
+        collector_credential.name = ActiveValue::Set(self.name);
+        Ok(collector_credential)
     }
 }

@@ -2,7 +2,7 @@ use crate::{
     clients::aggregator_client::{api_types::TaskResponse, TaskMetrics},
     entity::{
         account, membership, AccountColumn, Accounts, Aggregator, AggregatorColumn, Aggregators,
-        HpkeConfigColumn, HpkeConfigs,
+        CollectorCredentialColumn, CollectorCredentials,
     },
 };
 use sea_orm::{
@@ -49,7 +49,7 @@ pub struct Model {
     pub expiration: Option<OffsetDateTime>,
     pub leader_aggregator_id: Uuid,
     pub helper_aggregator_id: Uuid,
-    pub hpke_config_id: Uuid,
+    pub collector_credential_id: Uuid,
 }
 
 impl Model {
@@ -127,11 +127,11 @@ pub enum Relation {
     LeaderAggregator,
 
     #[sea_orm(
-        belongs_to = "HpkeConfigs",
-        from = "Column::HpkeConfigId",
-        to = "HpkeConfigColumn::Id"
+        belongs_to = "CollectorCredentials",
+        from = "Column::CollectorCredentialId",
+        to = "CollectorCredentialColumn::Id"
     )]
-    HpkeConfig,
+    CollectorCredential,
 }
 
 impl Related<account::Entity> for Entity {
@@ -150,9 +150,9 @@ impl Related<membership::Entity> for Entity {
     }
 }
 
-impl Related<HpkeConfigs> for Entity {
+impl Related<CollectorCredentials> for Entity {
     fn to() -> RelationDef {
-        Relation::HpkeConfig.def()
+        Relation::CollectorCredential.def()
     }
 }
 

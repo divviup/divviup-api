@@ -18,7 +18,7 @@ async fn task_list(app: Arc<DivviupApi>, account: Account, client: DivviupClient
 #[test(harness = with_configured_client)]
 async fn create_task(app: Arc<DivviupApi>, account: Account, client: DivviupClient) -> TestResult {
     let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
-    let hpke_config = fixtures::hpke_config(&app, &account).await;
+    let collector_credential = fixtures::collector_credential(&app, &account).await;
     let response_task = client
         .create_task(
             account.id,
@@ -30,7 +30,7 @@ async fn create_task(app: Arc<DivviupApi>, account: Account, client: DivviupClie
                 min_batch_size: fastrand::i64(100..).try_into().unwrap(),
                 max_batch_size: None,
                 time_precision_seconds: fastrand::u64(60..2592000),
-                hpke_config_id: hpke_config.id,
+                collector_credential_id: collector_credential.id,
             },
         )
         .await?;

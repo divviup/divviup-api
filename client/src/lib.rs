@@ -10,7 +10,7 @@
 mod account;
 mod aggregator;
 mod api_token;
-mod hpke_configs;
+mod collector_credentials;
 mod membership;
 mod protocol;
 mod task;
@@ -29,10 +29,10 @@ use trillium_http::{HeaderName, HeaderValues};
 pub use account::Account;
 pub use aggregator::{Aggregator, CollectorAuthenticationToken, NewAggregator, Role};
 pub use api_token::ApiToken;
-pub use hpke_configs::HpkeConfig;
+pub use collector_credentials::CollectorCredential;
 pub use janus_messages::{
     codec::{CodecError, Decode, Encode},
-    HpkeConfig as HpkeConfigContents, HpkePublicKey,
+    HpkeConfig, HpkePublicKey,
 };
 pub use membership::Membership;
 pub use protocol::Protocol;
@@ -304,31 +304,34 @@ impl DivviupClient {
         self.delete(&format!("api/api_tokens/{api_token_id}")).await
     }
 
-    pub async fn hpke_configs(&self, account_id: Uuid) -> ClientResult<Vec<HpkeConfig>> {
-        self.get(&format!("api/accounts/{account_id}/hpke_configs"))
+    pub async fn collector_credentials(
+        &self,
+        account_id: Uuid,
+    ) -> ClientResult<Vec<CollectorCredential>> {
+        self.get(&format!("api/accounts/{account_id}/collector_credentials"))
             .await
     }
 
-    pub async fn rename_hpke_config(
+    pub async fn rename_collector_credential(
         &self,
-        hpke_config_id: Uuid,
+        collector_credential_id: Uuid,
         new_name: &str,
-    ) -> ClientResult<HpkeConfig> {
+    ) -> ClientResult<CollectorCredential> {
         self.patch(
-            &format!("api/hpke_configs/{hpke_config_id}"),
+            &format!("api/collector_credentials/{collector_credential_id}"),
             &json!({"name": new_name}),
         )
         .await
     }
 
-    pub async fn create_hpke_config(
+    pub async fn create_collector_credential(
         &self,
         account_id: Uuid,
-        hpke_config: &HpkeConfigContents,
+        hpke_config: &HpkeConfig,
         name: Option<&str>,
-    ) -> ClientResult<HpkeConfig> {
+    ) -> ClientResult<CollectorCredential> {
         self.post(
-            &format!("api/accounts/{account_id}/hpke_configs"),
+            &format!("api/accounts/{account_id}/collector_credentials"),
             Some(&json!({
                 "name": name,
                 "contents": STANDARD.encode(hpke_config.get_encoded())
@@ -337,9 +340,11 @@ impl DivviupClient {
         .await
     }
 
-    pub async fn delete_hpke_config(&self, hpke_config_id: Uuid) -> ClientResult {
-        self.delete(&format!("api/hpke_configs/{hpke_config_id}"))
-            .await
+    pub async fn delete_collector_credential(&self, collector_credential_id: Uuid) -> ClientResult {
+        self.delete(&format!(
+            "api/collector_credentials/{collector_credential_id}"
+        ))
+        .await
     }
 
     pub async fn shared_aggregators(&self) -> ClientResult<Vec<Aggregator>> {

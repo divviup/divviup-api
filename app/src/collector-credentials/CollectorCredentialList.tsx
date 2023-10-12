@@ -11,7 +11,7 @@ import {
   useLoaderData,
   useNavigation,
 } from "react-router-dom";
-import { HpkeConfig } from "../ApiClient";
+import { CollectorCredential } from "../ApiClient";
 import Table from "react-bootstrap/Table";
 import React from "react";
 import { DateTime } from "luxon";
@@ -20,9 +20,9 @@ import FormGroup from "react-bootstrap/FormGroup";
 import InputGroup from "react-bootstrap/InputGroup";
 import Modal from "react-bootstrap/Modal";
 import Placeholder from "react-bootstrap/Placeholder";
-import HpkeConfigForm from "./HpkeConfigForm";
+import CollectorCredentialForm from "./CollectorCredentialForm";
 
-export default function HpkeConfigs() {
+export default function CollectorCredentials() {
   return (
     <>
       <Breadcrumbs />
@@ -39,12 +39,12 @@ export default function HpkeConfigs() {
       </Row>
       <Row className="mb-3">
         <Col>
-          <HpkeConfigForm />
+          <CollectorCredentialForm />
         </Col>
       </Row>
       <Row>
         <Col>
-          <HpkeConfigList />
+          <CollectorCredentialList />
         </Col>
       </Row>
     </>
@@ -59,9 +59,9 @@ function Breadcrumbs() {
   );
 }
 
-function HpkeConfigList() {
-  const { hpkeConfigs } = useLoaderData() as {
-    hpkeConfigs: Promise<HpkeConfig[]>;
+function CollectorCredentialList() {
+  const { collectorCredentials } = useLoaderData() as {
+    collectorCredentials: Promise<CollectorCredential[]>;
   };
 
   return (
@@ -78,10 +78,13 @@ function HpkeConfigList() {
       </thead>
       <tbody>
         <Suspense>
-          <Await resolve={hpkeConfigs}>
-            {(hpkeConfigs: HpkeConfig[]) =>
-              hpkeConfigs.map((hpkeConfig) => (
-                <HpkeConfigRow key={hpkeConfig.id} hpkeConfig={hpkeConfig} />
+          <Await resolve={collectorCredentials}>
+            {(collectorCredentials: CollectorCredential[]) =>
+              collectorCredentials.map((collectorCredential) => (
+                <CollectorCredentialRow
+                  key={collectorCredential.id}
+                  collectorCredential={collectorCredential}
+                />
               ))
             }
           </Await>
@@ -91,7 +94,11 @@ function HpkeConfigList() {
   );
 }
 
-function Name({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
+function Name({
+  collectorCredential,
+}: {
+  collectorCredential: CollectorCredential;
+}) {
   const [isEditing, setEditing] = useState(false);
   const edit = useCallback(() => setEditing(true), [setEditing]);
   const fetcher = useFetcher();
@@ -100,13 +107,13 @@ function Name({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
   }, [fetcher, setEditing]);
   if (isEditing) {
     return (
-      <fetcher.Form action={hpkeConfig.id} method="patch">
+      <fetcher.Form action={collectorCredential.id} method="patch">
         <FormGroup>
           <InputGroup>
             <FormControl
               type="text"
               name="name"
-              defaultValue={hpkeConfig.name || ""}
+              defaultValue={collectorCredential.name || ""}
               data-1p-ignore
               autoFocus
             />
@@ -120,7 +127,8 @@ function Name({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
   } else {
     return (
       <span onClick={edit}>
-        {hpkeConfig.name || `HPKE Config ${hpkeConfig.contents.id}`}{" "}
+        {collectorCredential.name ||
+          `HPKE Config ${collectorCredential.contents.id}`}{" "}
         <Button
           variant="outline-secondary"
           onClick={edit}
@@ -144,7 +152,11 @@ function RelativeTime({ time, missing }: { time?: string; missing?: string }) {
   );
 }
 
-function DeleteButton({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
+function DeleteButton({
+  collectorCredential,
+}: {
+  collectorCredential: CollectorCredential;
+}) {
   const navigation = useNavigation();
 
   const [show, setShow] = useState(false);
@@ -169,7 +181,7 @@ function DeleteButton({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
       <Modal show={show} onHide={close}>
         <Modal.Header closeButton>
           <Modal.Title>
-            Confirm HPKE Config Deletion {hpkeConfig.name}
+            Confirm HPKE Config Deletion {collectorCredential.name}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -180,7 +192,7 @@ function DeleteButton({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
           <Button variant="secondary" onClick={close}>
             Close
           </Button>
-          <fetcher.Form method="delete" action={hpkeConfig.id}>
+          <fetcher.Form method="delete" action={collectorCredential.id}>
             <Button
               variant="danger"
               type="submit"
@@ -195,20 +207,24 @@ function DeleteButton({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
   );
 }
 
-function HpkeConfigRow({ hpkeConfig }: { hpkeConfig: HpkeConfig }) {
+function CollectorCredentialRow({
+  collectorCredential,
+}: {
+  collectorCredential: CollectorCredential;
+}) {
   return (
     <tr>
       <td>
-        <Name hpkeConfig={hpkeConfig} />
+        <Name collectorCredential={collectorCredential} />
       </td>
-      <td>{hpkeConfig.contents.kem_id}</td>
-      <td>{hpkeConfig.contents.kdf_id}</td>
-      <td>{hpkeConfig.contents.aead_id}</td>
+      <td>{collectorCredential.contents.kem_id}</td>
+      <td>{collectorCredential.contents.kdf_id}</td>
+      <td>{collectorCredential.contents.aead_id}</td>
       <td>
-        <RelativeTime time={hpkeConfig.created_at} />
+        <RelativeTime time={collectorCredential.created_at} />
       </td>
       <td>
-        <DeleteButton hpkeConfig={hpkeConfig} />
+        <DeleteButton collectorCredential={collectorCredential} />
       </td>
     </tr>
   );

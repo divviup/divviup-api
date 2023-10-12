@@ -19,7 +19,7 @@ import { AccountBreadcrumbs } from "../../util";
 import LeaderAggregator from "./LeaderAggregator";
 import HelperAggregator from "./HelperAggregator";
 import QueryType from "./QueryType";
-import HpkeConfigSelect from "./HpkeConfigSelect";
+import CollectorCredentialSelect from "./CollectorCredentialSelect";
 import TaskName from "./TaskName";
 import MinBatchSize from "./MinBatchSize";
 import TimePrecisionSeconds from "./TimePrecisionSeconds";
@@ -102,7 +102,7 @@ export default function TaskForm() {
                 name: "",
                 max_batch_size: null,
                 time_precision_seconds: 3600,
-                hpke_config_id: null,
+                collector_credential_id: null,
               } as unknown as NewTask
             }
             onSubmit={handleSubmit}
@@ -125,7 +125,7 @@ export default function TaskForm() {
                   <VdafDetails {...props} />
                   <QueryType {...props} />
                   <MinBatchSize {...props} />
-                  <HpkeConfigSelect {...props} />
+                  <CollectorCredentialSelect {...props} />
                   <TimePrecisionSeconds {...props} />
                   <TaskFormGroup>
                     <Button

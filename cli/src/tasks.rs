@@ -34,7 +34,7 @@ pub enum TaskAction {
         #[arg(long)]
         time_precision: Duration,
         #[arg(long)]
-        hpke_config_id: Uuid,
+        collector_credential_id: Uuid,
         #[arg(long, value_delimiter = ',')]
         categorical_buckets: Option<Vec<String>>,
         #[arg(long, value_delimiter = ',')]
@@ -73,7 +73,7 @@ impl TaskAction {
                 min_batch_size,
                 max_batch_size,
                 time_precision,
-                hpke_config_id,
+                collector_credential_id,
                 categorical_buckets,
                 continuous_buckets,
                 length,
@@ -130,7 +130,7 @@ impl TaskAction {
                     min_batch_size,
                     max_batch_size,
                     time_precision_seconds,
-                    hpke_config_id,
+                    collector_credential_id,
                 };
 
                 output.display(client.create_task(account_id, task).await?)

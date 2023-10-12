@@ -17,7 +17,7 @@ import aggregators from "./aggregators";
 import { Spinner } from "react-bootstrap";
 import queue from "./queue";
 import sharedAggregators from "./shared-aggregators";
-import hpkeConfigs from "./hpke-configs";
+import collectorCredentials from "./collector-credentials";
 import swaggerUi from "./swagger-ui";
 
 function buildRouter(apiClient: ApiClient) {
@@ -32,7 +32,7 @@ function buildRouter(apiClient: ApiClient) {
         apiTokens(apiClient),
         memberships(apiClient),
         tasks(apiClient),
-        hpkeConfigs(apiClient),
+        collectorCredentials(apiClient),
       ]),
     ]),
   ]);

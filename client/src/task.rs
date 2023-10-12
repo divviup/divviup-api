@@ -21,7 +21,7 @@ pub struct Task {
     pub expiration: Option<OffsetDateTime>,
     pub leader_aggregator_id: Uuid,
     pub helper_aggregator_id: Uuid,
-    pub hpke_config_id: Uuid,
+    pub collector_credential_id: Uuid,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
@@ -33,7 +33,7 @@ pub struct NewTask {
     pub min_batch_size: u64,
     pub max_batch_size: Option<u64>,
     pub time_precision_seconds: u64,
-    pub hpke_config_id: Uuid,
+    pub collector_credential_id: Uuid,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]

@@ -293,7 +293,7 @@ paths:
                 expiration:
                   type: string
                   format: date-time
-                hpke_config_id:
+                collector_credential_id:
                   type: string
                   format: uuid
                 time_precision_seconds:
@@ -307,7 +307,7 @@ paths:
                 - vdaf
                 - min_batch_size
                 - time_precision_seconds
-                - hpke_config_id
+                - collector_credential_id
       responses:
         "200":
           description: success
@@ -456,14 +456,14 @@ paths:
         "400":
           $ref: "#/components/responses/Invalid"
 
-  /accounts/{account_id}/hpke_configs:
+  /accounts/{account_id}/collector_credentials:
     parameters:
       - $ref: "#/components/parameters/AccountId"
     get:
       tags: ["hpke configs"]
       summary: list hpke configs for a given account
       description: list hpke configs for a given account
-      operationId: listHpkeConfigs
+      operationId: listCollectorCredentials
       responses:
         "200":
           description: success
@@ -472,7 +472,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/HpkeConfig"
+                  $ref: "#/components/schemas/CollectorCredential"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -480,7 +480,7 @@ paths:
       tags: ["hpke configs"]
       summary: create a new reusable hpke config for the account
       description: create a new reusable hpke config for the account
-      operationId: createHpkeConfig
+      operationId: createCollectorCredential
       requestBody:
         required: true
         content:
@@ -500,16 +500,16 @@ paths:
           content:
             application/vnd.divviup+json;version=0.1:
               schema:
-                $ref: "#/components/schemas/HpkeConfig"
+                $ref: "#/components/schemas/CollectorCredential"
         "404":
           $ref: "#/components/responses/NotFound"
         "400":
           $ref: "#/components/responses/Invalid"
 
-  /hpke_configs/{hpke_config_id}:
+  /collector_credentials/{collector_credential_id}:
     parameters:
       - in: path
-        name: hpke_config_id
+        name: collector_credential_id
         schema:
           type: string
           format: uuid
@@ -519,21 +519,21 @@ paths:
       tags: ["hpke configs"]
       summary: retrieve the hpke config by id
       description: retrieve the hpke config by id
-      operationId: showHpkeConfig
+      operationId: showCollectorCredential
       responses:
         "200":
           description: success
           content:
             application/vnd.divviup+json;version=0.1:
               schema:
-                $ref: "#/components/schemas/HpkeConfig"
+                $ref: "#/components/schemas/CollectorCredential"
         "404":
           $ref: "#/components/responses/NotFound"
     patch:
       tags: ["hpke configs"]
       summary: update the hpke config by id
       description: update the hpke config by id
-      operationId: updateHpkeConfig
+      operationId: updateCollectorCredential
       requestBody:
         required: true
         content:
@@ -549,14 +549,14 @@ paths:
           content:
             application/vnd.divviup+json;version=0.1:
               schema:
-                $ref: "#/components/schemas/HpkeConfig"
+                $ref: "#/components/schemas/CollectorCredential"
         "404":
           $ref: "#/components/responses/NotFound"
     delete:
       tags: ["hpke configs"]
       summary: delete a hpke config by id
       description: delete a hpke config by id
-      operationId: deleteHpkeConfig
+      operationId: deleteCollectorCredential
       responses:
         "204":
           description: Successful operation
@@ -723,7 +723,7 @@ components:
         helper_aggregator_id:
           type: string
           format: uuid
-        hpke_config_id:
+        collector_credential_id:
           type: string
           format: uuid
     Membership:
@@ -829,7 +829,7 @@ components:
             - code: required
               message:
               params: {}
-    HpkeConfig:
+    CollectorCredential:
       type: object
       properties:
         id:

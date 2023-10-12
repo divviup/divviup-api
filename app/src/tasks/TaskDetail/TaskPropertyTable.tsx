@@ -1,7 +1,7 @@
 import { Await, useParams, useLoaderData, Link } from "react-router-dom";
 import Col from "react-bootstrap/Col";
 import { Suspense } from "react";
-import { Task, Aggregator, HpkeConfig } from "../../ApiClient";
+import { Task, Aggregator, CollectorCredential } from "../../ApiClient";
 import humanizeDuration from "humanize-duration";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
@@ -12,12 +12,12 @@ import Vdaf from "./Vdaf";
 
 export default function TaskPropertyTable() {
   const { accountId } = useParams();
-  const { task, leaderAggregator, helperAggregator, hpkeConfig } =
+  const { task, leaderAggregator, helperAggregator, collectorCredential } =
     useLoaderData() as {
       task: Promise<Task>;
       leaderAggregator: Promise<Aggregator>;
       helperAggregator: Promise<Aggregator>;
-      hpkeConfig: Promise<HpkeConfig>;
+      collectorCredential: Promise<CollectorCredential>;
     };
 
   return (
@@ -119,10 +119,10 @@ export default function TaskPropertyTable() {
           <ListGroup.Item>
             HPKE Config:{" "}
             <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
-              <Await resolve={hpkeConfig}>
-                {(hpkeConfig) => (
-                  <Link to={`/accounts/${accountId}/hpke_configs`}>
-                    {hpkeConfig.name}
+              <Await resolve={collectorCredential}>
+                {(collectorCredential) => (
+                  <Link to={`/accounts/${accountId}/collector_credentials`}>
+                    {collectorCredential.name}
                   </Link>
                 )}
               </Await>

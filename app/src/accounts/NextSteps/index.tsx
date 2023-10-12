@@ -1,7 +1,12 @@
 import { Steps } from "primereact/steps";
 import { Button, Card, Col, Row } from "react-bootstrap";
 import { useLoaderData } from "react-router-dom";
-import { Account, Aggregator, HpkeConfig, Task } from "../../ApiClient";
+import {
+  Account,
+  Aggregator,
+  CollectorCredential,
+  Task,
+} from "../../ApiClient";
 import { LinkContainer } from "react-router-bootstrap";
 import AggregatorTypeSelection from "./AggregatorTypeSelection";
 import InlineCollectorCredentials from "./InlineCollectorCredentials";
@@ -17,20 +22,20 @@ const STEPS = [
 
 function determineModel({
   account,
-  hpkeConfigs,
+  collectorCredentials,
   aggregators,
 }: {
   account: Account;
-  hpkeConfigs: HpkeConfig[];
+  collectorCredentials: CollectorCredential[];
   aggregators: Aggregator[];
 }): number {
   const aggregatorStepComplete =
     account.intends_to_use_shared_aggregators === true ||
     !!aggregators.find((a) => !!a.account_id);
-  const hpkeConfigStepComplete = hpkeConfigs.length > 0;
+  const collectorCredentialStepComplete = collectorCredentials.length > 0;
 
   const nextStepIndex =
-    [aggregatorStepComplete, hpkeConfigStepComplete, false].findIndex(
+    [aggregatorStepComplete, collectorCredentialStepComplete, false].findIndex(
       (x) => !x,
     ) + 1;
 
@@ -50,18 +55,19 @@ function NextInner({ activeIndex }: { activeIndex: number | undefined }) {
 }
 
 export default function NextSteps() {
-  const { account, hpkeConfigs, aggregators, tasks } = useLoaderData() as {
-    account: Promise<Account>;
-    hpkeConfigs: Promise<HpkeConfig[]>;
-    aggregators: Promise<Aggregator[]>;
-    tasks: Promise<Task[]>;
-  };
+  const { account, collectorCredentials, aggregators, tasks } =
+    useLoaderData() as {
+      account: Promise<Account>;
+      collectorCredentials: Promise<CollectorCredential[]>;
+      aggregators: Promise<Aggregator[]>;
+      tasks: Promise<Task[]>;
+    };
 
   const loadedTasks = usePromise(tasks, []);
   const activeIndex = usePromiseAll(
-    [account, hpkeConfigs, aggregators],
-    ([account, hpkeConfigs, aggregators]) =>
-      determineModel({ account, hpkeConfigs, aggregators }),
+    [account, collectorCredentials, aggregators],
+    ([account, collectorCredentials, aggregators]) =>
+      determineModel({ account, collectorCredentials, aggregators }),
     1,
   );
 

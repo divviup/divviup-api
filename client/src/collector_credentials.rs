@@ -1,12 +1,12 @@
-use crate::HpkeConfigContents;
+use crate::HpkeConfig;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-pub struct HpkeConfig {
+pub struct CollectorCredential {
     pub id: Uuid,
-    pub contents: HpkeConfigContents,
+    pub contents: HpkeConfig,
     #[serde(with = "::time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
     #[serde(default, with = "::time::serde::rfc3339::option")]
