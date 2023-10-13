@@ -1,11 +1,11 @@
 import { useFetcher } from "react-router-dom";
 import Col from "react-bootstrap/Col";
 import React from "react";
-import { CollectorAuthToken } from "../../ApiClient";
+import { Aggregator, CollectorAuthToken } from "../../ApiClient";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
-import { CopyCode } from "../../util";
+import { CopyCode, useLoaderPromise } from "../../util";
 import { Badge } from "react-bootstrap";
 
 export default function CollectorAuthTokens() {
@@ -14,6 +14,11 @@ export default function CollectorAuthTokens() {
     if (fetcher.state === "idle" && !fetcher.data)
       fetcher.load("collector_auth_tokens");
   }, [fetcher]);
+
+  const leader = useLoaderPromise<Aggregator | null>("leaderAggregator", null);
+  if (!leader || leader.features.includes("TokenHash")) {
+    return <></>;
+  }
 
   if (fetcher.data) {
     const { collectorAuthTokens } = fetcher.data as {

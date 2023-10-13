@@ -108,10 +108,14 @@ pub mod collector_auth_tokens {
         conn: &mut Conn,
         (task, db, State(client)): (Task, Db, State<Client>),
     ) -> Result<impl Handler, Error> {
-        let crypter = conn.state().unwrap();
         let leader = task.leader_aggregator(&db).await?;
-        let client = leader.client(client, crypter)?;
-        let task_response = client.get_task(&task.id).await?;
-        Ok(Json([task_response.collector_auth_token]))
+        if leader.features.token_hash_enabled() {
+            Err(Error::NotFound)
+        } else {
+            let crypter = conn.state().unwrap();
+            let client = leader.client(client, crypter)?;
+            let task_response = client.get_task(&task.id).await?;
+            Ok(Json([task_response.collector_auth_token]))
+        }
     }
 }

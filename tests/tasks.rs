@@ -723,14 +723,21 @@ mod update {
 }
 
 mod collector_auth_tokens {
-    use divviup_api::clients::aggregator_client::api_types::AuthenticationToken;
+    use divviup_api::{
+        clients::aggregator_client::api_types::AuthenticationToken, entity::aggregator::Features,
+    };
 
     use super::{assert_eq, test, *};
 
     #[test(harness = with_client_logs)]
-    async fn as_member(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+    async fn as_member_no_token_hash(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let task = fixtures::task(&app, &account).await;
+
+        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+        leader.features = ActiveValue::Set(Features::default().into());
+        leader.update(app.db()).await?;
+
         let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
             .with_api_headers()
             .with_state(user)
@@ -750,10 +757,33 @@ mod collector_auth_tokens {
     }
 
     #[test(harness = with_client_logs)]
+    async fn as_member_with_token_hash(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let leader = task.leader_aggregator(app.db()).await?;
+        assert!(leader.features.token_hash_enabled());
+
+        let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
+            .with_api_headers()
+            .with_state(user)
+            .run_async(&app)
+            .await;
+
+        assert!(client_logs.is_empty());
+        assert_not_found!(conn);
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
     async fn as_rando(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         let user = fixtures::user();
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
+
+        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+        leader.features = ActiveValue::Set(Features::default().into());
+        leader.update(app.db()).await?;
+
         let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
             .with_api_headers()
             .with_state(user)
@@ -769,6 +799,11 @@ mod collector_auth_tokens {
         let (admin, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
+
+        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+        leader.features = ActiveValue::Set(Features::default().into());
+        leader.update(app.db()).await?;
+
         let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
             .with_api_headers()
             .with_state(admin)
@@ -791,6 +826,11 @@ mod collector_auth_tokens {
         let token = fixtures::admin_token(&app).await;
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
+
+        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+        leader.features = ActiveValue::Set(Features::default().into());
+        leader.update(app.db()).await?;
+
         let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
             .with_api_headers()
             .with_auth_header(token)
@@ -813,6 +853,11 @@ mod collector_auth_tokens {
         let account = fixtures::account(&app).await;
         let (_, token) = fixtures::api_token(&app, &account).await;
         let task = fixtures::task(&app, &account).await;
+
+        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+        leader.features = ActiveValue::Set(Features::default().into());
+        leader.update(app.db()).await?;
+
         let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
             .with_api_headers()
             .with_auth_header(token)
@@ -837,6 +882,11 @@ mod collector_auth_tokens {
 
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
+
+        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+        leader.features = ActiveValue::Set(Features::default().into());
+        leader.update(app.db()).await?;
+
         let mut conn = get(format!("/api/tasks/{}/collector_auth_tokens", task.id))
             .with_api_headers()
             .with_auth_header(token)

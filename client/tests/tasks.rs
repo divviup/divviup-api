@@ -1,4 +1,5 @@
 mod harness;
+use divviup_api::entity::aggregator::Features;
 use divviup_client::{DivviupClient, NewTask, Vdaf};
 use harness::with_configured_client;
 use std::sync::Arc;
@@ -53,13 +54,31 @@ async fn rename_task(app: Arc<DivviupApi>, account: Account, client: DivviupClie
 }
 
 #[test(harness = with_configured_client)]
-async fn collector_auth_tokens(
+async fn collector_auth_tokens_no_token_hash(
     app: Arc<DivviupApi>,
     account: Account,
     client: DivviupClient,
 ) -> TestResult {
     let task = fixtures::task(&app, &account).await;
+
+    let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+    leader.features = ActiveValue::Set(Features::default().into());
+    leader.update(app.db()).await?;
+
     let tokens = client.task_collector_auth_tokens(&task.id).await?;
     assert!(!tokens.is_empty()); // we don't have aggregator-api client logs here
+    Ok(())
+}
+
+#[test(harness = with_configured_client)]
+async fn collector_auth_tokens_token_hash(
+    app: Arc<DivviupApi>,
+    account: Account,
+    client: DivviupClient,
+) -> TestResult {
+    let task = fixtures::task(&app, &account).await;
+    let leader = task.leader_aggregator(app.db()).await?;
+    assert!(leader.features.token_hash_enabled());
+    assert!(client.task_collector_auth_tokens(&task.id).await.is_err());
     Ok(())
 }

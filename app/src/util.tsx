@@ -3,7 +3,7 @@ import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import { LinkContainer } from "react-router-bootstrap";
 import React, { Suspense } from "react";
-import { Await, useRouteLoaderData } from "react-router-dom";
+import { Await, useRouteLoaderData, useLoaderData } from "react-router-dom";
 import { Account } from "./ApiClient";
 import Placeholder from "react-bootstrap/Placeholder";
 import { Button, OverlayTrigger, Tooltip } from "react-bootstrap";
@@ -102,6 +102,13 @@ export function CopyCode({ code }: { code: string }) {
         )
       }
     </Copy>
+  );
+}
+
+export function useLoaderPromise<T>(key: string, initialState: T): T {
+  return usePromise(
+    (useLoaderData() as { [k: string]: Promise<T> })[key],
+    initialState,
   );
 }
 

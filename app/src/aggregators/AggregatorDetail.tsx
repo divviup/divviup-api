@@ -125,6 +125,14 @@ function AggregatorPropertyTable() {
               .join(", ")
           }
         />
+        <TableRow
+          label="Supported features"
+          value={({ features }) =>
+            features
+              .map((v) => v.replaceAll(/([A-Z])/g, " $1").toLowerCase())
+              .join(", ")
+          }
+        />
       </tbody>
     </Table>
   );
