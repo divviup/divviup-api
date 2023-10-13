@@ -217,12 +217,10 @@ impl AuthenticationToken {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TaskCreate {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub aggregator_auth_token: Option<AuthenticationToken>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub collector_auth_token: Option<AuthenticationToken>,
     pub peer_aggregator_endpoint: Url,
     pub query_type: QueryType,
     pub vdaf: AggregatorVdaf,
@@ -233,6 +231,8 @@ pub struct TaskCreate {
     pub time_precision: u64,
     pub collector_hpke_config: HpkeConfig,
     pub vdaf_verify_key: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub collector_auth_token_hash: Option<String>,
 }
 
 impl TaskCreate {
@@ -245,6 +245,14 @@ impl TaskCreate {
         } else {
             Role::Helper
         };
+
+        let collector_auth_token_hash =
+            if role == Role::Leader && target_aggregator.features.token_hash_enabled() {
+                new_task.collector_credential.token_hash.clone()
+            } else {
+                None
+            };
+
         Ok(Self {
             peer_aggregator_endpoint: if role == Role::Leader {
                 new_task.helper_aggregator.dap_url.clone().into()
@@ -266,7 +274,7 @@ impl TaskCreate {
                 .aggregator_auth_token
                 .clone()
                 .map(AuthenticationToken::new),
-            collector_auth_token: None,
+            collector_auth_token_hash,
         })
     }
 }

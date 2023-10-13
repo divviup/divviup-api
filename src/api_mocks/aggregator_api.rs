@@ -13,7 +13,7 @@ use rand::random;
 use sha2::{Digest, Sha256};
 use std::iter::repeat_with;
 use trillium::{Conn, Handler, Status};
-use trillium_api::{api, Json};
+use trillium_api::{api, Json, State};
 use trillium_http::KnownHeaderName;
 use trillium_router::{router, RouterConnExt};
 use uuid::Uuid;
@@ -97,8 +97,11 @@ async fn get_task(conn: &mut Conn, (): ()) -> Json<TaskResponse> {
     })
 }
 
-async fn post_task(_: &mut Conn, Json(task_create): Json<TaskCreate>) -> Json<TaskResponse> {
-    Json(task_response(task_create))
+async fn post_task(
+    _: &mut Conn,
+    Json(task_create): Json<TaskCreate>,
+) -> (State<TaskCreate>, Json<TaskResponse>) {
+    (State(task_create.clone()), Json(task_response(task_create)))
 }
 
 pub fn task_response(task_create: TaskCreate) -> TaskResponse {

@@ -35,11 +35,11 @@ impl Handler for ClientLogs {
     async fn run(&self, conn: Conn) -> Conn {
         conn
     }
-    async fn before_send(&self, conn: Conn) -> Conn {
+    async fn before_send(&self, mut conn: Conn) -> Conn {
         self.logged_conns
             .write()
             .unwrap()
-            .push(LoggedConn::from(&conn));
+            .push(LoggedConn::from(&mut conn));
         conn
     }
 }

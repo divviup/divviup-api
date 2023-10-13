@@ -3,7 +3,7 @@ use std::{
     fmt::{Display, Formatter, Result},
     sync::{Arc, RwLock},
 };
-use trillium::{Body, Conn, Headers, Method, Status};
+use trillium::{Body, Conn, Headers, Method, StateSet, Status};
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -14,6 +14,7 @@ pub struct LoggedConn {
     pub response_status: Status,
     pub request_headers: Headers,
     pub response_headers: Headers,
+    pub state: Arc<StateSet>,
 }
 
 impl LoggedConn {
@@ -22,8 +23,8 @@ impl LoggedConn {
     }
 }
 
-impl From<&Conn> for LoggedConn {
-    fn from(conn: &Conn) -> Self {
+impl From<&mut Conn> for LoggedConn {
+    fn from(conn: &mut Conn) -> Self {
         let url = Url::parse(&format!(
             "{}://{}{}{}",
             if conn.is_secure() { "https" } else { "http" },
@@ -36,8 +37,11 @@ impl From<&Conn> for LoggedConn {
         ))
         .unwrap();
 
+        let state = Arc::new(std::mem::take(conn.inner_mut().state_mut()));
+
         Self {
             url,
+            state,
             method: conn.method(),
             response_body: conn
                 .inner()
