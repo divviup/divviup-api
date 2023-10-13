@@ -1,6 +1,8 @@
 use crate::{
     entity::{
-        aggregator::{QueryTypeName, QueryTypeNameSet, Role as AggregatorRole, VdafNameSet},
+        aggregator::{
+            Features, QueryTypeName, QueryTypeNameSet, Role as AggregatorRole, VdafNameSet,
+        },
         task::vdaf::{BucketLength, ContinuousBuckets, CountVec, Histogram, Sum, SumVec, Vdaf},
         Aggregator, Protocol, ProvisionableTask,
     },
@@ -319,6 +321,8 @@ pub struct AggregatorApiConfig {
     pub query_types: QueryTypeNameSet,
     #[serde(default)]
     pub protocol: Protocol,
+    #[serde(default)]
+    pub features: Features,
 }
 
 #[cfg(test)]

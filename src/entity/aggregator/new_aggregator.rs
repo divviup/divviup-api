@@ -103,6 +103,7 @@ impl NewAggregator {
             query_types: aggregator_config.query_types.into(),
             vdafs: aggregator_config.vdafs.into(),
             protocol: aggregator_config.protocol,
+            features: aggregator_config.features.into(),
         }
         .into_active_model())
     }

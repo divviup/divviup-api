@@ -1,3 +1,4 @@
+mod feature;
 mod new_aggregator;
 mod protocol;
 mod query_type_name;
@@ -12,10 +13,10 @@ use sea_orm::{
     EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef, RelationTrait,
 };
 use serde::{Deserialize, Serialize};
-
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+pub use feature::{Feature, Features};
 pub use new_aggregator::NewAggregator;
 pub use protocol::{Protocol, UnrecognizedProtocol};
 pub use query_type_name::{QueryTypeName, QueryTypeNameSet};
@@ -47,6 +48,7 @@ pub struct Model {
     pub protocol: Protocol,
     #[serde(skip)]
     pub encrypted_bearer_token: Vec<u8>,
+    pub features: Json<Features>,
 }
 
 impl Model {
