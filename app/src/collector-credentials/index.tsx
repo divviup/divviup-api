@@ -30,7 +30,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
                 params.accountId as string,
                 Object.fromEntries(await request.formData()) as {
                   name: string;
-                  contents: string;
+                  hpke_config: string;
                 },
               );
             default:

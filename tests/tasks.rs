@@ -142,7 +142,7 @@ mod index {
 
 mod create {
     use super::{assert_eq, test, *};
-    use divviup_api::entity::task::vdaf::Vdaf;
+    use divviup_api::entity::{aggregator::Features, task::vdaf::Vdaf};
 
     fn valid_task_json(
         collector_credential: &CollectorCredential,
@@ -160,8 +160,11 @@ mod create {
         })
     }
 
-    #[test(harness = set_up)]
-    async fn success(app: DivviupApi) -> TestResult {
+    #[test(harness = with_client_logs)]
+    async fn success_provisioning_with_token_hash(
+        app: DivviupApi,
+        client_logs: ClientLogs,
+    ) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
@@ -172,6 +175,64 @@ mod create {
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
             .run_async(&app)
             .await;
+
+        let logs = client_logs.logs();
+        let [helper_provisioning, leader_provisioning] = &logs[..] else {
+            panic!("expected exactly two requests");
+        };
+        let helper_task_create = helper_provisioning.state.get::<TaskCreate>().unwrap();
+        let leader_task_create = leader_provisioning.state.get::<TaskCreate>().unwrap();
+        assert_eq!(
+            leader_task_create
+                .collector_auth_token_hash
+                .as_ref()
+                .unwrap(),
+            collector_credential.token_hash.as_ref().unwrap()
+        );
+        assert!(helper_task_create.collector_auth_token_hash.is_none());
+
+        assert_response!(conn, 201);
+        let task: Task = conn.response_json().await;
+
+        assert_eq!(task.leader_aggregator_id, leader.id);
+        assert_eq!(task.helper_aggregator_id, helper.id);
+        assert_eq!(task.vdaf, Vdaf::Count);
+        assert_eq!(task.min_batch_size, 500);
+        assert_eq!(task.time_precision_seconds, 60);
+        assert!(task.reload(app.db()).await?.is_some());
+
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn success_provisioning_without_token_hash(
+        app: DivviupApi,
+        client_logs: ClientLogs,
+    ) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let collector_credential = fixtures::collector_credential(&app, &account).await;
+
+        let mut leader = leader.into_active_model();
+        leader.features = ActiveValue::Set(Features::default().into());
+        let leader = leader.update(app.db()).await?;
+
+        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+            .with_api_headers()
+            .with_state(user)
+            .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
+            .run_async(&app)
+            .await;
+
+        let logs = client_logs.logs();
+        let [helper_provisioning, leader_provisioning] = &logs[..] else {
+            panic!("expected exactly two requests");
+        };
+        let helper_task_create = helper_provisioning.state.get::<TaskCreate>().unwrap();
+        let leader_task_create = leader_provisioning.state.get::<TaskCreate>().unwrap();
+
+        assert!(leader_task_create.collector_auth_token_hash.is_none());
+        assert!(helper_task_create.collector_auth_token_hash.is_none());
 
         assert_response!(conn, 201);
         let task: Task = conn.response_json().await;

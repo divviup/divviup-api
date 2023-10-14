@@ -128,7 +128,7 @@ function Name({
     return (
       <span onClick={edit}>
         {collectorCredential.name ||
-          `HPKE Config ${collectorCredential.contents.id}`}{" "}
+          `HPKE Config ${collectorCredential.hpke_config.id}`}{" "}
         <Button
           variant="outline-secondary"
           onClick={edit}
@@ -217,9 +217,9 @@ function CollectorCredentialRow({
       <td>
         <Name collectorCredential={collectorCredential} />
       </td>
-      <td>{collectorCredential.contents.kem_id}</td>
-      <td>{collectorCredential.contents.kdf_id}</td>
-      <td>{collectorCredential.contents.aead_id}</td>
+      <td>{collectorCredential.hpke_config.kem_id}</td>
+      <td>{collectorCredential.hpke_config.kdf_id}</td>
+      <td>{collectorCredential.hpke_config.aead_id}</td>
       <td>
         <RelativeTime time={collectorCredential.created_at} />
       </td>

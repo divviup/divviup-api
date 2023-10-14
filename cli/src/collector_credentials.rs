@@ -144,18 +144,19 @@ impl CollectorCredentialAction {
                 );
 
                 let name = name.unwrap_or_else(|| format!("collector-credential-{config_id}"));
-                output.display(
-                    client
-                        .create_collector_credential(account_id, &hpke_config, Some(&name))
-                        .await?,
-                );
+                let collector_credential = client
+                    .create_collector_credential(account_id, &hpke_config, Some(&name))
+                    .await?;
+                let token = collector_credential.token.as_ref().cloned().unwrap();
+                output.display(collector_credential);
                 output.display(json!({
                     "id": config_id,
                     "public_key": URL_SAFE_NO_PAD.encode(public_key),
                     "private_key": URL_SAFE_NO_PAD.encode(private_key),
                     "kem": kem,
                     "kdf": kdf,
-                    "aead": aead
+                    "aead": aead,
+                    "token": token
                 }));
             }
         }

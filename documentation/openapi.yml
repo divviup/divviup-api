@@ -488,12 +488,12 @@ paths:
             schema:
               type: object
               properties:
-                contents:
+                hpke_config:
                   type: string
                   format: base64
                 name:
                   type: string
-              required: [contents]
+              required: [hpke_config]
       responses:
         "201":
           description: success
@@ -838,7 +838,7 @@ components:
         account_id:
           type: string
           format: uuid
-        contents:
+        hpke_config:
           type: object
           properties:
             kem_id:

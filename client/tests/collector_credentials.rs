@@ -27,7 +27,7 @@ async fn create_collector_credential(
     let collector_credential = client
         .create_collector_credential(account.id, &config, None)
         .await?;
-    assert_eq!(config, collector_credential.contents);
+    assert_eq!(config, collector_credential.hpke_config);
     Ok(())
 }
 
@@ -42,7 +42,7 @@ async fn create_collector_credential_with_name(
     let collector_credential = client
         .create_collector_credential(account.id, &config, Some(&name))
         .await?;
-    assert_eq!(config, collector_credential.contents);
+    assert_eq!(config, collector_credential.hpke_config);
     assert_eq!(name, collector_credential.name.unwrap());
     Ok(())
 }

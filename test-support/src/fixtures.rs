@@ -81,14 +81,17 @@ pub async fn member(app: &DivviupApi) -> (User, Account, Membership) {
 }
 
 pub async fn collector_credential(app: &DivviupApi, account: &Account) -> CollectorCredential {
+    let (token, token_hash) = CollectorCredential::new_token();
     CollectorCredential {
-        contents: random_hpke_config().into(),
+        hpke_config: random_hpke_config().into(),
         created_at: OffsetDateTime::now_utc(),
         updated_at: OffsetDateTime::now_utc(),
         id: Uuid::new_v4(),
         account_id: account.id,
         deleted_at: None,
         name: Some(random_name()),
+        token: Some(token),
+        token_hash: Some(token_hash),
     }
     .into_active_model()
     .insert(app.db())
