@@ -105,14 +105,29 @@ impl NewTask {
     async fn validate_collector_credential(
         &self,
         account: &Account,
+        leader: Option<&Aggregator>,
         db: &impl ConnectionTrait,
         errors: &mut ValidationErrors,
     ) -> Option<CollectorCredential> {
         match self.load_collector_credential(account, db).await {
-            Some(collector_credential) => Some(collector_credential),
             None => {
                 errors.add("collector_credential_id", ValidationError::new("required"));
                 None
+            }
+
+            Some(collector_credential) => {
+                let leader_needs_token_hash =
+                    leader.map_or(false, |leader| leader.features.token_hash_enabled());
+
+                if leader_needs_token_hash && collector_credential.token_hash.is_none() {
+                    errors.add(
+                        "collector_credential_id",
+                        ValidationError::new("missing-token-hash"),
+                    );
+                    None
+                } else {
+                    Some(collector_credential)
+                }
             }
         }
     }
@@ -255,10 +270,15 @@ impl NewTask {
     ) -> Result<ProvisionableTask, ValidationErrors> {
         let mut errors = Validate::validate(self).err().unwrap_or_default();
         self.validate_min_lte_max(&mut errors);
-        let collector_credential = self
-            .validate_collector_credential(&account, db, &mut errors)
-            .await;
         let aggregators = self.validate_aggregators(&account, db, &mut errors).await;
+        let collector_credential = self
+            .validate_collector_credential(
+                &account,
+                aggregators.as_ref().map(|(leader, ..)| leader),
+                db,
+                &mut errors,
+            )
+            .await;
 
         let aggregator_vdaf = if let Some((leader, helper, protocol)) = aggregators.as_ref() {
             self.validate_query_type_is_supported(leader, helper, &mut errors);
