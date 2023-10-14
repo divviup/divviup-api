@@ -1,7 +1,7 @@
 use super::{ActiveModel, *};
 use crate::{
     clients::aggregator_client::api_types::{AggregatorVdaf, AuthenticationToken},
-    entity::{Account, Aggregator, HpkeConfig, Protocol, Task},
+    entity::{Account, Aggregator, CollectorCredential, Protocol, Task},
     handler::Error,
     Crypter,
 };
@@ -30,7 +30,7 @@ pub struct ProvisionableTask {
     pub max_batch_size: Option<u64>,
     pub expiration: Option<OffsetDateTime>,
     pub time_precision_seconds: u64,
-    pub hpke_config: HpkeConfig,
+    pub collector_credential: CollectorCredential,
     pub aggregator_auth_token: Option<String>,
     pub protocol: Protocol,
 }
@@ -121,7 +121,7 @@ impl ProvisionableTask {
             expiration: self.expiration,
             leader_aggregator_id: self.leader_aggregator.id,
             helper_aggregator_id: self.helper_aggregator.id,
-            hpke_config_id: self.hpke_config.id,
+            collector_credential_id: self.collector_credential.id,
         }
         .into_active_model())
     }

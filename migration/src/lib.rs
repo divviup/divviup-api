@@ -20,6 +20,7 @@ mod m20230808_204859_create_hpke_config;
 mod m20230817_192017_add_protocol_to_aggregators;
 mod m20230907_175501_add_aggregator_onboarding_boolean_to_account;
 mod m20231012_205810_add_features_to_aggregators;
+mod m20231012_225001_rename_hpke_configs_to_collector_credentials;
 
 pub struct Migrator;
 
@@ -47,6 +48,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230817_192017_add_protocol_to_aggregators::Migration),
             Box::new(m20230907_175501_add_aggregator_onboarding_boolean_to_account::Migration),
             Box::new(m20231012_205810_add_features_to_aggregators::Migration),
+            Box::new(m20231012_225001_rename_hpke_configs_to_collector_credentials::Migration),
         ]
     }
 }

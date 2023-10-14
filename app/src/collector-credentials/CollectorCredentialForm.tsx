@@ -16,19 +16,19 @@ import { KeyFill } from "react-bootstrap-icons";
 import { useFetcher } from "react-router-dom";
 import { formikErrors } from "../ApiClient";
 
-export default function HpkeConfigForm() {
+export default function CollectorCredentialForm() {
   const fetcher = useFetcher();
   const [name, setName] = React.useState("");
-  const [hpke, setHpke] = React.useState("");
+  const [collectorCredential, setCollectorCredential] = React.useState("");
   const reader = React.useMemo(() => {
     const reader = new FileReader();
     reader.addEventListener("load", () => {
       if (typeof reader.result === "string") {
-        setHpke(reader.result.split(",")[1]);
+        setCollectorCredential(reader.result.split(",")[1]);
       }
     });
     return reader;
-  }, [setHpke]);
+  }, [setCollectorCredential]);
   const onChange: ChangeEventHandler<HTMLInputElement> = React.useCallback(
     (event) => {
       const files = event.target.files;
@@ -44,12 +44,12 @@ export default function HpkeConfigForm() {
   useEffect(() => {
     if (typeof fetcher.data === "object" && !("error" in fetcher.data)) {
       setName("");
-      setHpke("");
+      setCollectorCredential("");
       if (ref.current) {
         ref.current.value = "";
       }
     }
-  }, [fetcher, setName, setHpke, ref]);
+  }, [fetcher, setName, setCollectorCredential, ref]);
 
   const errors = formikErrors<{ contents?: string; name?: string }>(
     fetcher.data && "error" in fetcher.data
@@ -97,7 +97,7 @@ export default function HpkeConfigForm() {
               </FormControl.Feedback>
             ) : null}
           </FormGroup>
-          <input type="hidden" name="contents" value={hpke} />
+          <input type="hidden" name="contents" value={collectorCredential} />
         </Col>
         <Col sm="2">
           <FormGroup controlId="submit" className="my-3">

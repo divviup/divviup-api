@@ -1,5 +1,5 @@
 use crate::{
-    entity::{Aggregators, ApiTokens, HpkeConfigs, Memberships, Tasks},
+    entity::{Aggregators, ApiTokens, CollectorCredentials, Memberships, Tasks},
     PermissionsActor,
 };
 use sea_orm::{
@@ -51,8 +51,8 @@ pub enum Relation {
     Aggregators,
     #[sea_orm(has_many = "ApiTokens")]
     ApiTokens,
-    #[sea_orm(has_many = "HpkeConfigs")]
-    HpkeConfigs,
+    #[sea_orm(has_many = "CollectorCredentials")]
+    CollectorCredentials,
 }
 
 impl Related<Memberships> for Entity {
@@ -79,9 +79,9 @@ impl Related<ApiTokens> for Entity {
     }
 }
 
-impl Related<HpkeConfigs> for Entity {
+impl Related<CollectorCredentials> for Entity {
     fn to() -> RelationDef {
-        Relation::HpkeConfigs.def()
+        Relation::CollectorCredentials.def()
     }
 }
 

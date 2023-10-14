@@ -10,7 +10,7 @@
 mod accounts;
 mod aggregators;
 mod api_tokens;
-mod hpke_configs;
+mod collector_credentials;
 mod memberships;
 mod tasks;
 
@@ -18,10 +18,10 @@ use accounts::AccountAction;
 use aggregators::AggregatorAction;
 use api_tokens::ApiTokenAction;
 use clap::{Parser, Subcommand, ValueEnum};
+use collector_credentials::CollectorCredentialAction;
 use colored::Colorize;
 use const_format::concatcp;
 use divviup_client::{Client, CodecError, DivviupClient, HeaderValue, KnownHeaderName, Url, Uuid};
-use hpke_configs::HpkeConfigAction;
 use memberships::MembershipAction;
 use serde::Serialize;
 use std::{
@@ -124,7 +124,7 @@ enum Resource {
 
     /// manage asymmetrical encryption keys for collecting task aggregates later
     #[command(subcommand)]
-    HpkeConfig(HpkeConfigAction),
+    CollectorCredential(CollectorCredentialAction),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -215,7 +215,7 @@ impl Resource {
             Resource::Task(action) => action.run(account_id, client, output).await,
             Resource::Aggregator(action) => action.run(account_id, client, output).await,
             Resource::Membership(action) => action.run(account_id, client, output).await,
-            Resource::HpkeConfig(action) => action.run(account_id, client, output).await,
+            Resource::CollectorCredential(action) => action.run(account_id, client, output).await,
         }
     }
 }

@@ -1,23 +1,23 @@
 import { RouteObject, defer } from "react-router-dom";
 import ApiClient from "../ApiClient";
-import HpkeConfigList from "./HpkeConfigList";
+import CollectorCredentialList from "./CollectorCredentialList";
 export default function apiTokens(apiClient: ApiClient): RouteObject {
   return {
-    path: "hpke_configs",
+    path: "collector_credentials",
     children: [
       {
         path: "",
         index: true,
-        element: <HpkeConfigList />,
+        element: <CollectorCredentialList />,
         loader({ params }) {
           return defer({
-            hpkeConfigs: apiClient.accountHpkeConfigs(
+            collectorCredentials: apiClient.accountCollectorCredentials(
               params.accountId as string,
             ),
           });
         },
 
-        id: "hpkeConfigs",
+        id: "collectorCredentials",
 
         shouldRevalidate(_) {
           return true;
@@ -26,7 +26,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
         async action({ params, request }) {
           switch (request.method) {
             case "POST":
-              return await apiClient.createHpkeConfig(
+              return await apiClient.createCollectorCredential(
                 params.accountId as string,
                 Object.fromEntries(await request.formData()) as {
                   name: string;
@@ -44,7 +44,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
         async action({ params, request }) {
           switch (request.method) {
             case "PATCH":
-              await apiClient.updateHpkeConfig(
+              await apiClient.updateCollectorCredential(
                 params.apiTokenId as string,
                 Object.fromEntries(await request.formData()) as {
                   name: string;
@@ -52,7 +52,9 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
               );
               return true;
             case "DELETE":
-              await apiClient.deleteHpkeConfig(params.apiTokenId as string);
+              await apiClient.deleteCollectorCredential(
+                params.apiTokenId as string,
+              );
               return true;
             default:
               throw new Error(`unexpected method ${request.method}`);

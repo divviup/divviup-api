@@ -2,7 +2,8 @@ use super::*;
 use crate::{
     clients::aggregator_client::api_types::{AggregatorVdaf, QueryType},
     entity::{
-        aggregator::Role, Account, Aggregator, Aggregators, HpkeConfig, HpkeConfigColumn, Protocol,
+        aggregator::Role, Account, Aggregator, Aggregators, CollectorCredential,
+        CollectorCredentialColumn, Protocol,
     },
     handler::Error,
 };
@@ -43,7 +44,7 @@ pub struct NewTask {
     pub time_precision_seconds: Option<u64>,
 
     #[validate(required)]
-    pub hpke_config_id: Option<String>,
+    pub collector_credential_id: Option<String>,
 }
 
 async fn load_aggregator(
@@ -87,30 +88,30 @@ impl NewTask {
         }
     }
 
-    async fn load_hpke_config(
+    async fn load_collector_credential(
         &self,
         account: &Account,
         db: &impl ConnectionTrait,
-    ) -> Option<HpkeConfig> {
-        let id = Uuid::parse_str(self.hpke_config_id.as_deref()?).ok()?;
-        HpkeConfigs::find_by_id(id)
-            .filter(HpkeConfigColumn::AccountId.eq(account.id))
+    ) -> Option<CollectorCredential> {
+        let id = Uuid::parse_str(self.collector_credential_id.as_deref()?).ok()?;
+        CollectorCredentials::find_by_id(id)
+            .filter(CollectorCredentialColumn::AccountId.eq(account.id))
             .one(db)
             .await
             .ok()
             .flatten()
     }
 
-    async fn validate_hpke_config(
+    async fn validate_collector_credential(
         &self,
         account: &Account,
         db: &impl ConnectionTrait,
         errors: &mut ValidationErrors,
-    ) -> Option<HpkeConfig> {
-        match self.load_hpke_config(account, db).await {
-            Some(hpke_config) => Some(hpke_config),
+    ) -> Option<CollectorCredential> {
+        match self.load_collector_credential(account, db).await {
+            Some(collector_credential) => Some(collector_credential),
             None => {
-                errors.add("hpke_config_id", ValidationError::new("required"));
+                errors.add("collector_credential_id", ValidationError::new("required"));
                 None
             }
         }
@@ -254,7 +255,9 @@ impl NewTask {
     ) -> Result<ProvisionableTask, ValidationErrors> {
         let mut errors = Validate::validate(self).err().unwrap_or_default();
         self.validate_min_lte_max(&mut errors);
-        let hpke_config = self.validate_hpke_config(&account, db, &mut errors).await;
+        let collector_credential = self
+            .validate_collector_credential(&account, db, &mut errors)
+            .await;
         let aggregators = self.validate_aggregators(&account, db, &mut errors).await;
 
         let aggregator_vdaf = if let Some((leader, helper, protocol)) = aggregators.as_ref() {
@@ -289,7 +292,7 @@ impl NewTask {
                 max_batch_size: self.max_batch_size,
                 expiration: Some(OffsetDateTime::now_utc() + DEFAULT_EXPIRATION_DURATION),
                 time_precision_seconds: self.time_precision_seconds.unwrap(),
-                hpke_config: hpke_config.unwrap(),
+                collector_credential: collector_credential.unwrap(),
                 aggregator_auth_token: None,
                 protocol,
             })

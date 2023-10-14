@@ -71,7 +71,7 @@ pub async fn set_up_schema(db: &Db) {
     set_up_schema_for(&schema, db, queue::Entity).await;
     set_up_schema_for(&schema, db, Aggregators).await;
     set_up_schema_for(&schema, db, ApiTokens).await;
-    set_up_schema_for(&schema, db, HpkeConfigs).await;
+    set_up_schema_for(&schema, db, CollectorCredentials).await;
 }
 
 pub fn config(api_mocks: impl Handler) -> Config {
@@ -236,7 +236,7 @@ impl_reload!(Membership, Memberships);
 impl_reload!(Task, Tasks);
 impl_reload!(Aggregator, Aggregators);
 impl_reload!(ApiToken, ApiTokens);
-impl_reload!(HpkeConfig, HpkeConfigs);
+impl_reload!(CollectorCredential, CollectorCredentials);
 
 #[track_caller]
 pub fn assert_same_json_representation<Actual, Expected>(actual: &Actual, expected: &Expected)

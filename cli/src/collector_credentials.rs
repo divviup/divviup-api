@@ -1,7 +1,7 @@
 use crate::{CliResult, DetermineAccountId, Error, Output};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use clap::Subcommand;
-use divviup_client::{Decode, DivviupClient, HpkeConfigContents, Uuid};
+use divviup_client::{Decode, DivviupClient, HpkeConfig, Uuid};
 use std::{borrow::Cow, path::PathBuf};
 use trillium_tokio::tokio::fs;
 
@@ -9,7 +9,7 @@ use trillium_tokio::tokio::fs;
 use hpke_dispatch::{Aead, Kdf, Kem};
 
 #[derive(Subcommand, Debug)]
-pub enum HpkeConfigAction {
+pub enum CollectorCredentialAction {
     /// list hpke configs for the target account
     List,
     /// list hpke configs for the target account
@@ -34,7 +34,7 @@ pub enum HpkeConfigAction {
         name: Option<String>,
     },
     /// delete a hpke config by id
-    Delete { hpke_config_id: Uuid },
+    Delete { collector_credential_id: Uuid },
 
     #[cfg(feature = "hpke")]
     /// create a new hpke config and upload the public key to divviup
@@ -67,7 +67,7 @@ pub enum HpkeConfigAction {
     },
 }
 
-impl HpkeConfigAction {
+impl CollectorCredentialAction {
     pub(crate) async fn run(
         self,
         account_id: DetermineAccountId,
@@ -75,12 +75,12 @@ impl HpkeConfigAction {
         output: Output,
     ) -> CliResult {
         match self {
-            HpkeConfigAction::List => {
+            CollectorCredentialAction::List => {
                 let account_id = account_id.await?;
-                output.display(client.hpke_configs(account_id).await?);
+                output.display(client.collector_credentials(account_id).await?);
             }
 
-            HpkeConfigAction::Create { file, base64, name } => {
+            CollectorCredentialAction::Create { file, base64, name } => {
                 let account_id = account_id.await?;
                 let bytes = match (&file, base64) {
                     (Some(path), None) => fs::read(path).await?,
@@ -99,21 +99,25 @@ impl HpkeConfigAction {
                     _ => None,
                 };
 
-                let hpke_config = HpkeConfigContents::get_decoded(&bytes)?;
+                let hpke_config = HpkeConfig::get_decoded(&bytes)?;
 
                 output.display(
                     client
-                        .create_hpke_config(account_id, &hpke_config, name.as_deref())
+                        .create_collector_credential(account_id, &hpke_config, name.as_deref())
                         .await?,
                 );
             }
 
-            HpkeConfigAction::Delete { hpke_config_id } => {
-                client.delete_hpke_config(hpke_config_id).await?;
+            CollectorCredentialAction::Delete {
+                collector_credential_id,
+            } => {
+                client
+                    .delete_collector_credential(collector_credential_id)
+                    .await?;
             }
 
             #[cfg(feature = "hpke")]
-            HpkeConfigAction::Generate {
+            CollectorCredentialAction::Generate {
                 kem,
                 kdf,
                 aead,
@@ -131,7 +135,7 @@ impl HpkeConfigAction {
 
                 let config_id = id.unwrap_or_else(|| rand::random());
 
-                let hpke_config = HpkeConfigContents::new(
+                let hpke_config = HpkeConfig::new(
                     config_id.into(),
                     (kem as u16).try_into().unwrap(),
                     (kdf as u16).try_into().unwrap(),
@@ -139,10 +143,10 @@ impl HpkeConfigAction {
                     public_key.clone().into(),
                 );
 
-                let name = name.unwrap_or_else(|| format!("hpke-config-{config_id}"));
+                let name = name.unwrap_or_else(|| format!("collector-credential-{config_id}"));
                 output.display(
                     client
-                        .create_hpke_config(account_id, &hpke_config, Some(&name))
+                        .create_collector_credential(account_id, &hpke_config, Some(&name))
                         .await?,
                 );
                 output.display(json!({
