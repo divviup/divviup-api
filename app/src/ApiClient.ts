@@ -129,6 +129,7 @@ export interface Aggregator {
   is_first_party: boolean;
   vdafs: string[];
   query_types: string[];
+  features: string[];
 }
 
 export interface NewAggregator {

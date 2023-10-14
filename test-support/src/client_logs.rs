@@ -70,6 +70,14 @@ pub struct ClientLogs {
 }
 
 impl ClientLogs {
+    pub fn len(&self) -> usize {
+        self.logged_conns.read().unwrap().len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.logged_conns.read().unwrap().is_empty()
+    }
+
     pub fn logs(&self) -> Vec<LoggedConn> {
         self.logged_conns.read().unwrap().clone()
     }
