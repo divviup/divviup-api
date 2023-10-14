@@ -151,14 +151,13 @@ export const HELPS: {
   },
 
   collector_credential_id: {
-    title: "Collector HPKE Config",
-    short:
-      "The collector's HPKE config. Results will be encrypted using the config's public key.",
+    title: "Collector Credentials",
+    short: "Credentials that can be used to retrieve aggregates for this task.",
     long: (
       <p>
-        Select a previously uploaded HPKE configuration. You will need to use
-        the config&apos;s corresponding private key when collecting aggregate
-        results.
+        Select a previously uploaded collector credential. You will need to use
+        the config&apos;s corresponding private key and auth token when
+        collecting aggregate results.
       </p>
     ),
   },

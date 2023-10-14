@@ -3,7 +3,14 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import { AccountBreadcrumbs, WithAccount } from "../util";
-import { Check, PencilFill, Key, Trash } from "react-bootstrap-icons";
+import {
+  Check,
+  PencilFill,
+  Key,
+  Trash,
+  CheckCircle,
+  XCircle,
+} from "react-bootstrap-icons";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   Await,
@@ -33,7 +40,7 @@ export default function CollectorCredentials() {
             <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <WithAccount>{(account) => account.name}</WithAccount>
             </Suspense>{" "}
-            HPKE Configs
+            Collector Credentials
           </h1>
         </Col>
       </Row>
@@ -54,7 +61,7 @@ export default function CollectorCredentials() {
 function Breadcrumbs() {
   return (
     <AccountBreadcrumbs>
-      <Breadcrumb.Item active>HPKE Configs</Breadcrumb.Item>
+      <Breadcrumb.Item active>Collector Credentials</Breadcrumb.Item>
     </AccountBreadcrumbs>
   );
 }
@@ -72,6 +79,7 @@ function CollectorCredentialList() {
           <td>KEM</td>
           <td>KDF</td>
           <td>AEAD</td>
+          <td>Has token</td>
           <td>Created</td>
           <td></td>
         </tr>
@@ -128,7 +136,7 @@ function Name({
     return (
       <span onClick={edit}>
         {collectorCredential.name ||
-          `HPKE Config ${collectorCredential.hpke_config.id}`}{" "}
+          `Collector Credential ${collectorCredential.hpke_config.id}`}{" "}
         <Button
           variant="outline-secondary"
           onClick={edit}
@@ -181,12 +189,12 @@ function DeleteButton({
       <Modal show={show} onHide={close}>
         <Modal.Header closeButton>
           <Modal.Title>
-            Confirm HPKE Config Deletion {collectorCredential.name}
+            Confirm Collector Credential Deletion {collectorCredential.name}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          This HPKE Config will immediately be inactivated and cannot be used to
-          create new tasks. Existing tasks will continue to function.
+          This collector credential will immediately be inactivated and cannot
+          be used to create new tasks. Existing tasks will continue to function.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={close}>
@@ -220,6 +228,7 @@ function CollectorCredentialRow({
       <td>{collectorCredential.hpke_config.kem_id}</td>
       <td>{collectorCredential.hpke_config.kdf_id}</td>
       <td>{collectorCredential.hpke_config.aead_id}</td>
+      <td>{collectorCredential.token_hash ? <CheckCircle /> : <XCircle />}</td>
       <td>
         <RelativeTime time={collectorCredential.created_at} />
       </td>

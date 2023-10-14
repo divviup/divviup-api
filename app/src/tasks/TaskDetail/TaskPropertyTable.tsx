@@ -117,7 +117,7 @@ export default function TaskPropertyTable() {
             </Suspense>
           </ListGroup.Item>
           <ListGroup.Item>
-            HPKE Config:{" "}
+            Collector Crededential:{" "}
             <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
               <Await resolve={collectorCredential}>
                 {(collectorCredential) => (

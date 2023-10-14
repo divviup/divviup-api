@@ -172,7 +172,7 @@ export default function AccountSummary() {
 
               <LinkContainer to="collector_credentials">
                 <ListGroup.Item action>
-                  <KeyFill /> HPKE Configs
+                  <KeyFill /> Collector Credentials
                 </ListGroup.Item>
               </LinkContainer>
             </ListGroup>
