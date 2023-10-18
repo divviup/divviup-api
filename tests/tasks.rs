@@ -186,7 +186,8 @@ mod create {
             leader_task_create
                 .collector_auth_token_hash
                 .as_ref()
-                .unwrap(),
+                .unwrap()
+                .as_ref(),
             collector_credential.token_hash.as_ref().unwrap()
         );
         assert!(helper_task_create.collector_auth_token_hash.is_none());
