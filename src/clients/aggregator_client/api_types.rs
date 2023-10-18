@@ -217,6 +217,37 @@ impl AuthenticationToken {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "type")]
+pub enum AuthenticationTokenHash {
+    /// Type of the authentication token hash. Authentication token hash type is always "Bearer" in
+    /// divviup-api.
+    Bearer {
+        /// Encoded value of the token hash. The encoding is opaque to divviup-api.
+        hash: String,
+    },
+}
+
+impl AuthenticationTokenHash {
+    pub fn new(hash: String) -> Self {
+        Self::Bearer { hash }
+    }
+
+    pub fn hash(self) -> String {
+        match self {
+            Self::Bearer { hash } => hash,
+        }
+    }
+}
+
+impl AsRef<str> for AuthenticationTokenHash {
+    fn as_ref(&self) -> &str {
+        match self {
+            Self::Bearer { ref hash } => hash.as_str(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TaskCreate {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -232,7 +263,7 @@ pub struct TaskCreate {
     pub collector_hpke_config: HpkeConfig,
     pub vdaf_verify_key: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub collector_auth_token_hash: Option<String>,
+    pub collector_auth_token_hash: Option<AuthenticationTokenHash>,
 }
 
 impl TaskCreate {
@@ -248,7 +279,11 @@ impl TaskCreate {
 
         let collector_auth_token_hash =
             if role == Role::Leader && target_aggregator.features.token_hash_enabled() {
-                new_task.collector_credential.token_hash.clone()
+                new_task
+                    .collector_credential
+                    .token_hash
+                    .clone()
+                    .map(|token| AuthenticationTokenHash::Bearer { hash: token })
             } else {
                 None
             };
