@@ -76,11 +76,19 @@ export default function AggregatorDetail() {
       <Row>
         <Col>
           <AggregatorPropertyTable />
-          <ButtonGroup>
-            <RenameAggregatorButton />
-            <RotateBearerTokenButton />
-            <DeleteAggregatorButton />
-          </ButtonGroup>
+          <WithAggregator>
+            {({ account_id }) =>
+              account_id ? (
+                <ButtonGroup>
+                  <RenameAggregatorButton />
+                  <RotateBearerTokenButton />
+                  <DeleteAggregatorButton />
+                </ButtonGroup>
+              ) : (
+                <></>
+              )
+            }
+          </WithAggregator>
         </Col>
       </Row>
     </>

@@ -25,6 +25,7 @@ export default function AccountForm() {
           placeholder="Account Name"
           value={name}
           onChange={updateName}
+          data-1p-ignore
         />
       </FormGroup>
       <Button variant="primary" type="submit">

@@ -1,5 +1,5 @@
-import { useFetcher, useNavigation } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import { useFetcher } from "react-router-dom";
+import React from "react";
 import { Pencil, PencilSquare } from "react-bootstrap-icons";
 import {
   Button,
@@ -9,18 +9,28 @@ import {
   Modal,
 } from "react-bootstrap";
 import { WithAggregator } from "./AggregatorDetail";
+import { UpdateAggregator, formikErrors } from "../ApiClient";
+import { FormikErrors } from "formik";
 
 export default function RenameAggregatorButton() {
-  const navigation = useNavigation();
-
-  const [show, setShow] = useState(false);
+  const [show, setShow] = React.useState(false);
   const close = React.useCallback(() => setShow(false), []);
   const open = React.useCallback(() => setShow(true), []);
   const fetcher = useFetcher();
+  const [errors, setErrors] = React.useState(
+    null as null | FormikErrors<UpdateAggregator>,
+  );
 
-  useEffect(() => {
-    if (fetcher.data) close();
-  }, [fetcher, close]);
+  React.useEffect(() => {
+    if (fetcher.data) {
+      if ("error" in fetcher.data) {
+        setErrors(formikErrors(fetcher.data.error));
+      } else {
+        close();
+        setErrors(null);
+      }
+    }
+  }, [fetcher.data, close]);
 
   return (
     <>
@@ -45,12 +55,18 @@ export default function RenameAggregatorButton() {
               <FormLabel>Name</FormLabel>
               <WithAggregator>
                 {({ name }) => (
-                  <FormControl
-                    name="name"
-                    type="text"
-                    data-1p-ignore
-                    defaultValue={name}
-                  />
+                  <>
+                    <FormControl
+                      name="name"
+                      type="text"
+                      data-1p-ignore
+                      defaultValue={name}
+                      isInvalid={!!errors?.name}
+                    />
+                    <FormControl.Feedback type="invalid">
+                      {errors?.name}
+                    </FormControl.Feedback>
+                  </>
                 )}
               </WithAggregator>
             </FormGroup>
@@ -62,7 +78,7 @@ export default function RenameAggregatorButton() {
             <Button
               variant="primary"
               type="submit"
-              disabled={navigation.state === "submitting"}
+              disabled={fetcher.state === "submitting"}
             >
               <Pencil /> Edit
             </Button>

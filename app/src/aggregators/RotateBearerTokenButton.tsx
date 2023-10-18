@@ -1,5 +1,5 @@
-import { useFetcher, useNavigation } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import { useFetcher } from "react-router-dom";
+import React from "react";
 import { ArrowRepeat } from "react-bootstrap-icons";
 import {
   Button,
@@ -13,8 +13,7 @@ import { UpdateAggregator, formikErrors } from "../ApiClient";
 import { FormikErrors } from "formik";
 
 export default function RotateBearerTokenButton() {
-  const navigation = useNavigation();
-  const [show, setShow] = useState(false);
+  const [show, setShow] = React.useState(false);
   const close = React.useCallback(() => setShow(false), []);
   const open = React.useCallback(() => setShow(true), []);
   const fetcher = useFetcher();
@@ -22,7 +21,7 @@ export default function RotateBearerTokenButton() {
     null as null | FormikErrors<UpdateAggregator>,
   );
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (fetcher.data) {
       if ("error" in fetcher.data) {
         setErrors(formikErrors(fetcher.data.error));
@@ -71,7 +70,7 @@ export default function RotateBearerTokenButton() {
             <Button
               variant="primary"
               type="submit"
-              disabled={navigation.state === "submitting"}
+              disabled={fetcher.state === "submitting"}
             >
               <ArrowRepeat /> Rotate
             </Button>
