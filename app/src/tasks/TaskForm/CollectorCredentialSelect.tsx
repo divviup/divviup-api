@@ -43,7 +43,11 @@ export default function CollectorCredentialSelect(props: Props) {
         isInvalid={!!props.errors.collector_credential_id}
         id="collector-credential-id"
         name="collector_credential_id"
+        onChange={props.handleChange}
+        onBlur={props.handleBlur}
+        value={props.values.collector_credential_id || ""}
       >
+        <option value=""></option>
         {enabledCredentials.map((collectorCredential) => (
           <option key={collectorCredential.id} value={collectorCredential.id}>
             {collectorCredential.name}
