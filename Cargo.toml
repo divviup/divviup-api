@@ -44,7 +44,7 @@ subtle = "2.5.0"
 thiserror = "1.0.49"
 time = { version = "0.3.30", features = ["serde", "serde-well-known"] }
 tokio = { version = "1.33.0", features = ["full"] }
-tracing = "0.1.39"
+tracing = "0.1.40"
 trillium = "0.2.9"
 trillium-api = { version = "0.2.0-rc.4", default-features = false }
 trillium-caching-headers = "0.2.1"
