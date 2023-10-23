@@ -1099,7 +1099,7 @@ dependencies = [
 
 [[package]]
 name = "divviup-api"
-version = "0.0.29"
+version = "0.0.30"
 dependencies = [
  "aes-gcm",
  "async-lock",
