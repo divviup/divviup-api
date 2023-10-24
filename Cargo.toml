@@ -1,11 +1,22 @@
-[package]
-name = "divviup-api"
+[workspace]
+members = [".", "migration", "client", "test-support", "cli"]
+
+[workspace.package]
 version = "0.0.30"
 edition = "2021"
 license = "MPL-2.0"
 homepage = "https://divviup.org"
 repository = "https://github.com/divviup/divviup-api"
+
+
+[package]
+name = "divviup-api"
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
 publish = false
+repository.workspace = true
+version.workspace = true
 default-run = "divviup_api_bin"
 
 [features]
@@ -13,8 +24,6 @@ default = []
 api-mocks = ["dep:trillium-testing"]
 integration-testing = []
 
-[workspace]
-members = [".", "migration", "client", "test-support", "cli"]
 
 [dependencies]
 aes-gcm = "0.10.3"
@@ -88,6 +97,7 @@ features = [
     "with-uuid",
     "with-time",
 ]
+
 
 [dev-dependencies]
 regex = "1.10.2"

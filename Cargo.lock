@@ -1310,7 +1310,7 @@ dependencies = [
 
 [[package]]
 name = "divviup-cli"
-version = "0.0.1"
+version = "0.0.30"
 dependencies = [
  "base64 0.21.5",
  "clap",
@@ -1333,10 +1333,11 @@ dependencies = [
 
 [[package]]
 name = "divviup-client"
-version = "0.0.1"
+version = "0.0.30"
 dependencies = [
  "base64 0.21.5",
  "divviup-api",
+ "divviup-client",
  "email_address",
  "fastrand 2.0.1",
  "futures-lite 2.0.0",
