@@ -29,7 +29,7 @@ janus_messages = "0.5.24"
 [dev-dependencies]
 divviup-api = { version = "*", path = ".." }
 fastrand = "2.0.1"
-futures-lite = "1.13.0"
+futures-lite = "2.0.0"
 test-support = { path = "../test-support" }
 trillium = "0.2.10"
 trillium-macros = "0.0.4"
