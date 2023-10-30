@@ -46,7 +46,7 @@ time = { version = "0.3.30", features = ["serde", "serde-well-known"] }
 tokio = { version = "1.33.0", features = ["full"] }
 tracing = "0.1.39"
 trillium = "0.2.11"
-trillium-api = { version = "0.2.0-rc.4", default-features = false }
+trillium-api = { version = "0.2.0-rc.5", default-features = false }
 trillium-caching-headers = "0.2.1"
 trillium-client = { version = "0.4.5", features = ["json"] }
 trillium-compression = "0.1.0"
