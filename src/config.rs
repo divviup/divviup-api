@@ -1,7 +1,18 @@
-use crate::{handler::oauth2::Oauth2Config, Crypter};
+use crate::{
+    handler::oauth2::Oauth2Config,
+    trace::{TokioConsoleConfig, TraceConfig},
+    Crypter,
+};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use email_address::EmailAddress;
-use std::{collections::VecDeque, env::VarError, error::Error, str::FromStr};
+use std::{
+    any::type_name,
+    collections::VecDeque,
+    env::{self, VarError},
+    error::Error,
+    net::SocketAddr,
+    str::FromStr,
+};
 use thiserror::Error;
 use trillium_client::Client;
 use url::Url;
@@ -22,9 +33,21 @@ pub struct Config {
     pub email_address: EmailAddress,
     pub postmark_token: String,
     pub postmark_url: Url,
-    pub prometheus_host: String,
-    pub prometheus_port: u16,
+    /// The address to listen on for prometheus metrics and tracing configuration.
+    pub monitoring_listen_address: SocketAddr,
     pub session_secrets: SessionSecrets,
+    /// See [`TraceConfig::use_test_writer`].
+    pub trace_use_test_writer: bool,
+    /// See [`TraceConfig::force_json_writer`].
+    pub trace_force_json_writer: bool,
+    /// See [`TraceConfig::stackdriver_json_output`].
+    pub trace_stackdriver_json_output: bool,
+    /// See [`TraceConfig::chrome`].
+    pub trace_chrome: bool,
+    /// See [`TokioConsoleConfig::enabled`].
+    pub tokio_console_enabled: bool,
+    /// See [`TokioConsoleConfig::listen_address`].
+    pub tokio_console_listen_address: SocketAddr,
 }
 
 #[derive(Debug, Error)]
@@ -35,8 +58,11 @@ pub enum ConfigError {
     #[error("environment variable `{0}` found but was not unicode")]
     NotUnicode(&'static str),
 
-    #[error("The environment variable `{0}` was found, but was not a valid {1}:\n\t{2}\n")]
-    InvalidEnvVarFormat(&'static str, &'static str, Box<dyn Error + 'static>),
+    #[error("environment variable `{0}` was found, but was not a valid {1}:\n\t{2}\n")]
+    InvalidEnvVarFormat(String, &'static str, Box<dyn Error + 'static>),
+
+    #[error(transparent)]
+    AddrParseError(#[from] std::net::AddrParseError),
 }
 
 fn var<T>(name: &'static str) -> Result<T, ConfigError>
@@ -44,8 +70,8 @@ where
     T: FromStr,
     <T as FromStr>::Err: Error + 'static,
 {
-    let format = std::any::type_name::<T>();
-    std::env::var(name)
+    let format = type_name::<T>();
+    env::var(name)
         .map_err(|error| match error {
             VarError::NotPresent => ConfigError::MissingEnvVar(name),
             VarError::NotUnicode(_) => ConfigError::NotUnicode(name),
@@ -53,7 +79,7 @@ where
         .and_then(|input| {
             input
                 .parse()
-                .map_err(|e| ConfigError::InvalidEnvVarFormat(name, format, Box::new(e)))
+                .map_err(|e| ConfigError::InvalidEnvVarFormat(name.into(), format, Box::new(e)))
         })
 }
 
@@ -101,9 +127,20 @@ impl Config {
             email_address: var("EMAIL_ADDRESS")?,
             postmark_token: var("POSTMARK_TOKEN")?,
             postmark_url: Url::parse(POSTMARK_URL).unwrap(),
-            prometheus_host: var_optional("OTEL_EXPORTER_PROMETHEUS_HOST", "localhost".into())?,
-            prometheus_port: var_optional("OTEL_EXPORTER_PROMETHEUS_PORT", 9464)?,
+            monitoring_listen_address: var_optional(
+                "MONITORING_LISTEN_ADDRESS",
+                "127.0.0.1:9464".parse().unwrap(),
+            )?,
             session_secrets: var("SESSION_SECRETS")?,
+            trace_use_test_writer: false,
+            trace_force_json_writer: var_optional("TRACE_FORCE_JSON_WRITER", false)?,
+            trace_stackdriver_json_output: var_optional("TRACE_STACKDRIVER_JSON_OUTPUT", false)?,
+            trace_chrome: var_optional("TRACE_CHROME", false)?,
+            tokio_console_enabled: var_optional("TOKIO_CONSOLE_ENABLED", false)?,
+            tokio_console_listen_address: var_optional(
+                "TOKIO_CONSOLE_LISTEN_ADDRESS",
+                "127.0.0.1:6669".parse().unwrap(),
+            )?,
         })
     }
 
@@ -117,6 +154,19 @@ impl Config {
             base_url: self.auth_url.clone(),
             audience: self.auth_audience.clone(),
             http_client: self.client.clone(),
+        }
+    }
+
+    pub fn trace_config(&self) -> TraceConfig {
+        TraceConfig {
+            use_test_writer: self.trace_use_test_writer,
+            force_json_output: self.trace_force_json_writer,
+            stackdriver_json_output: self.trace_stackdriver_json_output,
+            tokio_console_config: TokioConsoleConfig {
+                enabled: self.tokio_console_enabled,
+                listen_address: Some(self.tokio_console_listen_address),
+            },
+            chrome: self.trace_chrome,
         }
     }
 }
