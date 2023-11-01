@@ -27,13 +27,13 @@ pad-adapter = "0.1.1"
 janus_messages = "0.6.1"
 
 [dev-dependencies]
-divviup-api = { version = "0.0.30", path = ".." }
+divviup-api.workspace = true
 fastrand = "2.0.1"
 futures-lite = "2.0.0"
-test-support = { path = "../test-support" }
+test-support.workspace = true
 trillium = "0.2.11"
 trillium-macros = "0.0.4"
 trillium-testing = { version = "0.5.0", features = ["tokio"] }
 trillium-rustls = "0.4.0"
 trillium-tokio = "0.3.2"
-divviup-client =  { path = ".", features = ["admin"] }
+divviup-client =  { workspace = true, features = ["admin"] }
