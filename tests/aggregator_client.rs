@@ -24,13 +24,10 @@ async fn get_task_ids(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         log.request_headers
             .get_str(KnownHeaderName::Authorization)
             .unwrap()
-            == &format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
+            == format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
     }));
 
-    let queries = logs
-        .iter()
-        .map(|log| log.url.query().clone())
-        .collect::<Vec<_>>();
+    let queries = logs.iter().map(|log| log.url.query()).collect::<Vec<_>>();
     assert_eq!(
         &queries,
         &[
