@@ -1,14 +1,15 @@
 [package]
 name = "divviup-client"
-version = "0.0.1"
-edition = "2021"
-license = "MPL-2.0"
-homepage = "https://divviup.org"
-repository = "https://github.com/divviup/divviup-api"
-publish = false
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+version.workspace = true
+description = "Async rust client for divviup.org"
 
 [features]
-default = ["admin"]
+default = []
 admin = []
 
 [dependencies]
@@ -27,12 +28,13 @@ pad-adapter = "0.1.1"
 janus_messages = "0.6.1"
 
 [dev-dependencies]
-divviup-api = { version = "*", path = ".." }
+divviup-api.workspace = true
 fastrand = "2.0.1"
 futures-lite = "2.0.0"
-test-support = { path = "../test-support" }
+test-support.workspace = true
 trillium = "0.2.11"
 trillium-macros = "0.0.4"
 trillium-testing = { version = "0.5.0", features = ["tokio"] }
 trillium-rustls = "0.4.0"
 trillium-tokio = "0.3.2"
+divviup-client =  { path = ".", features = ["admin"] }

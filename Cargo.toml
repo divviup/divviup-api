@@ -1,11 +1,27 @@
-[package]
-name = "divviup-api"
+[workspace]
+members = [".", "migration", "client", "test-support", "cli"]
+
+[workspace.package]
 version = "0.0.30"
 edition = "2021"
 license = "MPL-2.0"
 homepage = "https://divviup.org"
 repository = "https://github.com/divviup/divviup-api"
+
+[workspace.dependencies]
+divviup-client = { path = "./client", version = "0.0.30" }
+divviup-cli = { path = "./cli", version = "0.0.30" }
+divviup-api.path = "."
+test-support.path = "./test-support"
+
+[package]
+name = "divviup-api"
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
 publish = false
+repository.workspace = true
+version.workspace = true
 default-run = "divviup_api_bin"
 
 [features]
@@ -13,8 +29,6 @@ default = []
 api-mocks = ["dep:trillium-testing"]
 integration-testing = []
 
-[workspace]
-members = [".", "migration", "client", "test-support", "cli"]
 
 [dependencies]
 aes-gcm = "0.10.3"
@@ -30,7 +44,7 @@ janus_messages = "0.6.1"
 log = "0.4.20"
 opentelemetry = { version = "0.20.0", features = ["metrics", "rt-tokio"] }
 opentelemetry-prometheus = { version = "0.13.0", features = [
-    "prometheus-encoding",
+        "prometheus-encoding",
 ] }
 prio = "0.15.3"
 prometheus = "0.13.3"
@@ -50,7 +64,12 @@ tracing-chrome = "0.7.1"
 tracing-log = "0.2.0"
 tracing-opentelemetry = "0.21.0"
 tracing-stackdriver = "0.8.0"
-tracing-subscriber = { version = "0.3.17", features = ["json", "env-filter", "std", "fmt"] }
+tracing-subscriber = { version = "0.3.17", features = [
+        "json",
+        "env-filter",
+        "std",
+        "fmt",
+] }
 trillium-api = { version = "0.2.0-rc.7", default-features = false }
 trillium-caching-headers = "0.2.1"
 trillium-client = { version = "0.4.5", features = ["json"] }
@@ -82,16 +101,17 @@ features = ["pkce-plain"]
 [dependencies.sea-orm]
 version = "0.12.4"
 features = [
-    "runtime-tokio-rustls",
-    "macros",
-    "sqlx-postgres",
-    "with-uuid",
-    "with-time",
+        "runtime-tokio-rustls",
+        "macros",
+        "sqlx-postgres",
+        "with-uuid",
+        "with-time",
 ]
+
 
 [dev-dependencies]
 regex = "1.10.2"
-test-support = { path = "./test-support" }
+test-support.workspace = true
 
 [build-dependencies]
 rustc_version = "0.4.0"

@@ -1,11 +1,12 @@
 [package]
 name = "divviup-cli"
-version = "0.0.1"
-edition = "2021"
-license = "MPL-2.0"
-homepage = "https://divviup.org"
-repository = "https://github.com/divviup/divviup-api"
-publish = false
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+version.workspace = true
+description = "Command line utility for divviup.org"
 
 [features]
 default = ["hpke"]
@@ -19,7 +20,7 @@ path = "src/main.rs"
 [dependencies]
 clap = { version = "4.4.7", features = ["derive", "env"] }
 thiserror = "1.0.50"
-divviup-client = { path = "../client" }
+divviup-client = { workspace = true }
 trillium-rustls = "0.4.0"
 trillium-tokio = "0.3.2"
 serde = "1.0.190"
