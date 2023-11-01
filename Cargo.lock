@@ -1245,7 +1245,7 @@ dependencies = [
 
 [[package]]
 name = "divviup-api"
-version = "0.0.30"
+version = "0.1.0"
 dependencies = [
  "aes-gcm",
  "async-lock 3.0.0",
@@ -1310,7 +1310,7 @@ dependencies = [
 
 [[package]]
 name = "divviup-cli"
-version = "0.0.30"
+version = "0.1.0"
 dependencies = [
  "base64 0.21.5",
  "clap",
@@ -1333,7 +1333,7 @@ dependencies = [
 
 [[package]]
 name = "divviup-client"
-version = "0.0.30"
+version = "0.1.0"
 dependencies = [
  "base64 0.21.5",
  "divviup-api",
@@ -4222,7 +4222,7 @@ dependencies = [
 
 [[package]]
 name = "test-support"
-version = "0.0.30"
+version = "0.1.0"
 dependencies = [
  "base64 0.21.5",
  "divviup-api",
