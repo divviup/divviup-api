@@ -11,8 +11,8 @@ repository = "https://github.com/divviup/divviup-api"
 [workspace.dependencies]
 divviup-client = { path = "./client", version = "0.0.30" }
 divviup-cli = { path = "./cli", version = "0.0.30" }
-divviup-api = { path = ".", version = "0.0.30" }
-test-support = { path = "./test-support", version = "0.0.30" }
+divviup-api.path = "."
+test-support.path = "./test-support"
 
 [package]
 name = "divviup-api"
