@@ -51,7 +51,7 @@ tracing-log = "0.2.0"
 tracing-opentelemetry = "0.21.0"
 tracing-stackdriver = "0.8.0"
 tracing-subscriber = { version = "0.3.17", features = ["json", "env-filter", "std", "fmt"] }
-trillium-api = { version = "0.2.0-rc.4", default-features = false }
+trillium-api = { version = "0.2.0-rc.6", default-features = false }
 trillium-caching-headers = "0.2.1"
 trillium-client = { version = "0.4.5", features = ["json"] }
 trillium-compression = "0.1.0"
