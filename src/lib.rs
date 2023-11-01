@@ -18,6 +18,7 @@ pub mod permissions;
 pub mod queue;
 mod routes;
 pub mod telemetry;
+pub mod trace;
 mod user;
 
 pub use config::{Config, ConfigError};

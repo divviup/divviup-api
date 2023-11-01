@@ -87,13 +87,18 @@ pub fn config(api_mocks: impl Handler) -> Config {
         auth_client_id: "client id".into(),
         auth_client_secret: "client secret".into(),
         auth_audience: "aud".into(),
-        prometheus_host: "localhost".into(),
-        prometheus_port: 9464,
+        monitoring_listen_address: "127.0.0.1:9464".parse().unwrap(),
         postmark_token: "-".into(),
         email_address: "test@example.test".parse().unwrap(),
         postmark_url: POSTMARK_URL.parse().unwrap(),
         client: Client::new(trillium_testing::connector(api_mocks)),
         crypter: Crypter::from(Crypter::generate_key()),
+        trace_use_test_writer: true,
+        trace_force_json_writer: false,
+        trace_stackdriver_json_output: false,
+        trace_chrome: false,
+        tokio_console_enabled: false,
+        tokio_console_listen_address: "127.0.0.1:6669".parse().unwrap(),
     }
 }
 
