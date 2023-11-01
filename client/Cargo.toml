@@ -6,6 +6,7 @@ license.workspace = true
 publish = true
 repository.workspace = true
 version.workspace = true
+description = "Async rust client for divviup.org"
 
 [features]
 default = []
