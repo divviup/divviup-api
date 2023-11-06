@@ -1254,7 +1254,7 @@ dependencies = [
  "console-subscriber",
  "email_address",
  "fastrand 2.0.1",
- "futures-lite 2.0.0",
+ "futures-lite 2.0.1",
  "git-version",
  "janus_messages",
  "log",
@@ -1340,7 +1340,7 @@ dependencies = [
  "divviup-client",
  "email_address",
  "fastrand 2.0.1",
- "futures-lite 2.0.0",
+ "futures-lite 2.0.1",
  "janus_messages",
  "log",
  "pad-adapter",
@@ -1656,9 +1656,9 @@ dependencies = [
 
 [[package]]
 name = "futures-lite"
-version = "2.0.0"
+version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c1155db57329dca6d018b61e76b1488ce9a2e5e44028cac420a5898f4fcef63"
+checksum = "d3831c2651acb5177cbd83943f3d9c8912c5ad03c76afcc0e9511ba568ec5ebb"
 dependencies = [
  "fastrand 2.0.1",
  "futures-core",
@@ -1666,7 +1666,6 @@ dependencies = [
  "memchr",
  "parking",
  "pin-project-lite",
- "waker-fn",
 ]
 
 [[package]]
@@ -4114,7 +4113,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3cbaa496909aa4ff7ff606b9d7fe90bc8b619a1ece49c25bd5fb4c93bb466fb"
 dependencies = [
  "event-listener 3.0.1",
- "futures-lite 2.0.0",
+ "futures-lite 2.0.1",
  "pin-project-lite",
 ]
 
@@ -4609,7 +4608,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a924e0aeb1b4e0cb844cd57d9a8b81bea9cba1a0bdb323bd753920149089fe2"
 dependencies = [
  "async-trait",
- "futures-lite 2.0.0",
+ "futures-lite 2.0.1",
  "log",
  "trillium-http",
 ]
@@ -4715,7 +4714,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29d26d4a07ecbc874a465d9f0c97a795ca7170160a4c78d9b3442c25238b92f0"
 dependencies = [
  "encoding_rs",
- "futures-lite 2.0.0",
+ "futures-lite 2.0.1",
  "hashbrown 0.14.2",
  "http",
  "httparse",
@@ -4814,7 +4813,7 @@ dependencies = [
  "async-trait",
  "async_cell",
  "event-listener 3.0.1",
- "futures-lite 2.0.0",
+ "futures-lite 2.0.1",
  "log",
  "pin-project-lite",
  "rlimit",
