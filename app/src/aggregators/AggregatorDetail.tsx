@@ -100,6 +100,7 @@ function AggregatorPropertyTable() {
     <Table striped bordered className="overflow-auto" responsive>
       <tbody>
         <TableRow label="Name" value="name" />
+        <TableRow label="Protocol" value="protocol" />
         <TableRow label="DAP url" value="dap_url" />
         <TableRow label="API url" value="api_url" />
         <TableRow label="Supported roles" value="role" />

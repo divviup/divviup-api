@@ -130,6 +130,7 @@ export interface Aggregator {
   vdafs: string[];
   query_types: string[];
   features: string[];
+  protocol: string;
 }
 
 export interface NewAggregator {
