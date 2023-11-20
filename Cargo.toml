@@ -90,7 +90,7 @@ trillium-testing = { version = "0.5.0", optional = true }
 trillium-tokio = "0.3.2"
 typenum = "1.17.0"
 url = "2.4.1"
-uuid = { version = "1.5.0", features = ["v4", "fast-rng", "serde"] }
+uuid = { version = "1.6.0", features = ["v4", "fast-rng", "serde"] }
 validator = { version = "0.16.1", features = ["derive"] }
 
 [dependencies.oauth2]
