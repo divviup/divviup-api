@@ -2,7 +2,7 @@ use crate::{CliResult, DetermineAccountId, Error, Output};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use clap::Subcommand;
 use divviup_client::{Decode, DivviupClient, HpkeConfig, Uuid};
-use std::{borrow::Cow, fs::File, io::Write, path::PathBuf};
+use std::{borrow::Cow, env::current_dir, fs::File, io::Write, path::PathBuf};
 use trillium_tokio::tokio::fs;
 
 #[cfg(feature = "hpke")]
@@ -174,12 +174,17 @@ impl CollectorCredentialAction {
                 // of the output settings of this CLI. The credential file should be treated as
                 // opaque, so we don't grant user control over its encoding.
                 if save {
-                    let mut file = File::create(name + ".json")?;
+                    let path = current_dir()?.with_file_name(name).with_extension("json");
+                    let mut file = File::create(path.clone())?;
                     file.write_all(&serde_json::to_vec_pretty(&credential).unwrap())?;
+                    println!(
+                        "\nSaved new collector credential to {}. Keep this file safe!",
+                        path.display()
+                    );
                 } else {
                     println!(
-                        "\nNew collector credential generated. Copy and paste the following text into \
-                        a file or your password manager:",
+                        "\nNew collector credential generated. Copy and paste the following text \
+                        into a file or your password manager:",
                     );
                     println!("{}", serde_json::to_string_pretty(&credential).unwrap());
                 }
