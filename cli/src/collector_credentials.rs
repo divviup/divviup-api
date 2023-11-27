@@ -2,7 +2,7 @@ use crate::{CliResult, DetermineAccountId, Error, Output};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use clap::Subcommand;
 use divviup_client::{Decode, DivviupClient, HpkeConfig, Uuid};
-use std::{borrow::Cow, path::PathBuf};
+use std::{borrow::Cow, env::current_dir, fs::File, io::Write, path::PathBuf};
 use trillium_tokio::tokio::fs;
 
 #[cfg(feature = "hpke")]
@@ -10,9 +10,9 @@ use hpke_dispatch::{Aead, Kdf, Kem};
 
 #[derive(Subcommand, Debug)]
 pub enum CollectorCredentialAction {
-    /// list hpke configs for the target account
+    /// list collector credentials for the target account
     List,
-    /// list hpke configs for the target account
+    /// create a new collector credential using the public key from a dap-encoded hpke config file
     Create {
         #[arg(
             long,
@@ -33,14 +33,14 @@ pub enum CollectorCredentialAction {
         /// if `file` is provided and `name` is not, the filename will be used
         name: Option<String>,
     },
-    /// delete a hpke config by id
+    /// delete a collector credential by uuid
     Delete { collector_credential_id: Uuid },
 
     #[cfg(feature = "hpke")]
-    /// create a new hpke config and upload the public key to divviup
+    /// generate a new collector credential and upload the public key to divviup
     ///
-    /// the private key will be output to stdout
-    /// but not recorded anywhere else
+    /// the private key will be output to stdout or a local file, but will not be recorded anywhere
+    /// else
     Generate {
         #[arg(short, long, default_value = "x25519-sha256")]
         /// key encapsulation mechanism
@@ -64,6 +64,15 @@ pub enum CollectorCredentialAction {
         /// an optional display name to identify this hpke config
         #[arg(long, short)]
         name: Option<String>,
+
+        /// save the generated credential to a file in the current directory
+        ///
+        /// if `name` is not provided, the filename will be `collector-credential-{id}.json`
+        /// where `id` is the id of the newly generated credential.
+        ///
+        /// if `name` is provided, the filename will be `file.json`
+        #[arg(long, short, action)]
+        save: bool,
     },
 }
 
@@ -123,6 +132,7 @@ impl CollectorCredentialAction {
                 aead,
                 name,
                 id,
+                save,
             } => {
                 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
                 use serde_json::json;
@@ -148,8 +158,7 @@ impl CollectorCredentialAction {
                     .create_collector_credential(account_id, &hpke_config, Some(&name))
                     .await?;
                 let token = collector_credential.token.as_ref().cloned().unwrap();
-                output.display(collector_credential);
-                output.display(json!({
+                let credential = json!({
                     "id": config_id,
                     "public_key": URL_SAFE_NO_PAD.encode(public_key),
                     "private_key": URL_SAFE_NO_PAD.encode(private_key),
@@ -157,7 +166,28 @@ impl CollectorCredentialAction {
                     "kdf": kdf,
                     "aead": aead,
                     "token": token
-                }));
+                });
+
+                output.display(collector_credential);
+
+                // The collector credential is always written to file in JSON encoding, regardless
+                // of the output settings of this CLI. The credential file should be treated as
+                // opaque, so we don't grant user control over its encoding.
+                if save {
+                    let path = current_dir()?.with_file_name(name).with_extension("json");
+                    let mut file = File::create(path.clone())?;
+                    file.write_all(&serde_json::to_vec_pretty(&credential).unwrap())?;
+                    println!(
+                        "\nSaved new collector credential to {}. Keep this file safe!",
+                        path.display()
+                    );
+                } else {
+                    println!(
+                        "\nNew collector credential generated. Copy and paste the following text \
+                        into a file or your password manager:",
+                    );
+                    println!("{}", serde_json::to_string_pretty(&credential).unwrap());
+                }
             }
         }
         Ok(())
