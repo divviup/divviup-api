@@ -47,14 +47,14 @@ function TsClientConfig() {
     [task, leaderAggregator, helperAggregator],
     ([task, leader, helper]) => ({
       ...task.vdaf,
-      taskId: task.id,
+      id: task.id,
       leader: leader.dap_url,
       helper: helper.dap_url,
       timePrecisionSeconds: task.time_precision_seconds,
     }),
     {
       type: null,
-      taskId: null,
+      id: null,
       leader: null,
       helper: null,
       timePrecisionSeconds: null,
