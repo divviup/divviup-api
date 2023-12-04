@@ -1239,7 +1239,7 @@ dependencies = [
  "console-subscriber",
  "email_address",
  "fastrand 2.0.1",
- "futures-lite 2.0.1",
+ "futures-lite 2.1.0",
  "git-version",
  "janus_messages",
  "log",
@@ -1325,7 +1325,7 @@ dependencies = [
  "divviup-client",
  "email_address",
  "fastrand 2.0.1",
- "futures-lite 2.0.1",
+ "futures-lite 2.1.0",
  "janus_messages",
  "log",
  "pad-adapter",
@@ -1652,14 +1652,13 @@ dependencies = [
 
 [[package]]
 name = "futures-lite"
-version = "2.0.1"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3831c2651acb5177cbd83943f3d9c8912c5ad03c76afcc0e9511ba568ec5ebb"
+checksum = "aeee267a1883f7ebef3700f262d2d54de95dfaf38189015a74fdc4e0c7ad8143"
 dependencies = [
  "fastrand 2.0.1",
  "futures-core",
  "futures-io",
- "memchr",
  "parking",
  "pin-project-lite",
 ]
@@ -4095,7 +4094,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "810ecf6a47020ea27b2cc949d2f1292b9759e8f2c4cebf71376520124417d9e6"
 dependencies = [
  "event-listener 4.0.0",
- "futures-lite 2.0.1",
+ "futures-lite 2.1.0",
  "pin-project-lite",
 ]
 
@@ -4593,7 +4592,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a924e0aeb1b4e0cb844cd57d9a8b81bea9cba1a0bdb323bd753920149089fe2"
 dependencies = [
  "async-trait",
- "futures-lite 2.0.1",
+ "futures-lite 2.1.0",
  "log",
  "trillium-http",
 ]
@@ -4634,7 +4633,7 @@ dependencies = [
  "crossbeam-queue",
  "dashmap",
  "encoding_rs",
- "futures-lite 2.0.1",
+ "futures-lite 2.1.0",
  "httparse",
  "log",
  "memchr",
@@ -4699,7 +4698,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99e0cb5adb4dc9f3d8a53a6cb1c86372b7dfec0be46f252d38d09909b9ba578c"
 dependencies = [
  "encoding_rs",
- "futures-lite 2.0.1",
+ "futures-lite 2.1.0",
  "hashbrown 0.14.2",
  "http",
  "httparse",
@@ -4798,7 +4797,7 @@ dependencies = [
  "async-trait",
  "async_cell",
  "event-listener 3.0.1",
- "futures-lite 2.0.1",
+ "futures-lite 2.1.0",
  "log",
  "pin-project-lite",
  "rlimit",
