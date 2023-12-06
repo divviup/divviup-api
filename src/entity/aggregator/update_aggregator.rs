@@ -32,21 +32,26 @@ impl UpdateAggregator {
         }
 
         if let Some(bearer_token) = self.bearer_token {
-            let aggregator_config = AggregatorClient::get_config(client, api_url, &bearer_token)
-                .await
-                .map_err(|e| match e {
-                    ClientError::HttpStatusNotSuccess {
-                        status: Some(Status::Unauthorized | Status::Forbidden),
-                        ..
-                    } => {
-                        let mut validation_errors = ValidationErrors::new();
-                        validation_errors
-                            .add("bearer_token", ValidationError::new("token-not-recognized"));
-                        validation_errors.into()
-                    }
+            let aggregator_config = AggregatorClient::get_config(
+                client,
+                api_url,
+                &bearer_token,
+                cfg!(feature = "integration-testing"),
+            )
+            .await
+            .map_err(|e| match e {
+                ClientError::HttpStatusNotSuccess {
+                    status: Some(Status::Unauthorized | Status::Forbidden),
+                    ..
+                } => {
+                    let mut validation_errors = ValidationErrors::new();
+                    validation_errors
+                        .add("bearer_token", ValidationError::new("token-not-recognized"));
+                    validation_errors.into()
+                }
 
-                    other => Error::from(other),
-                })?;
+                other => Error::from(other),
+            })?;
 
             aggregator.query_types = ActiveValue::Set(aggregator_config.query_types.into());
             aggregator.vdafs = ActiveValue::Set(aggregator_config.vdafs.into());

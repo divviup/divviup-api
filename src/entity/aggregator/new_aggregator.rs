@@ -44,6 +44,7 @@ impl NewAggregator {
             client,
             self.api_url.as_ref().unwrap().parse()?,
             self.bearer_token.as_ref().unwrap(),
+            cfg!(feature = "integration-testing"),
         )
         .await
         .map_err(|e| match e {

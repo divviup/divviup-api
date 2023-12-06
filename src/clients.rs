@@ -4,7 +4,10 @@ pub mod postmark_client;
 
 pub use aggregator_client::AggregatorClient;
 pub use auth0_client::Auth0Client;
-use backoff::ExponentialBackoff;
+use backoff::{
+    backoff::{Backoff, Stop},
+    ExponentialBackoff,
+};
 pub use postmark_client::PostmarkClient;
 use std::time::Duration;
 use trillium::{async_trait, Status};
@@ -86,16 +89,16 @@ impl From<ClientSerdeError> for ClientError {
     }
 }
 
-/// An [`ExponentialBackoff`] with parameters suitable for most HTTP requests. The parameters are
-/// copied from the parameters used in the GCP Go SDK[1].
-///
-/// [1]: https://github.com/googleapis/gax-go/blob/fbaf9882acf3297573f3a7cb832e54c7d8f40635/v2/call_option.go#L120
-pub(crate) fn http_request_exponential_backoff() -> ExponentialBackoff {
-    ExponentialBackoff {
-        initial_interval: Duration::from_secs(1),
-        max_interval: Duration::from_secs(30),
-        multiplier: 2.0,
-        max_elapsed_time: Some(Duration::from_secs(600)),
-        ..Default::default()
+pub(crate) fn http_request_backoff(with_retries: bool) -> Box<dyn Backoff + Send> {
+    if with_retries {
+        Box::new(ExponentialBackoff {
+            initial_interval: Duration::from_millis(10),
+            max_interval: Duration::from_secs(5),
+            multiplier: 2.0,
+            max_elapsed_time: Some(Duration::from_secs(600)),
+            ..Default::default()
+        })
+    } else {
+        Box::new(Stop {})
     }
 }

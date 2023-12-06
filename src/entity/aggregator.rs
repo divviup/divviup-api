@@ -68,11 +68,12 @@ impl Model {
         http_client: trillium_client::Client,
         crypter: &Crypter,
     ) -> Result<AggregatorClient, Error> {
-        Ok(AggregatorClient::new(
-            http_client,
-            self.clone(),
-            &self.bearer_token(crypter)?,
-        ))
+        let mut aggregator_client =
+            AggregatorClient::new(http_client, self.clone(), &self.bearer_token(crypter)?);
+        if cfg!(feature = "integration-testing") {
+            aggregator_client = aggregator_client.with_retries();
+        }
+        Ok(aggregator_client)
     }
 
     pub fn bearer_token(&self, crypter: &Crypter) -> Result<String, Error> {

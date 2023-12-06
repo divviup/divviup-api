@@ -1,5 +1,5 @@
 use crate::{
-    clients::{http_request_exponential_backoff, ClientConnExt, ClientError},
+    clients::{http_request_backoff, ClientConnExt, ClientError},
     entity::{task::ProvisionableTask, Aggregator},
     handler::Error,
 };
@@ -19,6 +19,7 @@ pub struct AggregatorClient {
     auth_header: HeaderValue,
     aggregator: Aggregator,
     base_url: Url,
+    with_retries: bool,
 }
 
 impl AsRef<Client> for AggregatorClient {
@@ -39,6 +40,14 @@ impl AggregatorClient {
             auth_header: format!("Bearer {bearer_token}").into(),
             aggregator,
             base_url,
+            with_retries: false,
+        }
+    }
+
+    pub fn with_retries(self) -> Self {
+        Self {
+            with_retries: true,
+            ..self
         }
     }
 
@@ -46,8 +55,9 @@ impl AggregatorClient {
         client: Client,
         base_url: Url,
         token: &str,
+        with_retries: bool,
     ) -> Result<AggregatorApiConfig, ClientError> {
-        retry(http_request_exponential_backoff(), || async {
+        retry(http_request_backoff(with_retries), || async {
             let base_url = base_url.clone();
             client
                 .get(base_url)
@@ -114,7 +124,7 @@ impl AggregatorClient {
     }
 
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T, ClientError> {
-        retry(http_request_exponential_backoff(), || async {
+        retry(http_request_backoff(self.with_retries), || async {
             self.conn(Method::Get, path)
                 .success_or_client_error()
                 .await
@@ -131,7 +141,7 @@ impl AggregatorClient {
         path: &str,
         body: &impl Serialize,
     ) -> Result<T, ClientError> {
-        retry(http_request_exponential_backoff(), || async {
+        retry(http_request_backoff(self.with_retries), || async {
             self.conn(Method::Post, path)
                 .with_json_body(body)
                 .map_err(ClientError::Json)?
@@ -147,7 +157,7 @@ impl AggregatorClient {
     }
 
     async fn delete(&self, path: &str) -> Result<(), ClientError> {
-        let _ = retry(http_request_exponential_backoff(), || async {
+        let _ = retry(http_request_backoff(self.with_retries), || async {
             self.conn(Method::Delete, path)
                 .success_or_client_error()
                 .await

@@ -102,6 +102,7 @@ async fn get_config(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         app.config().client.clone(),
         "https://aggregator.api.url".parse().unwrap(),
         "token",
+        false,
     )
     .await?;
     let log = client_logs.last();
@@ -128,6 +129,7 @@ async fn get_config_bad_token(app: DivviupApi) -> TestResult {
         app.config().client.clone(),
         "https://aggregator.api.url".parse().unwrap(),
         BAD_BEARER_TOKEN,
+        false,
     )
     .await
     .is_err());
