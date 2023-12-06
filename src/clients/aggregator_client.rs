@@ -1,8 +1,9 @@
 use crate::{
-    clients::{ClientConnExt, ClientError},
+    clients::{http_request_exponential_backoff, ClientConnExt, ClientError},
     entity::{task::ProvisionableTask, Aggregator},
     handler::Error,
 };
+use backoff::future::retry;
 use serde::{de::DeserializeOwned, Serialize};
 use trillium::{HeaderValue, KnownHeaderName, Method};
 use trillium_client::{Client, Conn};
@@ -46,15 +47,20 @@ impl AggregatorClient {
         base_url: Url,
         token: &str,
     ) -> Result<AggregatorApiConfig, ClientError> {
-        client
-            .get(base_url)
-            .with_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
-            .with_header(KnownHeaderName::Accept, CONTENT_TYPE)
-            .success_or_client_error()
-            .await?
-            .response_json()
-            .await
-            .map_err(Into::into)
+        retry(http_request_exponential_backoff(), || async {
+            let base_url = base_url.clone();
+            client
+                .get(base_url)
+                .with_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
+                .with_header(KnownHeaderName::Accept, CONTENT_TYPE)
+                .success_or_client_error()
+                .await
+                .map_err(ClientError::into_backoff)
+        })
+        .await?
+        .response_json()
+        .await
+        .map_err(Into::into)
     }
 
     pub async fn get_task_ids(&self) -> Result<Vec<String>, ClientError> {
@@ -108,12 +114,16 @@ impl AggregatorClient {
     }
 
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T, ClientError> {
-        self.conn(Method::Get, path)
-            .success_or_client_error()
-            .await?
-            .response_json()
-            .await
-            .map_err(ClientError::from)
+        retry(http_request_exponential_backoff(), || async {
+            self.conn(Method::Get, path)
+                .success_or_client_error()
+                .await
+                .map_err(ClientError::into_backoff)
+        })
+        .await?
+        .response_json()
+        .await
+        .map_err(ClientError::from)
     }
 
     async fn post<T: DeserializeOwned>(
@@ -121,21 +131,29 @@ impl AggregatorClient {
         path: &str,
         body: &impl Serialize,
     ) -> Result<T, ClientError> {
-        self.conn(Method::Post, path)
-            .with_json_body(body)?
-            .with_header(KnownHeaderName::ContentType, CONTENT_TYPE)
-            .success_or_client_error()
-            .await?
-            .response_json()
-            .await
-            .map_err(ClientError::from)
+        retry(http_request_exponential_backoff(), || async {
+            self.conn(Method::Post, path)
+                .with_json_body(body)
+                .map_err(ClientError::Json)?
+                .with_header(KnownHeaderName::ContentType, CONTENT_TYPE)
+                .success_or_client_error()
+                .await
+                .map_err(ClientError::into_backoff)
+        })
+        .await?
+        .response_json()
+        .await
+        .map_err(ClientError::from)
     }
 
     async fn delete(&self, path: &str) -> Result<(), ClientError> {
-        let _ = self
-            .conn(Method::Delete, path)
-            .success_or_client_error()
-            .await?;
+        let _ = retry(http_request_exponential_backoff(), || async {
+            self.conn(Method::Delete, path)
+                .success_or_client_error()
+                .await
+                .map_err(ClientError::into_backoff)
+        })
+        .await?;
         Ok(())
     }
 }

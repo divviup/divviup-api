@@ -34,6 +34,7 @@ integration-testing = []
 aes-gcm = "0.10.3"
 async-lock = "3.1.2"
 async-session = "3.0.0"
+backoff = { version = "0.4.0", features = ["tokio"] }
 base64 = "0.21.5"
 console-subscriber = "0.2.0"
 email_address = "0.2.4"
