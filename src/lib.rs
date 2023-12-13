@@ -25,6 +25,7 @@ pub use config::{Config, ConfigError};
 pub use crypter::Crypter;
 pub use db::Db;
 pub use handler::{custom_mime_types::CONTENT_TYPE, DivviupApi, Error};
+pub use opentelemetry;
 pub use permissions::{Permissions, PermissionsActor};
 pub use queue::Queue;
 pub use routes::routes;

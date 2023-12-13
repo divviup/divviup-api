@@ -7,6 +7,7 @@ pub(crate) mod error;
 pub(crate) mod logger;
 pub(crate) mod misc;
 pub(crate) mod oauth2;
+pub(crate) mod opentelemetry;
 pub(crate) mod origin_router;
 pub(crate) mod session_store;
 
@@ -35,6 +36,15 @@ pub(crate) use misc::*;
 pub use error::Error;
 pub use origin_router::origin_router;
 
+use self::opentelemetry::opentelemetry;
+
+#[cfg(feature = "otlp-trace")]
+use trillium_opentelemetry::global::instrument_handler;
+#[cfg(not(feature = "otlp-trace"))]
+fn instrument_handler(handler: impl Handler) -> impl Handler {
+    handler
+}
+
 #[derive(Handler, Debug)]
 pub struct DivviupApi {
     #[handler(except = init)]
@@ -61,11 +71,12 @@ impl DivviupApi {
                 conn_id(),
                 routes::health_check(&db),
                 Forwarding::trust_always(),
+                opentelemetry(),
                 caching_headers(),
                 logger(),
                 #[cfg(assets)]
-                assets::static_assets(&config),
-                api(&db, &config),
+                instrument_handler(assets::static_assets(&config)),
+                instrument_handler(api(&db, &config)),
                 ErrorHandler,
             )),
             db,
