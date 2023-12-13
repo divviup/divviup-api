@@ -14,11 +14,11 @@ impl Handler for ErrorHandler {
     }
 
     async fn before_send(&self, mut conn: Conn) -> Conn {
-        let Some(error) = conn
-            .take_state::<ApiError>()
-            .map(Error::from)
-            .or_else(|| conn.take_state())
-        else {
+        if let Some(error) = conn.take_state::<ApiError>() {
+            conn.set_state(Error::from(error));
+        };
+
+        let Some(error) = conn.state().cloned() else {
             return conn;
         };
 
@@ -38,10 +38,11 @@ impl Handler for ErrorHandler {
             Error::Validation(e) => conn.with_status(Status::BadRequest).with_json(&e),
 
             e => {
-                let mut conn = conn.with_status(Status::InternalServerError);
+                let string = e.to_string();
                 log::error!("{e}");
+                let mut conn = conn.with_status(Status::InternalServerError);
                 if cfg!(debug_assertions) {
-                    conn.with_body(e.to_string())
+                    conn.with_body(string)
                 } else {
                     conn.inner_mut().take_response_body();
                     conn
