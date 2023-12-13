@@ -17,7 +17,7 @@ use cors::cors_headers;
 use error::ErrorHandler;
 use logger::logger;
 use session_store::SessionStore;
-use std::sync::Arc;
+use std::{borrow::Cow, sync::Arc};
 use trillium::{state, Handler, Info};
 use trillium_caching_headers::{
     cache_control, caching_headers,
@@ -103,23 +103,40 @@ impl AsRef<Db> for DivviupApi {
     }
 }
 
+#[derive(Handler, Debug, Clone)]
+pub struct NamedHandler<H>(#[handler(except = name)] H, Cow<'static, str>);
+impl<H: Handler> NamedHandler<H> {
+    fn name(&self) -> Cow<'static, str> {
+        self.1.clone()
+    }
+
+    pub fn new(name: impl Into<Cow<'static, str>>, handler: H) -> Self {
+        Self(handler, name.into())
+    }
+}
+
 fn api(db: &Db, config: &Config) -> impl Handler {
-    (
-        compression(),
-        #[cfg(feature = "integration-testing")]
-        state(crate::User::for_integration_testing()),
-        cookies(),
-        sessions(
-            SessionStore::new(db.clone()),
-            &config.session_secrets.current,
-        )
-        .with_cookie_name("divviup.sid")
-        .with_older_secrets(&config.session_secrets.older),
-        state(config.client.clone()),
-        state(config.crypter.clone()),
-        cors_headers(config),
-        cache_control([Private, MustRevalidate]),
-        db.clone(),
-        routes(config),
+    NamedHandler::new(
+        "api",
+        (
+            instrument_handler(compression()),
+            #[cfg(feature = "integration-testing")]
+            state(crate::User::for_integration_testing()),
+            instrument_handler(cookies()),
+            instrument_handler(
+                sessions(
+                    SessionStore::new(db.clone()),
+                    &config.session_secrets.current,
+                )
+                .with_cookie_name("divviup.sid")
+                .with_older_secrets(&config.session_secrets.older),
+            ),
+            state(config.client.clone()),
+            state(config.crypter.clone()),
+            instrument_handler(cors_headers(config)),
+            cache_control([Private, MustRevalidate]),
+            db.clone(),
+            instrument_handler(routes(config)),
+        ),
     )
 }
