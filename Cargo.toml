@@ -65,7 +65,7 @@ tracing-chrome = "0.7.1"
 tracing-log = "0.2.0"
 tracing-opentelemetry = "0.21.0"
 tracing-stackdriver = "0.8.0"
-tracing-subscriber = { version = "0.3.17", features = [
+tracing-subscriber = { version = "0.3.18", features = [
         "json",
         "env-filter",
         "std",

@@ -17,7 +17,7 @@ serde_json = "1.0.108"
 thiserror = "1.0.50"
 time = "0.3.30"
 tracing = "0.1.40"
-tracing-subscriber = "0.3.17"
+tracing-subscriber = "0.3.18"
 
 [dependencies.sea-orm-migration]
 version = "0.12.4"
