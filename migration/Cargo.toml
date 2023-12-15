@@ -11,17 +11,17 @@ path = "src/lib.rs"
 
 [dependencies]
 async-std = { version = "1", features = ["attributes", "tokio1"] }
-clap = { version = "4.4.7", features = ["env", "derive"] }
-sea-orm = "0.12.4"
+clap = { version = "4.4.11", features = ["env", "derive"] }
+sea-orm = "0.12.10"
 serde_json = "1.0.108"
 thiserror = "1.0.50"
 time = "0.3.30"
 tracing = "0.1.40"
-tracing-subscriber = "0.3.17"
+tracing-subscriber = "0.3.18"
 
 [dependencies.sea-orm-migration]
-version = "0.12.4"
+version = "0.12.10"
 features = ["runtime-tokio-rustls", "sqlx-postgres"]
 
 [dev-dependencies]
-sea-orm = { version = "0.12.4", features = ["sqlx-sqlite"] }
+sea-orm = { version = "0.12.10", features = ["sqlx-sqlite"] }
