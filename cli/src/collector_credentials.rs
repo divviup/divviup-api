@@ -174,7 +174,7 @@ impl CollectorCredentialAction {
                 // of the output settings of this CLI. The credential file should be treated as
                 // opaque, so we don't grant user control over its encoding.
                 if save {
-                    let path = current_dir()?.with_file_name(name).with_extension("json");
+                    let path = current_dir()?.join(name).with_extension("json");
                     let mut file = File::create(path.clone())?;
                     file.write_all(&serde_json::to_vec_pretty(&credential).unwrap())?;
                     println!(
