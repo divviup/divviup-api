@@ -15,7 +15,7 @@ serde = "1.0.193"
 serde_json = "1.0.108"
 thiserror = "1.0.51"
 trillium-client = { version = "0.4.8", features = ["json"] }
-trillium-http = "0.3.7"
+trillium-http = "0.3.9"
 trillium-rustls = "0.4.0"
 trillium-tokio = "0.3.2"
 url = "2.5.0"
