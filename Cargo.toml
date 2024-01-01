@@ -56,7 +56,7 @@ serde_json = "1.0.108"
 serde_path_to_error = "0.1.14"
 sha2 = "0.10.8"
 subtle = "2.5.0"
-thiserror = "1.0.51"
+thiserror = "1.0.53"
 time = { version = "0.3.31", features = ["serde", "serde-well-known"] }
 tokio = { version = "1.35.1", features = ["full"] }
 tracing = "0.1.40"
