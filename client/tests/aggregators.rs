@@ -1,8 +1,6 @@
 mod harness;
-use divviup_client::{DivviupClient, NewAggregator};
-use harness::with_configured_client;
-use std::sync::Arc;
-use test_support::{assert_eq, test, *};
+use divviup_client::NewAggregator;
+use harness::{assert_eq, test, *};
 
 #[test(harness = with_configured_client)]
 async fn aggregator_list(

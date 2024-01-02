@@ -1,9 +1,5 @@
 mod harness;
-use divviup_api::api_mocks::aggregator_api::random_hpke_config;
-use divviup_client::DivviupClient;
-use harness::with_configured_client;
-use std::sync::Arc;
-use test_support::{assert_eq, test, *};
+use harness::{assert_eq, test, *};
 
 #[test(harness = with_configured_client)]
 async fn collector_credentials_list(
@@ -23,7 +19,7 @@ async fn create_collector_credential(
     account: Account,
     client: DivviupClient,
 ) -> TestResult {
-    let config = random_hpke_config();
+    let config = fixtures::random_hpke_config();
     let collector_credential = client
         .create_collector_credential(account.id, &config, None)
         .await?;
@@ -37,7 +33,7 @@ async fn create_collector_credential_with_name(
     account: Account,
     client: DivviupClient,
 ) -> TestResult {
-    let config = random_hpke_config();
+    let config = fixtures::random_hpke_config();
     let name = fixtures::random_name();
     let collector_credential = client
         .create_collector_credential(account.id, &config, Some(&name))
