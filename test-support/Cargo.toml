@@ -7,17 +7,17 @@ publish = false
 [dependencies]
 fastrand = "2.0.1"
 time = "0.3.31"
-trillium = "0.2.11"
-trillium-macros = "0.0.4"
-trillium-testing = { version = "0.5.0", features = ["tokio"] }
+trillium = "0.2.13"
+trillium-macros = "0.0.5"
+trillium-testing = { version = "0.5.2", features = ["tokio"] }
 divviup-api.workspace = true
-serde = "1.0.193"
-serde_json = "1.0.108"
-thiserror = "1.0.51"
-trillium-client = { version = "0.4.8", features = ["json"] }
-trillium-http = "0.3.7"
-trillium-rustls = "0.4.0"
-trillium-tokio = "0.3.2"
+serde = "1.0.194"
+serde_json = "1.0.110"
+thiserror = "1.0.56"
+trillium-client = { version = "0.5.1", features = ["json"] }
+trillium-http = "0.3.11"
+trillium-rustls = "0.4.2"
+trillium-tokio = "0.3.4"
 url = "2.5.0"
 uuid = { version = "1.6.1", features = ["v4", "fast-rng", "serde"] }
 sea-orm = { version = "0.12.10", features = ["sqlx-sqlite"] }
@@ -25,4 +25,4 @@ pretty_assertions = "1.4.0"
 rand = "0.8.5"
 base64 = "0.21.5"
 querystrong = "0.3.0"
-test-harness = "0.1.1"
+test-harness = "0.2.0"
