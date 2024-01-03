@@ -21,7 +21,7 @@ Accidentally modifying any of these plaintext values would make report generatio
 
 ## Proposed improvement
 
-We add an infinitely cacheable (`Cache-Control: public, max-age=604800`) endpoint `GET {divviup-api url}/api/tasks/:task_id`. When a task is found with the provided task identifier, the divviup-api server responds with the following json:
+We add an infinitely cacheable (`Cache-Control: public, max-age=604800`) endpoint `GET {divviup-api url}/tasks/:task_id`. When a task is found with the provided task identifier, the divviup-api server responds with the following json:
 
 ```json
 {
@@ -33,7 +33,6 @@ We add an infinitely cacheable (`Cache-Control: public, max-age=604800`) endpoin
   "leader": "https://dap.xxqbi.example/",
   "helper": "https://dap.xxqbi.example/",
   "time_precision_seconds": 1080,
-  "protocol": "DAP-04"
 }
 ```
 
@@ -41,7 +40,7 @@ and the client can be configured like:
 
 ```js
 import DivviupClient from "@divviup/client";
-const client = new DivviupClient("https://api.divviup.org/api/tasks/5YXXYPFzt1a8cuo8AlKqs6oKbt3FIrkn3Q8JseJKRYs");
+const client = new DivviupClient("https://api.divviup.org/tasks/5YXXYPFzt1a8cuo8AlKqs6oKbt3FIrkn3Q8JseJKRYs");
 ```
 
 or, optionally, the following shortcut is also supported:
