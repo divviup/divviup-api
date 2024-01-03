@@ -1,6 +1,5 @@
-mod harness;
+use crate::harness::{assert_eq, test, *};
 use divviup_client::NewAggregator;
-use harness::{assert_eq, test, *};
 
 #[test(harness = with_configured_client)]
 async fn aggregator_list(

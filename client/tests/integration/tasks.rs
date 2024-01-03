@@ -1,7 +1,6 @@
-mod harness;
+use crate::harness::{assert_eq, test, *};
 use divviup_api::entity::aggregator::Features;
 use divviup_client::{NewTask, Vdaf};
-use harness::{assert_eq, test, *};
 
 #[test(harness = with_configured_client)]
 async fn task_list(app: Arc<DivviupApi>, account: Account, client: DivviupClient) -> TestResult {

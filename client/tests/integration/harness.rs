@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 pub use divviup_client::DivviupClient;
 use trillium_testing::connector;
 
