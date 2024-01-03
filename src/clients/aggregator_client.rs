@@ -4,8 +4,7 @@ use crate::{
     handler::Error,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use trillium::{HeaderValue, KnownHeaderName, Method};
-use trillium_client::{Client, Conn};
+use trillium_client::{Client, KnownHeaderName};
 use url::Url;
 pub mod api_types;
 pub use api_types::{AggregatorApiConfig, TaskCreate, TaskIds, TaskMetrics, TaskResponse};
@@ -15,9 +14,7 @@ const CONTENT_TYPE: &str = "application/vnd.janus.aggregator+json;version=0.1";
 #[derive(Debug, Clone)]
 pub struct AggregatorClient {
     client: Client,
-    auth_header: HeaderValue,
     aggregator: Aggregator,
-    base_url: Url,
 }
 
 impl AsRef<Client> for AggregatorClient {
@@ -28,17 +25,15 @@ impl AsRef<Client> for AggregatorClient {
 
 impl AggregatorClient {
     pub fn new(client: Client, aggregator: Aggregator, bearer_token: &str) -> Self {
-        let mut base_url: Url = aggregator.api_url.clone().into();
-        if !base_url.path().ends_with('/') {
-            base_url.set_path(&format!("{}/", base_url.path()));
-        }
+        let client = client
+            .with_base(aggregator.api_url.clone())
+            .with_default_header(
+                KnownHeaderName::Authorization,
+                format!("Bearer {bearer_token}"),
+            )
+            .with_default_header(KnownHeaderName::Accept, CONTENT_TYPE);
 
-        Self {
-            client,
-            auth_header: format!("Bearer {bearer_token}").into(),
-            aggregator,
-            base_url,
-        }
+        Self { client, aggregator }
     }
 
     pub async fn get_config(
@@ -96,19 +91,9 @@ impl AggregatorClient {
 
     // private below here
 
-    fn url(&self, path: &str) -> Url {
-        self.base_url.join(path).unwrap()
-    }
-
-    fn conn(&self, method: Method, path: &str) -> Conn {
-        self.client
-            .build_conn(method, self.url(path))
-            .with_header(KnownHeaderName::Authorization, self.auth_header.clone())
-            .with_header(KnownHeaderName::Accept, CONTENT_TYPE)
-    }
-
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T, ClientError> {
-        self.conn(Method::Get, path)
+        self.client
+            .get(path)
             .success_or_client_error()
             .await?
             .response_json()
@@ -121,7 +106,8 @@ impl AggregatorClient {
         path: &str,
         body: &impl Serialize,
     ) -> Result<T, ClientError> {
-        self.conn(Method::Post, path)
+        self.client
+            .post(path)
             .with_json_body(body)?
             .with_header(KnownHeaderName::ContentType, CONTENT_TYPE)
             .success_or_client_error()
@@ -132,10 +118,7 @@ impl AggregatorClient {
     }
 
     async fn delete(&self, path: &str) -> Result<(), ClientError> {
-        let _ = self
-            .conn(Method::Delete, path)
-            .success_or_client_error()
-            .await?;
+        let _ = self.client.delete(path).success_or_client_error().await?;
         Ok(())
     }
 }

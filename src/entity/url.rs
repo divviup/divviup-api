@@ -4,6 +4,7 @@ use std::{
     ops::{Deref, DerefMut},
     str::FromStr,
 };
+use trillium_client::IntoUrl;
 #[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(transparent)]
 pub struct Url(url::Url);
@@ -60,6 +61,12 @@ impl FromStr for Url {
     type Err = url::ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         url::Url::from_str(s).map(Self)
+    }
+}
+
+impl IntoUrl for Url {
+    fn into_url(self, base: Option<&url::Url>) -> trillium_http::Result<url::Url> {
+        self.0.into_url(base)
     }
 }
 
