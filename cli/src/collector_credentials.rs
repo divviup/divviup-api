@@ -2,11 +2,13 @@ use crate::{CliResult, DetermineAccountId, Error, Output};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use clap::Subcommand;
 use divviup_client::{Decode, DivviupClient, HpkeConfig, Uuid};
-use std::{borrow::Cow, env::current_dir, fs::File, io::Write, path::PathBuf};
+use std::{borrow::Cow, path::PathBuf};
 use trillium_tokio::tokio::fs;
 
 #[cfg(feature = "hpke")]
 use hpke_dispatch::{Aead, Kdf, Kem};
+#[cfg(feature = "hpke")]
+use std::{env::current_dir, fs::File, io::Write};
 
 #[derive(Subcommand, Debug)]
 pub enum CollectorCredentialAction {
