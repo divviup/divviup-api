@@ -1,5 +1,4 @@
-mod harness;
-use harness::{assert_eq, test, *};
+use crate::harness::{assert_eq, test, *};
 
 #[test(harness = with_configured_client)]
 async fn account_list(

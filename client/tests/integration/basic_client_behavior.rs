@@ -1,6 +1,5 @@
-mod harness;
+use crate::harness::{assert_eq, test, *};
 use divviup_client::{CONTENT_TYPE, USER_AGENT};
-use harness::{assert_eq, test, *};
 
 #[test(harness = with_configured_client_and_logs)]
 async fn default_headers(
