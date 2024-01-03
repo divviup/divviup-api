@@ -3,7 +3,7 @@ use std::{
     fmt::{Display, Formatter, Result},
     sync::{Arc, RwLock},
 };
-use trillium::{Body, Conn, Headers, Method, StateSet, Status};
+use trillium::{async_trait, Body, Conn, Handler, Headers, Method, StateSet, Status};
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -39,6 +39,11 @@ impl From<&mut Conn> for LoggedConn {
 
         let state = Arc::new(std::mem::take(conn.inner_mut().state_mut()));
 
+        let request_headers = match state.get() {
+            Some(OriginalRequestHeaders(headers)) => headers.clone(),
+            None => conn.request_headers().clone(),
+        };
+
         Self {
             url,
             state,
@@ -49,7 +54,7 @@ impl From<&mut Conn> for LoggedConn {
                 .and_then(Body::static_bytes)
                 .map(|s| String::from_utf8_lossy(s).to_string()),
             response_status: conn.status().unwrap_or(Status::NotFound),
-            request_headers: conn.request_headers().clone(),
+            request_headers,
             response_headers: conn.response_headers().clone(),
         }
     }
@@ -94,5 +99,23 @@ impl ClientLogs {
             .filter(|lc| lc.url == url)
             .cloned()
             .collect()
+    }
+}
+
+#[derive(Debug)]
+struct OriginalRequestHeaders(Headers);
+
+#[async_trait]
+impl Handler for ClientLogs {
+    async fn run(&self, conn: Conn) -> Conn {
+        let request_headers = conn.request_headers().clone();
+        conn.with_state(OriginalRequestHeaders(request_headers))
+    }
+    async fn before_send(&self, mut conn: Conn) -> Conn {
+        self.logged_conns
+            .write()
+            .unwrap()
+            .push(LoggedConn::from(&mut conn));
+        conn
     }
 }

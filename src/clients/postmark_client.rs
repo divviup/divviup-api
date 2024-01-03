@@ -8,14 +8,11 @@ use serde_json::{json, Value};
 use trillium::{async_trait, Conn, KnownHeaderName};
 use trillium_api::FromConn;
 use trillium_client::Client;
-use url::Url;
 
 #[derive(Debug, Clone)]
 pub struct PostmarkClient {
-    token: String,
     client: Client,
     email: EmailAddress,
-    base_url: Url,
 }
 
 #[async_trait]
@@ -27,11 +24,16 @@ impl FromConn for PostmarkClient {
 
 impl PostmarkClient {
     pub fn new(config: &Config) -> Self {
+        let client = config
+            .client
+            .clone()
+            .with_base(config.postmark_url.clone())
+            .with_default_header("X-Postmark-Server-Token", config.postmark_token.clone())
+            .with_default_header(KnownHeaderName::Accept, "application/json");
+
         Self {
-            token: config.postmark_token.clone(),
-            client: config.client.clone(),
+            client,
             email: config.email_address.clone(),
-            base_url: config.postmark_url.clone(),
         }
     }
 
@@ -79,9 +81,7 @@ impl PostmarkClient {
         T: DeserializeOwned,
     {
         self.client
-            .post(self.base_url.join(path).unwrap())
-            .with_header("X-Postmark-Server-Token", self.token.clone())
-            .with_header(KnownHeaderName::Accept, "application/json")
+            .post(path)
             .with_json_body(json)?
             .success_or_client_error()
             .await?

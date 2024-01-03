@@ -1,5 +1,4 @@
-use super::{ClientLogs, LoggedConn, AUTH0_URL, POSTMARK_URL};
-use trillium::{async_trait, Conn, Handler};
+use super::{ClientLogs, AUTH0_URL, POSTMARK_URL};
 use trillium_macros::Handler;
 
 #[derive(Handler, Debug)]
@@ -27,19 +26,5 @@ impl ApiMocks {
     }
     pub fn client_logs(&self) -> ClientLogs {
         self.client_logs.clone()
-    }
-}
-
-#[async_trait]
-impl Handler for ClientLogs {
-    async fn run(&self, conn: Conn) -> Conn {
-        conn
-    }
-    async fn before_send(&self, mut conn: Conn) -> Conn {
-        self.logged_conns
-            .write()
-            .unwrap()
-            .push(LoggedConn::from(&mut conn));
-        conn
     }
 }

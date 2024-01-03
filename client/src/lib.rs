@@ -23,7 +23,7 @@ pub const USER_AGENT: &str = concat!("divviup-client/", env!("CARGO_PKG_VERSION"
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
-use std::{future::Future, pin::Pin};
+use std::{fmt::Display, future::Future, pin::Pin};
 use trillium_http::{HeaderName, HeaderValues};
 
 pub use account::Account;
@@ -62,32 +62,22 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct DivviupClient {
-    http_client: Client,
-    headers: Headers,
-    url: Url,
-}
+pub struct DivviupClient(Client);
 
 impl DivviupClient {
-    pub fn new(token: String, http_client: impl Into<Client>) -> Self {
-        let headers = Headers::from_iter([
-            (KnownHeaderName::UserAgent, HeaderValue::from(USER_AGENT)),
-            (KnownHeaderName::Accept, HeaderValue::from(CONTENT_TYPE)),
-            (
-                KnownHeaderName::Authorization,
-                HeaderValue::from(format!("Bearer {token}")),
-            ),
-        ]);
-
-        Self {
-            url: DEFAULT_URL.parse().unwrap(),
-            http_client: http_client.into(),
-            headers,
-        }
+    pub fn new(token: impl Display, http_client: impl Into<Client>) -> Self {
+        Self(
+            http_client
+                .into()
+                .with_default_header(KnownHeaderName::UserAgent, USER_AGENT)
+                .with_default_header(KnownHeaderName::Accept, CONTENT_TYPE)
+                .with_default_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
+                .with_base(DEFAULT_URL),
+        )
     }
 
     pub fn with_default_pool(mut self) -> Self {
-        self.http_client = self.http_client.with_default_pool();
+        self.0 = self.0.with_default_pool();
         self
     }
 
@@ -105,15 +95,15 @@ impl DivviupClient {
         name: impl Into<HeaderName<'static>>,
         value: impl Into<HeaderValues>,
     ) {
-        self.headers.insert(name, value);
+        self.headers_mut().insert(name, value);
     }
 
     pub fn headers(&self) -> &Headers {
-        &self.headers
+        self.0.default_headers()
     }
 
     pub fn headers_mut(&mut self) -> &mut Headers {
-        &mut self.headers
+        self.0.default_headers_mut()
     }
 
     pub fn with_url(mut self, url: Url) -> Self {
@@ -122,24 +112,15 @@ impl DivviupClient {
     }
 
     pub fn set_url(&mut self, url: Url) {
-        self.url = url;
-    }
-
-    fn url(&self, path: &str) -> Url {
-        self.url.join(path).unwrap()
-    }
-
-    fn conn(&self, method: Method, path: &str) -> Conn {
-        self.http_client
-            .build_conn(method, self.url(path))
-            .with_headers(self.headers.clone())
+        self.0.set_base(url).unwrap();
     }
 
     async fn get<T>(&self, path: &str) -> ClientResult<T>
     where
         T: DeserializeOwned,
     {
-        self.conn(Method::Get, path)
+        self.0
+            .get(path)
             .success_or_error()
             .await?
             .response_json()
@@ -151,7 +132,8 @@ impl DivviupClient {
     where
         T: DeserializeOwned,
     {
-        self.conn(Method::Patch, path)
+        self.0
+            .patch(path)
             .with_json_body(body)?
             .with_header(KnownHeaderName::ContentType, CONTENT_TYPE)
             .success_or_error()
@@ -165,7 +147,7 @@ impl DivviupClient {
     where
         T: DeserializeOwned,
     {
-        let mut conn = self.conn(Method::Post, path);
+        let mut conn = self.0.post(path);
 
         if let Some(body) = body {
             conn = conn
@@ -181,7 +163,7 @@ impl DivviupClient {
     }
 
     async fn delete(&self, path: &str) -> ClientResult {
-        let _ = self.conn(Method::Delete, path).success_or_error().await?;
+        let _ = self.0.delete(path).success_or_error().await?;
         Ok(())
     }
 

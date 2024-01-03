@@ -9,7 +9,7 @@ use std::{
 
 use trillium::{
     Conn,
-    KnownHeaderName::{Accept, Authorization, ContentType},
+    KnownHeaderName::{Accept, Authorization},
 };
 use trillium_api::FromConn;
 use trillium_client::Client;
@@ -24,7 +24,6 @@ use crate::{
 pub struct Auth0Client {
     token: Arc<RwLock<Option<TokenWithExpiry>>>,
     client: Client,
-    base_url: Url,
     secret: String,
     client_id: String,
     postmark_client: PostmarkClient,
@@ -43,10 +42,15 @@ fn generate_password() -> String {
 
 impl Auth0Client {
     pub fn new(config: &Config) -> Self {
+        let client = config
+            .client
+            .clone()
+            .with_base(config.auth_url.clone())
+            .with_default_header(Accept, "application/json");
+
         Self {
             token: Arc::new(RwLock::new(None)),
-            client: config.client.clone(),
-            base_url: config.auth_url.clone(),
+            client,
             secret: config.auth_client_secret.clone(),
             client_id: config.auth_client_id.clone(),
             postmark_client: PostmarkClient::new(config),
@@ -129,13 +133,12 @@ impl Auth0Client {
 
         let token = self
             .client
-            .post(self.base_url.join("/oauth/token").unwrap())
-            .with_header(ContentType, "application/json")
+            .post("/oauth/token")
             .with_json_body(&json!({
                 "grant_type": "client_credentials",
                 "client_id": self.client_id,
                 "client_secret": self.secret,
-                "audience": self.base_url.join("/api/v2/").unwrap(),
+                "audience": self.client.build_url("/api/v2/").unwrap(),
             }))?
             .success_or_client_error()
             .await?
@@ -162,9 +165,7 @@ impl Auth0Client {
     {
         let token = self.token().await?;
         self.client
-            .post(self.base_url.join(path).unwrap())
-            .with_header(Accept, "application/json")
-            .with_header(ContentType, "application/json")
+            .post(path)
             .with_header(Authorization, format!("Bearer {token}"))
             .with_json_body(json)?
             .success_or_client_error()
@@ -180,8 +181,7 @@ impl Auth0Client {
     {
         let token = self.token().await?;
         self.client
-            .get(self.base_url.join(path).unwrap())
-            .with_header(Accept, "application/json")
+            .get(path)
             .with_header(Authorization, format!("Bearer {token}"))
             .success_or_client_error()
             .await?

@@ -1,30 +1,49 @@
+#![allow(dead_code)]
 pub use divviup_client::DivviupClient;
-use std::{future::Future, sync::Arc};
-use test_support::*;
+use trillium_testing::connector;
+
+pub use std::sync::Arc;
+pub use test_support::*;
+
+use std::{future::Future, process::Termination};
 use trillium_client::Client;
 
-pub fn with_http_client<F, Fut>(f: F)
+pub fn with_http_client<F, Fut, Out>(f: F) -> Out
 where
-    F: FnOnce(Arc<DivviupApi>, Client) -> Fut + Send + 'static,
-    Fut: Future<Output = TestResult> + Send + 'static,
+    F: FnOnce(Arc<DivviupApi>, Client, ClientLogs) -> Fut + Send + 'static,
+    Fut: Future<Output = Out> + Send + 'static,
+    Out: Termination,
 {
-    set_up(move |app| async move {
+    with_client_logs(move |app, _| async move {
+        let client_logs = ClientLogs::default();
         let app = Arc::new(app);
-        let http_client = Client::new(trillium_testing::connector(app.clone()));
-        f(app, http_client).await
+        let http_client = Client::new(connector((client_logs.clone(), app.clone())));
+        f(app, http_client, client_logs).await
     })
 }
 
-pub fn with_configured_client<F, Fut>(f: F)
+pub fn with_configured_client<F, Fut, Out>(f: F) -> Out
 where
     F: FnOnce(Arc<DivviupApi>, Account, DivviupClient) -> Fut + Send + 'static,
-    Fut: Future<Output = TestResult> + Send + 'static,
+    Fut: Future<Output = Out> + Send + 'static,
+    Out: Termination,
 {
-    with_http_client(move |app, http_client| async move {
+    with_configured_client_and_logs(move |app, account, client, _| async move {
+        f(app, account, client).await
+    })
+}
+
+pub fn with_configured_client_and_logs<F, Fut, Out>(f: F) -> Out
+where
+    F: FnOnce(Arc<DivviupApi>, Account, DivviupClient, ClientLogs) -> Fut + Send + 'static,
+    Fut: Future<Output = Out> + Send + 'static,
+    Out: Termination,
+{
+    with_http_client(move |app, http_client, logs| async move {
         let account = fixtures::account(&app).await;
         let (api_token, token) = ApiToken::build(&account);
         api_token.insert(app.db()).await.unwrap();
         let client = DivviupClient::new(token, http_client);
-        f(app, account, client).await
+        f(app, account, client, logs).await
     })
 }

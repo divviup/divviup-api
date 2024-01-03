@@ -9,7 +9,7 @@
 
 use divviup_api::{clients::aggregator_client::api_types, Config, Crypter, Db};
 use serde::{de::DeserializeOwned, Serialize};
-use std::{error::Error, future::Future, iter::repeat_with};
+use std::{error::Error, future::Future, iter::repeat_with, process::Termination};
 use trillium::Handler;
 use trillium_client::Client;
 use trillium_http::HeaderValue;
@@ -102,15 +102,16 @@ pub fn config(api_mocks: impl Handler) -> Config {
     }
 }
 
-pub async fn with_db<F, Fut>(f: F)
+pub async fn with_db<F, Fut, Out>(f: F) -> Out
 where
     F: FnOnce(Db) -> Fut,
-    Fut: Future<Output = TestResult>,
+    Fut: Future<Output = Out>,
+    Out: Termination,
 {
     block_on(async move {
         let db = Db::connect("sqlite::memory").await;
         set_up_schema(&db).await;
-        f(db).await.unwrap();
+        f(db).await
     })
 }
 
@@ -125,26 +126,28 @@ pub async fn build_test_app() -> (DivviupApi, ClientLogs) {
 }
 
 #[track_caller]
-pub fn set_up<F, Fut>(f: F)
+pub fn set_up<F, Fut, Out>(f: F) -> Out
 where
     F: FnOnce(DivviupApi) -> Fut,
-    Fut: Future<Output = Result<(), Box<dyn Error>>> + Send + 'static,
+    Fut: Future<Output = Out>,
+    Out: Termination,
 {
     block_on(async move {
         let (app, _) = build_test_app().await;
-        f(app).await.unwrap();
-    });
+        f(app).await
+    })
 }
 
-pub fn with_client_logs<F, Fut>(f: F)
+pub fn with_client_logs<F, Fut, Out>(f: F) -> Out
 where
     F: FnOnce(DivviupApi, ClientLogs) -> Fut,
-    Fut: Future<Output = Result<(), Box<dyn Error>>> + Send + 'static,
+    Fut: Future<Output = Out> + Send + 'static,
+    Out: Termination,
 {
     block_on(async move {
         let (app, client_logs) = build_test_app().await;
-        f(app, client_logs).await.unwrap();
-    });
+        f(app, client_logs).await
+    })
 }
 
 pub const APP_CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
