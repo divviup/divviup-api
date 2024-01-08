@@ -6,7 +6,7 @@
   "type": "module",
   "dependencies": {
     "@github/relative-time-element": "^4.3.0",
-    "axios": "^1.6.3",
+    "axios": "^1.6.5",
     "bootstrap": "^5.3.2",
     "formik": "^2.4.5",
     "humanize-duration": "^3.31.0",
