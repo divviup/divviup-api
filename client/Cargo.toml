@@ -30,7 +30,7 @@ janus_messages = "0.6.7"
 [dev-dependencies]
 divviup-api.workspace = true
 fastrand = "2.0.1"
-futures-lite = "2.1.0"
+futures-lite = "2.2.0"
 test-support.workspace = true
 trillium = "0.2.13"
 trillium-macros = "0.0.5"
