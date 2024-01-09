@@ -56,7 +56,12 @@ async fn load_aggregator(
         return Ok(None);
     };
 
-    let Some(aggregator) = Aggregators::find_by_id(id).one(db).await? else {
+    let aggregator = Aggregators::find_by_id(id)
+        .filter(AggregatorColumn::DeletedAt.is_null())
+        .one(db)
+        .await?;
+
+    let Some(aggregator) = aggregator else {
         return Ok(None);
     };
 

@@ -18,10 +18,7 @@ impl FromConn for Aggregator {
         let actor = PermissionsActor::from_conn(conn).await?;
         let db: &Db = conn.state()?;
         let id = conn.param("aggregator_id")?.parse::<Uuid>().ok()?;
-        let aggregator = Aggregators::find_by_id(id)
-            .filter(AggregatorColumn::DeletedAt.is_null())
-            .one(db)
-            .await;
+        let aggregator = Aggregators::find_by_id(id).one(db).await;
         match aggregator {
             Ok(Some(aggregator)) => actor.if_allowed(conn.method(), aggregator),
             Ok(None) => None,
