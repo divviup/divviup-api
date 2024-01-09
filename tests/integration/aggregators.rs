@@ -600,7 +600,9 @@ mod show {
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
 
@@ -618,7 +620,9 @@ mod show {
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
 
@@ -636,7 +640,9 @@ mod show {
             .with_state(admin)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
 
@@ -653,7 +659,9 @@ mod show {
             .with_state(admin)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
 
@@ -903,14 +911,17 @@ mod update {
             .tombstone()
             .update(app.db())
             .await?;
-
+        let name = fixtures::random_name();
         let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
-            .with_request_json(json!({ "name": "new_name" }))
+            .with_request_json(json!({ "name": name }))
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert_eq!(response_aggregator.name, name);
+        assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, name);
         Ok(())
     }
 
@@ -922,10 +933,10 @@ mod update {
             .tombstone()
             .update(app.db())
             .await?;
-
+        let name = fixtures::random_name();
         let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
-            .with_request_json(json!({ "name": "new_name" }))
+            .with_request_json(json!({ "name": name }))
             .with_state(user)
             .run_async(&app)
             .await;
@@ -942,13 +953,17 @@ mod update {
             .tombstone()
             .update(app.db())
             .await?;
+        let name = fixtures::random_name();
         let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
-            .with_request_json(json!({ "name": "new_name" }))
+            .with_request_json(json!({ "name": name }))
             .with_state(admin)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert_eq!(response_aggregator.name, name);
+        assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, name);
         Ok(())
     }
 
@@ -960,13 +975,18 @@ mod update {
             .tombstone()
             .update(app.db())
             .await?;
+        let name = fixtures::random_name();
         let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
-            .with_request_json(json!({ "name": "new_name" }))
+            .with_request_json(json!({ "name": name }))
             .with_state(admin)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert_eq!(response_aggregator.name, name);
+        assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, name);
         Ok(())
     }
 
@@ -982,6 +1002,7 @@ mod update {
             .with_request_json(json!({ "name": name }))
             .run_async(&app)
             .await;
+
         assert_ok!(conn);
         let response_aggregator: Aggregator = conn.response_json().await;
         assert_eq!(response_aggregator.name, name);

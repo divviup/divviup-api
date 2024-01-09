@@ -248,6 +248,54 @@ mod create {
         Ok(())
     }
 
+    #[test(harness = with_client_logs)]
+    async fn attempting_to_provision_against_a_tombstoned_leader(
+        app: DivviupApi,
+        client_logs: ClientLogs,
+    ) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let collector_credential = fixtures::collector_credential(&app, &account).await;
+        let leader = leader.tombstone().update(app.db()).await.unwrap();
+
+        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+            .with_api_headers()
+            .with_state(user)
+            .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
+            .run_async(&app)
+            .await;
+
+        assert_response!(conn, 400);
+        let error: Value = conn.response_json().await;
+        assert!(error.get("leader_aggregator_id").is_some());
+        assert!(client_logs.is_empty());
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn attempting_to_provision_against_a_tombstoned_helper(
+        app: DivviupApi,
+        client_logs: ClientLogs,
+    ) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
+        let collector_credential = fixtures::collector_credential(&app, &account).await;
+        let helper = helper.tombstone().update(app.db()).await.unwrap();
+
+        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+            .with_api_headers()
+            .with_state(user)
+            .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
+            .run_async(&app)
+            .await;
+
+        assert_response!(conn, 400);
+        let error: Value = conn.response_json().await;
+        assert!(error.get("helper_aggregator_id").is_some());
+        assert!(client_logs.is_empty());
+        Ok(())
+    }
+
     #[test(harness = set_up)]
     async fn invalid(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
