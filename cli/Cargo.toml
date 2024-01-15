@@ -26,7 +26,7 @@ trillium-tokio = "0.3.4"
 serde = "1.0.194"
 email_address = "0.2.4"
 humantime = "2.1.0"
-base64 = "0.21.5"
+base64 = "0.21.7"
 time = { version = "0.3.31", features = [
     "serde",
     "serde-well-known",

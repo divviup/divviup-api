@@ -23,6 +23,6 @@ uuid = { version = "1.6.1", features = ["v4", "fast-rng", "serde"] }
 sea-orm = { version = "0.12.10", features = ["sqlx-sqlite"] }
 pretty_assertions = "1.4.0"
 rand = "0.8.5"
-base64 = "0.21.5"
+base64 = "0.21.7"
 querystrong = "0.3.0"
 test-harness = "0.2.0"
