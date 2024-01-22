@@ -7,18 +7,19 @@ import React from "react";
 
 export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {
   const error = useRouteError();
+
+  const doLoginRedirect =
+    error instanceof AxiosError && error.response?.status === 403;
+  React.useEffect(() => {
+    if (doLoginRedirect) {
+      apiClient.loginUrl().then((url) => {
+        window.location.replace(url);
+      });
+    }
+  }, [doLoginRedirect, apiClient]);
+
   if (error instanceof AxiosError) {
     switch (error.response?.status) {
-      case 403: {
-        React.useEffect(() => {
-          apiClient.loginUrl().then((url) => {
-            window.location.replace(url);
-          });
-        }, [error, apiClient]);
-
-        return <></>;
-      }
-
       case 404: {
         return (
           <Layout error>
