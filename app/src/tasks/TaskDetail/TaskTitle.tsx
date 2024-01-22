@@ -56,7 +56,7 @@ export default function TaskTitle() {
         );
       }
     },
-    [fetcher, name, originalName, taskId, task],
+    [fetcher, name, originalName, accountId, taskId],
   );
 
   if (isEditingName) {

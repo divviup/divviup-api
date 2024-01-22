@@ -27,11 +27,12 @@ export default function CollectorCredentialSelect(props: Props) {
     [collectorCredentials, leader],
   );
 
+  const setFieldValue = props.setFieldValue;
   React.useEffect(() => {
     if (enabledCredentials.length === 1) {
-      props.setFieldValue("collector_credential_id", enabledCredentials[0].id);
+      setFieldValue("collector_credential_id", enabledCredentials[0].id);
     }
-  }, [enabledCredentials, props.setFieldValue]);
+  }, [enabledCredentials, setFieldValue]);
 
   return (
     <TaskFormGroup controlId="collector_credential_id">

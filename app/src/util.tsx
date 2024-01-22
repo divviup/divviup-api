@@ -66,14 +66,14 @@ export function Copy({
   children(copy: undefined | (() => void), copied: boolean): React.ReactElement;
   clipboardContents: string;
 }) {
-  if ("clipboard" in navigator) {
-    const [copied, setCopied] = React.useState(false);
-    const copy = React.useCallback(() => {
-      navigator.clipboard.writeText(clipboardContents).then(() => {
-        setCopied(true);
-      });
-    }, [setCopied, clipboardContents]);
+  const [copied, setCopied] = React.useState(false);
+  const copy = React.useCallback(() => {
+    navigator.clipboard.writeText(clipboardContents).then(() => {
+      setCopied(true);
+    });
+  }, [setCopied, clipboardContents]);
 
+  if ("clipboard" in navigator) {
     return (
       <OverlayTrigger
         overlay={<Tooltip>{copied ? "Copied!" : "Click to copy"}</Tooltip>}

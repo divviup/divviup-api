@@ -1,7 +1,7 @@
 import { FormikHelpers } from "formik";
 import ApiClient, { NewAggregator, formikErrors } from "../ApiClient";
 import { AggregatorForm } from "../aggregators/AggregatorForm";
-import { useNavigate, useRevalidator } from "react-router-dom";
+import { useRevalidator } from "react-router-dom";
 import { ApiClientContext } from "../ApiClientContext";
 import React from "react";
 
@@ -22,13 +22,12 @@ async function submit(
 }
 
 export default function SharedAggreatorForm() {
-  const navigate = useNavigate();
   const apiClient = React.useContext(ApiClientContext);
   const { revalidate } = useRevalidator();
   const handleSubmit = React.useCallback(
     (values: NewAggregator, actions: FormikHelpers<NewAggregator>) =>
       submit(apiClient, values, actions, revalidate),
-    [apiClient, navigate, revalidate],
+    [apiClient, revalidate],
   );
 
   return (
