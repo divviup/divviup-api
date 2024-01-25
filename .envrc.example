@@ -2,20 +2,19 @@
 export AUTH_URL=https://something.us.auth0.com
 export AUTH_CLIENT_ID=...
 export AUTH_CLIENT_SECRET=...
-export SESSION_SECRET=...
+export SESSION_SECRETS=...
+export DATABASE_ENCRYPTION_KEYS=...
 export AUTH_AUDIENCE=https://app.divviup.org
 export APP_URL=http://localhost:8081
 export DATABASE_URL=...
-export APP_PORT=8081
 export API_URL=http://localhost:8080
-export AGGREGATOR_SECRET=...
 export POSTMARK_TOKEN=looks-like-a-uuid
 export EMAIL_ADDRESS=the@from.address
-export AGGREGATOR_API_URL=https://aggregator.divviup.test
-export AGGREGATOR_DAP_URL=https://aggregator.divviup.test
 
 # optional
 export RUST_LOG=info
 export HOST=localhost
 export PORT=8080
+
+# for CLI
 export DIVVIUP_API_URL=$API_URL
