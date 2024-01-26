@@ -26,14 +26,14 @@
 
 An example `.envrc` is provided for optional but recommended use with [`direnv`](https://direnv.net).
 
-* `AUTH_URL` -- The auth0-hosted base url that we use for identity (see [auth0 config section](#auth0))
+* `AUTH_URL` -- The Auth0-hosted base url that we use for identity (see [auth0 config section](#auth0))
 * `API_URL` -- The public-facing base url for this application
 * `AUTH_CLIENT_ID` -- Auth0-provided client id (see [auth0 config section](#auth0))
 * `AUTH_CLIENT_SECRET` -- Auth0-provided client secret (see [auth0 config section](#auth0))
 * `SESSION_SECRETS` -- Comma-joined base64url-encoded, without padding,
   cryptographically-randomly secrets that are each at least 32 bytes long
   after base64url decoding. The first one will be used for new sessions.
-* `AUTH_AUDIENCE` -- This is not currently used for anything important and probably will go away, but for now you should set it to `https://api.divviup.org`
+* `AUTH_AUDIENCE` -- The OAuth 2 audience, for use when authenticating users via Auth0
 * `APP_URL` -- The public-facing url for the associated browser client application
 * `DATABASE_URL` -- A [libpq-compatible postgres uri](https://www.postgresql.org/docs/current/libpq-connect.html#id-1.7.3.8.3.6)
 * `POSTMARK_TOKEN` -- the token from the transactional stream from a [postmark](https://postmarkapp.com) account
