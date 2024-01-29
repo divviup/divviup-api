@@ -11,7 +11,7 @@ env:
   ASSET_DIR: ./app/build
 
 jobs:
-  build:
+  build_rust:
     runs-on: ubuntu-latest
 
     steps:
