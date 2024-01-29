@@ -18,7 +18,7 @@ function SaveApiToken({ onToken }: { onToken: (token: string) => void }) {
 
   React.useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data) onToken(fetcher.data.token);
-  }, [fetcher.data, fetcher.state]);
+  }, [fetcher.data, fetcher.state, onToken]);
 
   if (fetcher.state === "idle" && fetcher.data) {
     const { token } = fetcher.data;
@@ -70,7 +70,14 @@ export default function InlineCollectorCredentials() {
           setAnyCollectorCredentials(collectorCredentials.length > 0);
           setInFlight(false);
         });
-    }, [apiClient, setInFlight, setAnyCollectorCredentials]),
+    }, [
+      apiClient,
+      inFlight,
+      setInFlight,
+      anyCollectorCredentials,
+      setAnyCollectorCredentials,
+      accountId,
+    ]),
     1000,
   );
 

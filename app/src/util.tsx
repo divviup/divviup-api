@@ -2,7 +2,7 @@ import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import { LinkContainer } from "react-router-bootstrap";
-import React, { Suspense } from "react";
+import React, { Suspense, useRef } from "react";
 import { Await, useRouteLoaderData, useLoaderData } from "react-router-dom";
 import { Account } from "./ApiClient";
 import Placeholder from "react-bootstrap/Placeholder";
@@ -66,14 +66,14 @@ export function Copy({
   children(copy: undefined | (() => void), copied: boolean): React.ReactElement;
   clipboardContents: string;
 }) {
-  if ("clipboard" in navigator) {
-    const [copied, setCopied] = React.useState(false);
-    const copy = React.useCallback(() => {
-      navigator.clipboard.writeText(clipboardContents).then(() => {
-        setCopied(true);
-      });
-    }, [setCopied, clipboardContents]);
+  const [copied, setCopied] = React.useState(false);
+  const copy = React.useCallback(() => {
+    navigator.clipboard.writeText(clipboardContents).then(() => {
+      setCopied(true);
+    });
+  }, [setCopied, clipboardContents]);
 
+  if ("clipboard" in navigator) {
     return (
       <OverlayTrigger
         overlay={<Tooltip>{copied ? "Copied!" : "Click to copy"}</Tooltip>}
@@ -120,13 +120,37 @@ export function usePromise<T>(promise: PromiseLike<T>, initialState: T): T {
   return state;
 }
 
+// Adapted from https://github.com/lbfalvy/react-utils/blob/8c6e750bc6a2450c201ac34c2905aecb43b8350a/src/useArray.ts
+/**
+ * Ensures referential equality of an array whenever its elements are equal.
+ * This allows use of an array in a list of dependencies without unnecessary
+ * updates, or changed dependency array length warnings from trying to spread
+ * an array into a dependency array.
+ * @param input Array
+ * @returns Memoized array
+ */
+function useArray<T extends unknown[]>(input: T): T {
+  const ref = useRef<T>(input);
+  const cur = ref.current;
+  if (input.length === cur.length && input.every((v, i) => v === cur[i])) {
+    return cur;
+  } else {
+    ref.current = input;
+    return input;
+  }
+}
+
 export function usePromiseAll<U, T extends unknown[]>(
   promises: [...T],
   then: (arr: { [P in keyof T]: Awaited<T[P]> }) => U | PromiseLike<U>,
   initialState: U,
 ): U {
+  const memoizedPromises = useArray(promises);
   return usePromise(
-    React.useMemo(() => Promise.all(promises).then(then), promises),
+    React.useMemo(
+      () => Promise.all(memoizedPromises).then(then),
+      [memoizedPromises, then],
+    ),
     initialState,
   );
 }

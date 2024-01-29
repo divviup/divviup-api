@@ -10,7 +10,6 @@ import {
 import {
   Await,
   useFetcher,
-  useNavigate,
   useParams,
   useLoaderData,
   useRevalidator,
@@ -38,7 +37,6 @@ export default function AggregatorTypeSelection() {
   >(null);
 
   const fetcher = useFetcher();
-  const navigate = useNavigate();
   const { accountId } = useParams() as { accountId: string };
   const [showAggregatorForm, setShowAggregatorForm] =
     React.useState<boolean>(false);
@@ -56,7 +54,7 @@ export default function AggregatorTypeSelection() {
     } else {
       setShowAggregatorForm(true);
     }
-  }, [useSharedAggregators, navigate, fetcher]);
+  }, [useSharedAggregators, fetcher, accountId]);
 
   const partnerAggregators = React.useMemo(
     () =>

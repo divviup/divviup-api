@@ -84,7 +84,7 @@ export default function TaskForm() {
     (event: React.FocusEvent<HTMLFormElement>) => {
       setFocusedField(event.target.name as unknown as Field<NewTask>);
     },
-    [setFocusedField, navigate],
+    [setFocusedField],
   );
 
   return (
