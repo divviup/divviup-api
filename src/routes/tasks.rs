@@ -1,10 +1,9 @@
 use crate::{
     entity::{Account, NewTask, Task, Tasks, UpdateTask},
-    Crypter, Db, Error, Permissions, PermissionsActor,
+    Db, Error, Permissions, PermissionsActor,
 };
 use sea_orm::{ActiveModelTrait, EntityTrait, ModelTrait};
-use std::time::Duration;
-use time::OffsetDateTime;
+
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json, State};
 use trillium_caching_headers::CachingHeadersExt;
@@ -60,32 +59,7 @@ pub async fn create(
         .map(|task| (Status::Created, Json(task)))
 }
 
-async fn refresh_metrics_if_needed(
-    task: Task,
-    db: Db,
-    client: Client,
-    crypter: &Crypter,
-) -> Result<Task, Error> {
-    if OffsetDateTime::now_utc() - task.updated_at <= Duration::from_secs(5 * 60) {
-        return Ok(task);
-    }
-    if let Some(aggregator) = task.first_party_aggregator(&db).await? {
-        let metrics = aggregator
-            .client(client, crypter)?
-            .get_task_metrics(&task.id)
-            .await?;
-        task.update_metrics(metrics, db).await.map_err(Into::into)
-    } else {
-        Ok(task)
-    }
-}
-
-pub async fn show(
-    conn: &mut Conn,
-    (task, db, State(client)): (Task, Db, State<Client>),
-) -> Result<Json<Task>, Error> {
-    let crypter = conn.state().unwrap();
-    let task = refresh_metrics_if_needed(task, db, client, crypter).await?;
+pub async fn show(conn: &mut Conn, task: Task) -> Result<Json<Task>, Error> {
     conn.set_last_modified(task.updated_at.into());
     Ok(Json(task))
 }

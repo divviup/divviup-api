@@ -464,62 +464,6 @@ mod show {
         Ok(())
     }
 
-    #[test(harness = with_client_logs)]
-    async fn metrics_caching(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
-        let (user, account, ..) = fixtures::member(&app).await;
-        let task = fixtures::task(&app, &account).await;
-        let mut task = task.into_active_model();
-        task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc() - Duration::minutes(10));
-
-        let task = task.update(app.db()).await?;
-
-        let first_party_aggregator = task.first_party_aggregator(app.db()).await?.unwrap();
-
-        let mut conn = get(format!("/api/tasks/{}", task.id))
-            .with_api_headers()
-            .with_state(user.clone())
-            .run_async(&app)
-            .await;
-        assert_ok!(conn);
-
-        let aggregator_api_request = client_logs.last();
-        assert_eq!(
-            aggregator_api_request.url,
-            first_party_aggregator
-                .api_url
-                .join(&format!("tasks/{}/metrics", task.id))
-                .unwrap()
-        );
-        let metrics: TaskMetrics = aggregator_api_request.response_json();
-
-        let response_task: Task = conn.response_json().await;
-
-        assert_eq!(response_task.report_count, metrics.reports as i32);
-        assert_eq!(
-            response_task.aggregate_collection_count,
-            metrics.report_aggregations as i32
-        );
-        assert!(response_task.updated_at > task.updated_at);
-
-        let mut conn = get(format!("/api/tasks/{}", task.id))
-            .with_api_headers()
-            .with_state(user)
-            .run_async(&app)
-            .await;
-        let second_response_task: Task = conn.response_json().await;
-        assert_eq!(
-            second_response_task.report_count,
-            response_task.report_count
-        );
-        assert_eq!(
-            second_response_task.aggregate_collection_count,
-            response_task.aggregate_collection_count
-        );
-        assert_eq!(second_response_task.updated_at, response_task.updated_at);
-
-        Ok(())
-    }
-
     #[test(harness = set_up)]
     async fn not_member(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
