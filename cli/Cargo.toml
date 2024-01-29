@@ -33,7 +33,7 @@ time = { version = "0.3.31", features = [
     "local-offset",
 ] }
 serde_json = "1.0.111"
-serde_yaml = "0.9.30"
+serde_yaml = "0.9.31"
 env_logger = "0.10.2"
 colored = "2.1.0"
 const_format = "0.2.32"
