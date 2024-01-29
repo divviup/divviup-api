@@ -10,7 +10,7 @@ env:
   REACT_APP_API_URL: https://api.example
 
 jobs:
-  build:
+  build_ts:
     runs-on: ubuntu-latest
     defaults:
       run:
