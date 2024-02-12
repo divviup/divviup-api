@@ -5053,14 +5053,15 @@ dependencies = [
 
 [[package]]
 name = "trillium-testing"
-version = "0.5.2"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "477a6aaec9203ecfa8b3972915a447706e4c980c84d3f45569f4f367d35a48be"
+checksum = "7d3a22281ea7a75259e5abd011999647e8e6ba9adb01a736be86c9507e0629a5"
 dependencies = [
  "async-channel 2.1.1",
  "async-dup",
  "cfg-if 1.0.0",
  "dashmap",
+ "fastrand 2.0.1",
  "futures-lite 2.2.0",
  "once_cell",
  "portpicker",
