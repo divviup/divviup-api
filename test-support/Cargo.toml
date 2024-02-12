@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 fastrand = "2.0.1"
 time = "0.3.34"
-trillium = "0.2.13"
+trillium = "0.2.16"
 trillium-macros = "0.0.5"
 trillium-testing = { version = "0.5.4", features = ["tokio"] }
 divviup-api.workspace = true

@@ -32,7 +32,7 @@ divviup-api.workspace = true
 fastrand = "2.0.1"
 futures-lite = "2.2.0"
 test-support.workspace = true
-trillium = "0.2.13"
+trillium = "0.2.16"
 trillium-macros = "0.0.5"
 trillium-testing = { version = "0.5.4", features = ["tokio"] }
 trillium-rustls = "0.4.2"
