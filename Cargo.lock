@@ -4774,9 +4774,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-api"
-version = "0.2.0-rc.8"
+version = "0.2.0-rc.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "630a402bad8daa6547b77f1cac8ab2d41476314a9e7b16bf3da92e13fa70a8e3"
+checksum = "917333eeb7f3dec5a93b933cd0d0e94a56feb44b8d0b821ea95d91481ecba5b0"
 dependencies = [
  "log",
  "mime",
