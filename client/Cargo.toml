@@ -18,7 +18,7 @@ email_address = "0.2.4"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
 thiserror = "1.0.56"
-trillium-client = { version = "0.5.4", features = ["json"] }
+trillium-client = { version = "0.5.5", features = ["json"] }
 trillium-http = "0.3.14"
 url = { version = "2.5.0", features = ["serde"] }
 uuid = { version = "1.7.0", features = ["v4", "fast-rng", "serde"] }
