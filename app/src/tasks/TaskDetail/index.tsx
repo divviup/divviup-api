@@ -14,6 +14,7 @@ import { AccountBreadcrumbs } from "../../util";
 import Placeholder from "react-bootstrap/Placeholder";
 import TaskTitle from "./TaskTitle";
 import CollectorAuthTokens from "./CollectorAuthTokens";
+import Metrics from "./Metrics";
 import ClientConfig from "./ClientConfig";
 import TaskPropertyTable from "./TaskPropertyTable";
 
@@ -28,6 +29,7 @@ export default function TaskDetail() {
       <Row>
         <TaskPropertyTable />
         <ClientConfig />
+        <Metrics />
         <CollectorAuthTokens />
       </Row>
     </>
