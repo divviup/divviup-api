@@ -72,9 +72,15 @@ export interface Task {
   updated_at: string;
   expiration: string | null;
   max_batch_size: number | null;
-  report_count: number;
-  aggregate_collection_count: number;
   collector_credential_id: string;
+  report_counter_interval_collected: number;
+  report_counter_decode_failure: number;
+  report_counter_decrypt_failure: number;
+  report_counter_expired: number;
+  report_counter_outdated_key: number;
+  report_counter_success: number;
+  report_counter_too_early: number;
+  report_counter_task_expired: number;
 }
 
 export interface CollectorAuthToken {
@@ -85,13 +91,20 @@ export interface CollectorAuthToken {
 export type NewTask = Omit<
   Task,
   | "id"
-  | "report_count"
-  | "aggregate_collection_count"
   | "account_id"
   | "created_at"
   | "updated_at"
   | "vdaf"
   | "expiration"
+  | "report_counter_interval_collected"
+  | "report_counter_decode_failure"
+  | "report_counter_decrypt_failure"
+  | "report_counter_expired"
+  | "report_counter_outdated_key"
+  | "report_counter_success"
+  | "report_counter_too_early"
+  | "report_counter_task_expired"
+  | "report_counter_task_expired"
 > & {
   vdaf: {
     type: "sum" | "count" | "histogram";

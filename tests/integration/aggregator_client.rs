@@ -44,7 +44,7 @@ async fn get_task_ids(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
 async fn get_task_metrics(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
     let aggregator = fixtures::aggregator(&app, None).await;
     let client = aggregator.client(app.config().client.clone(), app.crypter())?;
-    assert!(client.get_task_metrics("fake-task-id").await.is_ok());
+    assert!(client.get_task_upload_metrics("fake-task-id").await.is_ok());
 
     let log = client_logs.last();
     assert_eq!(
@@ -62,7 +62,10 @@ async fn get_task_metrics(app: DivviupApi, client_logs: ClientLogs) -> TestResul
 
     assert_eq!(
         log.url.as_ref(),
-        &format!("{}tasks/fake-task-id/metrics", aggregator.api_url.as_ref())
+        &format!(
+            "{}tasks/fake-task-id/metrics/uploads",
+            aggregator.api_url.as_ref()
+        )
     );
 
     Ok(())
@@ -135,7 +138,7 @@ async fn get_config_bad_token(app: DivviupApi) -> TestResult {
 }
 
 mod prefixes {
-    use divviup_api::{clients::aggregator_client::TaskMetrics, handler::origin_router};
+    use divviup_api::{clients::aggregator_client::TaskUploadMetrics, handler::origin_router};
     use trillium_router::router;
 
     use super::{assert_eq, test, *};
@@ -208,18 +211,21 @@ mod prefixes {
     }
 
     #[test(harness = with_random_prefix)]
-    async fn get_task_metrics(
+    async fn get_task_upload_metrics(
         app: DivviupApi,
         client_logs: ClientLogs,
         aggregator: Aggregator,
     ) -> TestResult {
         let client = aggregator.client(app.config().client.clone(), app.crypter())?;
-        let metrics = client.get_task_metrics("fake-task-id").await?;
-        assert_eq!(client_logs.last().response_json::<TaskMetrics>(), metrics);
+        let metrics = client.get_task_upload_metrics("fake-task-id").await?;
+        assert_eq!(
+            client_logs.last().response_json::<TaskUploadMetrics>(),
+            metrics
+        );
         assert_eq!(client_logs.last().method, Method::Get);
         assert_eq!(
             client_logs.last().url.as_ref(),
-            format!("{}/tasks/fake-task-id/metrics", aggregator.api_url)
+            format!("{}/tasks/fake-task-id/metrics/uploads", aggregator.api_url)
         );
         assert_eq!(client_logs.logs().len(), 1);
         Ok(())

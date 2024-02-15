@@ -486,18 +486,14 @@ mod show {
             aggregator_api_request.url,
             first_party_aggregator
                 .api_url
-                .join(&format!("tasks/{}/metrics", task.id))
+                .join(&format!("tasks/{}/metrics/uploads", task.id))
                 .unwrap()
         );
-        let metrics: TaskMetrics = aggregator_api_request.response_json();
+        let metrics: TaskUploadMetrics = aggregator_api_request.response_json();
 
         let response_task: Task = conn.response_json().await;
 
-        assert_eq!(response_task.report_count, metrics.reports as i32);
-        assert_eq!(
-            response_task.aggregate_collection_count,
-            metrics.report_aggregations as i32
-        );
+        assert_eq!(metrics, response_task);
         assert!(response_task.updated_at > task.updated_at);
 
         let mut conn = get(format!("/api/tasks/{}", task.id))
@@ -506,14 +502,7 @@ mod show {
             .run_async(&app)
             .await;
         let second_response_task: Task = conn.response_json().await;
-        assert_eq!(
-            second_response_task.report_count,
-            response_task.report_count
-        );
-        assert_eq!(
-            second_response_task.aggregate_collection_count,
-            response_task.aggregate_collection_count
-        );
+        assert_eq!(metrics, second_response_task);
         assert_eq!(second_response_task.updated_at, response_task.updated_at);
 
         Ok(())

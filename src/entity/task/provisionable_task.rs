@@ -116,12 +116,18 @@ impl ProvisionableTask {
             created_at: OffsetDateTime::now_utc(),
             updated_at: OffsetDateTime::now_utc(),
             time_precision_seconds: self.time_precision_seconds.try_into()?,
-            report_count: 0,
-            aggregate_collection_count: 0,
             expiration: self.expiration,
             leader_aggregator_id: self.leader_aggregator.id,
             helper_aggregator_id: self.helper_aggregator.id,
             collector_credential_id: self.collector_credential.id,
+            report_counter_interval_collected: 0,
+            report_counter_decode_failure: 0,
+            report_counter_decrypt_failure: 0,
+            report_counter_expired: 0,
+            report_counter_outdated_key: 0,
+            report_counter_success: 0,
+            report_counter_too_early: 0,
+            report_counter_task_expired: 0,
         }
         .into_active_model())
     }
