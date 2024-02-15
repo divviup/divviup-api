@@ -6,6 +6,19 @@ import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
 import { DateTime } from "luxon";
 import Placeholder from "react-bootstrap/Placeholder";
+import { OutLink } from "../../util";
+
+function FailedMetric({ name, counter }: { name: string; counter: number }) {
+  if (counter > 0) {
+    return (
+      <ListGroup.Item>
+        {name}: {counter}
+      </ListGroup.Item>
+    );
+  } else {
+    return null;
+  }
+}
 
 export default function Metrics() {
   const { task } = useLoaderData() as {
@@ -16,24 +29,52 @@ export default function Metrics() {
     <Col md="6">
       <Card className="my-3">
         <Card.Body>
-          <Card.Title>Metrics</Card.Title>
+          <Card.Title>Upload Metrics</Card.Title>
+          <Card.Subtitle>
+            <OutLink href="https://docs.divviup.org/product-documentation/operational-metrics#upload-metrics">
+              View Documentation
+            </OutLink>
+          </Card.Subtitle>
         </Card.Body>
-        <ListGroup variant="flush">
-          <ListGroup.Item>
-            Report Count:{" "}
-            <Suspense fallback="0">
-              <Await resolve={task}>{(task) => task.report_count}</Await>
-            </Suspense>
-          </ListGroup.Item>
-          <ListGroup.Item>
-            Aggregate Collection Count:{" "}
-            <Suspense fallback="0">
-              <Await resolve={task}>
-                {(task) => task.aggregate_collection_count}
-              </Await>
-            </Suspense>
-          </ListGroup.Item>
-        </ListGroup>
+        <Suspense fallback="0">
+          <Await resolve={task}>
+            {(task: Task) => (
+              <ListGroup variant="flush">
+                <ListGroup.Item>
+                  Successful Uploads: {task.report_counter_success}
+                </ListGroup.Item>
+                <FailedMetric
+                  name="Interval Collected Failure"
+                  counter={task.report_counter_interval_collected}
+                />
+                <FailedMetric
+                  name="Decode Failure"
+                  counter={task.report_counter_decode_failure}
+                />
+                <FailedMetric
+                  name="Decrypt Failure"
+                  counter={task.report_counter_decrypt_failure}
+                />
+                <FailedMetric
+                  name="Report Expired Failure"
+                  counter={task.report_counter_expired}
+                />
+                <FailedMetric
+                  name="Outdated Key Failure"
+                  counter={task.report_counter_outdated_key}
+                />
+                <FailedMetric
+                  name="Report Too Early Failure"
+                  counter={task.report_counter_too_early}
+                />
+                <FailedMetric
+                  name="Task Expired Failure"
+                  counter={task.report_counter_task_expired}
+                />
+              </ListGroup>
+            )}
+          </Await>
+        </Suspense>
         <Card.Footer className="text-muted">
           Last updated{" "}
           <Suspense fallback={<Placeholder animation="glow" xs={6} />}>

@@ -114,14 +114,20 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         created_at: OffsetDateTime::now_utc(),
         updated_at: OffsetDateTime::now_utc(),
         time_precision_seconds: 60,
-        report_count: 0,
-        aggregate_collection_count: 0,
         expiration: Some(
             OffsetDateTime::now_utc() + divviup_api::entity::task::DEFAULT_EXPIRATION_DURATION,
         ),
         leader_aggregator_id: leader_aggregator.id,
         helper_aggregator_id: helper_aggregator.id,
         collector_credential_id: collector_credential.id,
+        report_counter_interval_collected: 0,
+        report_counter_decode_failure: 0,
+        report_counter_decrypt_failure: 0,
+        report_counter_expired: 0,
+        report_counter_outdated_key: 0,
+        report_counter_success: 0,
+        report_counter_too_early: 0,
+        report_counter_task_expired: 0,
     }
     .into_active_model()
     .insert(app.db())

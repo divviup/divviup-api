@@ -72,9 +72,11 @@ async fn refresh_metrics_if_needed(
     if let Some(aggregator) = task.first_party_aggregator(&db).await? {
         let metrics = aggregator
             .client(client, crypter)?
-            .get_task_metrics(&task.id)
+            .get_task_upload_metrics(&task.id)
             .await?;
-        task.update_metrics(metrics, db).await.map_err(Into::into)
+        task.update_task_upload_metrics(metrics, db)
+            .await
+            .map_err(Into::into)
     } else {
         Ok(task)
     }
