@@ -116,6 +116,8 @@ impl ProvisionableTask {
             created_at: OffsetDateTime::now_utc(),
             updated_at: OffsetDateTime::now_utc(),
             time_precision_seconds: self.time_precision_seconds.try_into()?,
+            report_count: 0,
+            aggregate_collection_count: 0,
             expiration: self.expiration,
             leader_aggregator_id: self.leader_aggregator.id,
             helper_aggregator_id: self.helper_aggregator.id,

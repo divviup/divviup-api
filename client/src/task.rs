@@ -15,13 +15,23 @@ pub struct Task {
     #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     pub time_precision_seconds: u32,
+    #[deprecated = "Not populated. Will be removed in a future release."]
     pub report_count: u32,
+    #[deprecated = "Not populated. Will be removed in a future release."]
     pub aggregate_collection_count: u32,
     #[serde(default, with = "time::serde::rfc3339::option")]
     pub expiration: Option<OffsetDateTime>,
     pub leader_aggregator_id: Uuid,
     pub helper_aggregator_id: Uuid,
     pub collector_credential_id: Uuid,
+    pub report_counter_interval_collected: i64,
+    pub report_counter_decode_failure: i64,
+    pub report_counter_decrypt_failure: i64,
+    pub report_counter_expired: i64,
+    pub report_counter_outdated_key: i64,
+    pub report_counter_success: i64,
+    pub report_counter_too_early: i64,
+    pub report_counter_task_expired: i64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
