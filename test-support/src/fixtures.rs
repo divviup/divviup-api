@@ -113,6 +113,8 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         created_at: OffsetDateTime::now_utc(),
         updated_at: OffsetDateTime::now_utc(),
         time_precision_seconds: 60,
+        report_count: 0,
+        aggregate_collection_count: 0,
         expiration: Some(
             OffsetDateTime::now_utc() + divviup_api::entity::task::DEFAULT_EXPIRATION_DURATION,
         ),

@@ -43,6 +43,16 @@ pub struct Model {
     #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     pub time_precision_seconds: i32,
+
+    /// Deprecated metrics field. Never populated, only reads zero.
+    #[sea_orm(ignore)]
+    #[serde(default)]
+    pub report_count: i32,
+    /// Deprecated metrics field. Never populated, only reads zero.
+    #[sea_orm(ignore)]
+    #[serde(default)]
+    pub aggregate_collection_count: i32,
+
     #[serde(default, with = "time::serde::rfc3339::option")]
     pub expiration: Option<OffsetDateTime>,
     pub leader_aggregator_id: Uuid,
