@@ -14,7 +14,7 @@ divviup-api.workspace = true
 serde = "1.0.196"
 serde_json = "1.0.113"
 thiserror = "1.0.57"
-trillium-client = { version = "0.5.5", features = ["json"] }
+trillium-client = { version = "0.5.6", features = ["json"] }
 trillium-http = "0.3.14"
 trillium-rustls = "0.4.2"
 trillium-tokio = "0.3.4"
