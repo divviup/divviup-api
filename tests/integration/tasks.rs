@@ -1,5 +1,6 @@
 use divviup_api::clients::aggregator_client::*;
 use test_support::*;
+use trillium::Handler;
 
 mod index {
     use super::{assert_eq, test, *};
@@ -505,6 +506,39 @@ mod show {
         let second_response_task: Task = conn.response_json().await;
         assert_eq!(metrics, second_response_task);
         assert_eq!(second_response_task.updated_at, response_task.updated_at);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn metrics_refresh_disabled() -> TestResult {
+        let api_mocks = ApiMocks::new();
+        let client_logs = api_mocks.client_logs();
+
+        let mut config = config(api_mocks);
+        config.enable_upload_metrics = false;
+
+        let mut app = DivviupApi::new(config).await;
+        set_up_schema(app.db()).await;
+        let mut info = "testing".into();
+        app.init(&mut info).await;
+
+        let (user, account, ..) = fixtures::member(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut task = task.into_active_model();
+        task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc() - Duration::minutes(10));
+
+        let task = task.update(app.db()).await?;
+
+        let conn = get(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_state(user.clone())
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+
+        // Ensure the aggregator API was never contacted.
+        assert!(client_logs.logs().is_empty());
 
         Ok(())
     }
