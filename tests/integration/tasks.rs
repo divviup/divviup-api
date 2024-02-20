@@ -519,7 +519,7 @@ mod show {
         let client_logs = api_mocks.client_logs();
 
         let mut config = config(api_mocks);
-        config.enable_upload_metrics = false;
+        config.enable_metrics_refresh = false;
 
         let mut app = DivviupApi::new(config).await;
         set_up_schema(app.db()).await;
