@@ -350,7 +350,7 @@ pub struct TaskIds {
     pub pagination_token: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TaskUploadMetrics {
     /// Reports that fell into a time interval that had already been collected.
     pub interval_collected: u64,

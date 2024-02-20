@@ -448,6 +448,8 @@ mod create {
 
 mod show {
     use super::{assert_eq, test, *};
+    use divviup_api::entity::aggregator::{Feature, Features};
+    use time::Duration;
 
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
@@ -470,11 +472,13 @@ mod show {
         let task = fixtures::task(&app, &account).await;
         let mut task = task.into_active_model();
         task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc() - Duration::minutes(10));
-
         let task = task.update(app.db()).await?;
 
-        let first_party_aggregator = task.first_party_aggregator(app.db()).await?.unwrap();
+        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+        leader.features = ActiveValue::Set(Features::from_iter([Feature::UploadMetrics]).into());
+        leader.update(app.db()).await?;
 
+        let leader = task.leader_aggregator(app.db()).await?;
         let mut conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_state(user.clone())
@@ -485,7 +489,7 @@ mod show {
         let aggregator_api_request = client_logs.last();
         assert_eq!(
             aggregator_api_request.url,
-            first_party_aggregator
+            leader
                 .api_url
                 .join(&format!("tasks/{}/metrics/uploads", task.id))
                 .unwrap()
@@ -528,6 +532,10 @@ mod show {
         task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc() - Duration::minutes(10));
 
         let task = task.update(app.db()).await?;
+
+        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+        leader.features = ActiveValue::Set(Features::from_iter([Feature::UploadMetrics]).into());
+        leader.update(app.db()).await?;
 
         let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
