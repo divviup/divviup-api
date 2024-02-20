@@ -1,7 +1,7 @@
 import { Await, useLoaderData } from "react-router-dom";
 import Col from "react-bootstrap/Col";
 import { Suspense } from "react";
-import { Task } from "../../ApiClient";
+import { Aggregator, Task } from "../../ApiClient";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
 import { DateTime } from "luxon";
@@ -20,11 +20,7 @@ function FailedMetric({ name, counter }: { name: string; counter: number }) {
   }
 }
 
-export default function Metrics() {
-  const { task } = useLoaderData() as {
-    task: Promise<Task>;
-  };
-
+function UploadMetrics(task: Promise<Task>) {
   return (
     <Col md="6">
       <Card className="my-3">
@@ -91,5 +87,24 @@ export default function Metrics() {
         </Card.Footer>
       </Card>
     </Col>
+  );
+}
+
+export default function Metrics() {
+  const { task, leaderAggregator } = useLoaderData() as {
+    task: Promise<Task>;
+    leaderAggregator: Promise<Aggregator>;
+  };
+
+  return (
+    <Suspense fallback="0">
+      <Await resolve={leaderAggregator}>
+        {(leaderAggregator) => {
+          if (leaderAggregator.features.contains("UploadMetrics")) {
+            return UploadMetrics(task);
+          }
+        }}
+      </Await>
+    </Suspense>
   );
 }

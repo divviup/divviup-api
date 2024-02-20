@@ -1,4 +1,5 @@
 use crate::{
+    clients::aggregator_client::TaskUploadMetrics,
     config::FeatureFlags,
     entity::{Account, NewTask, Task, Tasks, UpdateTask},
     Crypter, Db, Error, Permissions, PermissionsActor,
@@ -70,17 +71,18 @@ async fn refresh_metrics_if_needed(
     if OffsetDateTime::now_utc() - task.updated_at <= Duration::from_secs(5 * 60) {
         return Ok(task);
     }
-    if let Some(aggregator) = task.first_party_aggregator(&db).await? {
-        let metrics = aggregator
+    let aggregator = task.leader_aggregator(&db).await?;
+    let metrics = if aggregator.features.upload_metrics_enabled() {
+        aggregator
             .client(client, crypter)?
             .get_task_upload_metrics(&task.id)
-            .await?;
-        task.update_task_upload_metrics(metrics, db)
-            .await
-            .map_err(Into::into)
+            .await?
     } else {
-        Ok(task)
-    }
+        TaskUploadMetrics::default()
+    };
+    task.update_task_upload_metrics(metrics, db)
+        .await
+        .map_err(Into::into)
 }
 
 pub async fn show(
