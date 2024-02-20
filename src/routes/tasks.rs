@@ -89,7 +89,7 @@ pub async fn show(
     conn: &mut Conn,
     (task, db, State(client), State(feature_flags)): (Task, Db, State<Client>, State<FeatureFlags>),
 ) -> Result<Json<Task>, Error> {
-    let task = if feature_flags.enable_upload_metrics {
+    let task = if feature_flags.enable_metrics_refresh {
         let crypter = conn.state().unwrap();
         refresh_metrics_if_needed(task, db, client, crypter).await?
     } else {

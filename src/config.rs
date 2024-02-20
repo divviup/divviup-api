@@ -49,13 +49,13 @@ pub struct Config {
     /// See [`TokioConsoleConfig::listen_address`].
     pub tokio_console_listen_address: SocketAddr,
     /// Enables refreshing upload metrics from Janus. Enabled by default.
-    pub enable_upload_metrics: bool,
+    pub enable_metrics_refresh: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct FeatureFlags {
     /// Enables refreshing upload metrics from Janus. Enabled by default.
-    pub enable_upload_metrics: bool,
+    pub enable_metrics_refresh: bool,
 }
 
 #[derive(Debug, Error)]
@@ -149,7 +149,7 @@ impl Config {
                 "TOKIO_CONSOLE_LISTEN_ADDRESS",
                 "127.0.0.1:6669".parse().unwrap(),
             )?,
-            enable_upload_metrics: var_optional("ENABLE_UPLOAD_METRICS", true)?,
+            enable_metrics_refresh: var_optional("ENABLE_METRICS_REFRESH", true)?,
         })
     }
 
@@ -181,7 +181,7 @@ impl Config {
 
     pub fn feature_flags(&self) -> FeatureFlags {
         FeatureFlags {
-            enable_upload_metrics: self.enable_upload_metrics,
+            enable_metrics_refresh: self.enable_metrics_refresh,
         }
     }
 }
