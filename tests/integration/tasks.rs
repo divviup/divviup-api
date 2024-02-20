@@ -1,6 +1,5 @@
 use divviup_api::clients::aggregator_client::*;
 use test_support::*;
-use trillium::Handler;
 
 mod index {
     use super::{assert_eq, test, *};
@@ -448,7 +447,10 @@ mod create {
 
 mod show {
     use super::{assert_eq, test, *};
-    use divviup_api::entity::aggregator::{Feature, Features};
+    use divviup_api::{
+        entity::aggregator::{Feature, Features},
+        FeatureFlags,
+    };
     use time::Duration;
 
     #[test(harness = set_up)]
@@ -513,32 +515,19 @@ mod show {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn metrics_refresh_disabled() -> TestResult {
-        let api_mocks = ApiMocks::new();
-        let client_logs = api_mocks.client_logs();
-
-        let mut config = config(api_mocks);
-        config.enable_metrics_refresh = false;
-
-        let mut app = DivviupApi::new(config).await;
-        set_up_schema(app.db()).await;
-        let mut info = "testing".into();
-        app.init(&mut info).await;
-
+    #[test(harness = with_client_logs)]
+    async fn metrics_refresh_disabled(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let task = fixtures::task(&app, &account).await;
         let mut task = task.into_active_model();
         task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc() - Duration::minutes(10));
-
         let task = task.update(app.db()).await?;
-
-        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
-        leader.features = ActiveValue::Set(Features::from_iter([Feature::UploadMetrics]).into());
-        leader.update(app.db()).await?;
 
         let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
+            .with_state(FeatureFlags {
+                enable_metrics_refresh: false,
+            })
             .with_state(user.clone())
             .run_async(&app)
             .await;

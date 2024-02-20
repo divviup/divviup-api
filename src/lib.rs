@@ -21,7 +21,7 @@ pub mod telemetry;
 pub mod trace;
 mod user;
 
-pub use config::{Config, ConfigError};
+pub use config::{Config, ConfigError, FeatureFlags};
 pub use crypter::Crypter;
 pub use db::Db;
 pub use handler::{custom_mime_types::CONTENT_TYPE, DivviupApi, Error};
