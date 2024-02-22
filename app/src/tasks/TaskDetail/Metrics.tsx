@@ -32,7 +32,7 @@ function UploadMetrics(task: Promise<Task>) {
             </OutLink>
           </Card.Subtitle>
         </Card.Body>
-        <Suspense fallback="0">
+        <Suspense fallback={<Placeholder animation="glow" xs={2} />}>
           <Await resolve={task}>
             {(task: Task) => (
               <ListGroup variant="flush">
@@ -73,7 +73,7 @@ function UploadMetrics(task: Promise<Task>) {
         </Suspense>
         <Card.Footer className="text-muted">
           Last updated{" "}
-          <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
+          <Suspense fallback={<Placeholder animation="glow" xs={1} />}>
             <Await resolve={task}>
               {(task) => (
                 <relative-time datetime={task.updated_at} format="relative">
@@ -97,10 +97,10 @@ export default function Metrics() {
   };
 
   return (
-    <Suspense fallback="0">
+    <Suspense fallback={<Placeholder animation="glow" xs={2} />}>
       <Await resolve={leaderAggregator}>
         {(leaderAggregator) => {
-          if (leaderAggregator.features.contains("UploadMetrics")) {
+          if (leaderAggregator.features.includes("UploadMetrics")) {
             return UploadMetrics(task);
           }
         }}
