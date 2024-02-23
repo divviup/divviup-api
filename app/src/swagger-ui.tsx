@@ -8,7 +8,13 @@ export default function swaggerUi(): RouteObject {
       await import("swagger-ui-react/swagger-ui.css");
       return {
         Component() {
-          return <SwaggerUI url="/swagger.yml" supportedSubmitMethods={[]} />;
+          return (
+            <SwaggerUI
+              url="/swagger.yml"
+              supportedSubmitMethods={[]}
+              deepLinking={true}
+            />
+          );
         },
       };
     },
