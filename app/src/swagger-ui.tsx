@@ -12,7 +12,7 @@ export default function swaggerUi(): RouteObject {
             <SwaggerUI
               url="/swagger.yml"
               supportedSubmitMethods={[]}
-              deepLinking={true}
+              deepLinking
             />
           );
         },
