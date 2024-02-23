@@ -20,6 +20,22 @@ impl Features {
     pub fn upload_metrics_enabled(&self) -> bool {
         self.0.contains(&Feature::UploadMetrics)
     }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn intersect(&self, other: &Features) -> Self {
+        self.0.intersection(&other.0).cloned().collect()
+    }
+
+    pub fn contains(&self, feature: &Feature) -> bool {
+        self.0.contains(feature)
+    }
 }
 
 impl From<Feature> for Features {
