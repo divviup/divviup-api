@@ -10,6 +10,7 @@
 use divviup_api::{clients::aggregator_client::api_types, Config, Crypter, Db};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, future::Future, iter::repeat_with, process::Termination};
+use tracing::install_test_trace_subscriber;
 use trillium::Handler;
 use trillium_client::Client;
 use trillium_http::HeaderValue;
@@ -40,6 +41,7 @@ pub use url::Url;
 pub type TestResult = Result<(), Box<dyn Error>>;
 
 pub mod fixtures;
+pub mod tracing;
 
 mod client_logs;
 pub use client_logs::{ClientLogs, LoggedConn};
@@ -116,6 +118,7 @@ where
 }
 
 pub async fn build_test_app() -> (DivviupApi, ClientLogs) {
+    install_test_trace_subscriber();
     let api_mocks = ApiMocks::new();
     let client_logs = api_mocks.client_logs();
     let mut app = DivviupApi::new(config(api_mocks)).await;
