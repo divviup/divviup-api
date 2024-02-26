@@ -19,18 +19,14 @@
 * [Rust (current stable or nightly)](https://www.rust-lang.org/tools/install)
 * [PostgreSQL](https://www.postgresql.org/)
 
-### [Setting up Auth0](#auth0)
-
-<b style="color:red">TODO: This section will be updated with step-by-step instructions to configure auth0 for this application from scratch.</b>
-
 ### Required environment variables
 
 An example `.envrc` is provided for optional but recommended use with [`direnv`](https://direnv.net).
 
-* `AUTH_URL` -- The Auth0-hosted base url that we use for identity (see [auth0 config section](#auth0))
+* `AUTH_URL` -- The Auth0-hosted base url that we use for identity
 * `API_URL` -- The public-facing base url for this application
-* `AUTH_CLIENT_ID` -- Auth0-provided client id (see [auth0 config section](#auth0))
-* `AUTH_CLIENT_SECRET` -- Auth0-provided client secret (see [auth0 config section](#auth0))
+* `AUTH_CLIENT_ID` -- Auth0-provided client id
+* `AUTH_CLIENT_SECRET` -- Auth0-provided client secret
 * `SESSION_SECRETS` -- Comma-joined base64url-encoded, without padding,
   cryptographically-randomly secrets that are each at least 32 bytes long
   after base64url decoding. The first one will be used for new sessions.
