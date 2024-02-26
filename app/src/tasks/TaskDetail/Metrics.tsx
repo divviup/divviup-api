@@ -20,7 +20,7 @@ function FailedMetric({ name, counter }: { name: string; counter: number }) {
   }
 }
 
-function UploadMetrics(task: Promise<Task>) {
+function UploadMetrics({ task }: { task: Promise<Task> }) {
   return (
     <Col md="6">
       <Card className="my-3">
@@ -101,7 +101,7 @@ export default function Metrics() {
       <Await resolve={leaderAggregator}>
         {(leaderAggregator) => {
           if (leaderAggregator.features.includes("UploadMetrics")) {
-            return UploadMetrics(task);
+            return <UploadMetrics task={task} />;
           }
         }}
       </Await>
