@@ -41,7 +41,7 @@ email_address = "0.2.4"
 fastrand = "2.0.1"
 futures-lite = "2.2.0"
 git-version = "0.3.9"
-janus_messages = "0.6.15"
+janus_messages = "0.6.16"
 log = "0.4.20"
 opentelemetry = { version = "0.21.0", features = ["metrics", "logs"] }
 opentelemetry-prometheus = { version = "0.14.1", features = [
