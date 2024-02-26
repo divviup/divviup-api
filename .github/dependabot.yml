@@ -7,6 +7,10 @@ updates:
       interval: "weekly"
     target-branch: "main"
     open-pull-requests-limit: 20
+    groups:
+      opentelemetry:
+        patterns:
+          - '*opentelemetry*'
   - package-ecosystem: "npm"
     directory: "app"
     schedule:
