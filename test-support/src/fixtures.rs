@@ -1,10 +1,9 @@
 use super::*;
 use divviup_api::{
     clients::aggregator_client::api_types::TaskId,
-    entity::aggregator::{Feature, Features, Role},
+    entity::aggregator::{Feature, Features},
 };
 use rand::random;
-use trillium::HeaderValue;
 
 pub use divviup_api::api_mocks::aggregator_api::random_hpke_config;
 use uuid::Uuid;

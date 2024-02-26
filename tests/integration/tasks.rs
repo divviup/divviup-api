@@ -447,7 +447,6 @@ mod create {
 
 mod show {
     use super::{assert_eq, test, *};
-    use time::Duration;
 
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {

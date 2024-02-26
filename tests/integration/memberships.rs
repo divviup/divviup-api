@@ -1,7 +1,7 @@
 use test_support::*;
 
 mod create {
-    use divviup_api::{entity::queue, queue::CreateUser};
+    use divviup_api::queue::CreateUser;
 
     use super::{assert_eq, test, *};
 

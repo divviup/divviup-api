@@ -1,7 +1,7 @@
-use super::{ActiveModel, *};
+use super::*;
 use crate::{
     clients::aggregator_client::api_types::{AggregatorVdaf, AuthenticationToken},
-    entity::{Account, Aggregator, CollectorCredential, Protocol, Task},
+    entity::{Account, CollectorCredential, Protocol, Task},
     handler::Error,
     Crypter,
 };
