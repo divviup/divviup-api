@@ -7,7 +7,7 @@
   "dependencies": {
     "@github/relative-time-element": "^4.3.0",
     "axios": "^1.6.7",
-    "bootstrap": "^5.3.2",
+    "bootstrap": "^5.3.3",
     "formik": "^2.4.5",
     "humanize-duration": "^3.31.0",
     "luxon": "^3.4.4",
