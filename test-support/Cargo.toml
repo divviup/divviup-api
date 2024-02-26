@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 fastrand = "2.0.1"
 time = "0.3.34"
-trillium = "0.2.13"
+trillium = "0.2.16"
 trillium-macros = "0.0.5"
 trillium-testing = { version = "0.5.4", features = ["tokio"] }
 divviup-api.workspace = true
@@ -24,7 +24,7 @@ tracing-subscriber = { version = "0.3.18", features = [
 ] }
 trillium-client = { version = "0.5.6", features = ["json"] }
 trillium-http = "0.3.14"
-trillium-rustls = "0.4.2"
+trillium-rustls = "0.6.0"
 trillium-tokio = "0.3.4"
 url = "2.5.0"
 uuid = { version = "1.7.0", features = ["v4", "fast-rng", "serde"] }
