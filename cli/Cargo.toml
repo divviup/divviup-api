@@ -21,7 +21,7 @@ path = "src/main.rs"
 clap = { version = "4.5.1", features = ["derive", "env"] }
 thiserror = "1.0.57"
 divviup-client = { workspace = true }
-trillium-rustls = "0.4.2"
+trillium-rustls = "0.6.0"
 trillium-tokio = "0.3.4"
 serde = "1.0.197"
 email_address = "0.2.4"

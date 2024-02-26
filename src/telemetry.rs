@@ -1,6 +1,6 @@
 use git_version::git_version;
 use opentelemetry::{global, metrics::MetricsError, KeyValue};
-use opentelemetry_sdk::{metrics::MeterProvider, Resource};
+use opentelemetry_sdk::{metrics::SdkMeterProvider, Resource};
 use prometheus::Registry;
 
 /// Install a Prometheus metrics provider and exporter. The
@@ -35,7 +35,7 @@ pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricsError> {
     let resource = default_resource.merge(&version_info_resource);
 
     global::set_meter_provider(
-        MeterProvider::builder()
+        SdkMeterProvider::builder()
             .with_reader(exporter)
             .with_resource(resource.clone())
             .build(),
