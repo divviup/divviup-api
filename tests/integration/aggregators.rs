@@ -714,7 +714,12 @@ mod show {
 }
 
 mod update {
-    use divviup_api::api_mocks::aggregator_api::BAD_BEARER_TOKEN;
+    use divviup_api::{
+        api_mocks::aggregator_api::BAD_BEARER_TOKEN,
+        entity::aggregator::{
+            Feature, Features, QueryTypeName, QueryTypeNameSet, VdafName, VdafNameSet,
+        },
+    };
 
     use super::{assert_eq, test, *};
 
@@ -1047,6 +1052,50 @@ mod update {
             aggregator.reload(app.db()).await?.unwrap().name,
             name_before
         );
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
+    async fn refresh_features(app: DivviupApi) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+
+        let before_aggregator = fixtures::aggregator(&app, Some(&account)).await;
+
+        let mut aggregator = fixtures::aggregator(&app, Some(&account))
+            .await
+            .into_active_model();
+        aggregator.query_types =
+            ActiveValue::Set(QueryTypeNameSet::from_iter::<[QueryTypeName; 0]>([]).into());
+        aggregator.vdafs = ActiveValue::Set(VdafNameSet::from_iter::<[VdafName; 0]>([]).into());
+        aggregator.features = ActiveValue::Set(Features::from_iter::<[Feature; 0]>([]).into());
+        let aggregator = aggregator.update(app.db()).await?;
+
+        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_state(user.clone())
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert!(response_aggregator.query_types.is_empty());
+        assert!(response_aggregator.vdafs.is_empty());
+        assert!(response_aggregator.features.is_empty());
+
+        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+            .with_api_headers()
+            .with_request_json(json!({}))
+            .with_state(user)
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let response_aggregator: Aggregator = conn.response_json().await;
+        assert_eq!(
+            response_aggregator.query_types,
+            before_aggregator.query_types
+        );
+        assert_eq!(response_aggregator.vdafs, before_aggregator.vdafs);
+        assert_eq!(response_aggregator.features, before_aggregator.features);
 
         Ok(())
     }

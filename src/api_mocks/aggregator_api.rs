@@ -5,7 +5,7 @@ use crate::{
         HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, QueryType, Role, TaskCreate, TaskId,
         TaskIds, TaskResponse, TaskUploadMetrics,
     },
-    entity::aggregator::Feature,
+    entity::aggregator::{Feature, Features},
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use querystrong::QueryStrong;
@@ -35,11 +35,7 @@ pub fn mock() -> impl Handler {
                         vdafs: Default::default(),
                         query_types: Default::default(),
                         protocol: random(),
-                        features: if random() {
-                            Feature::TokenHash.into()
-                        } else {
-                            Default::default()
-                        },
+                        features: Features::from_iter([Feature::TokenHash]),
                     })
                 }),
             )
