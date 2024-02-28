@@ -133,6 +133,7 @@ fn api(db: &Db, config: &Config) -> impl Handler {
             ),
             state(config.client.clone()),
             state(config.crypter.clone()),
+            state(config.feature_flags()),
             instrument_handler(cors_headers(config)),
             cache_control([Private, MustRevalidate]),
             db.clone(),

@@ -30,32 +30,29 @@ pub fn routes(config: &Config) -> impl Handler {
     let oauth2_client = OauthClient::new(&config.oauth_config());
     let auth0_client = Auth0Client::new(config);
 
-    (
-        state(config.feature_flags()),
-        router()
-            .get(
-                "/login",
-                (
-                    redirect_if_logged_in(config),
-                    state(oauth2_client.clone()),
-                    oauth2::redirect,
-                ),
-            )
-            .get("/logout", (destroy_session, logout_from_auth0(config)))
-            .get(
-                "/callback",
-                (
-                    state(oauth2_client),
-                    oauth2::callback,
-                    redirect(config.app_url.to_string()),
-                ),
-            )
-            .any(
-                &[Get, Post, Delete, Patch],
-                "/api/*",
-                (state(auth0_client), api_routes()),
+    router()
+        .get(
+            "/login",
+            (
+                redirect_if_logged_in(config),
+                state(oauth2_client.clone()),
+                oauth2::redirect,
             ),
-    )
+        )
+        .get("/logout", (destroy_session, logout_from_auth0(config)))
+        .get(
+            "/callback",
+            (
+                state(oauth2_client),
+                oauth2::callback,
+                redirect(config.app_url.to_string()),
+            ),
+        )
+        .any(
+            &[Get, Post, Delete, Patch],
+            "/api/*",
+            (state(auth0_client), api_routes()),
+        )
 }
 
 fn api_routes() -> impl Handler {
