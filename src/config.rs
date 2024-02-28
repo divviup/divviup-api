@@ -149,7 +149,7 @@ impl Config {
                 "TOKIO_CONSOLE_LISTEN_ADDRESS",
                 "127.0.0.1:6669".parse().unwrap(),
             )?,
-            metrics_refresh_enabled: var_optional("ENABLE_METRICS_REFRESH", true)?,
+            metrics_refresh_enabled: var_optional("METRICS_REFRESH_ENABLED", true)?,
         })
     }
 
