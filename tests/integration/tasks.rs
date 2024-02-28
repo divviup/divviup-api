@@ -526,7 +526,7 @@ mod show {
         let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_state(FeatureFlags {
-                enable_metrics_refresh: false,
+                metrics_refresh_enabled: false,
             })
             .with_state(user.clone())
             .run_async(&app)

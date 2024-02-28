@@ -101,7 +101,7 @@ pub fn config(api_mocks: impl Handler) -> Config {
         trace_chrome: false,
         tokio_console_enabled: false,
         tokio_console_listen_address: "127.0.0.1:6669".parse().unwrap(),
-        enable_metrics_refresh: true,
+        metrics_refresh_enabled: true,
     }
 }
 
