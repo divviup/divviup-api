@@ -4,6 +4,7 @@ use std::collections::HashSet;
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Feature {
     TokenHash,
+    UploadMetrics,
     #[serde(untagged)]
     Unknown(String),
 }
@@ -14,6 +15,26 @@ pub struct Features(HashSet<Feature>);
 impl Features {
     pub fn token_hash_enabled(&self) -> bool {
         self.0.contains(&Feature::TokenHash)
+    }
+
+    pub fn upload_metrics_enabled(&self) -> bool {
+        self.0.contains(&Feature::UploadMetrics)
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn intersect(&self, other: &Features) -> Self {
+        self.0.intersection(&other.0).cloned().collect()
+    }
+
+    pub fn contains(&self, feature: &Feature) -> bool {
+        self.0.contains(feature)
     }
 }
 
@@ -44,7 +65,7 @@ mod tests {
     }
 
     #[test]
-    fn features_token_hash() {
+    fn features() {
         assert_eq!(
             serde_json::from_value::<Features>(json!(["TokenHash"])).unwrap(),
             Features::from_iter([Feature::TokenHash])
@@ -53,6 +74,10 @@ mod tests {
             serde_json::from_value::<Features>(json!(["TokenHash", "TokenHash", "TokenHash"]))
                 .unwrap(),
             Features::from_iter([Feature::TokenHash])
+        );
+        assert_eq!(
+            serde_json::from_value::<Features>(json!(["TokenHash", "UploadMetrics"])).unwrap(),
+            Features::from_iter([Feature::TokenHash, Feature::UploadMetrics])
         );
     }
 

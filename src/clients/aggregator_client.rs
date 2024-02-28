@@ -7,7 +7,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use trillium_client::{Client, KnownHeaderName};
 use url::Url;
 pub mod api_types;
-pub use api_types::{AggregatorApiConfig, TaskCreate, TaskIds, TaskMetrics, TaskResponse};
+pub use api_types::{AggregatorApiConfig, TaskCreate, TaskIds, TaskResponse, TaskUploadMetrics};
 
 const CONTENT_TYPE: &str = "application/vnd.janus.aggregator+json;version=0.1";
 
@@ -76,8 +76,11 @@ impl AggregatorClient {
         self.get(&format!("tasks/{task_id}")).await
     }
 
-    pub async fn get_task_metrics(&self, task_id: &str) -> Result<TaskMetrics, ClientError> {
-        self.get(&format!("tasks/{task_id}/metrics")).await
+    pub async fn get_task_upload_metrics(
+        &self,
+        task_id: &str,
+    ) -> Result<TaskUploadMetrics, ClientError> {
+        self.get(&format!("tasks/{task_id}/metrics/uploads")).await
     }
 
     pub async fn delete_task(&self, task_id: &str) -> Result<(), ClientError> {

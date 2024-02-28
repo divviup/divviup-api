@@ -447,6 +447,11 @@ mod create {
 
 mod show {
     use super::{assert_eq, test, *};
+    use divviup_api::{
+        entity::aggregator::{Feature, Features},
+        FeatureFlags,
+    };
+    use time::Duration;
 
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
@@ -460,6 +465,77 @@ mod show {
         assert_ok!(conn);
         let response_task: Task = conn.response_json().await;
         assert_eq!(response_task, task);
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn metrics_caching(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut task = task.into_active_model();
+        task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc() - Duration::minutes(10));
+        let task = task.update(app.db()).await?;
+
+        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+        leader.features = ActiveValue::Set(Features::from_iter([Feature::UploadMetrics]).into());
+        leader.update(app.db()).await?;
+
+        let leader = task.leader_aggregator(app.db()).await?;
+        let mut conn = get(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_state(user.clone())
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+
+        let aggregator_api_request = client_logs.last();
+        assert_eq!(
+            aggregator_api_request.url,
+            leader
+                .api_url
+                .join(&format!("tasks/{}/metrics/uploads", task.id))
+                .unwrap()
+        );
+        let metrics: TaskUploadMetrics = aggregator_api_request.response_json();
+
+        let response_task: Task = conn.response_json().await;
+
+        assert_eq!(metrics, response_task);
+        assert!(response_task.updated_at > task.updated_at);
+
+        let mut conn = get(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_state(user)
+            .run_async(&app)
+            .await;
+        let second_response_task: Task = conn.response_json().await;
+        assert_eq!(metrics, second_response_task);
+        assert_eq!(second_response_task.updated_at, response_task.updated_at);
+
+        Ok(())
+    }
+
+    #[test(harness = with_client_logs)]
+    async fn metrics_refresh_disabled(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut task = task.into_active_model();
+        task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc() - Duration::minutes(10));
+        let task = task.update(app.db()).await?;
+
+        let conn = get(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_state(FeatureFlags {
+                metrics_refresh_enabled: false,
+            })
+            .with_state(user.clone())
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+
+        // Ensure the aggregator API was never contacted.
+        assert!(client_logs.logs().is_empty());
+
         Ok(())
     }
 

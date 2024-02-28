@@ -1,5 +1,5 @@
 use crate::{
-    clients::aggregator_client::{api_types::TaskResponse, TaskMetrics},
+    clients::aggregator_client::api_types::{TaskResponse, TaskUploadMetrics},
     entity::{
         account, membership, AccountColumn, Accounts, Aggregator, AggregatorColumn, Aggregators,
         CollectorCredentialColumn, CollectorCredentials,
@@ -43,25 +43,59 @@ pub struct Model {
     #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
     pub time_precision_seconds: i32,
+
+    /// Deprecated metrics field. Never populated, only reads zero.
+    #[sea_orm(ignore)]
+    #[serde(default)]
     pub report_count: i32,
+    /// Deprecated metrics field. Never populated, only reads zero.
+    #[sea_orm(ignore)]
+    #[serde(default)]
     pub aggregate_collection_count: i32,
+
     #[serde(default, with = "time::serde::rfc3339::option")]
     pub expiration: Option<OffsetDateTime>,
     pub leader_aggregator_id: Uuid,
     pub helper_aggregator_id: Uuid,
     pub collector_credential_id: Uuid,
+
+    pub report_counter_interval_collected: i64,
+    pub report_counter_decode_failure: i64,
+    pub report_counter_decrypt_failure: i64,
+    pub report_counter_expired: i64,
+    pub report_counter_outdated_key: i64,
+    pub report_counter_success: i64,
+    pub report_counter_too_early: i64,
+    pub report_counter_task_expired: i64,
 }
 
 impl Model {
-    pub async fn update_metrics(
+    pub async fn update_task_upload_metrics(
         self,
-        metrics: TaskMetrics,
+        metrics: TaskUploadMetrics,
         db: impl ConnectionTrait,
     ) -> Result<Self, DbErr> {
         let mut task = self.into_active_model();
-        task.report_count = ActiveValue::Set(metrics.reports.try_into().unwrap_or(i32::MAX));
-        task.aggregate_collection_count =
-            ActiveValue::Set(metrics.report_aggregations.try_into().unwrap_or(i32::MAX));
+        task.report_counter_interval_collected =
+            ActiveValue::Set(metrics.interval_collected.try_into().unwrap_or(i64::MAX));
+        task.report_counter_decode_failure =
+            ActiveValue::Set(metrics.report_decode_failure.try_into().unwrap_or(i64::MAX));
+        task.report_counter_decrypt_failure = ActiveValue::Set(
+            metrics
+                .report_decrypt_failure
+                .try_into()
+                .unwrap_or(i64::MAX),
+        );
+        task.report_counter_expired =
+            ActiveValue::Set(metrics.report_expired.try_into().unwrap_or(i64::MAX));
+        task.report_counter_outdated_key =
+            ActiveValue::Set(metrics.report_outdated_key.try_into().unwrap_or(i64::MAX));
+        task.report_counter_success =
+            ActiveValue::Set(metrics.report_success.try_into().unwrap_or(i64::MAX));
+        task.report_counter_too_early =
+            ActiveValue::Set(metrics.report_too_early.try_into().unwrap_or(i64::MAX));
+        task.report_counter_task_expired =
+            ActiveValue::Set(metrics.task_expired.try_into().unwrap_or(i64::MAX));
         task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
         task.update(&db).await
     }

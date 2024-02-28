@@ -3,9 +3,9 @@ use crate::{
     clients::aggregator_client::api_types::{
         AggregatorApiConfig, AggregatorVdaf, AuthenticationToken, HpkeAeadId, HpkeConfig,
         HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, QueryType, Role, TaskCreate, TaskId,
-        TaskIds, TaskMetrics, TaskResponse,
+        TaskIds, TaskResponse, TaskUploadMetrics,
     },
-    entity::aggregator::Feature,
+    entity::aggregator::{Feature, Features},
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use querystrong::QueryStrong;
@@ -35,11 +35,7 @@ pub fn mock() -> impl Handler {
                         vdafs: Default::default(),
                         query_types: Default::default(),
                         protocol: random(),
-                        features: if random() {
-                            Feature::TokenHash.into()
-                        } else {
-                            Default::default()
-                        },
+                        features: Features::from_iter([Feature::TokenHash]),
                     })
                 }),
             )
@@ -47,7 +43,10 @@ pub fn mock() -> impl Handler {
             .get("/tasks/:task_id", api(get_task))
             .get("/task_ids", api(task_ids))
             .delete("/tasks/:task_id", Status::Ok)
-            .get("/tasks/:task_id/metrics", api(get_task_metrics)),
+            .get(
+                "/tasks/:task_id/metrics/uploads",
+                api(get_task_upload_metrics),
+            ),
     )
 }
 
@@ -68,10 +67,16 @@ async fn bearer_token_check(conn: Conn) -> Conn {
     }
 }
 
-async fn get_task_metrics(_: &mut Conn, (): ()) -> Json<TaskMetrics> {
-    Json(TaskMetrics {
-        reports: fastrand::u64(..1000),
-        report_aggregations: fastrand::u64(..1000),
+async fn get_task_upload_metrics(_: &mut Conn, (): ()) -> Json<TaskUploadMetrics> {
+    Json(TaskUploadMetrics {
+        interval_collected: fastrand::u64(..1000),
+        report_decode_failure: fastrand::u64(..1000),
+        report_decrypt_failure: fastrand::u64(..1000),
+        report_expired: fastrand::u64(..1000),
+        report_outdated_key: fastrand::u64(..1000),
+        report_success: fastrand::u64(..1000),
+        report_too_early: fastrand::u64(..1000),
+        task_expired: fastrand::u64(..1000),
     })
 }
 

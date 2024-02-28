@@ -711,8 +711,10 @@ components:
           type: number
         report_count:
           type: number
-        aggregate_collection-count:
+          deprecated: true
+        aggregate_collection_count:
           type: number
+          deprecated: true
         expiration:
           type: string
           format: date-time
@@ -726,6 +728,22 @@ components:
         collector_credential_id:
           type: string
           format: uuid
+        report_counter_interval_collected:
+          type: number
+        report_counter_decode_failure:
+          type: number
+        report_counter_decrypt_failure:
+          type: number
+        report_counter_expired:
+          type: number
+        report_counter_outdated_key:
+          type: number
+        report_counter_success:
+          type: number
+        report_counter_too_early:
+          type: number
+        report_counter_task_expired:
+          type: number
     Membership:
       type: object
       properties:

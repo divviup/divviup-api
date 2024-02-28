@@ -4,7 +4,7 @@ use crate::{
             Features, QueryTypeName, QueryTypeNameSet, Role as AggregatorRole, VdafNameSet,
         },
         task::vdaf::{BucketLength, ContinuousBuckets, CountVec, Histogram, Sum, SumVec, Vdaf},
-        Aggregator, Protocol, ProvisionableTask,
+        Aggregator, Protocol, ProvisionableTask, Task,
     },
     handler::Error,
 };
@@ -350,10 +350,37 @@ pub struct TaskIds {
     pub pagination_token: Option<String>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct TaskMetrics {
-    pub reports: u64,
-    pub report_aggregations: u64,
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TaskUploadMetrics {
+    /// Reports that fell into a time interval that had already been collected.
+    pub interval_collected: u64,
+    /// Reports that could not be decoded.
+    pub report_decode_failure: u64,
+    /// Reports that could not be decrypted.
+    pub report_decrypt_failure: u64,
+    /// Reports that contained a timestamp too far in the past.
+    pub report_expired: u64,
+    /// Reports that were encrypted with an old or unknown HPKE key.
+    pub report_outdated_key: u64,
+    /// Reports that were successfully uploaded.
+    pub report_success: u64,
+    /// Reports that contain a timestamp too far in the future.
+    pub report_too_early: u64,
+    /// Reports that were submitted to the task after the task's expiry.
+    pub task_expired: u64,
+}
+
+impl PartialEq<Task> for TaskUploadMetrics {
+    fn eq(&self, other: &Task) -> bool {
+        other.report_counter_interval_collected == self.interval_collected as i64
+            && other.report_counter_decode_failure == self.report_decode_failure as i64
+            && other.report_counter_decrypt_failure == self.report_decrypt_failure as i64
+            && other.report_counter_expired == self.report_expired as i64
+            && other.report_counter_outdated_key == self.report_outdated_key as i64
+            && other.report_counter_success == self.report_success as i64
+            && other.report_counter_too_early == self.report_too_early as i64
+            && other.report_counter_task_expired == self.task_expired as i64
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

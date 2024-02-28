@@ -48,6 +48,14 @@ pub struct Config {
     pub tokio_console_enabled: bool,
     /// See [`TokioConsoleConfig::listen_address`].
     pub tokio_console_listen_address: SocketAddr,
+    /// Enables refreshing upload metrics from Janus. Enabled by default.
+    pub metrics_refresh_enabled: bool,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct FeatureFlags {
+    /// Enables refreshing upload metrics from Janus. Enabled by default.
+    pub metrics_refresh_enabled: bool,
 }
 
 #[derive(Debug, Error)]
@@ -141,6 +149,7 @@ impl Config {
                 "TOKIO_CONSOLE_LISTEN_ADDRESS",
                 "127.0.0.1:6669".parse().unwrap(),
             )?,
+            metrics_refresh_enabled: var_optional("ENABLE_METRICS_REFRESH", true)?,
         })
     }
 
@@ -167,6 +176,12 @@ impl Config {
                 listen_address: Some(self.tokio_console_listen_address),
             },
             chrome: self.trace_chrome,
+        }
+    }
+
+    pub fn feature_flags(&self) -> FeatureFlags {
+        FeatureFlags {
+            metrics_refresh_enabled: self.metrics_refresh_enabled,
         }
     }
 }
