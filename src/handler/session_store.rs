@@ -2,7 +2,7 @@ use crate::{entity::session, Db};
 use async_session::{
     async_trait,
     chrono::{DateTime, NaiveDateTime, Utc},
-    serde_json, Session,
+    Session,
 };
 use sea_orm::{
     sea_query::{any, OnConflict},

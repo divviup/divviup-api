@@ -1,6 +1,6 @@
 use divviup_api::{
     entity::queue::Entity,
-    queue::{CreateUser, Job, JobStatus, Queue, ResetPassword, SendInvitationEmail, V1},
+    queue::{CreateUser, JobStatus, ResetPassword, SendInvitationEmail, V1},
 };
 use test_support::{assert_eq, test, *};
 use uuid::Uuid;

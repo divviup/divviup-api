@@ -1,4 +1,3 @@
-use divviup_api::entity::aggregator::Role;
 use test_support::{assert_eq, test, *};
 
 pub async fn assert_errors(app: &DivviupApi, new_task: &mut NewTask, field: &str, codes: &[&str]) {
