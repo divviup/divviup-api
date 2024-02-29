@@ -448,6 +448,7 @@ mod create {
 mod show {
     use super::{assert_eq, test, *};
     use divviup_api::{
+        api_mocks::aggregator_api::get_task,
         entity::aggregator::{Feature, Features},
         FeatureFlags,
     };
@@ -535,6 +536,43 @@ mod show {
 
         // Ensure the aggregator API was never contacted.
         assert!(client_logs.logs().is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn metrics_new_task() -> TestResult {
+        // Mock an aggregator API with a valid task that returns 404 on upload metrics. This
+        // simulates a brand new task with no uploads.
+        let mut app = DivviupApi::new(config(
+            router()
+                .get("/tasks/:task_id", api(get_task))
+                .get("/tasks/:task_id/metrics/uploads", Status::NotFound),
+        ))
+        .await;
+        set_up_schema(app.db()).await;
+        let mut info = "testing".into();
+        app.init(&mut info).await;
+
+        let (user, account, ..) = fixtures::member(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut task = task.into_active_model();
+        task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc() - Duration::minutes(10));
+        let task = task.update(app.db()).await?;
+
+        let mut leader = task.leader_aggregator(app.db()).await?.into_active_model();
+        leader.features = ActiveValue::Set(Features::from_iter([Feature::UploadMetrics]).into());
+        leader.update(app.db()).await?;
+
+        let mut conn = get(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_state(user.clone())
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+
+        let response_task: Task = conn.response_json().await;
+        assert_eq!(TaskUploadMetrics::default(), response_task);
 
         Ok(())
     }

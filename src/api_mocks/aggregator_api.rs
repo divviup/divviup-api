@@ -50,7 +50,7 @@ pub fn mock() -> impl Handler {
     )
 }
 
-async fn bearer_token_check(conn: Conn) -> Conn {
+pub async fn bearer_token_check(conn: Conn) -> Conn {
     let token_is_valid = conn
         .request_headers()
         .get_str(KnownHeaderName::Authorization)
@@ -67,7 +67,7 @@ async fn bearer_token_check(conn: Conn) -> Conn {
     }
 }
 
-async fn get_task_upload_metrics(_: &mut Conn, (): ()) -> Json<TaskUploadMetrics> {
+pub async fn get_task_upload_metrics(_: &mut Conn, (): ()) -> Json<TaskUploadMetrics> {
     Json(TaskUploadMetrics {
         interval_collected: fastrand::u64(..1000),
         report_decode_failure: fastrand::u64(..1000),
@@ -80,7 +80,7 @@ async fn get_task_upload_metrics(_: &mut Conn, (): ()) -> Json<TaskUploadMetrics
     })
 }
 
-async fn get_task(conn: &mut Conn, (): ()) -> Json<TaskResponse> {
+pub async fn get_task(conn: &mut Conn, (): ()) -> Json<TaskResponse> {
     let task_id = conn.param("task_id").unwrap();
     Json(TaskResponse {
         task_id: task_id.parse().unwrap(),
@@ -102,7 +102,7 @@ async fn get_task(conn: &mut Conn, (): ()) -> Json<TaskResponse> {
     })
 }
 
-async fn post_task(
+pub async fn post_task(
     _: &mut Conn,
     Json(task_create): Json<TaskCreate>,
 ) -> (State<TaskCreate>, Json<TaskResponse>) {
@@ -144,7 +144,7 @@ pub fn random_hpke_config() -> HpkeConfig {
     )
 }
 
-async fn task_ids(conn: &mut Conn, (): ()) -> Result<Json<TaskIds>, Status> {
+pub async fn task_ids(conn: &mut Conn, (): ()) -> Result<Json<TaskIds>, Status> {
     let query = QueryStrong::parse(conn.querystring()).map_err(|_| Status::InternalServerError)?;
     match query.get_str("pagination_token") {
         None => Ok(Json(TaskIds {

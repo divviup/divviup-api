@@ -1,5 +1,5 @@
 use crate::{
-    clients::aggregator_client::TaskUploadMetrics,
+    clients::{aggregator_client::TaskUploadMetrics, ClientError},
     config::FeatureFlags,
     entity::{Account, NewTask, Task, Tasks, UpdateTask},
     Crypter, Db, Error, Permissions, PermissionsActor,
@@ -76,7 +76,23 @@ async fn refresh_metrics_if_needed(
         aggregator
             .client(client, crypter)?
             .get_task_upload_metrics(&task.id)
-            .await?
+            .await
+            .or_else(|err| {
+                match err {
+                    // If this endpoint returns 404, it's because:
+                    //   - The task is deleted, and we wouldn't have made it this far in the first
+                    //     place.
+                    //   - The task has just been created, so has no metrics to report, or its
+                    //     metrics are otherwise gone.
+                    //
+                    // Either way, return an empty set of metrics.
+                    ClientError::HttpStatusNotSuccess {
+                        status: Some(Status::NotFound),
+                        ..
+                    } => Ok(TaskUploadMetrics::default()),
+                    _ => Err(err),
+                }
+            })?
     } else {
         TaskUploadMetrics::default()
     };

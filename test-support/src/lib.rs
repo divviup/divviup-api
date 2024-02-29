@@ -11,7 +11,6 @@ use divviup_api::{clients::aggregator_client::api_types, Config, Crypter, Db};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, future::Future, iter::repeat_with, process::Termination};
 use tracing::install_test_trace_subscriber;
-use trillium::Handler;
 use trillium_client::Client;
 use trillium_http::HeaderValue;
 use trillium_testing::TestConn;
@@ -34,7 +33,9 @@ pub use sea_orm::{
 pub use serde_json::{json, Value};
 pub use test_harness::test;
 pub use time::OffsetDateTime;
-pub use trillium::{Conn, KnownHeaderName, Method, Status};
+pub use trillium::{Conn, Handler, KnownHeaderName, Method, Status};
+pub use trillium_api::api;
+pub use trillium_router::router;
 pub use trillium_testing::prelude::*;
 pub use url::Url;
 
