@@ -580,6 +580,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
 
 [[package]]
+name = "base64"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9475866fec1451be56a3c2400fd081ff546538961565ccb5b7142cbd22bc7a51"
+
+[[package]]
 name = "base64ct"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1259,7 +1265,7 @@ dependencies = [
  "aes-gcm",
  "async-lock 3.3.0",
  "async-session",
- "base64 0.21.7",
+ "base64 0.22.0",
  "console-subscriber",
  "email_address",
  "fastrand 2.0.1",
@@ -1323,7 +1329,7 @@ dependencies = [
 name = "divviup-cli"
 version = "0.1.14"
 dependencies = [
- "base64 0.21.7",
+ "base64 0.22.0",
  "clap",
  "colored",
  "const_format",
@@ -1346,7 +1352,7 @@ dependencies = [
 name = "divviup-client"
 version = "0.1.14"
 dependencies = [
- "base64 0.21.7",
+ "base64 0.22.0",
  "divviup-api",
  "divviup-client",
  "email_address",
@@ -2051,7 +2057,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.4.10",
+ "socket2 0.5.5",
  "tokio",
  "tower-service",
  "tracing",
@@ -4327,7 +4333,7 @@ dependencies = [
 name = "test-support"
 version = "0.1.14"
 dependencies = [
- "base64 0.21.7",
+ "base64 0.22.0",
  "divviup-api",
  "fastrand 2.0.1",
  "pretty_assertions",
