@@ -42,7 +42,7 @@ fastrand = "2.0.1"
 futures-lite = "2.2.0"
 git-version = "0.3.9"
 janus_messages = "0.6.18"
-log = "0.4.20"
+log = "0.4.21"
 opentelemetry = { version = "0.22.0", features = ["metrics", "logs"] }
 opentelemetry-prometheus = { version = "0.15.0", features = [
         "prometheus-encoding",
