@@ -1,4 +1,4 @@
-# DivviUp API Server and web app
+# Divvi Up API Server and web app
 
 ## Badges
 
