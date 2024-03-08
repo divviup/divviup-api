@@ -49,10 +49,10 @@ export default function AccountList() {
 }
 
 function LoadedAccounts() {
-  const tasks = useAsyncValue() as Account[];
+  const accounts = useAsyncValue() as Account[];
   return (
     <ListGroup>
-      {tasks.map((t) => (
+      {accounts.map((t) => (
         <LinkContainer to={`/accounts/${t.id}`} key={t.id}>
           <ListGroup.Item action>{t.name}</ListGroup.Item>
         </LinkContainer>
