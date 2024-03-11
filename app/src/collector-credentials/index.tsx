@@ -1,7 +1,9 @@
 import { RouteObject, defer } from "react-router-dom";
 import ApiClient from "../ApiClient";
 import CollectorCredentialList from "./CollectorCredentialList";
-export default function apiTokens(apiClient: ApiClient): RouteObject {
+export default function collectorCredentials(
+  apiClient: ApiClient,
+): RouteObject {
   return {
     path: "collector_credentials",
     children: [
