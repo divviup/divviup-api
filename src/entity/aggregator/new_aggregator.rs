@@ -17,14 +17,21 @@ use validator::{Validate, ValidationError, ValidationErrors};
 pub struct NewAggregator {
     #[validate(required, length(min = 1))]
     pub name: Option<String>,
-    #[cfg_attr(not(feature = "integration-testing"), validate(custom = "https"))]
+    #[cfg_attr(
+        not(feature = "integration-testing"),
+        validate(custom(function = "https"))
+    )]
     pub api_url: Option<String>,
     pub bearer_token: Option<String>,
     pub is_first_party: Option<bool>,
 }
 
 #[cfg_attr(feature = "integration-testing", allow(dead_code))]
-fn https(url: &str) -> Result<(), ValidationError> {
+fn https(url_opt: &Option<String>) -> Result<(), ValidationError> {
+    let Some(url) = url_opt else {
+        return Ok(());
+    };
+
     let url = url::Url::from_str(url).map_err(|_| ValidationError::new("https-url"))?;
     if url.scheme() != "https" {
         return Err(ValidationError::new("https-url"));

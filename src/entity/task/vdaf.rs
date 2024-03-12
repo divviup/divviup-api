@@ -95,7 +95,7 @@ impl Histogram {
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq)]
 pub struct ContinuousBuckets {
-    #[validate(required, length(min = 1), custom = "increasing", custom = "unique")]
+    #[validate(required, length(min = 1), custom(function = "increasing_and_unique"))]
     pub buckets: Option<Vec<u64>>,
 
     #[validate(range(min = 1))]
@@ -104,7 +104,7 @@ pub struct ContinuousBuckets {
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq)]
 pub struct CategoricalBuckets {
-    #[validate(required, length(min = 1), custom = "unique")]
+    #[validate(required, length(min = 1), custom(function = "unique"))]
     pub buckets: Option<Vec<String>>,
 
     #[validate(range(min = 1))]
@@ -120,7 +120,11 @@ pub struct BucketLength {
     pub chunk_length: Option<u64>,
 }
 
-fn unique<T: Hash + Eq>(buckets: &[T]) -> Result<(), ValidationError> {
+fn unique<T: Hash + Eq>(buckets_opt: &Option<Vec<T>>) -> Result<(), ValidationError> {
+    let Some(buckets) = buckets_opt else {
+        return Ok(());
+    };
+
     if buckets.len() == buckets.iter().collect::<HashSet<_>>().len() {
         Ok(())
     } else {
@@ -128,7 +132,11 @@ fn unique<T: Hash + Eq>(buckets: &[T]) -> Result<(), ValidationError> {
     }
 }
 
-fn increasing(buckets: &[u64]) -> Result<(), ValidationError> {
+fn increasing(buckets_opt: &Option<Vec<u64>>) -> Result<(), ValidationError> {
+    let Some(buckets) = buckets_opt else {
+        return Ok(());
+    };
+
     let Some(mut last) = buckets.first().copied() else {
         return Ok(());
     };
@@ -141,6 +149,16 @@ fn increasing(buckets: &[u64]) -> Result<(), ValidationError> {
         }
     }
     Ok(())
+}
+
+fn increasing_and_unique(buckets_opt: &Option<Vec<u64>>) -> Result<(), ValidationError> {
+    // Due to limitations in the Validate derive macro, only one custom validator may be applied
+    // to each field. This function thus combines two custom validations into one. Unfortunately,
+    // only one error `ValidationError` may be added to the struct-level `ValidationErrors` by a
+    // single custom validation, so we must short-circuit if one of the two wrapped validations
+    // fails. See https://github.com/Keats/validator/issues/308.
+    increasing(buckets_opt)?;
+    unique(buckets_opt)
 }
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Copy, Eq, PartialEq)]
