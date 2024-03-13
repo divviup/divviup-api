@@ -156,7 +156,7 @@ export const HELPS: {
     long: (
       <p>
         Select a previously uploaded collector credential. You will need to use
-        the config&apos;s corresponding private key and auth token when
+        the credential&apos;s corresponding private key and auth token when
         collecting aggregate results.
       </p>
     ),
