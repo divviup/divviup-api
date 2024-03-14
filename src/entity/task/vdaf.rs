@@ -44,7 +44,7 @@ impl Histogram {
         protocol: &Protocol,
     ) -> Result<AggregatorVdaf, ValidationErrors> {
         match (protocol, self) {
-            (Protocol::Dap07, histogram) => {
+            (Protocol::Dap07 | Protocol::Dap09, histogram) => {
                 if let Some(chunk_length) = histogram.chunk_length() {
                     Ok(AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
                         length: histogram.length(),
@@ -290,7 +290,7 @@ impl Vdaf {
             ) => {}
 
             // Select a chunk length if the protocol version needs it and it isn't set yet.
-            (Self::Histogram(histogram), Protocol::Dap07) => {
+            (Self::Histogram(histogram), Protocol::Dap07 | Protocol::Dap09) => {
                 let length = histogram.length();
                 match histogram {
                     Histogram::Opaque(BucketLength { chunk_length, .. })
@@ -306,7 +306,7 @@ impl Vdaf {
                     length: Some(length),
                     chunk_length: chunk_length @ None,
                 }),
-                Protocol::Dap07,
+                Protocol::Dap07 | Protocol::Dap09,
             ) => *chunk_length = Some(optimal_chunk_length(*length as usize) as u64),
 
             (
@@ -315,15 +315,15 @@ impl Vdaf {
                     length: Some(length),
                     chunk_length: chunk_length @ None,
                 }),
-                Protocol::Dap07,
+                Protocol::Dap07 | Protocol::Dap09,
             ) => {
                 *chunk_length = Some(optimal_chunk_length(*bits as usize * *length as usize) as u64)
             }
 
             // Invalid, missing parameters, do nothing.
-            (Self::CountVec(CountVec { length: None, .. }), Protocol::Dap07)
-            | (Self::SumVec(SumVec { bits: None, .. }), Protocol::Dap07)
-            | (Self::SumVec(SumVec { length: None, .. }), Protocol::Dap07) => {}
+            (Self::CountVec(CountVec { length: None, .. }), Protocol::Dap07 | Protocol::Dap09)
+            | (Self::SumVec(SumVec { bits: None, .. }), Protocol::Dap07 | Protocol::Dap09)
+            | (Self::SumVec(SumVec { length: None, .. }), Protocol::Dap07 | Protocol::Dap09) => {}
 
             // Chunk length is not applicable, either due to VDAF choice or protocol version.
             (Self::Count, _)
