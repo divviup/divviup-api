@@ -5,7 +5,7 @@ info:
     Divvi Up is a privacy-respecting system for aggregate statistics.
 
     Some useful links:
-    - [The DivviUp API repository](https://github.com/divviup/divviup-api)
+    - [The Divvi Up API repository](https://github.com/divviup/divviup-api)
     - [The source API definition](https://github.com/divviup/divviup-api/blob/main/documentation/openapi.yml)
   termsOfService: http://divviup.org/terms/ # this doesn't exist yet
   contact:
@@ -15,7 +15,7 @@ info:
     url: https://www.mozilla.org/en-US/MPL/2.0/
   version: "0.1"
 externalDocs:
-  description: The DivviUp API repository
+  description: The Divvi Up API repository
   url: https://github.com/divviup/divviup-api
 servers:
   - url: https://api.divviup.org/api

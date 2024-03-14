@@ -13,7 +13,7 @@ export function HeaderPlaceholder() {
     <Navbar bg="light">
       <Container>
         <Navbar.Brand as={Link} to="/">
-          <img src={logo} alt="DivviUp" width="100" />
+          <img src={logo} alt="Divvi Up" width="100" />
         </Navbar.Brand>
         <LinkContainer to="/login">
           <NavDropdown.Item>Log In</NavDropdown.Item>
@@ -30,7 +30,7 @@ function LoggedInHeader() {
     <Navbar bg="light" expand="lg">
       <Container>
         <Navbar.Brand as={Link} to="/accounts">
-          <img src={logo} alt="DivviUp" width="100" />
+          <img src={logo} alt="Divvi Up" width="100" />
         </Navbar.Brand>
 
         {user.admin ? (
