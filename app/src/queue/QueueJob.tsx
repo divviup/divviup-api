@@ -6,9 +6,9 @@ import { QueueJob } from "../ApiClient";
 import { DateTime } from "luxon";
 import { Link } from "react-router-dom";
 
-export const Component = JobQueue;
+export const Component = QueueJobComponent;
 
-export function JobQueue() {
+export function QueueJobComponent() {
   const job = useLoaderData() as QueueJob;
 
   return (
