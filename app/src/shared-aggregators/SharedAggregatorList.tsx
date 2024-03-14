@@ -24,9 +24,9 @@ import SharedAggregatorForm from "./SharedAggregatorForm";
 import { Pencil, PencilSquare, Trash } from "react-bootstrap-icons";
 import React from "react";
 
-export const Component = JobQueue;
+export const Component = SharedAggregatorList;
 
-export function JobQueue() {
+export function SharedAggregatorList() {
   const { aggregators } = useLoaderData() as {
     aggregators: Promise<Aggregator[]>;
   };
