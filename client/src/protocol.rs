@@ -11,6 +11,8 @@ pub enum Protocol {
     Dap04,
     #[serde(rename = "DAP-07")]
     Dap07,
+    #[serde(rename = "DAP-09")]
+    Dap09,
 }
 
 impl AsRef<str> for Protocol {
@@ -18,6 +20,7 @@ impl AsRef<str> for Protocol {
         match self {
             Self::Dap04 => "DAP-04",
             Self::Dap07 => "DAP-07",
+            Self::Dap09 => "DAP-09",
         }
     }
 }
@@ -36,6 +39,7 @@ impl FromStr for Protocol {
         match &*s.to_lowercase() {
             "dap-04" => Ok(Self::Dap04),
             "dap-07" => Ok(Self::Dap07),
+            "dap-09" => Ok(Self::Dap09),
             unrecognized => Err(UnrecognizedProtocol(unrecognized.to_string())),
         }
     }
