@@ -292,7 +292,7 @@ dependencies = [
  "async-task",
  "concurrent-queue",
  "fastrand 2.0.1",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "slab",
 ]
 
@@ -307,7 +307,7 @@ dependencies = [
  "async-io 2.3.0",
  "async-lock 3.3.0",
  "blocking",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "once_cell",
  "tokio",
 ]
@@ -342,7 +342,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "concurrent-queue",
  "futures-io",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "parking",
  "polling 3.3.2",
  "rustix 0.38.30",
@@ -682,7 +682,7 @@ dependencies = [
  "async-task",
  "fastrand 2.0.1",
  "futures-io",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "piper",
  "tracing",
 ]
@@ -1304,7 +1304,7 @@ dependencies = [
  "console-subscriber",
  "email_address",
  "fastrand 2.0.1",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "git-version",
  "janus_messages",
  "log",
@@ -1392,7 +1392,7 @@ dependencies = [
  "divviup-client",
  "email_address",
  "fastrand 2.0.1",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "janus_messages",
  "log",
  "pad-adapter",
@@ -1718,9 +1718,9 @@ dependencies = [
 
 [[package]]
 name = "futures-lite"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "445ba825b27408685aaecefd65178908c36c6e96aaf6d8599419d46e624192ba"
+checksum = "52527eb5074e35e9339c6b4e8d12600c7128b68fb25dcb9fa9dec18f7c25f3a5"
 dependencies = [
  "fastrand 2.0.1",
  "futures-core",
@@ -4244,7 +4244,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed8bff52ab3d70adfb76df17a225936c7676efdda1a1567ed5b11c22e3577bd3"
 dependencies = [
  "event-listener 4.0.3",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "pin-project-lite",
 ]
 
@@ -4744,7 +4744,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acca545b3933760b2b88b822d83e62ccf9aab8c24d16ae82e56df1f2a5af11c1"
 dependencies = [
  "async-trait",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "log",
  "trillium-http",
 ]
@@ -4785,7 +4785,7 @@ dependencies = [
  "crossbeam-queue",
  "dashmap",
  "encoding_rs",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "httparse",
  "log",
  "memchr",
@@ -4806,7 +4806,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f7454b55f3bf1b93818443e466ac2c034aaa46aab3a5d0a54f668a3af3c9bf8"
 dependencies = [
  "async-compression",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "log",
  "trillium",
 ]
@@ -4850,7 +4850,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8afd3a7e9a46df93d81229fcd2011e089ed522c55ef633edee8893a23cb88e9"
 dependencies = [
  "encoding_rs",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "hashbrown 0.14.3",
  "http",
  "httparse",
@@ -4958,7 +4958,7 @@ dependencies = [
  "async-trait",
  "async_cell",
  "event-listener 4.0.3",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "log",
  "pin-project-lite",
  "rlimit",
@@ -5014,7 +5014,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "dashmap",
  "fastrand 2.0.1",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "once_cell",
  "portpicker",
  "trillium",
