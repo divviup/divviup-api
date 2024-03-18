@@ -63,7 +63,7 @@ tracing = "0.1.40"
 trillium = "0.2.16"
 tracing-chrome = "0.7.1"
 tracing-log = "0.2.0"
-tracing-stackdriver = "0.9.0"
+tracing-stackdriver = "0.10.0"
 tracing-subscriber = { version = "0.3.18", features = [
         "json",
         "env-filter",
