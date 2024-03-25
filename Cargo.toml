@@ -77,7 +77,7 @@ trillium-compression = "0.1.1"
 trillium-conn-id = "0.2.2"
 trillium-cookies = "0.4.1"
 trillium-forwarding = "0.2.3"
-trillium-http = { version = "0.3.14", features = ["http-compat", "serde"] }
+trillium-http = { version = "0.3.15", features = ["http-compat", "serde"] }
 trillium-logger = "0.4.4"
 trillium-macros = "0.0.5"
 trillium-prometheus = "0.1.0"
