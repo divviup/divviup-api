@@ -1313,7 +1313,7 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry-prometheus",
  "opentelemetry_sdk",
- "prio 0.16.1",
+ "prio 0.16.2",
  "prometheus",
  "querystrong",
  "rand",
@@ -3023,9 +3023,9 @@ dependencies = [
 
 [[package]]
 name = "prio"
-version = "0.16.1"
+version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a5247468645c68d3f5eaa958ca8b7ce5539bb604a1dcb9baa6a3cb7831f8fa8"
+checksum = "5cec5eb0d28eee4ea74be34b28ed4c625e88c54ff83c21b412a5ea7cc48624ae"
 dependencies = [
  "aes",
  "byteorder",
