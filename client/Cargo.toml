@@ -21,7 +21,7 @@ thiserror = "1.0.58"
 trillium-client = { version = "0.5.6", features = ["json"] }
 trillium-http = "0.3.14"
 url = { version = "2.5.0", features = ["serde"] }
-uuid = { version = "1.7.0", features = ["v4", "fast-rng", "serde"] }
+uuid = { version = "1.8.0", features = ["v4", "fast-rng", "serde"] }
 time = { version = "0.3.34", features = ["serde", "serde-well-known"] }
 log = "0.4.21"
 pad-adapter = "0.1.1"
