@@ -78,7 +78,7 @@
     "source-map-explorer": "^2.5.3",
     "typescript": "^5.4.3",
     "typescript-eslint-language-service": "^5.0.5",
-    "vite": "^5.1.6",
+    "vite": "^5.2.6",
     "vite-plugin-eslint": "^1.8.1"
   },
   "jest": {
