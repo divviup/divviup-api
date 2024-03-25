@@ -90,7 +90,7 @@ trillium-testing = { version = "0.5.4", optional = true }
 trillium-tokio = "0.3.4"
 typenum = "1.17.0"
 url = "2.5.0"
-uuid = { version = "1.7.0", features = ["v4", "fast-rng", "serde"] }
+uuid = { version = "1.8.0", features = ["v4", "fast-rng", "serde"] }
 validator = { version = "0.17.0", features = ["derive"] }
 trillium-opentelemetry = { version = "0.6.0", default-features = false, features = ["metrics"] }
 opentelemetry_sdk = { version = "0.22.1", features = ["rt-tokio", "logs", "metrics"] }
