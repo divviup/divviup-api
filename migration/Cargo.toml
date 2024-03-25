@@ -20,7 +20,7 @@ tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 
 [dependencies.sea-orm-migration]
-version = "0.12.14"
+version = "0.12.15"
 features = ["runtime-tokio-rustls", "sqlx-postgres"]
 
 [dev-dependencies]
