@@ -113,7 +113,7 @@ features = [
 
 
 [dev-dependencies]
-regex = "1.10.3"
+regex = "1.10.4"
 test-support.workspace = true
 
 [build-dependencies]
