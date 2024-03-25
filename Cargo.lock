@@ -291,7 +291,7 @@ dependencies = [
  "async-lock 3.3.0",
  "async-task",
  "concurrent-queue",
- "fastrand 2.0.1",
+ "fastrand 2.0.2",
  "futures-lite 2.3.0",
  "slab",
 ]
@@ -680,7 +680,7 @@ dependencies = [
  "async-channel 2.1.1",
  "async-lock 3.3.0",
  "async-task",
- "fastrand 2.0.1",
+ "fastrand 2.0.2",
  "futures-io",
  "futures-lite 2.3.0",
  "piper",
@@ -1303,7 +1303,7 @@ dependencies = [
  "base64 0.22.0",
  "console-subscriber",
  "email_address",
- "fastrand 2.0.1",
+ "fastrand 2.0.2",
  "futures-lite 2.3.0",
  "git-version",
  "janus_messages",
@@ -1391,7 +1391,7 @@ dependencies = [
  "divviup-api",
  "divviup-client",
  "email_address",
- "fastrand 2.0.1",
+ "fastrand 2.0.2",
  "futures-lite 2.3.0",
  "janus_messages",
  "log",
@@ -1563,9 +1563,9 @@ dependencies = [
 
 [[package]]
 name = "fastrand"
-version = "2.0.1"
+version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25cbce373ec4653f1a01a31e8a5e5ec0c622dc27ff9c4e6606eefef5cbbed4a5"
+checksum = "658bd65b1cf4c852a3cc96f18a8ce7b5640f6b703f905c7d74532294c2a63984"
 
 [[package]]
 name = "ff"
@@ -1722,7 +1722,7 @@ version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52527eb5074e35e9339c6b4e8d12600c7128b68fb25dcb9fa9dec18f7c25f3a5"
 dependencies = [
- "fastrand 2.0.1",
+ "fastrand 2.0.2",
  "futures-core",
  "futures-io",
  "parking",
@@ -2881,7 +2881,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "668d31b1c4eba19242f2088b2bf3316b82ca31082a8335764db4e083db7485d4"
 dependencies = [
  "atomic-waker",
- "fastrand 2.0.1",
+ "fastrand 2.0.2",
  "futures-io",
 ]
 
@@ -4348,7 +4348,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01ce4141aa927a6d1bd34a041795abd0db1cccba5d5f24b009f694bdf3a1f3fa"
 dependencies = [
  "cfg-if 1.0.0",
- "fastrand 2.0.1",
+ "fastrand 2.0.2",
  "redox_syscall",
  "rustix 0.38.30",
  "windows-sys 0.52.0",
@@ -4371,7 +4371,7 @@ version = "0.1.17"
 dependencies = [
  "base64 0.22.0",
  "divviup-api",
- "fastrand 2.0.1",
+ "fastrand 2.0.2",
  "pretty_assertions",
  "querystrong",
  "rand",
@@ -4823,7 +4823,7 @@ version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5338fda5b851671e36a715aead8f851d7ecd025ba220b9e014771702e2f06098"
 dependencies = [
- "fastrand 2.0.1",
+ "fastrand 2.0.2",
  "trillium",
 ]
 
@@ -5019,7 +5019,7 @@ dependencies = [
  "async-dup",
  "cfg-if 1.0.0",
  "dashmap",
- "fastrand 2.0.1",
+ "fastrand 2.0.2",
  "futures-lite 2.3.0",
  "once_cell",
  "portpicker",
