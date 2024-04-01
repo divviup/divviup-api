@@ -34,7 +34,7 @@ futures-lite = "2.3.0"
 test-support.workspace = true
 trillium = "0.2.17"
 trillium-macros = "0.0.5"
-trillium-testing = { version = "0.5.4", features = ["tokio"] }
+trillium-testing = { version = "0.6.0", features = ["tokio"] }
 trillium-rustls = "0.6.0"
 trillium-tokio = "0.3.4"
 divviup-client =  { path = ".", features = ["admin"] }

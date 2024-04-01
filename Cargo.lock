@@ -4801,7 +4801,7 @@ dependencies = [
  "size",
  "thiserror",
  "trillium-http",
- "trillium-server-common",
+ "trillium-server-common 0.4.7",
  "url",
 ]
 
@@ -4951,7 +4951,7 @@ dependencies = [
  "rustls 0.22.2",
  "rustls-native-certs",
  "rustls-pemfile 2.1.0",
- "trillium-server-common",
+ "trillium-server-common 0.4.7",
  "webpki-roots 0.26.1",
 ]
 
@@ -4960,6 +4960,24 @@ name = "trillium-server-common"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f157b81051bb2630b6750d6583f648f545d241ef4b939781f4ad6a45fe700"
+dependencies = [
+ "async-trait",
+ "async_cell",
+ "event-listener 4.0.3",
+ "futures-lite 2.3.0",
+ "log",
+ "pin-project-lite",
+ "rlimit",
+ "trillium",
+ "trillium-http",
+ "url",
+]
+
+[[package]]
+name = "trillium-server-common"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "025792631f39bba769a22eee99f4f9bf791a37f507575bac22d34ba07e26168a"
 dependencies = [
  "async-trait",
  "async_cell",
@@ -5011,9 +5029,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-testing"
-version = "0.5.4"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d3a22281ea7a75259e5abd011999647e8e6ba9adb01a736be86c9507e0629a5"
+checksum = "65f5b24fe225e111acf32ce7b5637beb76f7ba457d4ec24f82dfe22f533a7844"
 dependencies = [
  "async-channel 2.1.1",
  "async-dup",
@@ -5026,7 +5044,7 @@ dependencies = [
  "trillium",
  "trillium-http",
  "trillium-macros",
- "trillium-server-common",
+ "trillium-server-common 0.5.0",
  "trillium-tokio",
  "url",
 ]
@@ -5046,7 +5064,7 @@ dependencies = [
  "trillium",
  "trillium-http",
  "trillium-macros",
- "trillium-server-common",
+ "trillium-server-common 0.4.7",
  "url",
 ]
 
