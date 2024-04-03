@@ -1,7 +1,7 @@
 pub mod account;
 pub mod aggregator;
 pub mod api_token;
-mod codec;
+pub mod codec;
 pub mod collector_credential;
 mod json;
 pub mod membership;

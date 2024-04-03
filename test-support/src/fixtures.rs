@@ -1,11 +1,13 @@
 use super::*;
+pub use divviup_api::api_mocks::aggregator_api::random_hpke_config;
 use divviup_api::{
     clients::aggregator_client::api_types::TaskId,
-    entity::aggregator::{Feature, Features},
+    entity::{
+        aggregator::{Feature, Features},
+        codec::Codec,
+    },
 };
 use rand::random;
-
-pub use divviup_api::api_mocks::aggregator_api::random_hpke_config;
 use uuid::Uuid;
 
 pub fn user() -> User {
@@ -82,7 +84,7 @@ pub async fn member(app: &DivviupApi) -> (User, Account, Membership) {
 pub async fn collector_credential(app: &DivviupApi, account: &Account) -> CollectorCredential {
     let (token, token_hash) = CollectorCredential::new_token();
     CollectorCredential {
-        hpke_config: random_hpke_config().into(),
+        hpke_config: Codec::new(random_hpke_config()).unwrap(),
         created_at: OffsetDateTime::now_utc(),
         updated_at: OffsetDateTime::now_utc(),
         id: Uuid::new_v4(),
