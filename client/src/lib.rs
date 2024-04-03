@@ -316,7 +316,7 @@ impl DivviupClient {
             &format!("api/accounts/{account_id}/collector_credentials"),
             Some(&json!({
                 "name": name,
-                "hpke_config": STANDARD.encode(hpke_config.get_encoded())
+                "hpke_config": STANDARD.encode(hpke_config.get_encoded()?)
             })),
         )
         .await
@@ -376,6 +376,9 @@ pub enum Error {
 
     #[error("Validation errors:\n{0}")]
     ValidationErrors(ValidationErrors),
+
+    #[error(transparent)]
+    Codec(#[from] CodecError),
 }
 
 pub trait ClientConnExt: Sized {

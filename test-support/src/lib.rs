@@ -54,7 +54,7 @@ const AUTH0_URL: &str = "https://auth.example";
 
 pub fn encode_hpke_config(hpke_config: api_types::HpkeConfig) -> String {
     use divviup_api::clients::aggregator_client::api_types::Encode;
-    STANDARD.encode(hpke_config.get_encoded())
+    STANDARD.encode(hpke_config.get_encoded().unwrap())
 }
 
 async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {

@@ -134,7 +134,7 @@ impl NewCollectorCredential {
                 created_at: OffsetDateTime::now_utc(),
                 updated_at: OffsetDateTime::now_utc(),
                 deleted_at: None,
-                hpke_config: collector_credential.into(),
+                hpke_config: Codec::new(collector_credential)?,
                 name: self.name,
                 token_hash: Some(token_hash),
                 token: None,

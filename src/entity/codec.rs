@@ -1,4 +1,5 @@
 use janus_messages::codec::{Decode, Encode};
+use prio::codec::CodecError;
 use sea_orm::{
     entity::ColumnType,
     sea_query::{ArrayType, BlobSize, Nullable, ValueType, ValueTypeErr},
@@ -12,7 +13,8 @@ use std::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize, Default)]
-pub struct Codec<T>(pub T);
+pub struct Codec<T>(T);
+
 impl<T: Display> Display for Codec<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
@@ -38,15 +40,21 @@ impl<T> DerefMut for Codec<T> {
 
 impl<T: Encode + Decode> From<Codec<T>> for Value {
     fn from(value: Codec<T>) -> Self {
-        Value::Bytes(Some(Box::new(value.0.get_encoded())))
+        // Unwrap safety: this type cannot be constructed without validating that it's encodeable.
+        //
+        // Ideally we'd do an `impl TryFrom` on this type, but that is insufficient to satisfy the
+        // type constraints for a type deriving DeriveEntityModel.
+        Value::Bytes(Some(Box::new(value.0.get_encoded().unwrap())))
     }
 }
 
-impl<T> From<T> for Codec<T> {
-    fn from(value: T) -> Self {
-        Self(value)
+impl<T: Encode + Decode> Codec<T> {
+    pub fn new(value: T) -> Result<Self, CodecError> {
+        value.get_encoded()?;
+        Ok(Self(value))
     }
 }
+
 impl<T> Codec<T> {
     pub fn into_inner(self) -> T {
         self.0
