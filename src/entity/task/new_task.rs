@@ -21,7 +21,7 @@ pub struct NewTask {
     #[validate(required)]
     pub helper_aggregator_id: Option<String>,
 
-    #[validate(required_nested)]
+    #[validate(required, nested)]
     pub vdaf: Option<Vdaf>,
 
     #[validate(required, range(min = 100))]

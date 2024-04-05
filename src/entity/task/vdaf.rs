@@ -120,11 +120,7 @@ pub struct BucketLength {
     pub chunk_length: Option<u64>,
 }
 
-fn unique<T: Hash + Eq>(buckets_opt: &Option<Vec<T>>) -> Result<(), ValidationError> {
-    let Some(buckets) = buckets_opt else {
-        return Ok(());
-    };
-
+fn unique<T: Hash + Eq>(buckets: &Vec<T>) -> Result<(), ValidationError> {
     if buckets.len() == buckets.iter().collect::<HashSet<_>>().len() {
         Ok(())
     } else {
@@ -132,11 +128,7 @@ fn unique<T: Hash + Eq>(buckets_opt: &Option<Vec<T>>) -> Result<(), ValidationEr
     }
 }
 
-fn increasing(buckets_opt: &Option<Vec<u64>>) -> Result<(), ValidationError> {
-    let Some(buckets) = buckets_opt else {
-        return Ok(());
-    };
-
+fn increasing(buckets: &Vec<u64>) -> Result<(), ValidationError> {
     let Some(mut last) = buckets.first().copied() else {
         return Ok(());
     };
@@ -151,14 +143,14 @@ fn increasing(buckets_opt: &Option<Vec<u64>>) -> Result<(), ValidationError> {
     Ok(())
 }
 
-fn increasing_and_unique(buckets_opt: &Option<Vec<u64>>) -> Result<(), ValidationError> {
+fn increasing_and_unique(buckets: &Vec<u64>) -> Result<(), ValidationError> {
     // Due to limitations in the Validate derive macro, only one custom validator may be applied
     // to each field. This function thus combines two custom validations into one. Unfortunately,
     // only one error `ValidationError` may be added to the struct-level `ValidationErrors` by a
     // single custom validation, so we must short-circuit if one of the two wrapped validations
     // fails. See https://github.com/Keats/validator/issues/308.
-    increasing(buckets_opt)?;
-    unique(buckets_opt)
+    increasing(buckets)?;
+    unique(buckets)
 }
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Copy, Eq, PartialEq)]
