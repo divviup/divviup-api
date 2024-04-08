@@ -43,8 +43,8 @@ impl AggregatorClient {
     ) -> Result<AggregatorApiConfig, ClientError> {
         client
             .get(base_url)
-            .with_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
-            .with_header(KnownHeaderName::Accept, CONTENT_TYPE)
+            .with_request_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
+            .with_request_header(KnownHeaderName::Accept, CONTENT_TYPE)
             .success_or_client_error()
             .await?
             .response_json()
@@ -112,7 +112,7 @@ impl AggregatorClient {
         self.client
             .post(path)
             .with_json_body(body)?
-            .with_header(KnownHeaderName::ContentType, CONTENT_TYPE)
+            .with_request_header(KnownHeaderName::ContentType, CONTENT_TYPE)
             .success_or_client_error()
             .await?
             .response_json()

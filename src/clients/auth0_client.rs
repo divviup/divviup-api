@@ -166,7 +166,7 @@ impl Auth0Client {
         let token = self.token().await?;
         self.client
             .post(path)
-            .with_header(Authorization, format!("Bearer {token}"))
+            .with_request_header(Authorization, format!("Bearer {token}"))
             .with_json_body(json)?
             .success_or_client_error()
             .await?
@@ -182,7 +182,7 @@ impl Auth0Client {
         let token = self.token().await?;
         self.client
             .get(path)
-            .with_header(Authorization, format!("Bearer {token}"))
+            .with_request_header(Authorization, format!("Bearer {token}"))
             .success_or_client_error()
             .await?
             .response_json()

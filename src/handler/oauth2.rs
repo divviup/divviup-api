@@ -157,7 +157,7 @@ impl OauthClient {
                 let mut conn = http_client
                     .build_conn(req.method, req.url)
                     .with_body(req.body)
-                    .with_headers(Headers::from(req.headers))
+                    .with_request_headers(Headers::from(req.headers))
                     .await?;
                 let status_code = conn.status().unwrap().try_into()?;
                 let body = conn.response_body().read_bytes().await?;
@@ -172,7 +172,7 @@ impl OauthClient {
         let mut client_conn = self
             .http_client()
             .get(self.0.oauth_config.base_url.join("/userinfo")?)
-            .with_header(
+            .with_request_header(
                 Authorization,
                 format!("Bearer {}", exchange.access_token().secret()),
             )
