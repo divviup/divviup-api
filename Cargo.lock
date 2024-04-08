@@ -4792,9 +4792,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-compression"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f7454b55f3bf1b93818443e466ac2c034aaa46aab3a5d0a54f668a3af3c9bf8"
+checksum = "d8e8420639515883a138cc10c260c89d5e97297a86922ef9f2470bdba925ec23"
 dependencies = [
  "async-compression",
  "futures-lite 2.3.0",
