@@ -7,6 +7,8 @@ use trillium_tokio::CloneCounterObserver;
 
 #[tokio::main]
 async fn main() {
+    let _ = trillium_rustls::rustls::crypto::aws_lc_rs::default_provider().install_default();
+
     let config = match Config::from_env() {
         Ok(config) => config,
         Err(e) => {

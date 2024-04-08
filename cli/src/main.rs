@@ -178,6 +178,7 @@ impl ClientBin {
 }
 
 pub fn main() -> ExitCode {
+    let _ = trillium_rustls::rustls::crypto::aws_lc_rs::default_provider().install_default();
     env_logger::init();
     let args = ClientBin::parse();
     trillium_tokio::block_on(async move { args.run().await })
