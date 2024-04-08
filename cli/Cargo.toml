@@ -22,7 +22,7 @@ clap = { version = "4.5.4", features = ["derive", "env"] }
 thiserror = "1.0.58"
 divviup-client = { workspace = true }
 trillium-rustls = "0.6.0"
-trillium-tokio = "0.3.4"
+trillium-tokio = "0.4.0"
 serde = "1.0.197"
 email_address = "0.2.4"
 humantime = "2.1.0"

@@ -87,7 +87,7 @@ trillium-rustls = { version = "0.6.0", default-features = false, features = ["cl
 trillium-sessions = "0.4.3"
 trillium-static-compiled = "0.5.2"
 trillium-testing = { version = "0.5.4", optional = true }
-trillium-tokio = "0.3.4"
+trillium-tokio = "0.4.0"
 typenum = "1.17.0"
 url = "2.5.0"
 uuid = { version = "1.8.0", features = ["v4", "fast-rng", "serde"] }
