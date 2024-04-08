@@ -4814,9 +4814,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-cookies"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87cb2229b30620757ddf5a979c4ae5da2d62be95a9d650d53ebd30c50b561ff7"
+checksum = "b131f74b2f61b2cfa01b52b8abec1ee3248624b1472ab34df463a51be3891240"
 dependencies = [
  "cookie",
  "log",
