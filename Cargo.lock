@@ -4918,9 +4918,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-redirect"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22690f7c84e94b644accce350f036247f1ea26e458f99814b60acfeef2f1e89d"
+checksum = "5c361ebb0501bdf703502e25522e62903bd2961db2a4a07ac53d9870ef6cdcff"
 dependencies = [
  "trillium",
 ]

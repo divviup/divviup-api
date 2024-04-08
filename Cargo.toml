@@ -81,7 +81,7 @@ trillium-http = { version = "0.3.14", features = ["http-compat", "serde"] }
 trillium-logger = "0.4.5"
 trillium-macros = "0.0.6"
 trillium-prometheus = "0.1.0"
-trillium-redirect = "0.1.1"
+trillium-redirect = "0.1.2"
 trillium-router = "0.4.1"
 trillium-rustls = { version = "0.6.0", default-features = false, features = ["client", "ring"] }
 trillium-sessions = "0.4.3"
