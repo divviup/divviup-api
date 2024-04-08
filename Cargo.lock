@@ -2098,7 +2098,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.4.10",
+ "socket2 0.5.5",
  "tokio",
  "tower-service",
  "tracing",
@@ -4770,9 +4770,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-client"
-version = "0.5.6"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "033e800afc0e2b7e3f4c1745037df38b9f9f447c510717af0a7c1434c6f81b50"
+checksum = "0290b1adf22551493649921fb39b8bb27c6b1ce59d020e9305cedb0c1b2a4f39"
 dependencies = [
  "crossbeam-queue",
  "dashmap",
@@ -4787,8 +4787,7 @@ dependencies = [
  "size",
  "thiserror",
  "trillium-http",
- "trillium-server-common",
- "url",
+ "trillium-server-common 0.5.2",
 ]
 
 [[package]]
@@ -4948,7 +4947,7 @@ dependencies = [
  "rustls 0.22.2",
  "rustls-native-certs",
  "rustls-pemfile 2.1.0",
- "trillium-server-common",
+ "trillium-server-common 0.4.7",
  "webpki-roots 0.26.1",
 ]
 
@@ -4957,6 +4956,24 @@ name = "trillium-server-common"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f157b81051bb2630b6750d6583f648f545d241ef4b939781f4ad6a45fe700"
+dependencies = [
+ "async-trait",
+ "async_cell",
+ "event-listener 4.0.3",
+ "futures-lite 2.3.0",
+ "log",
+ "pin-project-lite",
+ "rlimit",
+ "trillium",
+ "trillium-http",
+ "url",
+]
+
+[[package]]
+name = "trillium-server-common"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a96faa60ceaf4b575886eb7d2ad3df4371acf67e0a4489585cccd4ff18966103"
 dependencies = [
  "async-trait",
  "async_cell",
@@ -5023,7 +5040,7 @@ dependencies = [
  "trillium",
  "trillium-http",
  "trillium-macros",
- "trillium-server-common",
+ "trillium-server-common 0.4.7",
  "trillium-tokio",
  "url",
 ]
@@ -5043,7 +5060,7 @@ dependencies = [
  "trillium",
  "trillium-http",
  "trillium-macros",
- "trillium-server-common",
+ "trillium-server-common 0.4.7",
  "url",
 ]
 
