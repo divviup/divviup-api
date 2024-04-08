@@ -4804,9 +4804,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-conn-id"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5338fda5b851671e36a715aead8f851d7ecd025ba220b9e014771702e2f06098"
+checksum = "969858ab1e08f59888dea5a018a523e6125991cad94a2fed1fed5b93825808f2"
 dependencies = [
  "fastrand 2.0.2",
  "trillium",
