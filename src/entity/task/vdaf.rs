@@ -95,7 +95,12 @@ impl Histogram {
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq)]
 pub struct ContinuousBuckets {
-    #[validate(required, length(min = 1), custom(function = "increasing_and_unique"))]
+    #[validate(
+        required,
+        length(min = 1),
+        custom(function = "increasing"),
+        custom(function = "unique")
+    )]
     pub buckets: Option<Vec<u64>>,
 
     #[validate(range(min = 1))]
@@ -141,16 +146,6 @@ fn increasing(buckets: &Vec<u64>) -> Result<(), ValidationError> {
         }
     }
     Ok(())
-}
-
-fn increasing_and_unique(buckets: &Vec<u64>) -> Result<(), ValidationError> {
-    // Due to limitations in the Validate derive macro, only one custom validator may be applied
-    // to each field. This function thus combines two custom validations into one. Unfortunately,
-    // only one error `ValidationError` may be added to the struct-level `ValidationErrors` by a
-    // single custom validation, so we must short-circuit if one of the two wrapped validations
-    // fails. See https://github.com/Keats/validator/issues/308.
-    increasing(buckets)?;
-    unique(buckets)
 }
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Copy, Eq, PartialEq)]
