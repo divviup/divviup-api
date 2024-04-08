@@ -2098,7 +2098,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.4.10",
+ "socket2 0.5.5",
  "tokio",
  "tower-service",
  "tracing",
@@ -2242,9 +2242,9 @@ checksum = "b1a46d1a171d865aa5f83f92695765caa047a9b4cbae2cbf37dbd613a793fd4c"
 
 [[package]]
 name = "janus_messages"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98bf7f5817e3282bed2ef21116241a1d74bce822e56b238c7f97f4d220e65ddd"
+checksum = "425b77ad31e0614c16041aa44c4014ebd4c67544d01135cece4f51c33b4adef2"
 dependencies = [
  "anyhow",
  "base64 0.22.0",
