@@ -135,7 +135,7 @@ impl DivviupClient {
         self.0
             .patch(path)
             .with_json_body(body)?
-            .with_header(KnownHeaderName::ContentType, CONTENT_TYPE)
+            .with_request_header(KnownHeaderName::ContentType, CONTENT_TYPE)
             .success_or_error()
             .await?
             .response_json()
@@ -152,7 +152,7 @@ impl DivviupClient {
         if let Some(body) = body {
             conn = conn
                 .with_json_body(body)?
-                .with_header(KnownHeaderName::ContentType, CONTENT_TYPE);
+                .with_request_header(KnownHeaderName::ContentType, CONTENT_TYPE);
         }
 
         conn.success_or_error()

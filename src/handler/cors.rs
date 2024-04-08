@@ -16,10 +16,10 @@ struct CorsHeaders {
 #[trillium::async_trait]
 impl Handler for CorsHeaders {
     async fn run(&self, mut conn: Conn) -> Conn {
-        let conn_origin = conn.headers().get_str(Origin);
+        let conn_origin = conn.request_headers().get_str(Origin);
 
         if conn_origin == Some(&self.origin) {
-            conn.headers_mut().extend([
+            conn.response_headers_mut().extend([
                 (
                     AccessControlAllowMethods,
                     "POST, DELETE, OPTIONS, GET, PATCH",
@@ -31,7 +31,7 @@ impl Handler for CorsHeaders {
                 ),
                 (AccessControlMaxAge, "86400"),
             ]);
-            conn.headers_mut()
+            conn.response_headers_mut()
                 .insert(AccessControlAllowOrigin, self.origin.clone());
 
             if conn.method() == Method::Options {
