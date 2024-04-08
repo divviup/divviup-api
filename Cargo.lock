@@ -4860,9 +4860,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-logger"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a0d5329a0826c06cd7d36a81928345d97ab5277dcc7d1d624335eb52fa22d1a"
+checksum = "da5e9b6c08a27d991b4a9c73dd7276c6f181fd4dee7218723b0fbd7fca3a1659"
 dependencies = [
  "colored",
  "log",
