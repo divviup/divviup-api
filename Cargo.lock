@@ -1348,7 +1348,7 @@ dependencies = [
  "trillium-opentelemetry",
  "trillium-prometheus",
  "trillium-redirect",
- "trillium-router 0.4.0",
+ "trillium-router 0.4.1",
  "trillium-rustls",
  "trillium-sessions",
  "trillium-static-compiled",
@@ -4938,9 +4938,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-router"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fc712d6f93919120bf6f5eed2d328a9a7317ad02bb8946bacd29c3f056125ce"
+checksum = "6a7aed20d63101d7dcd165fd047141423009a7f4ccfc75db5b875312d8127dbe"
 dependencies = [
  "log",
  "routefinder",
