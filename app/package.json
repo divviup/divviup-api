@@ -76,7 +76,7 @@
     "postcss-nesting": "^12.1.1",
     "prettier": "^3.2.5",
     "source-map-explorer": "^2.5.3",
-    "typescript": "^5.4.3",
+    "typescript": "^5.4.4",
     "typescript-eslint-language-service": "^5.0.5",
     "vite": "^5.2.8",
     "vite-plugin-eslint": "^1.8.1"
