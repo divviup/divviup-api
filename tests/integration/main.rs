@@ -12,5 +12,6 @@ mod jobs;
 mod memberships;
 mod new_task;
 mod tasks;
+mod tls_smoke_test;
 mod users;
 mod vdaf;
