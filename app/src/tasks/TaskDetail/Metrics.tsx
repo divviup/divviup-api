@@ -6,13 +6,13 @@ import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
 import { DateTime } from "luxon";
 import Placeholder from "react-bootstrap/Placeholder";
-import { OutLink } from "../../util";
+import { OutLink, numberFormat } from "../../util";
 
 function FailedMetric({ name, counter }: { name: string; counter: number }) {
   if (counter > 0) {
     return (
       <ListGroup.Item>
-        {name}: {counter}
+        {name}: {numberFormat.format(counter)}
       </ListGroup.Item>
     );
   } else {

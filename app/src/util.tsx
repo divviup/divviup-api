@@ -169,3 +169,5 @@ export function OutLink({
     </a>
   );
 }
+
+export const numberFormat = Intl.NumberFormat();
