@@ -69,14 +69,16 @@ function TaskList() {
   } else {
     return (
       <ListGroup>
-        {tasks.map((task) => (
-          <LinkContainer key={task.id} to={task.id}>
-            <ListGroup.Item action>
-              <VdafIcon task={task} />
-              {task.name}
-            </ListGroup.Item>
-          </LinkContainer>
-        ))}
+        {tasks
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((task) => (
+            <LinkContainer key={task.id} to={task.id}>
+              <ListGroup.Item action>
+                <VdafIcon task={task} />
+                {task.name}
+              </ListGroup.Item>
+            </LinkContainer>
+          ))}
       </ListGroup>
     );
   }
