@@ -23,6 +23,7 @@ mod m20231012_205810_add_features_to_aggregators;
 mod m20231012_225001_rename_hpke_configs_to_collector_credentials;
 mod m20231012_233117_add_token_hash_to_collector_credential;
 mod m20240214_215101_upload_metrics;
+mod m20240411_195358_time_bucketed_fixed_size;
 
 pub struct Migrator;
 

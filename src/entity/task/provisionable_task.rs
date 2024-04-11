@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    clients::aggregator_client::api_types::{AggregatorVdaf, AuthenticationToken},
+    clients::aggregator_client::api_types::{AggregatorVdaf, AuthenticationToken, QueryType},
     entity::{Account, CollectorCredential, Protocol, Task},
     handler::Error,
     Crypter,
@@ -28,6 +28,7 @@ pub struct ProvisionableTask {
     pub aggregator_vdaf: AggregatorVdaf,
     pub min_batch_size: u64,
     pub max_batch_size: Option<u64>,
+    pub batch_time_window_size_seconds: Option<u64>,
     pub expiration: Option<OffsetDateTime>,
     pub time_precision_seconds: u64,
     pub collector_credential: CollectorCredential,
@@ -67,7 +68,7 @@ impl ProvisionableTask {
             "min_batch_size",
         )?;
         assert_same(
-            &self.max_batch_size.into(),
+            &QueryType::from(self.clone()),
             &response.query_type,
             "query_type",
         )?;
@@ -113,6 +114,10 @@ impl ProvisionableTask {
             vdaf: self.vdaf.into(),
             min_batch_size: self.min_batch_size.try_into()?,
             max_batch_size: self.max_batch_size.map(TryInto::try_into).transpose()?,
+            batch_time_window_size_seconds: self
+                .batch_time_window_size_seconds
+                .map(TryInto::try_into)
+                .transpose()?,
             created_at: OffsetDateTime::now_utc(),
             updated_at: OffsetDateTime::now_utc(),
             time_precision_seconds: self.time_precision_seconds.try_into()?,
