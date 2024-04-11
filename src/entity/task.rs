@@ -38,6 +38,7 @@ pub struct Model {
     pub vdaf: Json<Vdaf>,
     pub min_batch_size: i64,
     pub max_batch_size: Option<i64>,
+    pub batch_time_window_size_seconds: Option<i64>,
     #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]

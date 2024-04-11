@@ -31,6 +31,8 @@ pub enum TaskAction {
         min_batch_size: u64,
         #[arg(long)]
         max_batch_size: Option<u64>,
+        #[arg(long, requires = "max_batch_size")]
+        batch_time_window_size_seconds: Option<u64>,
         #[arg(long)]
         time_precision: Duration,
         #[arg(long)]
@@ -72,6 +74,7 @@ impl TaskAction {
                 vdaf,
                 min_batch_size,
                 max_batch_size,
+                batch_time_window_size_seconds,
                 time_precision,
                 collector_credential_id,
                 categorical_buckets,
@@ -129,6 +132,7 @@ impl TaskAction {
                     vdaf,
                     min_batch_size,
                     max_batch_size,
+                    batch_time_window_size_seconds,
                     time_precision_seconds,
                     collector_credential_id,
                 };

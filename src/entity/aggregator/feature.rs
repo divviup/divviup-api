@@ -5,6 +5,7 @@ use std::collections::HashSet;
 pub enum Feature {
     TokenHash,
     UploadMetrics,
+    TimeBucketedFixedSize,
     #[serde(untagged)]
     Unknown(String),
 }
@@ -78,6 +79,10 @@ mod tests {
         assert_eq!(
             serde_json::from_value::<Features>(json!(["TokenHash", "UploadMetrics"])).unwrap(),
             Features::from_iter([Feature::TokenHash, Feature::UploadMetrics])
+        );
+        assert_eq!(
+            serde_json::from_value::<Features>(json!(["TimeBucketedFixedSize"])).unwrap(),
+            Features::from_iter([Feature::TimeBucketedFixedSize])
         );
     }
 
