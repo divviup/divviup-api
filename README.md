@@ -14,10 +14,47 @@
 
 ## Configuring and running
 
-## System requirements
+### System requirements
 * [NodeJS](https://nodejs.org/) and [npm](https://www.npmjs.com/)
 * [Rust (current stable or nightly)](https://www.rust-lang.org/tools/install)
 * [PostgreSQL](https://www.postgresql.org/)
+
+Some Rust dependencies require additional system dependencies. These can be installed with your usual
+package manager:
+* C compiler (GCC or Clang)
+* CMake
+
+### Quick Start
+
+This will get you up and running quickly for development purposes.
+
+1. Clone the repository and navigate to its root.
+1. Look over `.envrc.example`, then do `cp .envrc.example .envrc && direnv allow .envrc`
+1. Create the `api_url` file so the app knows where to hit the API.
+    ```bash
+    echo "$API_URL" >app/public/api_url
+    ```
+1. Run a local database locally:
+    ```bash
+    docker run -de POSTGRES_PASSWORD=postgres -p 5432:5432 postgres
+    ```
+1. Migrate the database:
+    ```bash
+    cargo run -p migration -- up
+    ```
+1. Start the API
+    ```bash
+    cargo run --features integration-testing
+    ```
+1. In another terminal, start the react server
+    ```bash
+    cd app
+    npm i && npm start
+    ```
+1. Navigate to `http://localhost:8081` to open the app.
+
+When you make changes to the app, it is automatically reloaded. API changes require restart of the
+`cargo run` command.
 
 ### Required environment variables
 
@@ -50,61 +87,10 @@ An example `.envrc` is provided for optional but recommended use with [`direnv`]
 
 ### Migrating the database
 
-* First, create the database referred to by `DATABASE_URL` in your environment. This may an invocation of [`createdb`](https://www.postgresql.org/docs/current/app-createdb.html) if running locally.
-* `cargo run -p migration -- up` will bring the application up to the current schema
-* For more options, execute `cargo run -p migration -- --help` emits this:
+First, create the database referred to by `DATABASE_URL` in your environment. This may an invocation of [`createdb`](https://www.postgresql.org/docs/current/app-createdb.html) if running postgresql locally, or postgres inside of a docker container.
 
-<details>
-  <summary><code>cargo run -p migration -- --help</code></summary>
-  
-```
-sea-orm-migration 0.11.0
-
-USAGE:
-    migration [OPTIONS] [SUBCOMMAND]
-
-OPTIONS:
-    -h, --help
-            Print help information
-
-    -s, --database-schema <DATABASE_SCHEMA>
-            Database schema
-             - For MySQL and SQLite, this argument is ignored.
-             - For PostgreSQL, this argument is optional with default value 'public'.
-            [env: DATABASE_SCHEMA=]
-
-    -u, --database-url <DATABASE_URL>
-            Database URL
-            
-            [env: DATABASE_URL=postgres://localhost/divviup_dev]
-
-    -v, --verbose
-            Show debug messages
-
-    -V, --version
-            Print version information
-
-SUBCOMMANDS:
-    init
-            Initialize migration directory
-    generate
-            Generate a new, empty migration
-    fresh
-            Drop all tables from the database, then reapply all migrations
-    refresh
-            Rollback all applied migrations, then reapply all migrations
-    reset
-            Rollback all applied migrations
-    status
-            Check the status of all migrations
-    up
-            Apply pending migrations
-    down
-            Rollback applied migrations
-    help
-            Print this message or the help of the given subcommand(s)
-```
-</details>
+`cargo run -p migration -- up` will bring the application up to the current schema.
+For more options, execute `cargo run -p migration -- --help`.
 
 ### Installing npm dependencies
 
@@ -130,17 +116,6 @@ If an environment variable `ASSET_DIR` is available, all files in that directory
 $ cd app && npm ci && npm run build && cd - && env ASSET_DIR=app/build cargo run
 ```
 
-### Running the React development server
-
-Configure the rust app environment to point `APP_URL` to whatever port you're using here, eg `env APP_URL=http://localhost:8082 cargo run --features api-mocks`
-
-```bash
-$ cd app && PORT=8082 npm start
-```
-
-
 ## Security Notes
 
 * We do not have CSRF protections because we only accept a custom content type for non-idempotent request methods such as POST, and have constrained CORS rules.
-
-
