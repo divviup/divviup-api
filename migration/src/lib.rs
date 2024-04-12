@@ -54,6 +54,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20231012_225001_rename_hpke_configs_to_collector_credentials::Migration),
             Box::new(m20231012_233117_add_token_hash_to_collector_credential::Migration),
             Box::new(m20240214_215101_upload_metrics::Migration),
+            Box::new(m20240411_195358_time_bucketed_fixed_size::Migration),
         ]
     }
 }

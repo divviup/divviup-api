@@ -11,7 +11,7 @@ impl MigrationTrait for Migration {
                 TableAlterStatement::new()
                     .table(Task::Table)
                     .add_column(
-                        ColumnDef::new(Task::BatchTimeWindowSize)
+                        ColumnDef::new(Task::BatchTimeWindowSizeSeconds)
                             .big_integer()
                             .null(),
                     )
@@ -25,7 +25,7 @@ impl MigrationTrait for Migration {
             .alter_table(
                 TableAlterStatement::new()
                     .table(Task::Table)
-                    .drop_column(Task::BatchTimeWindowSize)
+                    .drop_column(Task::BatchTimeWindowSizeSeconds)
                     .to_owned(),
             )
             .await
@@ -35,5 +35,5 @@ impl MigrationTrait for Migration {
 #[derive(Iden)]
 enum Task {
     Table,
-    BatchTimeWindowSize,
+    BatchTimeWindowSizeSeconds,
 }
