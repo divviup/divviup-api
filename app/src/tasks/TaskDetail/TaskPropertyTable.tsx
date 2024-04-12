@@ -44,18 +44,48 @@ export default function TaskPropertyTable() {
               </Await>
             </Suspense>
           </ListGroup.Item>
-          <ListGroup.Item>
-            Query Type:{" "}
-            <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
-              <Await resolve={task}>
-                {(task) =>
-                  typeof task.max_batch_size === "number"
-                    ? `Fixed maximum batch size ${task.max_batch_size}`
-                    : "Time Interval"
+          <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
+            <Await resolve={task}>
+              {(task) => {
+                let queryType;
+                let maxBatchSize;
+                let batchTimeWindowSize;
+
+                if (typeof task.max_batch_size === "number") {
+                  maxBatchSize = (
+                    <ListGroup.Item>
+                      Maximum Batch Size: {task.max_batch_size}
+                    </ListGroup.Item>
+                  );
+
+                  if (typeof task.batch_time_window_size_seconds === "number") {
+                    queryType = "Time-bucketed Fixed Size";
+
+                    batchTimeWindowSize = (
+                      <ListGroup.Item>
+                        Batch Time Window Size:{" "}
+                        {humanizeDuration(
+                          1000 * task.batch_time_window_size_seconds,
+                        )}
+                      </ListGroup.Item>
+                    );
+                  } else {
+                    queryType = "Fixed Size";
+                  }
+                } else {
+                  queryType = "Time Interval";
                 }
-              </Await>
-            </Suspense>
-          </ListGroup.Item>
+
+                return (
+                  <>
+                    <ListGroup.Item>Query Type: {queryType}</ListGroup.Item>
+                    {maxBatchSize}
+                    {batchTimeWindowSize}
+                  </>
+                );
+              }}
+            </Await>
+          </Suspense>
           <ListGroup.Item>
             Minimum Batch Size:{" "}
             <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
