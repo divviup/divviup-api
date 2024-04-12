@@ -34,7 +34,7 @@ This will get you up and running quickly for development purposes.
     ```bash
     echo "$API_URL" >app/public/api_url
     ```
-1. Run a local database locally:
+1. Run a local database:
     ```bash
     docker run -de POSTGRES_PASSWORD=postgres -p 5432:5432 postgres
     ```
