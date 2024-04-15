@@ -44,7 +44,13 @@ export default function TaskPropertyTable() {
               </Await>
             </Suspense>
           </ListGroup.Item>
-          <Suspense fallback={<Placeholder animation="glow" xs={6} />}>
+          <Suspense
+            fallback={
+              <ListGroup.Item>
+                <Placeholder animation="glow" xs={6} />
+              </ListGroup.Item>
+            }
+          >
             <Await resolve={task}>
               {(task) => {
                 let queryType;
@@ -79,8 +85,8 @@ export default function TaskPropertyTable() {
                 return (
                   <>
                     <ListGroup.Item>Query Type: {queryType}</ListGroup.Item>
-                    {maxBatchSize}
                     {batchTimeWindowSize}
+                    {maxBatchSize}
                   </>
                 );
               }}
