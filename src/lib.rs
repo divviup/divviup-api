@@ -29,9 +29,20 @@ pub use opentelemetry;
 pub use permissions::{Permissions, PermissionsActor};
 pub use queue::Queue;
 pub use routes::routes;
+use serde::{Deserialize, Deserializer};
 pub use user::{User, USER_SESSION_KEY};
 
 #[cfg(test)]
 pub mod test;
 
 pub mod api_mocks;
+
+/// Any value that is present is considered Some value, including null.
+/// See https://github.com/serde-rs/serde/issues/984#issuecomment-314143738
+fn deserialize_some<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    T: Deserialize<'de>,
+    D: Deserializer<'de>,
+{
+    Deserialize::deserialize(deserializer).map(Some)
+}

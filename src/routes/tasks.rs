@@ -4,7 +4,7 @@ use crate::{
     entity::{Account, NewTask, Task, Tasks, UpdateTask},
     Crypter, Db, Error, Permissions, PermissionsActor,
 };
-use sea_orm::{ActiveModelTrait, EntityTrait, ModelTrait};
+use sea_orm::{ActiveModelTrait, ActiveValue, EntityTrait, IntoActiveModel, ModelTrait};
 use std::time::Duration;
 use time::OffsetDateTime;
 use trillium::{Conn, Handler, Status};
@@ -99,16 +99,53 @@ pub async fn show(
     Ok(Json(task))
 }
 
+type UpdateArgs = (Task, Json<UpdateTask>, State<Client>, Db);
 pub async fn update(
-    _: &mut Conn,
-    (task, Json(update), db): (Task, Json<UpdateTask>, Db),
+    conn: &mut Conn,
+    (task, Json(update), client, db): UpdateArgs,
 ) -> Result<impl Handler, Error> {
+    let crypter = conn.state().unwrap();
     update
-        .build(task)?
+        .update(&client, &db, crypter, task)
+        .await?
         .update(&db)
         .await
         .map(Json)
         .map_err(Error::from)
+}
+
+pub async fn delete(
+    conn: &mut Conn,
+    (task, client, db): (Task, State<Client>, Db),
+) -> Result<impl Handler, Error> {
+    if task.deleted_at.is_some() {
+        return Ok(Status::NoContent);
+    }
+
+    let crypter = conn.state().unwrap();
+    let now = OffsetDateTime::now_utc();
+
+    let mut am;
+    // If the task has not already expired, mark the aggregator-side tasks as expired. This will
+    // allow the aggregators to cease uploads and eventually GC the task at their leisure.
+    if task.expiration.is_none() || task.expiration > Some(now) {
+        // There is a narrow edge case that results in an undeletable task. If this operation
+        // fails for one aggregator, and enough time passes before the next DELETE call that the
+        // successful aggregator fully deletes its copy of the task, we won't be able to progress.
+        //
+        // We assume that aggregators hang on to expired tasks for a decently long time, so this
+        // edge case is left unhandled.
+        am = UpdateTask::expiration(Some(now))
+            .update(&client, &db, crypter, task)
+            .await?;
+    } else {
+        am = task.clone().into_active_model();
+        am.updated_at = ActiveValue::Set(now);
+    }
+
+    am.deleted_at = ActiveValue::Set(Some(now));
+    am.update(&db).await?;
+    Ok(Status::NoContent)
 }
 
 pub mod collector_auth_tokens {

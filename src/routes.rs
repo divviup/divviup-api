@@ -70,6 +70,7 @@ fn api_routes() -> impl Handler {
                 api(tasks::collector_auth_tokens::index),
             )
             .patch("/tasks/:task_id", api(tasks::update))
+            .delete("/tasks/:task_id", api(tasks::delete))
             .patch("/aggregators/:aggregator_id", api(aggregators::update))
             .get("/aggregators/:aggregator_id", api(aggregators::show))
             .delete("/aggregators/:aggregator_id", api(aggregators::delete))

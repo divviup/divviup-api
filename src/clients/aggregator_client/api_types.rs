@@ -289,6 +289,11 @@ impl TaskCreate {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+pub struct TaskPatch {
+    pub task_expiration: Option<JanusTime>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TaskResponse {
     pub task_id: TaskId,

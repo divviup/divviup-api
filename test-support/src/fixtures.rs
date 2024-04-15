@@ -115,6 +115,7 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         batch_time_window_size_seconds: None,
         created_at: OffsetDateTime::now_utc(),
         updated_at: OffsetDateTime::now_utc(),
+        deleted_at: None,
         time_precision_seconds: 60,
         report_count: 0,
         aggregate_collection_count: 0,

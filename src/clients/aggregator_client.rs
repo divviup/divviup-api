@@ -3,11 +3,14 @@ use crate::{
     entity::{task::ProvisionableTask, Aggregator},
     handler::Error,
 };
+use janus_messages::Time as JanusTime;
 use serde::{de::DeserializeOwned, Serialize};
 use trillium_client::{Client, KnownHeaderName};
 use url::Url;
 pub mod api_types;
-pub use api_types::{AggregatorApiConfig, TaskCreate, TaskIds, TaskResponse, TaskUploadMetrics};
+pub use api_types::{
+    AggregatorApiConfig, TaskCreate, TaskIds, TaskPatch, TaskResponse, TaskUploadMetrics,
+};
 
 const CONTENT_TYPE: &str = "application/vnd.janus.aggregator+json;version=0.1";
 
@@ -83,13 +86,24 @@ impl AggregatorClient {
         self.get(&format!("tasks/{task_id}/metrics/uploads")).await
     }
 
-    pub async fn delete_task(&self, task_id: &str) -> Result<(), ClientError> {
-        self.delete(&format!("tasks/{task_id}")).await
-    }
-
     pub async fn create_task(&self, task: &ProvisionableTask) -> Result<TaskResponse, Error> {
         let task_create = TaskCreate::build(&self.aggregator, task)?;
         self.post("tasks", &task_create).await.map_err(Into::into)
+    }
+
+    pub async fn update_task_expiration(
+        &self,
+        task_id: &str,
+        expiration: Option<JanusTime>,
+    ) -> Result<TaskResponse, Error> {
+        self.patch(
+            &format!("tasks/{task_id}"),
+            &TaskPatch {
+                task_expiration: expiration,
+            },
+        )
+        .await
+        .map_err(Into::into)
     }
 
     // private below here
@@ -120,8 +134,19 @@ impl AggregatorClient {
             .map_err(ClientError::from)
     }
 
-    async fn delete(&self, path: &str) -> Result<(), ClientError> {
-        let _ = self.client.delete(path).success_or_client_error().await?;
-        Ok(())
+    async fn patch<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        body: &impl Serialize,
+    ) -> Result<T, ClientError> {
+        self.client
+            .patch(path)
+            .with_json_body(body)?
+            .with_request_header(KnownHeaderName::ContentType, CONTENT_TYPE)
+            .success_or_client_error()
+            .await?
+            .response_json()
+            .await
+            .map_err(ClientError::from)
     }
 }

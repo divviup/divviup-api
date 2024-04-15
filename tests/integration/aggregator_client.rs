@@ -72,34 +72,6 @@ async fn get_task_metrics(app: DivviupApi, client_logs: ClientLogs) -> TestResul
 }
 
 #[test(harness = with_client_logs)]
-async fn delete_task(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
-    let aggregator = fixtures::aggregator(&app, None).await;
-    let client = aggregator.client(app.config().client.clone(), app.crypter())?;
-    assert!(client.delete_task("fake-task-id").await.is_ok());
-
-    let log = client_logs.last();
-    assert_eq!(
-        log.request_headers
-            .get_str(KnownHeaderName::Accept)
-            .unwrap(),
-        "application/vnd.janus.aggregator+json;version=0.1"
-    );
-    assert_eq!(
-        log.request_headers
-            .get_str(KnownHeaderName::Authorization)
-            .unwrap(),
-        &format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
-    );
-
-    assert_eq!(
-        log.url.as_ref(),
-        &format!("{}tasks/fake-task-id", aggregator.api_url.as_ref())
-    );
-
-    Ok(())
-}
-
-#[test(harness = with_client_logs)]
 async fn get_config(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
     AggregatorClient::get_config(
         app.config().client.clone(),
@@ -227,24 +199,6 @@ mod prefixes {
             client_logs.last().url.as_ref(),
             format!("{}/tasks/fake-task-id/metrics/uploads", aggregator.api_url)
         );
-        assert_eq!(client_logs.logs().len(), 1);
-        Ok(())
-    }
-
-    #[test(harness = with_random_prefix)]
-    async fn delete_task(
-        app: DivviupApi,
-        client_logs: ClientLogs,
-        aggregator: Aggregator,
-    ) -> TestResult {
-        let client = aggregator.client(app.config().client.clone(), app.crypter())?;
-        client.delete_task("fake-task-id").await?;
-        assert_eq!(client_logs.last().url.path_segments().unwrap().count(), 3);
-        assert_eq!(
-            client_logs.last().url.as_ref(),
-            format!("{}/tasks/fake-task-id", aggregator.api_url)
-        );
-        assert_eq!(client_logs.last().method, Method::Delete);
         assert_eq!(client_logs.logs().len(), 1);
         Ok(())
     }
