@@ -4,7 +4,7 @@ use crate::{
             Features, QueryTypeName, QueryTypeNameSet, Role as AggregatorRole, VdafNameSet,
         },
         task::vdaf::{BucketLength, ContinuousBuckets, CountVec, Histogram, Sum, SumVec, Vdaf},
-        Aggregator, NewTask, Protocol, ProvisionableTask, Task,
+        Aggregator, Protocol, ProvisionableTask, Task,
     },
     handler::Error,
 };
@@ -160,32 +160,6 @@ pub enum QueryType {
     },
 }
 
-impl From<ProvisionableTask> for QueryType {
-    fn from(value: ProvisionableTask) -> Self {
-        if let Some(max_batch_size) = value.max_batch_size {
-            Self::FixedSize {
-                max_batch_size,
-                batch_time_window_size: value.batch_time_window_size_seconds,
-            }
-        } else {
-            Self::TimeInterval
-        }
-    }
-}
-
-impl From<NewTask> for QueryType {
-    fn from(value: NewTask) -> Self {
-        if let Some(max_batch_size) = value.max_batch_size {
-            Self::FixedSize {
-                max_batch_size,
-                batch_time_window_size: value.batch_time_window_size_seconds,
-            }
-        } else {
-            Self::TimeInterval
-        }
-    }
-}
-
 impl QueryType {
     pub fn name(&self) -> QueryTypeName {
         match self {
@@ -295,7 +269,7 @@ impl TaskCreate {
             } else {
                 new_task.leader_aggregator.dap_url.clone().into()
             },
-            query_type: new_task.clone().into(),
+            query_type: new_task.query_type(),
             vdaf: new_task.aggregator_vdaf.clone(),
             role,
             max_batch_query_count: 1,

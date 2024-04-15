@@ -294,7 +294,7 @@ impl NewTask {
         helper: &Aggregator,
         errors: &mut ValidationErrors,
     ) {
-        let name = QueryType::from(self.clone()).name();
+        let name = self.query_type().name();
         if !leader.query_types.contains(&name) || !helper.query_types.contains(&name) {
             errors.add("max_batch_size", ValidationError::new("not-supported"));
         }
@@ -357,6 +357,17 @@ impl NewTask {
             })
         } else {
             Err(errors)
+        }
+    }
+
+    pub fn query_type(&self) -> QueryType {
+        if let Some(max_batch_size) = self.max_batch_size {
+            QueryType::FixedSize {
+                max_batch_size,
+                batch_time_window_size: self.batch_time_window_size_seconds,
+            }
+        } else {
+            QueryType::TimeInterval
         }
     }
 }

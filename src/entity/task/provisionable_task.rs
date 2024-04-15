@@ -67,11 +67,7 @@ impl ProvisionableTask {
             response.min_batch_size,
             "min_batch_size",
         )?;
-        assert_same(
-            &QueryType::from(self.clone()),
-            &response.query_type,
-            "query_type",
-        )?;
+        assert_same(&self.query_type(), &response.query_type, "query_type")?;
         assert_same(
             // precision is lost in the round trip so we truncate our own
             self.expiration
@@ -137,5 +133,16 @@ impl ProvisionableTask {
             report_counter_task_expired: 0,
         }
         .into_active_model())
+    }
+
+    pub fn query_type(&self) -> QueryType {
+        if let Some(max_batch_size) = self.max_batch_size {
+            QueryType::FixedSize {
+                max_batch_size,
+                batch_time_window_size: self.batch_time_window_size_seconds,
+            }
+        } else {
+            QueryType::TimeInterval
+        }
     }
 }
