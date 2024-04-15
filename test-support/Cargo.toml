@@ -24,7 +24,7 @@ tracing-subscriber = { version = "0.3.18", features = [
 ] }
 trillium-client = { version = "0.6.1", features = ["json"] }
 trillium-http = "0.3.14"
-trillium-rustls = "0.7.0"
+trillium-rustls = "0.8.0"
 trillium-tokio = "0.4.0"
 url = "2.5.0"
 uuid = { version = "1.8.0", features = ["v4", "fast-rng", "serde"] }
