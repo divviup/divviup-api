@@ -10,6 +10,7 @@ pub struct Task {
     pub vdaf: Vdaf,
     pub min_batch_size: u64,
     pub max_batch_size: Option<u64>,
+    pub batch_time_window_size_seconds: Option<u64>,
     #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
@@ -42,6 +43,7 @@ pub struct NewTask {
     pub vdaf: Vdaf,
     pub min_batch_size: u64,
     pub max_batch_size: Option<u64>,
+    pub batch_time_window_size_seconds: Option<u64>,
     pub time_precision_seconds: u64,
     pub collector_credential_id: Uuid,
 }

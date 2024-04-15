@@ -112,6 +112,7 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         vdaf: task::vdaf::Vdaf::Count.into(),
         min_batch_size: 100,
         max_batch_size: Some(200),
+        batch_time_window_size_seconds: None,
         created_at: OffsetDateTime::now_utc(),
         updated_at: OffsetDateTime::now_utc(),
         time_precision_seconds: 60,

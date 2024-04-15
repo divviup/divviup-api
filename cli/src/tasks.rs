@@ -31,6 +31,8 @@ pub enum TaskAction {
         min_batch_size: u64,
         #[arg(long)]
         max_batch_size: Option<u64>,
+        #[arg(long, requires = "max_batch_size")]
+        batch_time_window_size: Option<Duration>,
         #[arg(long)]
         time_precision: Duration,
         #[arg(long)]
@@ -72,6 +74,7 @@ impl TaskAction {
                 vdaf,
                 min_batch_size,
                 max_batch_size,
+                batch_time_window_size,
                 time_precision,
                 collector_credential_id,
                 categorical_buckets,
@@ -121,6 +124,8 @@ impl TaskAction {
                 };
 
                 let time_precision_seconds = time_precision.as_secs();
+                let batch_time_window_size_seconds =
+                    batch_time_window_size.map(|window| window.as_secs());
 
                 let task = NewTask {
                     name,
@@ -129,6 +134,7 @@ impl TaskAction {
                     vdaf,
                     min_batch_size,
                     max_batch_size,
+                    batch_time_window_size_seconds,
                     time_precision_seconds,
                     collector_credential_id,
                 };

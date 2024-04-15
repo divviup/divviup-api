@@ -153,7 +153,11 @@ impl From<AggregatorVdaf> for Vdaf {
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum QueryType {
     TimeInterval,
-    FixedSize { max_batch_size: u64 },
+    FixedSize {
+        max_batch_size: u64,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        batch_time_window_size: Option<u64>,
+    },
 }
 
 impl QueryType {
@@ -162,35 +166,6 @@ impl QueryType {
             QueryType::TimeInterval => QueryTypeName::TimeInterval,
             QueryType::FixedSize { .. } => QueryTypeName::FixedSize,
         }
-    }
-}
-
-impl From<QueryType> for Option<i64> {
-    fn from(value: QueryType) -> Self {
-        Option::<u64>::from(value).map(|u| u.try_into().unwrap())
-    }
-}
-
-impl From<QueryType> for Option<u64> {
-    fn from(value: QueryType) -> Self {
-        match value {
-            QueryType::TimeInterval => None,
-            QueryType::FixedSize { max_batch_size } => Some(max_batch_size),
-        }
-    }
-}
-
-impl From<Option<u64>> for QueryType {
-    fn from(value: Option<u64>) -> Self {
-        value.map_or(QueryType::TimeInterval, |max_batch_size| {
-            QueryType::FixedSize { max_batch_size }
-        })
-    }
-}
-
-impl From<Option<i64>> for QueryType {
-    fn from(value: Option<i64>) -> Self {
-        value.map(|i| u64::try_from(i).unwrap()).into()
     }
 }
 
@@ -294,7 +269,7 @@ impl TaskCreate {
             } else {
                 new_task.leader_aggregator.dap_url.clone().into()
             },
-            query_type: new_task.max_batch_size.into(),
+            query_type: new_task.query_type(),
             vdaf: new_task.aggregator_vdaf.clone(),
             role,
             max_batch_query_count: 1,

@@ -1,7 +1,10 @@
 use super::*;
 use crate::{
     clients::aggregator_client::api_types::{AggregatorVdaf, QueryType},
-    entity::{aggregator::Role, Account, CollectorCredential, Protocol},
+    entity::{
+        aggregator::{Feature, Role},
+        Account, CollectorCredential, Protocol,
+    },
     handler::Error,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
@@ -29,6 +32,9 @@ pub struct NewTask {
 
     #[validate(range(min = 0))]
     pub max_batch_size: Option<u64>,
+
+    #[validate(range(min = 0))]
+    pub batch_time_window_size_seconds: Option<u64>,
 
     #[validate(
         required,
@@ -87,6 +93,26 @@ impl NewTask {
             let error = ValidationError::new("min_greater_than_max");
             errors.add("min_batch_size", error.clone());
             errors.add("max_batch_size", error);
+        }
+    }
+
+    fn validate_batch_time_window_size(&self, errors: &mut ValidationErrors) {
+        let window = self.batch_time_window_size_seconds;
+        if let Some(window) = window {
+            if self.max_batch_size.is_none() {
+                errors.add(
+                    "batch_time_window_size_seconds",
+                    ValidationError::new("missing-max-batch-size"),
+                );
+            }
+            if let Some(precision) = self.time_precision_seconds {
+                if window % precision != 0 {
+                    errors.add(
+                        "batch_time_window_size_seconds",
+                        ValidationError::new("not-multiple-of-time-precision"),
+                    );
+                }
+            }
         }
     }
 
@@ -192,6 +218,15 @@ impl NewTask {
             errors.add("helper_aggregator_id", ValidationError::new("role"))
         }
 
+        if self.batch_time_window_size_seconds.is_some()
+            && !leader.features.contains(&Feature::TimeBucketedFixedSize)
+        {
+            errors.add(
+                "leader_aggregator_id",
+                ValidationError::new("time-bucketed-fixed-size-unsupported"),
+            )
+        }
+
         if errors.is_empty() {
             Some((leader, helper, resolved_protocol))
         } else {
@@ -259,7 +294,7 @@ impl NewTask {
         helper: &Aggregator,
         errors: &mut ValidationErrors,
     ) {
-        let name = QueryType::from(self.max_batch_size).name();
+        let name = self.query_type().name();
         if !leader.query_types.contains(&name) || !helper.query_types.contains(&name) {
             errors.add("max_batch_size", ValidationError::new("not-supported"));
         }
@@ -272,6 +307,7 @@ impl NewTask {
     ) -> Result<ProvisionableTask, ValidationErrors> {
         let mut errors = Validate::validate(self).err().unwrap_or_default();
         self.validate_min_lte_max(&mut errors);
+        self.validate_batch_time_window_size(&mut errors);
         let aggregators = self.validate_aggregators(&account, db, &mut errors).await;
         let collector_credential = self
             .validate_collector_credential(
@@ -312,6 +348,7 @@ impl NewTask {
                 aggregator_vdaf: aggregator_vdaf.unwrap(),
                 min_batch_size: self.min_batch_size.unwrap(),
                 max_batch_size: self.max_batch_size,
+                batch_time_window_size_seconds: self.batch_time_window_size_seconds,
                 expiration: Some(OffsetDateTime::now_utc() + DEFAULT_EXPIRATION_DURATION),
                 time_precision_seconds: self.time_precision_seconds.unwrap(),
                 collector_credential: collector_credential.unwrap(),
@@ -320,6 +357,17 @@ impl NewTask {
             })
         } else {
             Err(errors)
+        }
+    }
+
+    pub fn query_type(&self) -> QueryType {
+        if let Some(max_batch_size) = self.max_batch_size {
+            QueryType::FixedSize {
+                max_batch_size,
+                batch_time_window_size: self.batch_time_window_size_seconds,
+            }
+        } else {
+            QueryType::TimeInterval
         }
     }
 }

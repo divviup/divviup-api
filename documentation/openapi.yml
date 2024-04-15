@@ -290,6 +290,8 @@ paths:
                   type: number
                 max_batch_size:
                   type: number
+                batch_time_window_size_seconds:
+                  type: number
                 expiration:
                   type: string
                   format: date-time
@@ -705,6 +707,9 @@ components:
         min_batch_size:
           type: number
         max_batch_size:
+          type: number
+          nullable: true
+        batch_time_window_size_seconds:
           type: number
           nullable: true
         time_precision_seconds:

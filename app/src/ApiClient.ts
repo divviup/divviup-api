@@ -72,6 +72,7 @@ export interface Task {
   updated_at: string;
   expiration: string | null;
   max_batch_size: number | null;
+  batch_time_window_size_seconds: number | null;
   collector_credential_id: string;
   report_counter_interval_collected: number;
   report_counter_decode_failure: number;
