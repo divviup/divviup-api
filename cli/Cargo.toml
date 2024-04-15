@@ -27,7 +27,7 @@ serde = "1.0.197"
 email_address = "0.2.4"
 humantime = "2.1.0"
 base64 = "0.22.0"
-time = { version = "0.3.34", features = [
+time = { version = "0.3.36", features = [
     "serde",
     "serde-well-known",
     "local-offset",
