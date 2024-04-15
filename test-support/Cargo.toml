@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 fastrand = "2.0.2"
-time = "0.3.34"
+time = "0.3.36"
 trillium = "0.2.17"
 trillium-macros = "0.0.6"
 trillium-testing = { version = "0.6.1", features = ["tokio"] }
