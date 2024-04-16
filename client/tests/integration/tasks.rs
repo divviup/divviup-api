@@ -86,8 +86,49 @@ async fn rename_task(app: Arc<DivviupApi>, account: Account, client: DivviupClie
     let task = fixtures::task(&app, &account).await;
     let name = fixtures::random_name();
     let response = client.rename_task(&task.id, &name).await?;
-    assert_eq!(&response.name, &name);
-    assert_eq!(task.reload(app.db()).await?.unwrap().name, name);
+    assert_eq!(response.name, name);
+    assert_eq!(response.expiration, task.expiration);
+    let task_reload = task.reload(app.db()).await?.unwrap();
+    assert_eq!(task_reload.name, name);
+    assert_eq!(task_reload.expiration, task.expiration);
+    Ok(())
+}
+
+#[test(harness = with_configured_client)]
+async fn set_task_expiration(
+    app: Arc<DivviupApi>,
+    account: Account,
+    client: DivviupClient,
+) -> TestResult {
+    let task = fixtures::task(&app, &account).await;
+    let now = OffsetDateTime::now_utc();
+    let response = client.set_task_expiration(&task.id, Some(&now)).await?;
+    assert_eq!(response.name, task.name);
+    assert_eq!(response.expiration, Some(now));
+    let task_reload = task.reload(app.db()).await?.unwrap();
+    assert_eq!(task_reload.name, task.name);
+    assert_eq!(task_reload.expiration, Some(now));
+
+    let response = client.set_task_expiration(&task.id, None).await?;
+    assert_eq!(response.name, task.name);
+    assert_eq!(response.expiration, None);
+    let task_reload = task.reload(app.db()).await?.unwrap();
+    assert_eq!(task_reload.name, task.name);
+    assert_eq!(task_reload.expiration, None);
+    Ok(())
+}
+
+#[test(harness = with_configured_client)]
+async fn delete_task(app: Arc<DivviupApi>, account: Account, client: DivviupClient) -> TestResult {
+    let task = fixtures::task(&app, &account).await;
+
+    let response_tasks = client.tasks(account.id).await?;
+    assert!(!response_tasks.is_empty());
+
+    client.delete_task(&task.id).await?;
+
+    let response_tasks = client.tasks(account.id).await?;
+    assert!(response_tasks.is_empty());
     Ok(())
 }
 
