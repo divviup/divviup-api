@@ -5,6 +5,25 @@ mod index {
     use super::{assert_eq, test, *};
 
     #[test(harness = set_up)]
+    async fn deleted(app: DivviupApi) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let task = fixtures::task(&app, &account).await;
+        let mut am = task.into_active_model();
+        am.deleted_at = ActiveValue::Set(Some(OffsetDateTime::now_utc()));
+        let _ = am.update(app.db()).await?;
+
+        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+            .with_api_headers()
+            .with_state(user)
+            .run_async(&app)
+            .await;
+        assert_ok!(conn);
+        let tasks: Vec<Task> = conn.response_json().await;
+        assert!(tasks.is_empty());
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
         let other_account = fixtures::account(&app).await;
         let _ = fixtures::task(&app, &other_account).await;
