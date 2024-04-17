@@ -7,6 +7,7 @@ use crate::{
 use sea_orm::{ActiveModelTrait, ActiveValue, EntityTrait, IntoActiveModel, ModelTrait};
 use std::time::Duration;
 use time::OffsetDateTime;
+use tracing::warn;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json, State};
 use trillium_caching_headers::CachingHeadersExt;
@@ -125,24 +126,43 @@ pub async fn delete(
     let crypter = conn.state().unwrap();
     let now = OffsetDateTime::now_utc();
 
-    let mut am;
+    let mut am = task.clone().into_active_model();
     // If the task has not already expired, mark the aggregator-side tasks as expired. This will
-    // allow the aggregators to cease uploads and eventually GC the task at their leisure.
+    // allow the aggregators to cease processing and eventually GC the task at their leisure.
     if task.expiration.is_none() || task.expiration > Some(now) {
-        // There is a narrow edge case that results in an undeletable task. If this operation
-        // fails for one aggregator, and enough time passes before the next DELETE call that the
-        // successful aggregator fully deletes its copy of the task, we won't be able to progress.
-        //
-        // We assume that aggregators hang on to expired tasks for a decently long time, so this
-        // edge case is left unhandled.
-        am = UpdateTask::expiration(Some(now))
-            .update(&client, &db, crypter, task)
+        let update = UpdateTask::expiration(Some(now));
+
+        // The leader aggregator drives DAP, so we _must_ succeed in setting its expiration.
+        update
+            .update_aggregator_expiration(
+                task.leader_aggregator(&db).await?,
+                &task.id,
+                &client,
+                crypter,
+            )
             .await?;
-    } else {
-        am = task.clone().into_active_model();
-        am.updated_at = ActiveValue::Set(now);
+
+        // Expiry helper-side is best-effort. It's plausible that the user is deleting tasks to a
+        // BYOH that no longer exists, so we don't want to irritate them by forcing them to bring
+        // the BYOH back up.
+        //
+        // If we fail to set expiry transiently, e.g. due to temporary server outage, it's no big
+        // deal, because the leader is what drives the protocol forward. The helper shouldn't incur
+        // load based on this task because we've ensured that the leader will stop.
+        let _ = update
+            .update_aggregator_expiration(
+                task.leader_aggregator(&db).await?,
+                &task.id,
+                &client,
+                crypter,
+            )
+            .await
+            .map_err(|err| warn!(?err, "failed to expire helper-side task"));
+
+        am.expiration = ActiveValue::Set(Some(now));
     }
 
+    am.updated_at = ActiveValue::Set(now);
     am.deleted_at = ActiveValue::Set(Some(now));
     am.update(&db).await?;
     Ok(Status::NoContent)

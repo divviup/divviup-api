@@ -29,7 +29,7 @@ fn validate_name(name: &str) -> Result<(), ValidationError> {
 }
 
 impl UpdateTask {
-    async fn update_aggregator_expiration(
+    pub async fn update_aggregator_expiration(
         &self,
         aggregator: Aggregator,
         task_id: &str,
