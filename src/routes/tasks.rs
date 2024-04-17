@@ -1,10 +1,13 @@
 use crate::{
     clients::aggregator_client::TaskUploadMetrics,
     config::FeatureFlags,
-    entity::{Account, NewTask, Task, Tasks, UpdateTask},
+    entity::{Account, NewTask, Task, TaskColumn, Tasks, UpdateTask},
     Crypter, Db, Error, Permissions, PermissionsActor,
 };
-use sea_orm::{ActiveModelTrait, ActiveValue, EntityTrait, IntoActiveModel, ModelTrait};
+use sea_orm::{
+    ActiveModelTrait, ActiveValue, ColumnTrait, EntityTrait, IntoActiveModel, ModelTrait,
+    QueryFilter,
+};
 use std::time::Duration;
 use time::OffsetDateTime;
 use tracing::warn;
@@ -17,6 +20,7 @@ use trillium_router::RouterConnExt;
 pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
     account
         .find_related(Tasks)
+        .filter(TaskColumn::DeletedAt.is_null())
         .all(&db)
         .await
         .map(Json)
