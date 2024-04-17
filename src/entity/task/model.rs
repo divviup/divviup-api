@@ -20,7 +20,7 @@ use super::vdaf::Vdaf;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "task")]
 pub struct Model {
-    /// The task's DAP ID.
+    /// The DAP task ID.
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: String,
     pub account_id: Uuid,
