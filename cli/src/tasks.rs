@@ -1,7 +1,10 @@
+use std::time::SystemTime;
+
 use crate::{CliResult, DetermineAccountId, Error, Output};
 use clap::Subcommand;
 use divviup_client::{DivviupClient, Histogram, NewTask, Uuid, Vdaf};
-use humantime::Duration;
+use humantime::{Duration, Timestamp};
+use time::OffsetDateTime;
 
 #[derive(clap::ValueEnum, Clone, Debug)]
 pub enum VdafName {
@@ -51,6 +54,18 @@ pub enum TaskAction {
 
     /// rename a task
     Rename { task_id: String, name: String },
+
+    /// delete a task
+    Delete { task_id: String },
+
+    /// set the expiration date of a task
+    SetExpiration {
+        task_id: String,
+        /// the date and time to set to.
+        ///
+        /// if omitted, unset the expiration. the format is RFC 3339.
+        expiration: Option<Timestamp>,
+    },
 
     /// retrieve the collector auth tokens for a task
     CollectorAuthTokens { task_id: String },
@@ -149,6 +164,20 @@ impl TaskAction {
             TaskAction::CollectorAuthTokens { task_id } => {
                 output.display(client.task_collector_auth_tokens(&task_id).await?)
             }
+            TaskAction::Delete { task_id } => output.display(client.delete_task(&task_id).await?),
+            TaskAction::SetExpiration {
+                task_id,
+                expiration,
+            } => output.display(
+                client
+                    .set_task_expiration(
+                        &task_id,
+                        expiration
+                            .map(|e| OffsetDateTime::from(Into::<SystemTime>::into(e)))
+                            .as_ref(),
+                    )
+                    .await?,
+            ),
         }
 
         Ok(())

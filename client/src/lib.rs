@@ -24,6 +24,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use std::{fmt::Display, future::Future, pin::Pin};
+use time::format_description::well_known::Rfc3339;
 use trillium_http::{HeaderName, HeaderValues};
 
 pub use account::Account;
@@ -269,6 +270,24 @@ impl DivviupClient {
             .await
     }
 
+    pub async fn set_task_expiration(
+        &self,
+        task_id: &str,
+        expiration: Option<&OffsetDateTime>,
+    ) -> ClientResult<Task> {
+        self.patch(
+            &format!("api/tasks/{task_id}"),
+            &json!({
+                "expiration": expiration.map(|e| e.format(&Rfc3339)).transpose()?
+            }),
+        )
+        .await
+    }
+
+    pub async fn delete_task(&self, task_id: &str) -> ClientResult<()> {
+        self.delete(&format!("api/tasks/{task_id}")).await
+    }
+
     pub async fn api_tokens(&self, account_id: Uuid) -> ClientResult<Vec<ApiToken>> {
         self.get(&format!("api/accounts/{account_id}/api_tokens"))
             .await
@@ -379,6 +398,9 @@ pub enum Error {
 
     #[error(transparent)]
     Codec(#[from] CodecError),
+
+    #[error("time formatting error: {0}")]
+    TimeFormat(#[from] time::error::Format),
 }
 
 pub trait ClientConnExt: Sized {
