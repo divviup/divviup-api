@@ -164,7 +164,7 @@ impl TaskAction {
             TaskAction::CollectorAuthTokens { task_id } => {
                 output.display(client.task_collector_auth_tokens(&task_id).await?)
             }
-            TaskAction::Delete { task_id } => output.display(client.delete_task(&task_id).await?),
+            TaskAction::Delete { task_id } => client.delete_task(&task_id).await?,
             TaskAction::SetExpiration {
                 task_id,
                 expiration,
