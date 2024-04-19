@@ -646,7 +646,7 @@ dependencies = [
  "bitflags 2.4.2",
  "cexpr",
  "clang-sys",
- "itertools 0.12.0",
+ "itertools 0.11.0",
  "lazy_static",
  "lazycell",
  "log",
@@ -1865,7 +1865,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f2f12607f92c69b12ed746fabf9ca4f5c482cba46679c1a75b874ed7c26adb"
 dependencies = [
  "futures-io",
- "rustls 0.23.4",
+ "rustls 0.23.5",
  "rustls-pki-types",
 ]
 
@@ -2460,7 +2460,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c2a198fb6b0eada2a8df47933734e6d35d350665a33a3593d7164fa52c75c19"
 dependencies = [
  "cfg-if 1.0.0",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.4",
 ]
 
 [[package]]
@@ -3637,9 +3637,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.23.4"
+version = "0.23.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c4d6d8ad9f2492485e13453acbb291dd08f64441b6609c491f1c2cd2c6b4fe1"
+checksum = "afabcee0551bd1aa3e18e5adbf2c0544722014b899adb31bd186ec638d3da97e"
 dependencies = [
  "aws-lc-rs",
  "log",
@@ -3699,7 +3699,7 @@ dependencies = [
  "jni",
  "log",
  "once_cell",
- "rustls 0.23.4",
+ "rustls 0.23.5",
  "rustls-native-certs",
  "rustls-platform-verifier-android",
  "rustls-webpki 0.102.2",
