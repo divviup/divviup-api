@@ -1,6 +1,6 @@
 import { RouteObject, defer } from "react-router-dom";
 import ApiClient from "../ApiClient";
-import CollectorCredentialList from "./CollectorCredentialList";
+import CollectorCredentials from "./CollectorCredentialList";
 export default function collectorCredentials(
   apiClient: ApiClient,
 ): RouteObject {
@@ -10,7 +10,7 @@ export default function collectorCredentials(
       {
         path: "",
         index: true,
-        element: <CollectorCredentialList />,
+        element: <CollectorCredentials />,
         loader({ params }) {
           return defer({
             collectorCredentials: apiClient.accountCollectorCredentials(
