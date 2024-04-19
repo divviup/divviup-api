@@ -65,6 +65,9 @@ pub enum TaskAction {
         ///
         /// if omitted, unset the expiration. the format is RFC 3339.
         expiration: Option<Timestamp>,
+        /// set the expiration to the current time, effectively disabling the task.
+        #[arg(long, action, conflicts_with = "expiration")]
+        now: bool,
     },
 
     /// retrieve the collector auth tokens for a task
@@ -168,16 +171,19 @@ impl TaskAction {
             TaskAction::SetExpiration {
                 task_id,
                 expiration,
-            } => output.display(
-                client
-                    .set_task_expiration(
-                        &task_id,
-                        expiration
-                            .map(|e| OffsetDateTime::from(Into::<SystemTime>::into(e)))
-                            .as_ref(),
-                    )
-                    .await?,
-            ),
+                now,
+            } => {
+                let expiration = if now {
+                    Some(OffsetDateTime::now_utc())
+                } else {
+                    expiration.map(|e| OffsetDateTime::from(Into::<SystemTime>::into(e)))
+                };
+                output.display(
+                    client
+                        .set_task_expiration(&task_id, expiration.as_ref())
+                        .await?,
+                )
+            }
         }
 
         Ok(())
