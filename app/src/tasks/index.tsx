@@ -1,4 +1,4 @@
-import TaskList from "./TaskList";
+import AccountDetailFull from "./TaskList";
 import TaskForm from "./TaskForm";
 import TaskDetail from "./TaskDetail";
 import ApiClient from "../ApiClient";
@@ -11,7 +11,7 @@ export default function tasks(apiClient: ApiClient): RouteObject {
       {
         path: "",
         index: true,
-        element: <TaskList />,
+        element: <AccountDetailFull />,
         loader({ params }) {
           return defer({
             tasks: apiClient.accountTasks(params.accountId as string),

@@ -1,5 +1,5 @@
 import Aggregators from "./AggregatorList";
-import AggregatorForm from "./AggregatorForm";
+import AggregatorFormPage from "./AggregatorForm";
 import AggregatorDetail from "./AggregatorDetail";
 import ApiClient from "../ApiClient";
 import { RouteObject, defer, redirect } from "react-router-dom";
@@ -48,7 +48,7 @@ export default function aggregators(apiClient: ApiClient): RouteObject {
 
       {
         path: "new",
-        element: <AggregatorForm />,
+        element: <AggregatorFormPage />,
       },
     ],
   };

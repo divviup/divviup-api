@@ -1,6 +1,6 @@
 import { RouteObject, defer } from "react-router-dom";
 import ApiClient from "../ApiClient";
-import ApiTokenList from "./ApiTokenList";
+import ApiTokens from "./ApiTokenList";
 
 export default function apiTokens(apiClient: ApiClient): RouteObject {
   return {
@@ -9,7 +9,7 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
       {
         path: "",
         index: true,
-        element: <ApiTokenList />,
+        element: <ApiTokens />,
         loader({ params }) {
           return defer({
             apiTokens: apiClient
