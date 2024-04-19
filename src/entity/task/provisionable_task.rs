@@ -5,16 +5,9 @@ use crate::{
     handler::Error,
     Crypter,
 };
+use sea_orm::IntoActiveModel;
 use std::fmt::Debug;
 use trillium_client::Client;
-
-#[derive(thiserror::Error, Debug, Clone, Copy)]
-pub enum TaskProvisioningError {
-    #[error("discrepancy in {0}")]
-    Discrepancy(&'static str),
-    #[error("missing task id from all sources")]
-    MissingTaskId,
-}
 
 #[derive(Clone, Debug)]
 pub struct ProvisionableTask {
@@ -34,19 +27,6 @@ pub struct ProvisionableTask {
     pub collector_credential: CollectorCredential,
     pub aggregator_auth_token: Option<String>,
     pub protocol: Protocol,
-}
-
-fn assert_same<T: Eq + Debug>(
-    ours: T,
-    theirs: T,
-    property: &'static str,
-) -> Result<(), TaskProvisioningError> {
-    if ours == theirs {
-        Ok(())
-    } else {
-        log::error!("{property} discrepancy. ours: {ours:?}, theirs: {theirs:?}");
-        Err(TaskProvisioningError::Discrepancy(property))
-    }
 }
 
 impl ProvisionableTask {
@@ -116,6 +96,7 @@ impl ProvisionableTask {
                 .transpose()?,
             created_at: OffsetDateTime::now_utc(),
             updated_at: OffsetDateTime::now_utc(),
+            deleted_at: None,
             time_precision_seconds: self.time_precision_seconds.try_into()?,
             report_count: 0,
             aggregate_collection_count: 0,

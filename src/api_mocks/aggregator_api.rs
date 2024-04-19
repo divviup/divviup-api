@@ -3,7 +3,7 @@ use crate::{
     clients::aggregator_client::api_types::{
         AggregatorApiConfig, AggregatorVdaf, AuthenticationToken, HpkeAeadId, HpkeConfig,
         HpkeKdfId, HpkeKemId, HpkePublicKey, JanusDuration, QueryType, Role, TaskCreate, TaskId,
-        TaskIds, TaskResponse, TaskUploadMetrics,
+        TaskIds, TaskPatch, TaskResponse, TaskUploadMetrics,
     },
     entity::aggregator::{Feature, Features},
 };
@@ -41,6 +41,7 @@ pub fn mock() -> impl Handler {
             )
             .post("/tasks", api(post_task))
             .get("/tasks/:task_id", api(get_task))
+            .patch("/tasks/:task_id", api(patch_task))
             .get("/task_ids", api(task_ids))
             .delete("/tasks/:task_id", Status::Ok)
             .get(
@@ -107,6 +108,28 @@ async fn post_task(
     Json(task_create): Json<TaskCreate>,
 ) -> (State<TaskCreate>, Json<TaskResponse>) {
     (State(task_create.clone()), Json(task_response(task_create)))
+}
+
+async fn patch_task(conn: &mut Conn, Json(patch): Json<TaskPatch>) -> Json<TaskResponse> {
+    let task_id = conn.param("task_id").unwrap();
+    Json(TaskResponse {
+        task_id: task_id.parse().unwrap(),
+        peer_aggregator_endpoint: "https://_".parse().unwrap(),
+        query_type: QueryType::TimeInterval,
+        vdaf: AggregatorVdaf::Prio3Count,
+        role: Role::Leader,
+        vdaf_verify_key: random_chars(10),
+        max_batch_query_count: 100,
+        task_expiration: patch.task_expiration,
+        report_expiry_age: None,
+        min_batch_size: 1000,
+        time_precision: JanusDuration::from_seconds(60),
+        tolerable_clock_skew: JanusDuration::from_seconds(60),
+        collector_hpke_config: random_hpke_config(),
+        aggregator_auth_token: Some(AuthenticationToken::new(random_chars(32))),
+        collector_auth_token: Some(AuthenticationToken::new(random_chars(32))),
+        aggregator_hpke_configs: repeat_with(random_hpke_config).take(5).collect(),
+    })
 }
 
 pub fn task_response(task_create: TaskCreate) -> TaskResponse {

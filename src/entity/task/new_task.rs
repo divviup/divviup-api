@@ -9,7 +9,7 @@ use crate::{
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::Rng;
-use sea_orm::{ColumnTrait, QueryFilter};
+use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use sha2::{Digest, Sha256};
 use validator::{ValidationErrors, ValidationErrorsKind};
 

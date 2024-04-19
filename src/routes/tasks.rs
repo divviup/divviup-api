@@ -1,12 +1,16 @@
 use crate::{
     clients::aggregator_client::TaskUploadMetrics,
     config::FeatureFlags,
-    entity::{Account, NewTask, Task, Tasks, UpdateTask},
+    entity::{Account, NewTask, Task, TaskColumn, Tasks, UpdateTask},
     Crypter, Db, Error, Permissions, PermissionsActor,
 };
-use sea_orm::{ActiveModelTrait, EntityTrait, ModelTrait};
+use sea_orm::{
+    ActiveModelTrait, ActiveValue, ColumnTrait, EntityTrait, IntoActiveModel, ModelTrait,
+    QueryFilter,
+};
 use std::time::Duration;
 use time::OffsetDateTime;
+use tracing::warn;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json, State};
 use trillium_caching_headers::CachingHeadersExt;
@@ -16,6 +20,7 @@ use trillium_router::RouterConnExt;
 pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
     account
         .find_related(Tasks)
+        .filter(TaskColumn::DeletedAt.is_null())
         .all(&db)
         .await
         .map(Json)
@@ -99,16 +104,72 @@ pub async fn show(
     Ok(Json(task))
 }
 
+type UpdateArgs = (Task, Json<UpdateTask>, State<Client>, Db);
 pub async fn update(
-    _: &mut Conn,
-    (task, Json(update), db): (Task, Json<UpdateTask>, Db),
+    conn: &mut Conn,
+    (task, Json(update), client, db): UpdateArgs,
 ) -> Result<impl Handler, Error> {
+    let crypter = conn.state().unwrap();
     update
-        .build(task)?
+        .update(&client, &db, crypter, task)
+        .await?
         .update(&db)
         .await
         .map(Json)
         .map_err(Error::from)
+}
+
+pub async fn delete(
+    conn: &mut Conn,
+    (task, client, db): (Task, State<Client>, Db),
+) -> Result<impl Handler, Error> {
+    if task.deleted_at.is_some() {
+        return Ok(Status::NoContent);
+    }
+
+    let crypter = conn.state().unwrap();
+    let now = OffsetDateTime::now_utc();
+
+    let mut am = task.clone().into_active_model();
+    // If the task has not already expired, mark the aggregator-side tasks as expired. This will
+    // allow the aggregators to cease processing and eventually GC the task at their leisure.
+    if task.expiration.is_none() || task.expiration > Some(now) {
+        let update = UpdateTask::expiration(Some(now));
+
+        // The leader aggregator drives DAP, so we _must_ succeed in setting its expiration.
+        update
+            .update_aggregator_expiration(
+                task.leader_aggregator(&db).await?,
+                &task.id,
+                &client,
+                crypter,
+            )
+            .await?;
+
+        // Expiry helper-side is best-effort. It's plausible that the user is deleting tasks to a
+        // BYOH that no longer exists, so we don't want to irritate them by forcing them to bring
+        // the BYOH back up.
+        //
+        // If we fail to set expiry transiently, e.g. due to temporary server outage, it's no big
+        // deal, because the leader is what drives the protocol forward. The helper shouldn't incur
+        // load based on this task because we've ensured that the leader will stop.
+        let _ = update
+            .update_aggregator_expiration(
+                task.leader_aggregator(&db).await?,
+                &task.id,
+                &client,
+                crypter,
+            )
+            .await
+            .map_err(|err| warn!(?err, "failed to expire helper-side task"));
+
+        am.expiration = ActiveValue::Set(Some(now));
+    }
+
+    am.updated_at = ActiveValue::Set(now);
+    am.deleted_at = ActiveValue::Set(Some(now));
+    am.update(&db).await?;
+    Ok(Status::NoContent)
 }
 
 pub mod collector_auth_tokens {

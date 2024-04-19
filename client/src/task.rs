@@ -15,6 +15,8 @@ pub struct Task {
     pub created_at: OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339::option")]
+    pub deleted_at: Option<OffsetDateTime>,
     pub time_precision_seconds: u32,
     #[deprecated = "Not populated. Will be removed in a future release."]
     pub report_count: u32,
