@@ -20,6 +20,9 @@ pub enum TaskAction {
     /// list all tasks for the target account
     List,
 
+    /// retrieve details of a single task. this also refreshes cached data, such as metrics.
+    Get { task_id: String },
+
     /// create a new task for the target account
     Create {
         #[arg(long)]
@@ -85,6 +88,7 @@ impl TaskAction {
 
         match self {
             TaskAction::List => output.display(client.tasks(account_id).await?),
+            TaskAction::Get { task_id } => output.display(client.task(&task_id).await?),
             TaskAction::Create {
                 name,
                 leader_aggregator_id,

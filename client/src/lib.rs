@@ -252,6 +252,10 @@ impl DivviupClient {
         self.get(&format!("api/accounts/{account_id}/tasks")).await
     }
 
+    pub async fn task(&self, task_id: &str) -> ClientResult<Task> {
+        self.get(&format!("api/tasks/{task_id}")).await
+    }
+
     pub async fn create_task(&self, account_id: Uuid, task: NewTask) -> ClientResult<Task> {
         self.post(&format!("api/accounts/{account_id}/tasks"), Some(&task))
             .await

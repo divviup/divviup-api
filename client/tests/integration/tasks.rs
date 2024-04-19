@@ -14,6 +14,14 @@ async fn task_list(app: Arc<DivviupApi>, account: Account, client: DivviupClient
 }
 
 #[test(harness = with_configured_client)]
+async fn get_task(app: Arc<DivviupApi>, account: Account, client: DivviupClient) -> TestResult {
+    let task = fixtures::task(&app, &account).await;
+    let response_task = client.task(&task.id).await?;
+    assert_same_json_representation(&task, &response_task);
+    Ok(())
+}
+
+#[test(harness = with_configured_client)]
 async fn create_task(app: Arc<DivviupApi>, account: Account, client: DivviupClient) -> TestResult {
     let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
     let collector_credential = fixtures::collector_credential(&app, &account).await;
