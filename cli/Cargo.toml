@@ -19,7 +19,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive", "env"] }
-thiserror = "1.0.58"
+thiserror = "1.0.59"
 divviup-client = { workspace = true }
 trillium-rustls = "0.8.0"
 trillium-tokio = "0.4.0"
