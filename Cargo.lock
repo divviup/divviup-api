@@ -646,7 +646,7 @@ dependencies = [
  "bitflags 2.4.2",
  "cexpr",
  "clang-sys",
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "lazy_static",
  "lazycell",
  "log",
@@ -2360,9 +2360,9 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "janus_messages"
-version = "0.7.4"
+version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b13e82e819524fa01d84cfb0067c6e64ae47b2f1a6b095cb7e6ab7dc0820fe82"
+checksum = "bd629c85e8ff09303b2bfccb15e7ae07adb716a998d9124b312f988afbd8b5b5"
 dependencies = [
  "anyhow",
  "base64 0.22.0",
