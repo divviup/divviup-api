@@ -12,6 +12,7 @@ import AggregatorTypeSelection from "./AggregatorTypeSelection";
 import InlineCollectorCredentials from "./InlineCollectorCredentials";
 import { usePromise, usePromiseAll } from "../../util";
 import css from "./index.module.css";
+import { useCallback } from "react";
 
 const STEPS = [
   { label: "Create account" },
@@ -66,8 +67,11 @@ export default function NextSteps() {
   const loadedTasks = usePromise(tasks, []);
   const activeIndex = usePromiseAll(
     [account, collectorCredentials, aggregators],
-    ([account, collectorCredentials, aggregators]) =>
-      determineModel({ account, collectorCredentials, aggregators }),
+    useCallback(
+      ([account, collectorCredentials, aggregators]) =>
+        determineModel({ account, collectorCredentials, aggregators }),
+      [],
+    ),
     1,
   );
 
