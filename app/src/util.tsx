@@ -141,15 +141,15 @@ function useArray<T extends unknown[]>(input: T): T {
 }
 
 /**
- * This custom hook allows using the results of multiple futures. At first, the
- * initial value is returned. Once all futures are ready, their resolved values
+ * This custom hook allows using the results of multiple promises. At first, the
+ * initial value is returned. Once all promises are ready, their resolved values
  * are passed to the `then` function, and the result is returned.
  *
- * Note that the `then function should be either defined outside of any render
+ * Note that the `then` function should be either defined outside of any render
  * function or passed through `useCallback()`, to avoid spurious renders.
  * @param promises Array of promises
  * @param then Function
- * @param initialState Value to be returned until futures are resolved
+ * @param initialState Value to be returned until promises are resolved
  * @returns `initialState` or output of `then`
  */
 export function usePromiseAll<U, T extends unknown[]>(
