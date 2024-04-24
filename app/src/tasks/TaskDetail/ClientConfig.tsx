@@ -7,6 +7,7 @@ import "@github/relative-time-element";
 import { Copy, OutLink, usePromiseAll } from "../../util";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { github as syntaxStyle } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { useCallback } from "react";
 
 export default function ClientConfig() {
   return (
@@ -45,13 +46,16 @@ function TsClientConfig() {
 
   const taskConfig = usePromiseAll(
     [task, leaderAggregator, helperAggregator],
-    ([task, leader, helper]) => ({
-      ...task.vdaf,
-      id: task.id,
-      leader: leader.dap_url,
-      helper: helper.dap_url,
-      timePrecisionSeconds: task.time_precision_seconds,
-    }),
+    useCallback(
+      ([task, leader, helper]) => ({
+        ...task.vdaf,
+        id: task.id,
+        leader: leader.dap_url,
+        helper: helper.dap_url,
+        timePrecisionSeconds: task.time_precision_seconds,
+      }),
+      [],
+    ),
     {
       type: null,
       id: null,
