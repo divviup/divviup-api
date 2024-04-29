@@ -31,12 +31,14 @@ export default function DisableTaskButton() {
   const submit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      const data = new FormData();
-      data.append("expiration", isExpired ? "" : new Date().toISOString());
-      fetcher.submit(data, {
-        action: `/accounts/${accountId}/tasks/${taskId}`,
-        method: "PATCH",
-      });
+      fetcher.submit(
+        { expiration: isExpired ? null : new Date().toISOString() },
+        {
+          action: `/accounts/${accountId}/tasks/${taskId}`,
+          method: "PATCH",
+          encType: "application/json",
+        },
+      );
     },
     [fetcher, taskId, accountId, isExpired],
   );

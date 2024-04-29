@@ -43,21 +43,18 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         async action({ params, request }) {
           switch (request.method) {
             case "PATCH": {
-              const data = Object.fromEntries(
-                Array.from((await request.formData()).entries()).map(
-                  (entry): [string, string | null] => [
-                    entry[0],
-                    entry[1].toString(),
-                  ],
-                ),
-              );
-              const expiration = data["expiration"];
-              data["expiration"] = expiration === "" ? null : expiration;
-
-              return apiClient.updateTask(
-                params.taskId as string,
-                data as { name: string } | { expiration: string | null },
-              );
+              if (request.headers.get("Content-Type") === "application/json") {
+                return apiClient.updateTask(
+                  params.taskId as string,
+                  await request.json(),
+                );
+              } else {
+                const data = Object.fromEntries(await request.formData());
+                return apiClient.updateTask(
+                  params.taskId as string,
+                  data as { name: string },
+                );
+              }
             }
             case "DELETE": {
               await apiClient.deleteTask(params.taskId as string);
