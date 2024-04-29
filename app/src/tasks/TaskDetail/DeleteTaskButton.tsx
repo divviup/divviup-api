@@ -29,8 +29,8 @@ export default function DeleteTaskButton() {
         </Modal.Header>
         <Modal.Body>
           This task will be immediately removed from the interface, and
-          aggregators will stop accepting new reports. It may take a few minutes
-          for aggregators to start rejecting reports.
+          aggregators will stop accepting reports. It may take a few minutes for
+          aggregators to stop accepting reports.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={close}>

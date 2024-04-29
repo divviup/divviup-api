@@ -69,8 +69,8 @@ export default function DisableTaskButton() {
     variant = "success";
     body = (
       <>
-        Aggregators will accept new reports for this task. It may take a few
-        minutes for this to take effect.
+        Aggregators will accept reports for this task. It may take a few minutes
+        for this to take effect.
       </>
     );
   } else {
@@ -79,8 +79,8 @@ export default function DisableTaskButton() {
     variant = "warning";
     body = (
       <>
-        Aggregators will stop accepting new reports for this task. It may take a
-        few minutes for this to take effect.
+        Aggregators will stop accepting reports for this task. It may take a few
+        minutes for this to take effect.
       </>
     );
   }
