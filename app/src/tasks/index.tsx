@@ -2,7 +2,7 @@ import AccountDetailFull from "./TaskList";
 import TaskForm from "./TaskForm";
 import TaskDetail from "./TaskDetail";
 import ApiClient from "../ApiClient";
-import { RouteObject, defer } from "react-router-dom";
+import { RouteObject, defer, redirect } from "react-router-dom";
 
 export default function tasks(apiClient: ApiClient): RouteObject {
   return {
@@ -21,7 +21,7 @@ export default function tasks(apiClient: ApiClient): RouteObject {
       {
         path: ":taskId",
         element: <TaskDetail />,
-        loader({ params }) {
+        async loader({ params }) {
           const task = apiClient.task(params.taskId as string);
           const leaderAggregator = task.then((t) =>
             apiClient.aggregator(t.leader_aggregator_id),
@@ -43,10 +43,22 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         async action({ params, request }) {
           switch (request.method) {
             case "PATCH": {
-              return apiClient.updateTask(
-                params.taskId as string,
-                (await request.json()) as { name: string },
-              );
+              if (request.headers.get("Content-Type") === "application/json") {
+                return apiClient.updateTask(
+                  params.taskId as string,
+                  await request.json(),
+                );
+              } else {
+                const data = Object.fromEntries(await request.formData());
+                return apiClient.updateTask(
+                  params.taskId as string,
+                  data as { name: string },
+                );
+              }
+            }
+            case "DELETE": {
+              await apiClient.deleteTask(params.taskId as string);
+              return redirect("..");
             }
             default:
               throw new Error(`unexpected method ${request.method}`);

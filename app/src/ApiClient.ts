@@ -115,7 +115,8 @@ export type NewTask = Omit<
 };
 
 export interface UpdateTask {
-  name: string;
+  name?: string;
+  expiration?: string | null;
 }
 
 export interface CreateMembership {
@@ -416,6 +417,11 @@ export class ApiClient {
       default:
         throw res;
     }
+  }
+
+  async deleteTask(taskId: string): Promise<null> {
+    await this.delete(`/api/tasks/${taskId}`);
+    return null;
   }
 
   async accountApiTokens(accountId: string): Promise<ApiToken[]> {
