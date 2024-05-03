@@ -21,20 +21,32 @@ const POSTMARK_URL: &str = "https://api.postmarkapp.com";
 
 #[derive(Debug, Clone)]
 pub struct Config {
+    /// The public facing base URL for this application.
     pub api_url: Url,
+    /// The public-facing url for the associated browser client application.
     pub app_url: Url,
+    /// The OAuth2 audience, used for Auth0.
     pub auth_audience: String,
+    /// The OAuth2 client ID.
     pub auth_client_id: String,
+    /// The OAuth2 client secret.
     pub auth_client_secret: String,
+    /// The base URL to an OAuth2 IdP (usually Auth0).
     pub auth_url: Url,
     pub client: Client,
     pub crypter: Crypter,
+    /// A libpq-compatible PostgreSQL URI.
     pub database_url: Url,
+    /// The email address this deployment should send from.
     pub email_address: EmailAddress,
+    /// The token from the transactional stream from a [postmark](https://postmarkapp.com) account.
     pub postmark_token: String,
+    /// The URL to postmark.
     pub postmark_url: Url,
     /// The address to listen on for prometheus metrics and tracing configuration.
     pub monitoring_listen_address: SocketAddr,
+    /// Comma-joined unpadded base64url encoded cryptographically random secrets, 32 bytes long
+    /// after decoding. The first one is used for new sessions.
     pub session_secrets: SessionSecrets,
     /// See [`TraceConfig::use_test_writer`].
     pub trace_use_test_writer: bool,

@@ -1,0 +1,326 @@
+# Local development-only compose file. This is not suitable for production!
+
+x-janus-common: &janus_common
+  image: us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_aggregator:0.7.7
+  restart: always
+  healthcheck:
+    test: ["CMD", "wget", "http://localhost:8000/healthz"]
+  depends_on:
+    janus_1_migrate:
+      condition: service_completed_successfully
+    janus_2_migrate:
+      condition: service_completed_successfully
+
+x-janus-migrate: &janus_migrate
+  image: us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_db_migrator:0.7.7
+  command:
+    - migrate
+    - run
+    - --source
+    - /migrations
+    - --connect-timeout
+    - "60"
+  depends_on:
+    postgres:
+      condition: service_started
+
+x-janus-environment: &janus_environment
+  RUST_LOG: info
+  PGPASSWORD: postgres
+  DATASTORE_KEYS: 1B6szboUUtMfyrLsIVE20g
+  AGGREGATOR_API_AUTH_TOKENS: "0000"
+
+services:
+  postgres:
+    image: docker.io/library/postgres:16
+    ports:
+      - "5432:5432"
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+    configs:
+      - source: postgres_init
+        target: /docker-entrypoint-initdb.d/postgres_init.sql
+
+  divviup_api_migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.fast
+      args:
+        # This isn't strictly required for migrations, but prevents docker from needlessly rebuilding
+        # the image.
+        RUST_FEATURES: integration-testing
+    entrypoint:
+      - /migration
+      - up
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/divviup
+    depends_on:
+      postgres:
+        condition: service_started
+    develop:
+      watch:
+        - path: migration
+          action: rebuild
+          ignore:
+            - README.md
+
+  divviup_api:
+    build:
+      context: .
+      dockerfile: Dockerfile.fast
+      args:
+        RUST_FEATURES: integration-testing
+    ports:
+      - "8080:8080"
+    environment:
+      RUST_LOG: info
+      AUTH_URL: https://auth.example
+      AUTH_CLIENT_ID: fake
+      AUTH_CLIENT_SECRET: fake
+      SESSION_SECRETS: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+      DATABASE_ENCRYPTION_KEYS: heHIWC_qxHzdglI0VgLopQ
+      AUTH_AUDIENCE: https://app.example
+      APP_URL: http://app.divviup.local:8080
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/divviup
+      API_URL: http://api.divviup.local:8080
+      POSTMARK_TOKEN: fake
+      EMAIL_ADDRESS: the@from.address
+    depends_on:
+      divviup_api_migrate:
+        condition: service_completed_successfully
+    develop:
+      watch:
+        - path: src/
+          action: rebuild
+        - path: app/
+          action: rebuild
+
+  janus_1_migrate:
+    <<: *janus_migrate
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/janus_1
+
+  janus_1_aggregator:
+    <<: *janus_common
+    entrypoint: ["/janus_aggregator", "aggregator"]
+    configs:
+      - janus_1_aggregator.yaml
+    ports:
+      - "9001:8080"
+    environment:
+      CONFIG_FILE: /janus_1_aggregator.yaml
+      <<: *janus_environment
+
+  janus_1_aggregation_job_creator:
+    <<: *janus_common
+    entrypoint: ["/janus_aggregator", "aggregation_job_creator"]
+    configs:
+      - janus_1_aggregation_job_creator.yaml
+    environment:
+      CONFIG_FILE: /janus_1_aggregation_job_creator.yaml
+      <<: *janus_environment
+
+  janus_1_aggregation_job_driver:
+    <<: *janus_common
+    entrypoint: ["/janus_aggregator", "aggregation_job_driver"]
+    configs:
+      - janus_1_aggregation_job_driver.yaml
+    environment:
+      CONFIG_FILE: /janus_1_aggregation_job_driver.yaml
+      <<: *janus_environment
+
+  janus_1_collection_job_driver:
+    <<: *janus_common
+    entrypoint: ["/janus_aggregator", "collection_job_driver"]
+    configs:
+      - janus_1_collection_job_driver.yaml
+    environment:
+      CONFIG_FILE: /janus_1_collection_job_driver.yaml
+      <<: *janus_environment
+
+  janus_1_garbage_collector:
+    <<: *janus_common
+    entrypoint: ["/janus_aggregator", "garbage_collector"]
+    configs:
+      - janus_1_garbage_collector.yaml
+    environment:
+      CONFIG_FILE: /janus_1_garbage_collector.yaml
+      <<: *janus_environment
+
+  janus_2_migrate:
+    <<: *janus_migrate
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/janus_2
+
+  janus_2_aggregator:
+    <<: *janus_common
+    entrypoint: ["/janus_aggregator", "aggregator"]
+    configs:
+      - janus_2_aggregator.yaml
+    ports:
+      - "9002:8080"
+    environment:
+      CONFIG_FILE: /janus_2_aggregator.yaml
+      <<: *janus_environment
+
+  janus_2_aggregation_job_creator:
+    <<: *janus_common
+    entrypoint: ["/janus_aggregator", "aggregation_job_creator"]
+    configs:
+      - janus_2_aggregation_job_creator.yaml
+    environment:
+      CONFIG_FILE: /janus_2_aggregation_job_creator.yaml
+      <<: *janus_environment
+
+  janus_2_aggregation_job_driver:
+    <<: *janus_common
+    entrypoint: ["/janus_aggregator", "aggregation_job_driver"]
+    configs:
+      - janus_2_aggregation_job_driver.yaml
+    environment:
+      CONFIG_FILE: /janus_2_aggregation_job_driver.yaml
+      <<: *janus_environment
+
+  janus_2_collection_job_driver:
+    <<: *janus_common
+    entrypoint: ["/janus_aggregator", "collection_job_driver"]
+    configs:
+      - janus_2_collection_job_driver.yaml
+    environment:
+      CONFIG_FILE: /janus_2_collection_job_driver.yaml
+      <<: *janus_environment
+
+  janus_2_garbage_collector:
+    <<: *janus_common
+    entrypoint: ["/janus_aggregator", "garbage_collector"]
+    configs:
+      - janus_2_garbage_collector.yaml
+    environment:
+      CONFIG_FILE: /janus_2_garbage_collector.yaml
+      <<: *janus_environment
+
+configs:
+  postgres_init:
+    content: |
+      CREATE DATABASE divviup;
+      CREATE DATABASE janus_1;
+      CREATE DATABASE janus_2;
+
+  janus_1_aggregator.yaml:
+    content: |
+      database:
+        url: "postgres://postgres@postgres:5432/janus_1"
+      health_check_listen_address: "0.0.0.0:8000"
+      listen_address: "0.0.0.0:8080"
+      max_upload_batch_size: 100
+      max_upload_batch_write_delay_ms: 250
+      batch_aggregation_shard_count: 32
+      aggregator_api:
+        path_prefix: "aggregator-api"
+        public_dap_url: "http://localhost:9001"
+
+  janus_1_aggregation_job_creator.yaml:
+    content: |
+      database:
+        url: "postgres://postgres@postgres:5432/janus_1"
+      health_check_listen_address: "0.0.0.0:8000"
+      batch_aggregation_shard_count: 32
+      tasks_update_frequency_secs: 3600
+      aggregation_job_creation_interval_secs: 60
+      min_aggregation_job_size: 10
+      max_aggregation_job_size: 100
+
+  janus_1_aggregation_job_driver.yaml:
+    content: |
+      database:
+        url: "postgres://postgres@postgres:5432/janus_1"
+      health_check_listen_address: "0.0.0.0:8000"
+      job_discovery_interval_secs: 10
+      max_concurrent_job_workers: 10
+      worker_lease_duration_secs: 600
+      worker_lease_clock_skew_allowance_secs: 60
+      maximum_attempts_before_failure: 10
+      batch_aggregation_shard_count: 32
+
+  janus_1_collection_job_driver.yaml:
+    content: |
+      database:
+        url: "postgres://postgres@postgres:5432/janus_1"
+      health_check_listen_address: "0.0.0.0:8000"
+      job_discovery_interval_secs: 10
+      max_concurrent_job_workers: 10
+      worker_lease_duration_secs: 600
+      worker_lease_clock_skew_allowance_secs: 60
+      maximum_attempts_before_failure: 10
+      batch_aggregation_shard_count: 32
+
+  janus_1_garbage_collector.yaml:
+    content: |
+      database:
+        url: "postgres://postgres@postgres:5432/janus_1"
+      health_check_listen_address: "0.0.0.0:8000"
+      garbage_collection:
+        gc_frequency_s: 60
+        report_limit: 5000
+        aggregation_limit: 500
+        collection_limit: 50
+
+  janus_2_aggregator.yaml:
+    content: |
+      database:
+        url: "postgres://postgres@postgres:5432/janus_2"
+      health_check_listen_address: "0.0.0.0:8000"
+      listen_address: "0.0.0.0:8080"
+      max_upload_batch_size: 100
+      max_upload_batch_write_delay_ms: 250
+      batch_aggregation_shard_count: 32
+      aggregator_api:
+        path_prefix: "aggregator-api"
+        public_dap_url: "http://localhost:9002"
+
+  janus_2_aggregation_job_creator.yaml:
+    content: |
+      database:
+        url: "postgres://postgres@postgres:5432/janus_2"
+      health_check_listen_address: "0.0.0.0:8000"
+      batch_aggregation_shard_count: 32
+      tasks_update_frequency_secs: 3600
+      aggregation_job_creation_interval_secs: 60
+      min_aggregation_job_size: 10
+      max_aggregation_job_size: 100
+
+  janus_2_aggregation_job_driver.yaml:
+    content: |
+      database:
+        url: "postgres://postgres@postgres:5432/janus_2"
+      health_check_listen_address: "0.0.0.0:8000"
+      job_discovery_interval_secs: 10
+      max_concurrent_job_workers: 10
+      worker_lease_duration_secs: 600
+      worker_lease_clock_skew_allowance_secs: 60
+      maximum_attempts_before_failure: 10
+      batch_aggregation_shard_count: 32
+
+  janus_2_collection_job_driver.yaml:
+    content: |
+      database:
+        url: "postgres://postgres@postgres:5432/janus_2"
+      health_check_listen_address: "0.0.0.0:8000"
+      job_discovery_interval_secs: 10
+      max_concurrent_job_workers: 10
+      worker_lease_duration_secs: 600
+      worker_lease_clock_skew_allowance_secs: 60
+      maximum_attempts_before_failure: 10
+      batch_aggregation_shard_count: 32
+
+  janus_2_garbage_collector.yaml:
+    content: |
+      database:
+        url: "postgres://postgres@postgres:5432/janus_2"
+      health_check_listen_address: "0.0.0.0:8000"
+      garbage_collection:
+        gc_frequency_s: 60
+        report_limit: 5000
+        aggregation_limit: 500
+        collection_limit: 50
