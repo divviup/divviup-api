@@ -218,6 +218,10 @@ export class ApiClient {
     });
   }
 
+  async apiUrl(): Promise<string> {
+    return (await this.#client).getUri({ url: "/" });
+  }
+
   async loginUrl(): Promise<string> {
     return (await this.#client).getUri({ url: "/login" });
   }
