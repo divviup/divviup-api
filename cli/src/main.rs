@@ -13,6 +13,7 @@ mod accounts;
 mod aggregators;
 mod api_tokens;
 mod collector_credentials;
+mod dap_client;
 mod memberships;
 mod tasks;
 
@@ -23,6 +24,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use collector_credentials::CollectorCredentialAction;
 use colored::Colorize;
 use const_format::concatcp;
+use dap_client::DapClientAction;
 use divviup_client::{Client, CodecError, DivviupClient, HeaderValue, KnownHeaderName, Url, Uuid};
 use memberships::MembershipAction;
 use serde::Serialize;
@@ -115,6 +117,10 @@ enum Resource {
     /// privacy-preserving metrics in the divviup system
     #[command(subcommand)]
     Task(TaskAction),
+
+    /// DAP client to upload metrics
+    #[command(subcommand)]
+    DapClient(DapClientAction),
 
     /// dap servers that have been paired to divviup for your account
     #[command(subcommand)]
@@ -220,6 +226,7 @@ impl Resource {
             Resource::Account(action) => action.run(account_id, client, output).await,
             Resource::ApiToken(action) => action.run(account_id, client, output).await,
             Resource::Task(action) => action.run(account_id, client, output).await,
+            Resource::DapClient(action) => action.run(account_id, client, output).await,
             Resource::Aggregator(action) => action.run(account_id, client, output).await,
             Resource::Membership(action) => action.run(account_id, client, output).await,
             Resource::CollectorCredential(action) => action.run(account_id, client, output).await,
