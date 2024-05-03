@@ -11,7 +11,10 @@ import {
   Icon3CircleFill,
   Clipboard,
 } from "react-bootstrap-icons";
-import { Copy, OutLink } from "../../util";
+import { Copy, OutLink, usePromise } from "../../util";
+
+/** This matches the default value of DIVVIUP_API_URL in the divviup CLI tool. */
+const DEFAULT_API_URL = "https://api.divviup.org/";
 
 function SaveApiToken({ onToken }: { onToken: (token: string) => void }) {
   const fetcher = useFetcher<ApiToken & { token: string }>();
@@ -83,6 +86,7 @@ export default function InlineCollectorCredentials() {
 
   const [token, setToken] = React.useState<string>("«TOKEN»");
   const { revalidate, state } = useRevalidator();
+  const apiUrl = usePromise(apiClient.apiUrl(), DEFAULT_API_URL);
 
   if (anyCollectorCredentials) {
     return (
@@ -94,7 +98,10 @@ export default function InlineCollectorCredentials() {
       </>
     );
   } else {
-    const command = `divviup -t ${token} collector-credential generate`;
+    const command =
+      apiUrl == DEFAULT_API_URL
+        ? `divviup -t ${token} collector-credential generate`
+        : `divviup -u ${apiUrl} -t ${token} collector-credential generate`;
     return (
       <>
         <ol className="list-unstyled">
