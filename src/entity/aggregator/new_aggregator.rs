@@ -27,7 +27,7 @@ pub struct NewAggregator {
 }
 
 #[cfg_attr(feature = "integration-testing", allow(dead_code))]
-fn https(url: &String) -> Result<(), ValidationError> {
+fn https(url: &str) -> Result<(), ValidationError> {
     let url = url::Url::from_str(url).map_err(|_| ValidationError::new("https-url"))?;
     if url.scheme() != "https" {
         return Err(ValidationError::new("https-url"));

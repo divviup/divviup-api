@@ -241,9 +241,7 @@ impl NewTask {
         protocol: &Protocol,
         errors: &mut ValidationErrors,
     ) -> Option<AggregatorVdaf> {
-        let Some(vdaf) = self.vdaf.as_ref() else {
-            return None;
-        };
+        let vdaf = self.vdaf.as_ref()?;
 
         let name = vdaf.name();
         let aggregator_vdaf = match vdaf.representation_for_protocol(protocol) {

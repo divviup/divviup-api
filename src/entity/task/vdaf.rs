@@ -125,7 +125,7 @@ pub struct BucketLength {
     pub chunk_length: Option<u64>,
 }
 
-fn unique<T: Hash + Eq>(buckets: &Vec<T>) -> Result<(), ValidationError> {
+fn unique<T: Hash + Eq>(buckets: &[T]) -> Result<(), ValidationError> {
     if buckets.len() == buckets.iter().collect::<HashSet<_>>().len() {
         Ok(())
     } else {
@@ -133,7 +133,7 @@ fn unique<T: Hash + Eq>(buckets: &Vec<T>) -> Result<(), ValidationError> {
     }
 }
 
-fn increasing(buckets: &Vec<u64>) -> Result<(), ValidationError> {
+fn increasing(buckets: &[u64]) -> Result<(), ValidationError> {
     let Some(mut last) = buckets.first().copied() else {
         return Ok(());
     };
