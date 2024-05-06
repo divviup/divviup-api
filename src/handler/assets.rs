@@ -32,17 +32,17 @@ impl Handler for ReactApp {
         if conn.path().starts_with("/api_url") {
             return conn
                 .ok(self.api_url.to_string())
-                .with_header(KnownHeaderName::ContentType, "text/plain")
-                .with_header(CacheControl, NoCache);
+                .with_response_header(KnownHeaderName::ContentType, "text/plain")
+                .with_response_header(CacheControl, NoCache);
         }
 
         conn = self.handler.run(conn).await;
 
         if conn.is_halted() {
             if conn.path().starts_with("/assets" /*hashed assets*/) {
-                conn.with_header(CacheControl, MaxAge(ONE_YEAR))
+                conn.with_response_header(CacheControl, MaxAge(ONE_YEAR))
             } else {
-                conn.with_header(CacheControl, NoCache)
+                conn.with_response_header(CacheControl, NoCache)
             }
         } else {
             conn.push_path("/index.html".into());
@@ -50,7 +50,7 @@ impl Handler for ReactApp {
                 .handler
                 .run(conn)
                 .await
-                .with_header(CacheControl, NoCache)
+                .with_response_header(CacheControl, NoCache)
                 .with_status(Status::Ok);
             conn.pop_path();
             conn
