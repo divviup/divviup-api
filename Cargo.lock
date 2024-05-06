@@ -607,9 +607,9 @@ checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
 
 [[package]]
 name = "base64"
-version = "0.22.0"
+version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9475866fec1451be56a3c2400fd081ff546538961565ccb5b7142cbd22bc7a51"
+checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "base64ct"
@@ -1097,7 +1097,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ddef33a339a91ea89fb53151bd0a4689cfce27055c291dfa69945475d22c747"
 dependencies = [
  "aes-gcm",
- "base64 0.22.0",
+ "base64 0.22.1",
  "hkdf",
  "hmac 0.12.1",
  "percent-encoding",
@@ -1375,7 +1375,7 @@ dependencies = [
  "aes-gcm",
  "async-lock 3.3.0",
  "async-session",
- "base64 0.22.0",
+ "base64 0.22.1",
  "console-subscriber",
  "email_address",
  "fastrand 2.1.0",
@@ -1440,7 +1440,7 @@ dependencies = [
 name = "divviup-cli"
 version = "0.3.1"
 dependencies = [
- "base64 0.22.0",
+ "base64 0.22.1",
  "clap",
  "colored",
  "const_format",
@@ -1463,7 +1463,7 @@ dependencies = [
 name = "divviup-client"
 version = "0.3.1"
 dependencies = [
- "base64 0.22.0",
+ "base64 0.22.1",
  "divviup-api",
  "divviup-client",
  "email_address",
@@ -2346,7 +2346,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "31c6c35fffd82f3c0d43560d2e635ed5e34353c2713d33dee3948e195c5e2fb3"
 dependencies = [
  "anyhow",
- "base64 0.22.0",
+ "base64 0.22.1",
  "derivative",
  "hex",
  "num_enum",
@@ -2974,7 +2974,7 @@ version = "3.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e459365e590736a54c3fa561947c84837534b8e9af6fc5bf781307e82658fae"
 dependencies = [
- "base64 0.22.0",
+ "base64 0.22.1",
  "serde",
 ]
 
@@ -3638,7 +3638,7 @@ version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29993a25686778eb88d4189742cd713c9bce943bc54251a33509dc63cbacf73d"
 dependencies = [
- "base64 0.22.0",
+ "base64 0.22.1",
  "rustls-pki-types",
 ]
 
@@ -4560,7 +4560,7 @@ dependencies = [
 name = "test-support"
 version = "0.3.1"
 dependencies = [
- "base64 0.22.0",
+ "base64 0.22.1",
  "divviup-api",
  "fastrand 2.1.0",
  "pretty_assertions",
