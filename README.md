@@ -25,9 +25,7 @@ package manager:
 * C compiler (GCC or Clang)
 * CMake
 
-## Local Development
-
-### Quick Start
+### Local Development
 
 This will get you up and running quickly for development purposes.
 
