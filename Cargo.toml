@@ -48,7 +48,7 @@ opentelemetry-prometheus = { version = "0.15.0", features = [
         "prometheus-encoding",
 ] }
 prio = "0.16.3"
-prometheus = "0.13.3"
+prometheus = "0.13.4"
 querystrong = "0.3.0"
 rand = "0.8.5"
 serde = { version = "1.0.199", features = ["derive"] }
