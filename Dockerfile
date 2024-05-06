@@ -1,5 +1,3 @@
-# The production-ready Dockerfile.
-
 FROM node:alpine as assets
 WORKDIR /src/app
 COPY app/package.json /src/app/package.json
