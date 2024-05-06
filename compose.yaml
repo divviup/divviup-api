@@ -81,9 +81,9 @@ services:
       SESSION_SECRETS: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
       DATABASE_ENCRYPTION_KEYS: heHIWC_qxHzdglI0VgLopQ
       AUTH_AUDIENCE: https://app.example
-      APP_URL: http://app.divviup.local:8080
+      APP_URL: http://localhost:8081
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/divviup
-      API_URL: http://api.divviup.local:8080
+      API_URL: http://localhost:8080
       POSTMARK_TOKEN: fake
       EMAIL_ADDRESS: the@from.address
     depends_on:
@@ -93,7 +93,26 @@ services:
       watch:
         - path: src/
           action: rebuild
-        - path: app/
+
+  divviup_api_vite:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM node:alpine
+    ports:
+      - "8081:8081"
+    working_dir: /srv/app
+    volumes:
+     - type: bind
+       source: ./app
+       target: /srv/app
+    entrypoint:
+      - /bin/sh
+      - -c
+      - npm i && npx vite --host=0.0.0.0
+    develop:
+      watch:
+        - path: ./app/package.json
           action: rebuild
 
   janus_1_migrate:
