@@ -45,8 +45,8 @@ services:
   divviup_api_migrate:
     build:
       context: .
-      dockerfile: Dockerfile.fast
       args:
+        RUST_PROFILE: dev
         # This isn't strictly required for migrations, but it allows reusing one
         # container image for both this and the divviup_api service.
         RUST_FEATURES: integration-testing
@@ -68,8 +68,8 @@ services:
   divviup_api:
     build:
       context: .
-      dockerfile: Dockerfile.fast
       args:
+        RUST_PROFILE: dev
         RUST_FEATURES: integration-testing
     ports:
       - "8080:8080"

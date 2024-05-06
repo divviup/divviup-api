@@ -28,8 +28,10 @@ COPY cli /src/cli
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef as builder
+ARG RUST_FEATURES=default
+ARG RUST_PROFILE=release
 COPY --from=planner /src/recipe.json /src/recipe.json
-RUN cargo chef cook --workspace --release --recipe-path recipe.json
+RUN cargo chef cook --workspace --profile ${RUST_PROFILE} --recipe-path recipe.json
 COPY Cargo.toml /src/Cargo.toml
 COPY Cargo.lock /src/Cargo.lock
 COPY build.rs /src/build.rs
@@ -39,16 +41,19 @@ COPY test-support /src/test-support
 COPY client /src/client
 COPY cli /src/cli
 COPY --from=assets /src/app/build /src/app/build
-ARG RUST_FEATURES=default
-RUN ASSET_DIR=/src/app/build cargo build --workspace --bins --release --features ${RUST_FEATURES}
+RUN ASSET_DIR=/src/app/build cargo build --workspace --bins --profile ${RUST_PROFILE} --features ${RUST_FEATURES}
+# Hack: --profile=dev outputs to target/debug, so to interpolate $RUST_PROFILE in the next stage,
+# we need to create this symlink.
+RUN ln -s debug target/dev
 
 FROM alpine:3.19.1 AS final
 ARG GIT_REVISION=unknown
+ARG RUST_PROFILE=release
 LABEL revision ${GIT_REVISION}
 EXPOSE 8080
 ENV HOST=0.0.0.0
-COPY --from=builder /src/target/release/migration /migration
-COPY --from=builder /src/target/release/migrate_to /migrate_to
-COPY --from=builder /src/target/release/divviup_api_bin /divviup_api_bin
-COPY --from=builder /src/target/release/divviup /divviup
+COPY --from=builder /src/target/${RUST_PROFILE}/migration /migration
+COPY --from=builder /src/target/${RUST_PROFILE}/migrate_to /migrate_to
+COPY --from=builder /src/target/${RUST_PROFILE}/divviup_api_bin /divviup_api_bin
+COPY --from=builder /src/target/${RUST_PROFILE}/divviup /divviup
 ENTRYPOINT ["/divviup_api_bin"]
