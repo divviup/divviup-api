@@ -47,8 +47,8 @@ services:
       context: .
       dockerfile: Dockerfile.fast
       args:
-        # This isn't strictly required for migrations, but prevents docker from needlessly rebuilding
-        # the image.
+        # This isn't strictly required for migrations, but it allows reusing one
+        # container image for both this and the divviup_api service.
         RUST_FEATURES: integration-testing
     entrypoint:
       - /migration
