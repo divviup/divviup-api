@@ -1,6 +1,7 @@
 use rustc_version::version;
 
 fn main() {
+    println!("cargo::rustc-check-cfg=cfg(assets)");
     if let Ok(asset_dir) = std::env::var("ASSET_DIR") {
         println!("cargo:rustc-cfg=assets");
         println!("cargo:rerun-if-changed={asset_dir}");
