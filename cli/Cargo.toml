@@ -23,7 +23,7 @@ thiserror = "1.0.59"
 divviup-client = { workspace = true }
 trillium-rustls = "0.8.0"
 trillium-tokio = "0.4.0"
-serde = "1.0.199"
+serde = "1.0.200"
 email_address = "0.2.4"
 humantime = "2.1.0"
 base64 = "0.22.1"
