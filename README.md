@@ -18,31 +18,41 @@
 * [NodeJS](https://nodejs.org/) and [npm](https://www.npmjs.com/)
 * [Rust (current stable or nightly)](https://www.rust-lang.org/tools/install)
 * [PostgreSQL](https://www.postgresql.org/)
-* [docker-compose](https://docs.docker.com/compose/)
+* [docker-compose](https://docs.docker.com/compose/) >=v2.27.0
+  * On MacOS, [install this through `brew`][brew]. Notice this calls for extra modifications to
+    `~/.docker/config.json`.
+  * On Linux, install `docker-compose-plugin` from the `docker-ce` repository. See the OS-specific
+    [instructions here][linux].
+  * Alternatively, for both platforms, you can [install the binary plugin][compose].
 
 Some Rust dependencies require additional system dependencies. These can be installed with your usual
 package manager:
 * C compiler (GCC or Clang)
 * CMake
 
+[brew]: https://formulae.brew.sh/formula/docker-compose
+[linux]: https://docs.docker.com/engine/install/
+[compose]: https://github.com/docker/compose/releases
+
 ### Local Development
 
 This will get you up and running quickly for development purposes.
 
 1. Clone the repository and navigate to its root.
-1. Execute `docker-compose watch`.
+1. Execute `echo "http://localhost:8080" >app/public/api_url`
+1. Execute `docker compose watch`.
 1. Navigate in your browser to `http://localhost:8081/`.
 
-`docker-compose` will automatically reload containers when you make changes. Data is persisted
-until you `docker-compose rm --volumes`.
+`docker compose` will automatically reload containers when you make changes. Data is persisted
+until you `docker compose rm --volumes`.
 
 Two Janus aggregators will be created for you, but are not automatically paired to divviup-api.
 Their information is:
 1. Address: `http://janus_1_aggregator:8080/aggregator-api`, Token: `0000`
 1. Address: `http://janus_2_aggregator:8080/aggregator-api`, Token: `0000`
 
-If you need to talk to these aggregators from outside docker-compose's network namespace, e.g.
-with a testing client, they are mapped to `localhost:9001` and `localhost:9002`, respectively.
+If you need to talk to these aggregators from outside compose's network namespace, e.g. with a
+testing client, they are mapped to `localhost:9001` and `localhost:9002`, respectively.
 
 PostgreSQL is exposed on port 5432 with username and password `postgres`.
 
@@ -51,4 +61,5 @@ service by commenting it out in `compose.yaml`.
 
 ## Security Notes
 
-* We do not have CSRF protections because we only accept a custom content type for non-idempotent request methods such as POST, and have constrained CORS rules.
+* We do not have CSRF protections because we only accept a custom content type for non-idempotent
+  request methods such as POST, and have constrained CORS rules.
