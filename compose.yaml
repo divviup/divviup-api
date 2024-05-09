@@ -4,7 +4,7 @@ x-janus-common: &janus_common
   image: us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_aggregator:0.7.7
   restart: always
   healthcheck:
-    test: ["CMD", "/bin/sh", "-c", "wget http://localhost:8000/healthz -O - >/dev/null"]
+    test: ["CMD", "/bin/sh", "-c", "wget http://0.0.0.0:8000/healthz -O - >/dev/null"]
   depends_on:
     janus_1_migrate:
       condition: service_completed_successfully
