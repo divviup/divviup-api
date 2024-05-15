@@ -97,8 +97,7 @@ services:
   divviup_api_vite:
     build:
       context: .
-      dockerfile_inline: |
-        FROM node:alpine
+      dockerfile: Dockerfile.vite
     ports:
       - "8081:8081"
     working_dir: /srv/app
