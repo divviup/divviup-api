@@ -12,6 +12,12 @@ export default defineConfig(() => ({
   server: {
     port: 8081,
     strictPort: true,
+    watch: {
+      // Workaround for workstations using MacOS and Colima as the container runtime. inotify does
+      // work reliably for virtiofs volumes, so fall back to polling. This comes at the cost of
+      // higher CPU usage.
+      usePolling: true,
+    },
   },
   css: {
     postcss: {
