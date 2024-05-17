@@ -47,8 +47,8 @@ services:
       context: .
       args:
         RUST_PROFILE: dev
-        # This isn't strictly required for migrations, but it allows reusing one
-        # container image for both this and the divviup_api service.
+        # This isn't strictly required for migrations, but it allows reusing one container image
+        # for both this and the divviup_api service.
         RUST_FEATURES: integration-testing
     entrypoint:
       - /migration
@@ -97,6 +97,8 @@ services:
   divviup_api_vite:
     build:
       context: .
+      # `develop` cannot be used with an `image` directive, so we need to use a minimal dockerfile
+      # containing the image we need.
       dockerfile: Dockerfile.vite
     ports:
       - "8081:8081"
