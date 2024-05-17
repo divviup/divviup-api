@@ -7,19 +7,19 @@
 First, set an environment variable for the Divvi Up account and an API token. The initial token will be created when an account is created.
 
 ```
-export TOKEN=YOUR_TOKEN_HERE
+export DIVVIUP_TOKEN=YOUR_TOKEN_HERE
 ```
 
 Test the token by listing all accounts.
 
 ```
-divviup --token $TOKEN account list
+divviup account list
 ```
 
 List the aggregators and identify the ID of both a leader and a helper.
 
 ```
-divviup --token $TOKEN aggregator list
+divviup aggregator list
 ```
 
 ```
@@ -87,7 +87,7 @@ export HELPERID=96301951-c848-4a57-b4f5-32812e4db1be
 Next, generate a collector-credential for the task. The collector credential will be used by the collector to export the aggregated statistics.
 
 ```
-divviup --token $TOKEN collector-credential generate
+divviup collector-credential generate --save
 ```
 
 ```
@@ -129,7 +129,7 @@ export COLLECTORID=0a0f8ea8-b603-4416-b138-b7f217153bb7
 Create the the histogram task. In this case the task is a set of values from 0 to 10 for use in collecting an net-promoter score for a survey.
 
 ```
- divviup --token $TOKEN task create --name net-promoter-score \
+ divviup task create --name net-promoter-score \
  --leader-aggregator-id $LEADERID --helper-aggregator-id $HELPERID \
  --collector-credential-id $COLLECTORID \
  --vdaf histogram --categorical-buckets 0,1,2,3,4,5,6,7,8,9,10 \
@@ -191,7 +191,7 @@ Upload a random set of 150 metrics.
 ```
 for i in {1..150}; do
   value=$(( $RANDOM % 10 ))
-  divviup dap-client --task-id $TASKID --vdaf histogram --value 7
+  divviup dap-client upload --task-id $TASKID  --value $value;
 done
 ```
 
