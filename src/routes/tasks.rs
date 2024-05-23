@@ -155,7 +155,7 @@ pub async fn delete(
         // load based on this task because we've ensured that the leader will stop.
         let _ = update
             .update_aggregator_expiration(
-                task.leader_aggregator(&db).await?,
+                task.helper_aggregator(&db).await?,
                 &task.id,
                 &client,
                 crypter,
