@@ -226,7 +226,7 @@ impl Resource {
             Resource::Account(action) => action.run(account_id, client, output).await,
             Resource::ApiToken(action) => action.run(account_id, client, output).await,
             Resource::Task(action) => action.run(account_id, client, output).await,
-            Resource::DapClient(action) => action.run(account_id, client, output).await,
+            Resource::DapClient(action) => action.run(account_id, client).await,
             Resource::Aggregator(action) => action.run(account_id, client, output).await,
             Resource::Membership(action) => action.run(account_id, client, output).await,
             Resource::CollectorCredential(action) => action.run(account_id, client, output).await,
