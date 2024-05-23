@@ -37,7 +37,8 @@ function UploadMetrics({ task }: { task: Promise<Task> }) {
             {(task: Task) => (
               <ListGroup variant="flush">
                 <ListGroup.Item>
-                  Successful Uploads: {task.report_counter_success}
+                  Successful Uploads:{" "}
+                  {numberFormat.format(task.report_counter_success)}
                 </ListGroup.Item>
                 <FailedMetric
                   name="Interval Collected Failure"
