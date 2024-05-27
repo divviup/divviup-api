@@ -43,8 +43,8 @@ futures-lite = "2.3.0"
 git-version = "0.3.9"
 janus_messages = "0.7.8"
 log = "0.4.21"
-opentelemetry = { version = "0.22.0", features = ["metrics", "logs"] }
-opentelemetry-prometheus = { version = "0.15.0", features = [
+opentelemetry = { version = "0.23.0", features = ["metrics", "logs"] }
+opentelemetry-prometheus = { version = "0.16.0", features = [
         "prometheus-encoding",
 ] }
 prio = "0.16.4"
@@ -92,9 +92,9 @@ typenum = "1.17.0"
 url = "2.5.0"
 uuid = { version = "1.8.0", features = ["v4", "fast-rng", "serde"] }
 validator = { version = "0.18.1", features = ["derive"] }
-trillium-opentelemetry = { version = "0.7.0", default-features = false, features = ["metrics"] }
-opentelemetry_sdk = { version = "0.22.1", features = ["rt-tokio", "logs", "metrics"] }
-opentelemetry-otlp = { version = "0.15.0", optional = true }
+trillium-opentelemetry = { version = "0.8.0", default-features = false, features = ["metrics"] }
+opentelemetry_sdk = { version = "0.23.0", features = ["rt-tokio", "logs", "metrics"] }
+opentelemetry-otlp = { version = "0.16.0", optional = true }
 
 [dependencies.oauth2]
 version = "4.4.2"
