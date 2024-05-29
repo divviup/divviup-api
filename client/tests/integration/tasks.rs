@@ -141,6 +141,24 @@ async fn delete_task(app: Arc<DivviupApi>, account: Account, client: DivviupClie
 }
 
 #[test(harness = with_configured_client)]
+async fn force_delete_task(
+    app: Arc<DivviupApi>,
+    account: Account,
+    client: DivviupClient,
+) -> TestResult {
+    let task = fixtures::task(&app, &account).await;
+
+    let response_tasks = client.tasks(account.id).await?;
+    assert!(!response_tasks.is_empty());
+
+    client.force_delete_task(&task.id).await?;
+
+    let response_tasks = client.tasks(account.id).await?;
+    assert!(response_tasks.is_empty());
+    Ok(())
+}
+
+#[test(harness = with_configured_client)]
 async fn collector_auth_tokens_no_token_hash(
     app: Arc<DivviupApi>,
     account: Account,
