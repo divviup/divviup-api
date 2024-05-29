@@ -292,6 +292,11 @@ impl DivviupClient {
         self.delete(&format!("api/tasks/{task_id}")).await
     }
 
+    pub async fn force_delete_task(&self, task_id: &str) -> ClientResult<()> {
+        self.delete(&format!("api/tasks/{task_id}?force=true"))
+            .await
+    }
+
     pub async fn api_tokens(&self, account_id: Uuid) -> ClientResult<Vec<ApiToken>> {
         self.get(&format!("api/accounts/{account_id}/api_tokens"))
             .await

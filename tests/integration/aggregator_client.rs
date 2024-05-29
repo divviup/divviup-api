@@ -3,7 +3,6 @@ use divviup_api::{
     clients::AggregatorClient,
 };
 use test_support::{assert_eq, test, *};
-use trillium::Handler;
 
 #[test(harness = with_client_logs)]
 async fn get_task_ids(app: DivviupApi, client_logs: ClientLogs) -> TestResult {

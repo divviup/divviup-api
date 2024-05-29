@@ -4,12 +4,14 @@ use crate::{
     entity::{Account, NewTask, Task, TaskColumn, Tasks, UpdateTask},
     Crypter, Db, Error, Permissions, PermissionsActor,
 };
+use querystrong::QueryStrong;
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, EntityTrait, IntoActiveModel, ModelTrait,
     QueryFilter,
 };
 use std::time::Duration;
 use time::OffsetDateTime;
+use tokio::join;
 use tracing::warn;
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json, State};
@@ -123,6 +125,12 @@ pub async fn delete(
     conn: &mut Conn,
     (task, client, db): (Task, State<Client>, Db),
 ) -> Result<impl Handler, Error> {
+    let params = QueryStrong::parse(conn.querystring()).unwrap_or_default();
+    let force = params
+        .get_str("force")
+        .and_then(|param| param.parse().ok())
+        .unwrap_or(false);
+
     if task.deleted_at.is_some() {
         return Ok(Status::NoContent);
     }
@@ -136,32 +144,30 @@ pub async fn delete(
     if task.expiration.is_none() || task.expiration > Some(now) {
         let update = UpdateTask::expiration(Some(now));
 
-        // The leader aggregator drives DAP, so we _must_ succeed in setting its expiration.
-        update
-            .update_aggregator_expiration(
+        let (leader_result, helper_result) = join!(
+            update.update_aggregator_expiration(
                 task.leader_aggregator(&db).await?,
                 &task.id,
                 &client,
                 crypter,
-            )
-            .await?;
-
-        // Expiry helper-side is best-effort. It's plausible that the user is deleting tasks to a
-        // BYOH that no longer exists, so we don't want to irritate them by forcing them to bring
-        // the BYOH back up.
-        //
-        // If we fail to set expiry transiently, e.g. due to temporary server outage, it's no big
-        // deal, because the leader is what drives the protocol forward. The helper shouldn't incur
-        // load based on this task because we've ensured that the leader will stop.
-        let _ = update
-            .update_aggregator_expiration(
+            ),
+            update.update_aggregator_expiration(
                 task.helper_aggregator(&db).await?,
                 &task.id,
                 &client,
                 crypter,
             )
-            .await
-            .map_err(|err| warn!(?err, "failed to expire helper-side task"));
+        );
+
+        if force {
+            let _ = leader_result
+                .map_err(|err| warn!(?err, "failed to expire leader-side task, ignoring"));
+            let _ = helper_result
+                .map_err(|err| warn!(?err, "failed to expire helper-side task, ignoring"));
+        } else {
+            leader_result?;
+            helper_result?;
+        }
 
         am.expiration = ActiveValue::Set(Some(now));
     }

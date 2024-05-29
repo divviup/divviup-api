@@ -54,7 +54,7 @@ pub struct DivviupApi {
 }
 
 impl DivviupApi {
-    async fn init(&mut self, info: &mut Info) {
+    pub async fn init(&mut self, info: &mut Info) {
         *info.server_description_mut() = format!("divviup-api {}", env!("CARGO_PKG_VERSION"));
         *info.listener_description_mut() = format!(
             "api url: {}\n             app url: {}\n",

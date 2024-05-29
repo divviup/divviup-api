@@ -59,7 +59,12 @@ pub enum TaskAction {
     Rename { task_id: String, name: String },
 
     /// delete a task
-    Delete { task_id: String },
+    Delete {
+        task_id: String,
+        /// delete the task even if the aggregators are unreachable
+        #[arg(long, action)]
+        force: bool,
+    },
 
     /// set the expiration date of a task
     SetExpiration {
@@ -171,7 +176,13 @@ impl TaskAction {
             TaskAction::CollectorAuthTokens { task_id } => {
                 output.display(client.task_collector_auth_tokens(&task_id).await?)
             }
-            TaskAction::Delete { task_id } => client.delete_task(&task_id).await?,
+            TaskAction::Delete { task_id, force } => {
+                if force {
+                    client.force_delete_task(&task_id).await?
+                } else {
+                    client.delete_task(&task_id).await?
+                }
+            }
             TaskAction::SetExpiration {
                 task_id,
                 expiration,

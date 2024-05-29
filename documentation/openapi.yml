@@ -213,6 +213,27 @@ paths:
                 $ref: "#/components/schemas/Task"
         "404":
           $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [tasks]
+      operationId: deleteTask
+      summary: delete a task by id
+      description: delete a task by id
+      parameters:
+        - in: query
+          name: force
+          schema:
+            type: boolean
+          required: false
+          description: >-
+            forces deletion of the task, even if task's aggregators are unreachable. this is a
+            dangerous operation!
+      responses:
+        "204":
+          description: Successful operation
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
 
   /tasks/{task_id}/collector_auth_tokens:
     get:

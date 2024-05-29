@@ -888,7 +888,9 @@ mod update {
 }
 
 mod delete {
+    use divviup_api::DivviupApi;
     use janus_messages::Time as JanusTime;
+    use test_support::tracing::install_test_trace_subscriber;
 
     use super::{assert_eq, test, *};
 
@@ -943,6 +945,45 @@ mod delete {
         let task_reload_2 = task.reload(app.db()).await?.unwrap();
         assert_eq!(task_reload.deleted_at, task_reload_2.deleted_at);
         assert_eq!(client_logs_len, client_logs.len());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn force() -> TestResult {
+        install_test_trace_subscriber();
+        let client_logs = ClientLogs::default();
+        let mut app = DivviupApi::new(config((
+            client_logs.clone(),
+            // Stub out aggregator API mocks to simulate a FUBAR aggregator.
+            |conn: Conn| async move { conn.with_status(Status::InternalServerError) },
+        )))
+        .await;
+        set_up_schema(app.db()).await;
+        let mut info = "testing".into();
+        app.init(&mut info).await;
+
+        let (user, account, ..) = fixtures::member(&app).await;
+        let task = fixtures::task(&app, &account).await;
+
+        let conn = delete(format!("/api/tasks/{}?force=true", task.id))
+            .with_api_headers()
+            .with_state(user.clone())
+            .run_async(&app)
+            .await;
+        assert_status!(conn, Status::NoContent);
+        let task_reload = task.reload(app.db()).await?.unwrap();
+        assert!(task_reload.expiration.is_some());
+        assert!(task_reload.expiration <= Some(OffsetDateTime::now_utc()));
+        assert!(task_reload.deleted_at.is_some());
+        assert!(task_reload.deleted_at <= Some(OffsetDateTime::now_utc()));
+
+        let logs = dbg!(client_logs.logs());
+        let [leader, helper] = &logs[..] else {
+            panic!("expected exactly two requests");
+        };
+        assert_eq!(leader.response_status, Status::InternalServerError);
+        assert_eq!(helper.response_status, Status::InternalServerError);
+
         Ok(())
     }
 
