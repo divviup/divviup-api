@@ -154,6 +154,15 @@ pub enum Error {
 
     #[error(transparent)]
     CodecError(#[from] CodecError),
+
+    #[error("message encoding error: {0}")]
+    JanusMessages(#[from] janus_messages::Error),
+
+    #[error("Janus client error: {0}")]
+    JanusClient(#[from] janus_client::Error),
+
+    #[error("VDAF error: {0}")]
+    Vdaf(#[from] prio::vdaf::VdafError),
 }
 
 pub type CliResult<T = ()> = Result<T, Error>;

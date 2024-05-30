@@ -1,20 +1,20 @@
-use std::str::FromStr;
-use url::Url;
-use janus_client;
-use janus_messages::{Duration, TaskId};
-use prio::vdaf::prio3::{Prio3Histogram, Prio3SumVec, Prio3Sum, Prio3Count};
 use crate::{CliResult, DetermineAccountId, Error};
 use clap::Subcommand;
 use divviup_client::{self, Histogram, Protocol};
+use janus_messages::Duration;
+use prio::vdaf::prio3::{Prio3Count, Prio3Histogram, Prio3Sum, Prio3SumVec};
+use tokio::try_join;
 
 #[derive(Subcommand, Debug)]
 pub enum DapClientAction {
-    /// create a new task for the target account
+    /// upload a report
     Upload {
+        /// DAP task to upload to, as an unpadded Base64, URL-safe encoded string.
         #[arg(long)]
         task_id: String,
+        /// The measurement to upload.
         #[arg(long)]
-        value: String,
+        measurement: String,
     },
 }
 
@@ -27,122 +27,136 @@ impl DapClientAction {
         let account_id = account_id.await?;
 
         match self {
-            DapClientAction::Upload { task_id, value } => {
-                let task = client.task(&task_id).await?;
-
-                let aggregators = client.aggregators(account_id).await?;
+            DapClientAction::Upload {
+                task_id,
+                measurement,
+            } => {
+                let (task, aggregators) =
+                    try_join!(client.task(&task_id), client.aggregators(account_id))?;
 
                 if !aggregators.iter().all(|a| a.protocol == Protocol::Dap09) {
                     return Err(Error::Other("unable to handle protocol version".into()));
                 }
 
-                let mut leader_url: Option<Url> = None;
-                let mut helper_url: Option<Url> = None;
+                let leader_url = aggregators
+                    .iter()
+                    .find(|a| a.id == task.leader_aggregator_id)
+                    .map(|a| a.dap_url.clone())
+                    .ok_or_else(|| Error::Other("leader URL unset".into()))?;
 
-                for a in &aggregators {
-                    if a.id == task.leader_aggregator_id {
-                        leader_url = Some(a.dap_url.clone());
-                    }
-                    if a.id == task.helper_aggregator_id {
-                        helper_url = Some(a.dap_url.clone());
-                    }
-                }
-                if leader_url.is_none() {
-                    return Err(Error::Other("leader URL unset".into()));
-                }
-                if helper_url.is_none() {
-                    return Err(Error::Other("leader URL unset".into()));
-                }
+                let helper_url = aggregators
+                    .iter()
+                    .find(|a| a.id == task.helper_aggregator_id)
+                    .map(|a| a.dap_url.clone())
+                    .ok_or_else(|| Error::Other("helper URL unset".into()))?;
 
                 match task.vdaf {
                     divviup_client::Vdaf::Count => {
                         let client = janus_client::Client::new(
-                            TaskId::from_str(&task_id).unwrap(),
-                            leader_url.unwrap(),
-                            helper_url.unwrap(),
+                            task_id.parse()?,
+                            leader_url,
+                            helper_url,
                             Duration::from_seconds(task.time_precision_seconds as u64),
-                            Prio3Count::new_count(2).unwrap(),
+                            Prio3Count::new_count(2)?,
                         )
-                        .await
-                        .unwrap();
-                        let v = bool::from_str(&value).unwrap();
-                        client.upload(&v).await.unwrap();
-                        println!("uploaded measurement: {}", &value);
+                        .await?;
+                        let v = measurement.parse().map_err(|e| {
+                            Error::Other(format!("cannot parse measurement as boolean: {e:?}"))
+                        })?;
+                        client.upload(&v).await?;
                     }
-                    divviup_client::Vdaf::Sum{bits} => {
+                    divviup_client::Vdaf::Sum { bits } => {
                         let client = janus_client::Client::new(
-                            TaskId::from_str(&task_id).unwrap(),
-                            leader_url.unwrap(),
-                            helper_url.unwrap(),
+                            task_id.parse()?,
+                            leader_url,
+                            helper_url,
                             Duration::from_seconds(task.time_precision_seconds as u64),
-                            Prio3Sum::new_sum(2, bits as usize).unwrap(),
+                            Prio3Sum::new_sum(2, bits as usize)?,
                         )
-                        .await
-                        .unwrap();
-                        let v = u128::from_str(&value).unwrap();
-                        client.upload(&v).await.unwrap();
-                        println!("uploaded measurement: {}", &value);
+                        .await?;
+                        let v = measurement.parse().map_err(|e| {
+                            Error::Other(format!("cannot parse measurement as number: {e:?}"))
+                        })?;
+                        client.upload(&v).await?;
                     }
-                    divviup_client::Vdaf::SumVec { bits, length, chunk_length } => {
+                    divviup_client::Vdaf::SumVec {
+                        bits,
+                        length,
+                        chunk_length,
+                    } => {
+                        // Chunk length should always be set for DAP-09 tasks
+                        let chunk_length = chunk_length.ok_or_else(|| {
+                            Error::Other(
+                                "task's VDAF configuration does not provide a chunk length".into(),
+                            )
+                        })?;
                         let client = janus_client::Client::new(
-                            TaskId::from_str(&task_id).unwrap(),
-                            leader_url.unwrap(),
-                            helper_url.unwrap(),
+                            task_id.parse()?,
+                            leader_url,
+                            helper_url,
                             Duration::from_seconds(task.time_precision_seconds as u64),
-                            Prio3SumVec::new_sum_vec(2, bits as usize, length as usize, chunk_length.unwrap() as usize).unwrap(),
+                            Prio3SumVec::new_sum_vec(
+                                2,
+                                bits as usize,
+                                length as usize,
+                                chunk_length as usize,
+                            )?,
                         )
-                        .await
-                        .unwrap();
-                        let v: Vec<u128> = value
+                        .await?;
+                        let v = measurement
                             .split(',')
-                            .map(|s| u128::from_str(s.trim()).unwrap())
-                            .collect();
-                        client.upload(&v).await.unwrap();
-                        println!("uploaded measurement: {}", &value);
+                            .map(|s| s.trim().parse())
+                            .collect::<Result<_, _>>()
+                            .map_err(|e| {
+                                Error::Other(format!("cannot parse measurement as number: {e:?}"))
+                            })?;
+                        client.upload(&v).await?;
                     }
                     divviup_client::Vdaf::Histogram(Histogram::Categorical {
                         buckets,
                         chunk_length,
                     }) => {
-                        let client = janus_client::Client::new(
-                            TaskId::from_str(&task_id).unwrap(),
-                            leader_url.unwrap(),
-                            helper_url.unwrap(),
-                            Duration::from_seconds(task.time_precision_seconds as u64),
-                            Prio3Histogram::new_histogram(
-                                2,
-                                buckets.len(),
-                                chunk_length.unwrap() as usize,
+                        // Chunk length should always be set for DAP-09 tasks
+                        let chunk_length = chunk_length.ok_or_else(|| {
+                            Error::Other(
+                                "task's VDAF configuration does not provide a chunk length".into(),
                             )
-                            .unwrap(),
+                        })?;
+                        let client = janus_client::Client::new(
+                            task_id.parse()?,
+                            leader_url,
+                            helper_url,
+                            Duration::from_seconds(task.time_precision_seconds as u64),
+                            Prio3Histogram::new_histogram(2, buckets.len(), chunk_length as usize)?,
                         )
-                        .await
-                        .unwrap();
-                        let v = usize::from_str(&value).unwrap();
-                        client.upload(&v).await.unwrap();
-                        println!("uploaded measurement: {}", &value);
+                        .await?;
+                        let v = measurement.parse().map_err(|e| {
+                            Error::Other(format!("cannot parse measurement as number: {e:?}"))
+                        })?;
+                        client.upload(&v).await?;
                     }
                     divviup_client::Vdaf::Histogram(Histogram::Continuous {
                         buckets,
                         chunk_length,
                     }) => {
-                        let client = janus_client::Client::new(
-                            TaskId::from_str(&task_id).unwrap(),
-                            leader_url.unwrap(),
-                            helper_url.unwrap(),
-                            Duration::from_seconds(task.time_precision_seconds as u64),
-                            Prio3Histogram::new_histogram(
-                                2,
-                                buckets.len(),
-                                chunk_length.unwrap() as usize,
+                        // Chunk length should always be set for DAP-09 tasks
+                        let chunk_length = chunk_length.ok_or_else(|| {
+                            Error::Other(
+                                "task's VDAF configuration does not provide a chunk length".into(),
                             )
-                            .unwrap(),
+                        })?;
+                        let client = janus_client::Client::new(
+                            task_id.parse()?,
+                            leader_url,
+                            helper_url,
+                            Duration::from_seconds(task.time_precision_seconds as u64),
+                            Prio3Histogram::new_histogram(2, buckets.len(), chunk_length as usize)?,
                         )
-                        .await
-                        .unwrap();
-                        let v = usize::from_str(&value).unwrap();
-                        client.upload(&v).await.unwrap();
-                        println!("uploaded measurement: {}", &value);
+                        .await?;
+                        let v = measurement.parse().map_err(|e| {
+                            Error::Other(format!("cannot parse measurement as number: {e:?}"))
+                        })?;
+                        client.upload(&v).await?;
                     }
                     _ => {
                         return Err(Error::Other("No matching VDAF".into()));

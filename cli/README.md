@@ -1,6 +1,6 @@
 ## divviup - the Divvi Up command line tool
 
-`divviup` is a command line (CLI) tool for doing all basic operations on both the Divvi Up API and Distributed Aggregation Protocol (DAP) API endpoints. See `divviup --help` for details on all of the commands.
+`divviup` is a command line (CLI) tool for doing all basic operations on both the Divvi Up API and Distributed Aggregation Protocol (DAP) API endpoints. It's only likely to work if the leader aggregator is [Janus](https://github.com/divviup/janus). See `divviup --help` for details on all of the commands.
 
 ### Command Line Tutorial
 
@@ -194,6 +194,8 @@ for i in {1..150}; do
   divviup dap-client upload --task-id $TASKID  --value $value;
 done
 ```
+
+TODO(timg) fill in guide for collecting aggregate result
 
 ```
 
