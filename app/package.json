@@ -22,7 +22,7 @@
     "react-syntax-highlighter": "^15.5.0",
     "swagger-ui-react": "=5.17.12",
     "use-interval": "^1.4.0",
-    "web-vitals": "^4.0.0"
+    "web-vitals": "^4.0.1"
   },
   "scripts": {
     "analyze": "source-map-explorer 'build/assets/*.js'",
