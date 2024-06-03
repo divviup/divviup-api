@@ -4927,9 +4927,9 @@ dependencies = [
 
 [[package]]
 name = "trillium"
-version = "0.2.19"
+version = "0.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01c7180eac36666f14504c5a8606d027154a8e3a4704bd0acc69a13f56c202b6"
+checksum = "b84b5b14b3b2dda42a660fd7476a00f25c7565c4f1dc63b4322a7855a1c5384f"
 dependencies = [
  "async-trait",
  "log",
@@ -4938,9 +4938,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-api"
-version = "0.2.0-rc.11"
+version = "0.2.0-rc.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e9490fa41645e61efc5359bdea19686c71df855603361606a4afb501fec6038"
+checksum = "87ac0b2a746f70736c3b1c78078d361d71a1705121f2b134a791d50de2a4f78d"
 dependencies = [
  "log",
  "mime",
@@ -4965,9 +4965,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-client"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "849934ffb43e2601ad74d611295bee9dae611a13700e03a5c4223ad82ddb288c"
+checksum = "c6977db194636278cb7b7397887066885e35a040c7e16312c10e29780372a6c5"
 dependencies = [
  "crossbeam-queue",
  "dashmap",
@@ -4987,9 +4987,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-compression"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8e8420639515883a138cc10c260c89d5e97297a86922ef9f2470bdba925ec23"
+checksum = "3ba60c4bdb74196654425381255b3e1e6a0e10955a9bcbd0db474b82ad3b6c1d"
 dependencies = [
  "async-compression",
  "futures-lite 2.3.0",
@@ -5031,9 +5031,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-http"
-version = "0.3.16"
+version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a18d82a9418c6fc1a872bc163fffd49320229edf783cbbb1aa62ba49f517cfad"
+checksum = "dd4c063660875422d9f85a334931963fc301a3ede9a5c39de7c968ab0801ce33"
 dependencies = [
  "encoding_rs",
  "futures-lite 2.3.0",
@@ -5212,9 +5212,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-testing"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccbf2cb1fe8f280ace56bb68ae3e6c969437d7b0c74386020c84d4790fe2ccf3"
+checksum = "4c6c5d4d9d6f6844131f166cbe4d779894f09f9b846945ab2024272bcd6e198c"
 dependencies = [
  "async-channel 2.1.1",
  "async-dup",
