@@ -39,7 +39,7 @@ pub use janus_messages::{
 };
 pub use membership::Membership;
 pub use protocol::Protocol;
-pub use task::{Histogram, NewTask, Task, Vdaf};
+pub use task::{Histogram, NewTask, SumVec, Task, Vdaf};
 pub use time::OffsetDateTime;
 pub use trillium_client;
 pub use trillium_client::Client;

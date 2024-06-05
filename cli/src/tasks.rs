@@ -1,9 +1,8 @@
-use std::time::SystemTime;
-
 use crate::{CliResult, DetermineAccountId, Error, Output};
 use clap::Subcommand;
-use divviup_client::{DivviupClient, Histogram, NewTask, Uuid, Vdaf};
+use divviup_client::{DivviupClient, Histogram, NewTask, SumVec, Uuid, Vdaf};
 use humantime::{Duration, Timestamp};
+use std::time::SystemTime;
 use time::OffsetDateTime;
 
 #[derive(clap::ValueEnum, Clone, Debug)]
@@ -143,11 +142,9 @@ impl TaskAction {
                         length: length.unwrap(),
                         chunk_length,
                     },
-                    VdafName::SumVec => Vdaf::SumVec {
-                        bits: bits.unwrap(),
-                        length: length.unwrap(),
-                        chunk_length,
-                    },
+                    VdafName::SumVec => {
+                        Vdaf::SumVec(SumVec::new(bits.unwrap(), length.unwrap(), chunk_length))
+                    }
                 };
 
                 let time_precision_seconds = time_precision.as_secs();

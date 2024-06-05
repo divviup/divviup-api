@@ -1454,6 +1454,7 @@ dependencies = [
 name = "divviup-cli"
 version = "0.3.7"
 dependencies = [
+ "anyhow",
  "base64 0.22.1",
  "clap",
  "colored",
@@ -1464,6 +1465,7 @@ dependencies = [
  "hpke-dispatch",
  "humantime",
  "janus_client",
+ "janus_collector",
  "janus_messages",
  "prio",
  "rand",
@@ -1491,6 +1493,7 @@ dependencies = [
  "janus_messages",
  "log",
  "pad-adapter",
+ "prio",
  "serde",
  "serde_json",
  "test-support",
@@ -2491,6 +2494,30 @@ dependencies = [
  "prio",
  "rand",
  "reqwest",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "janus_collector"
+version = "0.7.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0cec6e61077ad921a4f772aaed5579e38dd3b04c42aa870449437f2c8504960"
+dependencies = [
+ "backoff",
+ "chrono",
+ "derivative",
+ "hpke-dispatch",
+ "janus_core",
+ "janus_messages",
+ "prio",
+ "rand",
+ "reqwest",
+ "retry-after",
+ "serde",
+ "serde_json",
  "thiserror",
  "tokio",
  "tracing",
@@ -3657,6 +3684,17 @@ dependencies = [
  "web-sys",
  "webpki-roots 0.26.1",
  "winreg",
+]
+
+[[package]]
+name = "retry-after"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0a2a3fe45c9b89f416bc92174669d954594e152d158df845e6df173a9b7aed4"
+dependencies = [
+ "chrono",
+ "http 1.1.0",
+ "thiserror",
 ]
 
 [[package]]
