@@ -2,6 +2,25 @@ use crate::harness::{assert_eq, test, *};
 use divviup_client::NewAggregator;
 
 #[test(harness = with_configured_client)]
+async fn show_aggregator(
+    app: Arc<DivviupApi>,
+    account: Account,
+    client: DivviupClient,
+) -> TestResult {
+    let aggregators = [
+        fixtures::aggregator(&app, Some(&account)).await,
+        fixtures::aggregator(&app, Some(&account)).await,
+    ];
+
+    for aggregator in aggregators {
+        let response = client.aggregator(aggregator.id).await?;
+        assert_same_json_representation(&aggregator, &response);
+    }
+
+    Ok(())
+}
+
+#[test(harness = with_configured_client)]
 async fn aggregator_list(
     app: Arc<DivviupApi>,
     account: Account,
