@@ -235,7 +235,7 @@ impl DapClientAction {
                         duration.to_std().map_err(|err| Error::Anyhow(err.into()))?
                     );
                     println!("Aggregation result: {:?}", collection.aggregate_result());
-                    println!("collection: {collection:?}");
+                    println!("Collection: {collection:?}");
 
                     Ok(())
                 })

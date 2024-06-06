@@ -122,7 +122,7 @@ export COLLECTOR_CREDENTIAL_PATH=/your/current/directory/collector-credential-<s
 export COLLECTOR_ID=0a0f8ea8-b603-4416-b138-b7f217153bb7
 ```
 
-Create the the histogram task. In this case the task is a set of values from 0 to 10 for use in collecting an net-promoter score for a survey.
+Create the the histogram task. In this case the task is a set of values from 0 to 10 for use in collecting a net-promoter score for a survey.
 
 ```sh
  divviup task create --name net-promoter-score \
