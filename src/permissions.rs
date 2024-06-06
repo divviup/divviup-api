@@ -69,7 +69,7 @@ impl FromConn for PermissionsActor {
         };
 
         if let Some(actor) = &actor {
-            conn.set_state(actor.clone());
+            conn.insert_state(actor.clone());
         }
 
         actor

@@ -23,7 +23,7 @@ impl FromConn for Aggregator {
             Ok(Some(aggregator)) => actor.if_allowed(conn.method(), aggregator),
             Ok(None) => None,
             Err(error) => {
-                conn.set_state(Error::from(error));
+                conn.insert_state(Error::from(error));
                 None
             }
         }

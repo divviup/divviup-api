@@ -35,7 +35,7 @@ impl FromConn for CollectorCredential {
             Ok(Some(collector_credential)) => actor.if_allowed(conn.method(), collector_credential),
             Ok(None) => None,
             Err(error) => {
-                conn.set_state(Error::from(error));
+                conn.insert_state(Error::from(error));
                 None
             }
         }
