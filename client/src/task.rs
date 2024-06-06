@@ -1,3 +1,4 @@
+use prio::vdaf::prio3::optimal_chunk_length;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -69,11 +70,7 @@ pub enum Vdaf {
     },
 
     #[serde(rename = "sum_vec")]
-    SumVec {
-        bits: u8,
-        length: u64,
-        chunk_length: Option<u64>,
-    },
+    SumVec(SumVec),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
@@ -91,4 +88,51 @@ pub enum Histogram {
         length: u64,
         chunk_length: Option<u64>,
     },
+}
+
+impl Histogram {
+    /// The length of this histogram, i.e. the number of buckets.
+    pub fn length(&self) -> usize {
+        match self {
+            Histogram::Categorical { buckets, .. } => buckets.len(),
+            Histogram::Continuous { buckets, .. } => buckets.len() + 1,
+            Histogram::Length { length, .. } => *length as usize,
+        }
+    }
+
+    /// The chunk length used in the VDAF.
+    pub fn chunk_length(&self) -> usize {
+        match self {
+            Histogram::Categorical { chunk_length, .. } => chunk_length,
+            Histogram::Continuous { chunk_length, .. } => chunk_length,
+            Histogram::Length { chunk_length, .. } => chunk_length,
+        }
+        .map(|c| c as usize)
+        .unwrap_or_else(|| optimal_chunk_length(self.length()))
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq)]
+pub struct SumVec {
+    pub bits: u8,
+    pub length: u64,
+    chunk_length: Option<u64>,
+}
+
+impl SumVec {
+    /// Create a new SumVec
+    pub fn new(bits: u8, length: u64, chunk_length: Option<u64>) -> Self {
+        Self {
+            bits,
+            length,
+            chunk_length,
+        }
+    }
+
+    /// The chunk length used in the VDAF.
+    pub fn chunk_length(&self) -> usize {
+        self.chunk_length
+            .map(|c| c as usize)
+            .unwrap_or_else(|| optimal_chunk_length(self.bits as usize * self.length as usize))
+    }
 }
