@@ -6,7 +6,8 @@
     nonstandard_style
 )]
 #![warn(clippy::perf, clippy::cargo)]
-#![allow(clippy::needless_pass_by_ref_mut)]
+#![allow(clippy::cargo_common_metadata)]
+#![allow(clippy::multiple_crate_versions)]
 
 pub mod clients;
 mod config;

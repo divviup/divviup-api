@@ -46,7 +46,7 @@ impl FromConn for Task {
             Ok(Some(task)) => actor.if_allowed(conn.method(), task),
             Ok(None) => None,
             Err(error) => {
-                conn.set_state(Error::from(error));
+                conn.insert_state(Error::from(error));
                 None
             }
         }

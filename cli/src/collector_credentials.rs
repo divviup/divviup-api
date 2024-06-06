@@ -145,13 +145,13 @@ impl CollectorCredentialAction {
                     public_key,
                 } = kem.gen_keypair();
 
-                let config_id = id.unwrap_or_else(|| rand::random());
+                let config_id = id.unwrap_or_else(rand::random);
 
                 let hpke_config = HpkeConfig::new(
                     config_id.into(),
-                    (kem as u16).try_into().unwrap(),
-                    (kdf as u16).try_into().unwrap(),
-                    (aead as u16).try_into().unwrap(),
+                    (kem as u16).into(),
+                    (kdf as u16).into(),
+                    (aead as u16).into(),
                     public_key.clone().into(),
                 );
 

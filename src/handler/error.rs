@@ -15,7 +15,7 @@ impl Handler for ErrorHandler {
 
     async fn before_send(&self, mut conn: Conn) -> Conn {
         if let Some(error) = conn.take_state::<ApiError>() {
-            conn.set_state(Error::from(error));
+            conn.insert_state(Error::from(error));
         };
 
         let Some(error) = conn.state().cloned() else {

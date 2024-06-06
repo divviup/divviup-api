@@ -30,7 +30,7 @@ impl FromConn for queue::Model {
         match Entity::find_by_id(id).one(&db).await {
             Ok(job) => job,
             Err(error) => {
-                conn.set_state(Error::from(error));
+                conn.insert_state(Error::from(error));
                 None
             }
         }

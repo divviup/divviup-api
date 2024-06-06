@@ -26,7 +26,7 @@ impl FromConn for Account {
             Ok(Some(account)) => actor.if_allowed(conn.method(), account),
             Ok(None) => None,
             Err(error) => {
-                conn.set_state(Error::from(error));
+                conn.insert_state(Error::from(error));
                 None
             }
         }

@@ -6,6 +6,8 @@
     nonstandard_style
 )]
 #![warn(clippy::perf, clippy::cargo)]
+#![allow(clippy::cargo_common_metadata)]
+#![allow(clippy::multiple_crate_versions)]
 
 mod account;
 mod aggregator;
@@ -373,8 +375,7 @@ impl DivviupClient {
         &self,
         aggregator: NewSharedAggregator,
     ) -> ClientResult<Aggregator> {
-        self.post(&format!("api/aggregators"), Some(&aggregator))
-            .await
+        self.post("api/aggregators", Some(&aggregator)).await
     }
 }
 

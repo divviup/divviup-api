@@ -6,6 +6,8 @@
     nonstandard_style
 )]
 #![warn(clippy::perf, clippy::cargo)]
+#![allow(clippy::cargo_common_metadata)]
+#![allow(clippy::multiple_crate_versions)]
 
 mod accounts;
 mod aggregators;

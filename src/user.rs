@@ -77,7 +77,7 @@ impl FromConn for User {
             .or_else(|| conn.session().get(USER_SESSION_KEY))?;
         let db: &Db = conn.state()?;
         user.populate_admin(db).await;
-        conn.set_state(user.clone());
+        conn.insert_state(user.clone());
         Some(user)
     }
 }

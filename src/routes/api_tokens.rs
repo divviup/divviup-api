@@ -29,7 +29,7 @@ impl FromConn for ApiToken {
             Ok(Some(api_token)) => actor.if_allowed(conn.method(), api_token),
             Ok(None) => None,
             Err(error) => {
-                conn.set_state(Error::from(error));
+                conn.insert_state(Error::from(error));
                 None
             }
         }

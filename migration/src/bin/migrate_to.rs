@@ -109,7 +109,7 @@ async fn migrate_up<M: MigratorTrait>(
                 ),
             }
         }
-        Err(err) if matches!(err, Error::DbNotInitialized) => (
+        Err(Error::DbNotInitialized) => (
             0usize..=target_index,
             // The migration API takes "number of migrations to apply". If we have an
             // uninitialized database, and we want to apply the first migration (index 0),
@@ -215,7 +215,7 @@ enum Error {
     #[error("migration version {0} is newer than the latest applied migration")]
     VersionTooNew(String),
     #[error("error calculating number of migrations, too many migrations?: {0}")]
-    OverflowError(#[from] std::num::TryFromIntError),
+    Overflow(#[from] std::num::TryFromIntError),
     #[error("applied migrations do not match migrations present in this tool")]
     DbNotCompatible,
 }
