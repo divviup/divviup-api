@@ -182,6 +182,10 @@ impl DivviupClient {
         .await
     }
 
+    pub async fn aggregator(&self, aggregator_id: Uuid) -> ClientResult<Aggregator> {
+        self.get(&format!("api/aggregators/{aggregator_id}")).await
+    }
+
     pub async fn aggregators(&self, account_id: Uuid) -> ClientResult<Vec<Aggregator>> {
         self.get(&format!("api/accounts/{account_id}/aggregators"))
             .await

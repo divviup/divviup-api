@@ -1,4 +1,4 @@
-use crate::{CliResult, DetermineAccountId, Error};
+use crate::{CliResult, Error};
 use anyhow::Context;
 use clap::{ArgAction, Args, Subcommand};
 use divviup_client::{self, Protocol};
@@ -151,35 +151,22 @@ pub enum DapClientAction {
 }
 
 impl DapClientAction {
-    pub(crate) async fn run(
-        self,
-        account_id: DetermineAccountId,
-        client: divviup_client::DivviupClient,
-    ) -> CliResult {
-        let account_id = account_id.await?;
-
+    pub(crate) async fn run(self, client: divviup_client::DivviupClient) -> CliResult {
         let task_id = match self {
             DapClientAction::Upload { ref task_id, .. } => task_id,
             DapClientAction::Collect { ref task_id, .. } => task_id,
         };
 
-        let (task, aggregators) = try_join!(client.task(task_id), client.aggregators(account_id))?;
+        let task = client.task(task_id).await?;
         let task_id = task_id.parse().context("failed to parse task ID")?;
         let time_precision = Duration::from_seconds(task.time_precision_seconds as u64);
 
-        let (leader_url, leader_protocol) = aggregators
-            .iter()
-            .find(|a| a.id == task.leader_aggregator_id)
-            .map(|a| (a.dap_url.clone(), a.protocol))
-            .ok_or_else(|| Error::Other("leader URL unset".into()))?;
+        let (leader_aggregator, helper_aggregator) = try_join!(
+            client.aggregator(task.leader_aggregator_id),
+            client.aggregator(task.helper_aggregator_id),
+        )?;
 
-        let (helper_url, helper_protocol) = aggregators
-            .iter()
-            .find(|a| a.id == task.helper_aggregator_id)
-            .map(|a| (a.dap_url.clone(), a.protocol))
-            .ok_or_else(|| Error::Other("helper URL unset".into()))?;
-
-        if ![leader_protocol, helper_protocol]
+        if ![leader_aggregator.protocol, helper_aggregator.protocol]
             .iter()
             .all(|p| p == &Protocol::Dap09)
         {
@@ -192,8 +179,8 @@ impl DapClientAction {
                     let v = janus_vdaf.parse_measurement(measurement).context("failed to parse measurement")?;
                     let client = janus_client::Client::new(
                         task_id,
-                        leader_url,
-                        helper_url,
+                        leader_aggregator.dap_url.clone(),
+                        helper_aggregator.dap_url.clone(),
                         time_precision,
                         janus_vdaf,
                     )
@@ -213,7 +200,7 @@ impl DapClientAction {
                 collect_dispatch!(task.vdaf, query, (janus_query, janus_vdaf) => {
                     let collector = Collector::new(
                         task_id,
-                        leader_url,
+                        leader_aggregator.dap_url.clone(),
                         credential.authentication_token(),
                         credential.hpke_keypair(),
                         janus_vdaf

@@ -4,6 +4,9 @@ use divviup_client::{DivviupClient, NewAggregator, Url, Uuid};
 
 #[derive(Subcommand, Debug)]
 pub enum AggregatorAction {
+    /// Show an aggregator
+    Show { aggregator_id: Uuid },
+
     /// List all aggregators for the target account
     List {
         /// list only shared aggregators
@@ -67,17 +70,17 @@ impl AggregatorAction {
         output: Output,
     ) -> CliResult {
         match self {
-            AggregatorAction::List { shared: true } => {
-                output.display(client.shared_aggregators().await?)
-            }
+            Self::Show { aggregator_id } => output.display(client.aggregator(aggregator_id).await?),
 
-            AggregatorAction::List { shared: false } => {
+            Self::List { shared: true } => output.display(client.shared_aggregators().await?),
+
+            Self::List { shared: false } => {
                 let account_id = account_id.await?;
                 output.display(client.aggregators(account_id).await?)
             }
 
             #[cfg(feature = "admin")]
-            AggregatorAction::Create {
+            Self::Create {
                 name,
                 api_url,
                 bearer_token,
@@ -94,7 +97,7 @@ impl AggregatorAction {
                     .await?,
             ),
 
-            AggregatorAction::Create {
+            Self::Create {
                 name,
                 api_url,
                 bearer_token,
@@ -114,12 +117,12 @@ impl AggregatorAction {
                     .await?,
             ),
 
-            AggregatorAction::Rename {
+            Self::Rename {
                 aggregator_id,
                 name,
             } => output.display(client.rename_aggregator(aggregator_id, &name).await?),
 
-            AggregatorAction::RotateBearerToken {
+            Self::RotateBearerToken {
                 aggregator_id,
                 bearer_token,
             } => output.display(
