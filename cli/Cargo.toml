@@ -9,7 +9,12 @@ version.workspace = true
 description = "Command line utility for divviup.org"
 
 [features]
-default = ["hpke"]
+default = ["common", "aws-lc-rs"]
+common = ["hpke", "trillium-rustls/client", "trillium-rustls/tls12"]
+# Building aws-lc-rs on Windows is challenging at best because of aws-lc's toolchain, so we allow
+# using ring instead
+aws-lc-rs = ["trillium-rustls/aws-lc-rs"]
+ring = ["trillium-rustls/ring"]
 hpke = ["dep:hpke-dispatch", "dep:rand"]
 admin = ["divviup-client/admin"]
 
@@ -22,7 +27,7 @@ anyhow = "1"
 clap = { version = "4.5.4", features = ["derive", "env"] }
 thiserror = "1.0.61"
 divviup-client = { workspace = true }
-trillium-rustls = "0.8.0"
+trillium-rustls = { version = "0.8.0", default-features = false }
 trillium-tokio = "0.4.0"
 serde = "1.0.203"
 email_address = "0.2.4"
