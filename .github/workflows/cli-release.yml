@@ -50,7 +50,7 @@ jobs:
         # Use tag input if available, otherwise parse it out of the git ref
         run: |
           TAG_INPUT=${{ inputs.tag }}
-          echo "tag=${TAG_INPUT:-GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG_INPUT:-${GITHUB_REF/refs\/tags\//}}" >> $GITHUB_OUTPUT
           TRIPLE=`printf '%s-%s' ${{ matrix.arch }} ${{ matrix.target.triple-suffix }}`
           echo "triple=$TRIPLE" >> $GITHUB_OUTPUT
           EXECUTABLE=`printf 'divviup-%s%s' $TRIPLE ${{ matrix.target.extension }}`
