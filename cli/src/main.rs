@@ -189,10 +189,13 @@ impl ClientBin {
 }
 
 pub fn main() -> ExitCode {
-    // Choose aws-lc-rs as the default rustls crypto provider. This is what's currently enabled by
-    // the default Cargo feature. Specifying a default provider here prevents runtime errors if
-    // another dependency also enables the ring feature.
+    // Install a default rustls crypto provider based on enabled features. Specifying a default
+    // provider here prevents runtime errors if another dependency enables a different crypto
+    // provider.
+    #[cfg(feature = "aws-lc-rs")]
     let _ = trillium_rustls::rustls::crypto::aws_lc_rs::default_provider().install_default();
+    #[cfg(feature = "ring")]
+    let _ = trillium_rustls::rustls::crypto::ring::default_provider().install_default();
 
     env_logger::init();
     let args = ClientBin::parse();
