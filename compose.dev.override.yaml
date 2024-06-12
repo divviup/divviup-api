@@ -11,10 +11,8 @@ services:
         RUST_FEATURES: integration-testing
     develop:
       watch:
-        - path: migration
+        - path: src/
           action: rebuild
-          ignore:
-            - README.md
 
   divviup_api_migrate:
     image: !reset null
@@ -27,5 +25,7 @@ services:
         RUST_FEATURES: integration-testing
     develop:
       watch:
-        - path: src/
+        - path: migration
           action: rebuild
+          ignore:
+            - README.md
