@@ -1,0 +1,8 @@
+# Local development-only compose file which builds divviup-api from source. This is not suitable for
+# production!
+
+include:
+  - path:
+    # These files are ordered deliberately so that they will be merged correctly
+    - compose.yaml
+    - compose.dev.override.yaml

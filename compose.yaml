@@ -1,7 +1,7 @@
-# Local development-only compose file. This is not suitable for production!
+# Compose file for bringing up a simple local Divvi Up environment. This is not suitable for production!
 
 x-janus-common: &janus_common
-  image: us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_aggregator:0.7.7
+  image: ${JANUS_AGGREGATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_aggregator:0.7.7}
   restart: always
   healthcheck:
     test: ["CMD", "/bin/sh", "-c", "wget http://0.0.0.0:8000/healthz -O - >/dev/null"]
@@ -12,7 +12,7 @@ x-janus-common: &janus_common
       condition: service_completed_successfully
 
 x-janus-migrate: &janus_migrate
-  image: us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_db_migrator:0.7.7
+  image: ${JANUS_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_db_migrator:0.7.7}
   command:
     - migrate
     - run
@@ -43,13 +43,7 @@ services:
         target: /docker-entrypoint-initdb.d/postgres_init.sql
 
   divviup_api_migrate:
-    build:
-      context: .
-      args:
-        RUST_PROFILE: dev
-        # This isn't strictly required for migrations, but it allows reusing one container image
-        # for both this and the divviup_api service.
-        RUST_FEATURES: integration-testing
+    image: ${DIVVIUP_API_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api:0.3.12}
     entrypoint:
       - /migration
       - up
@@ -58,19 +52,9 @@ services:
     depends_on:
       postgres:
         condition: service_started
-    develop:
-      watch:
-        - path: migration
-          action: rebuild
-          ignore:
-            - README.md
 
   divviup_api:
-    build:
-      context: .
-      args:
-        RUST_PROFILE: dev
-        RUST_FEATURES: integration-testing
+    image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api:0.3.12}
     ports:
       - "8080:8080"
     environment:
@@ -89,10 +73,6 @@ services:
     depends_on:
       divviup_api_migrate:
         condition: service_completed_successfully
-    develop:
-      watch:
-        - path: src/
-          action: rebuild
 
   divviup_api_vite:
     build:
