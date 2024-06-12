@@ -33,3 +33,16 @@ jobs:
           build-args: |
             GIT_REVISION=${{ steps.git.outputs.GIT_REVISION }}
             RUST_FEATURES=${{ matrix.rust-features }}
+      - name: Compose
+        id: compose
+        run: docker compose up --wait --waitfor 120
+        # continue on error so we can inspect containers in the next step
+        continue-on-error: true
+      - name: Inspect containers
+        if: steps.compose.outcome != 'success'
+        run: |
+          docker compose ps
+          for NAME in `docker compose ps --format json | jq -r '.Name'`; do
+            docker inspect $NAME
+          done
+          exit 1
