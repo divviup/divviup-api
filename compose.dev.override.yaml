@@ -1,0 +1,21 @@
+# Overrides for the local development docker compose setup. Meant only to be used by
+# compose.dev.yaml
+
+services:
+  divviup_api:
+    image: !reset null
+    build:
+      context: .
+      args:
+        RUST_PROFILE: dev
+        RUST_FEATURES: integration-testing
+
+  divviup_api_migrate:
+    image: !reset null
+    build:
+      context: .
+      args:
+        RUST_PROFILE: dev
+        # This isn't strictly required for migrations, but it allows reusing one container image
+        # for both this and the divviup_api service.
+        RUST_FEATURES: integration-testing

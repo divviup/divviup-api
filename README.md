@@ -42,16 +42,14 @@ This will get you up and running quickly for development purposes.
 
 1. Clone the repository and navigate to its root.
 1. Execute `echo "http://localhost:8080" >app/public/api_url`
-1. Execute `docker compose watch`.
+1. Execute `docker compose up`.
 1. Navigate in your browser to `http://localhost:8081/`.
 
-`docker compose` will automatically reload containers when you make changes. Data is persisted
-until you `docker compose rm --volumes`.
+Data is persisted until you `docker compose rm --volumes`.
 
 If you want to use image versions besides the defaults, you can use environment variables
 `JANUS_AGGREGATOR_IMAGE`, `JANUS_MIGRATOR_IMAGE`, `DIVVIUP_API_IMAGE` and
-`DIVVIUP_API_MIGRATOR_IMAGE` when invoking `docker compose`. If the tag set for `DIVVIUP_API_IMAGE`
-or `DIVVIUP_API_MIGRATOR_IMAGE` cannot be found, it will be built from local context. For example:
+`DIVVIUP_API_MIGRATOR_IMAGE` when invoking `docker compose`.  For example:
 
 ```bash
 DIVVIUP_API_IMAGE=divviup_api:localversion \
@@ -59,10 +57,18 @@ DIVVIUP_API_IMAGE=divviup_api:localversion \
   docker compose up
 ```
 
-If `divviup_api:localversion` is present in the local Docker repository, it will be used, but it
-will be built otherwise, and then run.
-`us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_aggregator:0.7.18` will be pulled and
-run.
+`divviup_api:localversion` will be pulled from the local Docker repository and
+`us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_aggregator:0.7.18` will be pulled from
+`us-west2-docker.pkg.dev`.
+
+We also provide `compose.dev.yaml`, which will build `divviup-api` from local sources. Try:
+
+```bash
+docker compose -f compose.dev.yaml watch
+```
+
+`docker compose` will automatically reload containers when you make changes. The `JANUS_IMAGE` and
+`JANUS_MIGRATOR_IMAGE` variables are honored by `compose.dev.yaml`.
 
 Two Janus aggregators will be created for you, but are not automatically paired to divviup-api.
 Their information is:
