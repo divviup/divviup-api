@@ -52,12 +52,6 @@ services:
     depends_on:
       postgres:
         condition: service_started
-    develop:
-      watch:
-        - path: migration
-          action: rebuild
-          ignore:
-            - README.md
 
   divviup_api:
     image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/janus-artifacts/divviup-api/divviup_api:0.3.9}
@@ -79,10 +73,6 @@ services:
     depends_on:
       divviup_api_migrate:
         condition: service_completed_successfully
-    develop:
-      watch:
-        - path: src/
-          action: rebuild
 
   divviup_api_vite:
     build:

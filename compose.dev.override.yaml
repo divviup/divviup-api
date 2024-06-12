@@ -9,6 +9,12 @@ services:
       args:
         RUST_PROFILE: dev
         RUST_FEATURES: integration-testing
+    develop:
+      watch:
+        - path: migration
+          action: rebuild
+          ignore:
+            - README.md
 
   divviup_api_migrate:
     image: !reset null
@@ -19,3 +25,7 @@ services:
         # This isn't strictly required for migrations, but it allows reusing one container image
         # for both this and the divviup_api service.
         RUST_FEATURES: integration-testing
+    develop:
+      watch:
+        - path: src/
+          action: rebuild
