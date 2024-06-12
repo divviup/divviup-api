@@ -33,7 +33,11 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          # Do not push in this step so we can push to the private and public repositories
+          # separately in later steps, but do load so that the images will be visible to `docker
+          # push`
           push: false
+          load: true
           tags: "${{ steps.resolve_variables.outputs.PUBLIC_TAG}},${{ steps.resolve_variables.outputs.PRIVATE_TAG }}"
           build-args: |
             GIT_REVISION=${{ steps.resolve_variables.outputs.GIT_REVISION }}
