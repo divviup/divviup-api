@@ -57,7 +57,7 @@ jobs:
           password: ${{ steps.gcp-auth-private.outputs.access_token }}
       - name: Push (private repository)
         run: docker push ${{ steps.resolve_variables.outputs.PRIVATE_TAG }}
-      - id: gcp-auth-private
+      - id: gcp-auth-public
         name: Authenticate to GCP (public repository)
         uses: google-github-actions/auth@v2
         with:
