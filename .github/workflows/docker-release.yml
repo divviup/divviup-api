@@ -20,10 +20,10 @@ jobs:
       - uses: actions/checkout@v4
       - id: resolve_variables
         run: |
-        echo "GIT_REVISION=$(git describe --always --dirty=-modified)" >> $GITHUB_OUTPUT
-        IMAGE=${{ matrix.image.name }}:${GITHUB_REF/refs\/tags\//}
-        echo "PUBLIC_TAG=us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/${IMAGE}" >> $GITHUB_OUTPUT
-        echo "PRIVATE_TAG=us-west2-docker.pkg.dev/janus-artifacts/divviup-api/${IMAGE}" >> $GITHUB_OUTPUT
+          echo "GIT_REVISION=$(git describe --always --dirty=-modified)" >> $GITHUB_OUTPUT
+          IMAGE=${{ matrix.image.name }}:${GITHUB_REF/refs\/tags\//}
+          echo "PUBLIC_TAG=us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/${IMAGE}" >> $GITHUB_OUTPUT
+          echo "PRIVATE_TAG=us-west2-docker.pkg.dev/janus-artifacts/divviup-api/${IMAGE}" >> $GITHUB_OUTPUT
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
