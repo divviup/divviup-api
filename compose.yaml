@@ -43,7 +43,7 @@ services:
         target: /docker-entrypoint-initdb.d/postgres_init.sql
 
   divviup_api_migrate:
-    image: ${DIVVIUP_API_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/janus-artifacts/divviup-api/divviup_api:0.3.9}
+    image: ${DIVVIUP_API_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api:0.3.12}
     entrypoint:
       - /migration
       - up
@@ -54,7 +54,7 @@ services:
         condition: service_started
 
   divviup_api:
-    image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/janus-artifacts/divviup-api/divviup_api:0.3.9}
+    image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api:0.3.12}
     ports:
       - "8080:8080"
     environment:
