@@ -35,7 +35,7 @@ jobs:
             RUST_FEATURES=${{ matrix.rust-features }}
       - name: Compose
         id: compose
-        run: docker compose up --wait --waitfor 120
+        run: docker compose up --wait --wait-timeout 120
         # continue on error so we can inspect containers in the next step
         continue-on-error: true
       - name: Inspect containers
