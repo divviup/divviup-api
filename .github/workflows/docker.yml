@@ -38,7 +38,7 @@ jobs:
       # interesting when feature integration-testing is on, but we may as well exercise both.
       - name: Compose (dev)
         id: compose-dev
-        run: docker compose -f compose.dev.yaml --wait --wait-timeout 120
+        run: docker compose -f compose.dev.yaml up --wait --wait-timeout 120
       - name: Inspect dev containers
         if: ${{ failure() && steps.compose-dev.outcome != 'success' }}
         run: |
