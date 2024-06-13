@@ -49,10 +49,12 @@ jobs:
 
   # Test the non-dev compose, which we use for demo purposes. This pulls images from remote repos,
   # so no need to build anything. Additionally we want coverage across multiple operating systems.
+  # Ideally we'd test on macOS, too, but those runners don't have Docker:
+  # https://github.com/actions/runner-images/issues/2150
   compose:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
