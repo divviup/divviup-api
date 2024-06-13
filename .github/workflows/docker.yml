@@ -58,11 +58,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-          use: true
       - name: Compose
         id: compose
         run: docker compose up --wait --wait-timeout 120
