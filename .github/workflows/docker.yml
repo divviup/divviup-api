@@ -50,7 +50,10 @@ jobs:
   # Test the non-dev compose, which we use for demo purposes. This pulls images from remote repos,
   # so no need to build anything. Additionally we want coverage across multiple operating systems.
   compose:
-    runs-on: [ubuntu-latest, windows-latest, macos-latest]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Compose
