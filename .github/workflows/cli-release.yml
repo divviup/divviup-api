@@ -15,6 +15,23 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  upload-compose-yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Resolve inputs
+        id: resolve-inputs
+        # Use tag input if available, otherwise parse it out of the git ref
+        run: |
+          TAG_INPUT=${{ inputs.tag }}
+          echo "tag=${TAG_INPUT:-${GITHUB_REF/refs\/tags\//}}" >> $GITHUB_OUTPUT
+      - name: Publish
+        env:
+          GH_TOKEN: '${{ secrets.DIVVIUP_GITHUB_AUTOMATION_RELEASE_PAT }}'
+        run: |
+          gh release upload ${{ steps.resolve-inputs.outputs.tag }} compose.yaml
+
   build-cli:
     defaults:
       run:
@@ -65,7 +82,7 @@ jobs:
           strip: true
       - name: Publish
         env:
-            GH_TOKEN: '${{ secrets.DIVVIUP_GITHUB_AUTOMATION_RELEASE_PAT }}'
+          GH_TOKEN: '${{ secrets.DIVVIUP_GITHUB_AUTOMATION_RELEASE_PAT }}'
         run: |
           cp target/${{ steps.resolve-inputs.outputs.triple }}/release/divviup${{ matrix.target.extension }} \
             ./${{ steps.resolve-inputs.outputs.executable }}
