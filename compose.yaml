@@ -54,9 +54,11 @@ services:
         condition: service_started
 
   divviup_api:
-    image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api:0.3.12}
+    image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api_integration_test:0.3.12}
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "wget http://0.0.0.0:8080/health -O - >/dev/null"]
     environment:
       RUST_LOG: info
       AUTH_URL: https://auth.example

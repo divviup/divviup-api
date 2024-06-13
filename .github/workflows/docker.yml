@@ -26,6 +26,7 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           cache-from: |
             type=gha,scope=main-${{ matrix.rust-features }}
             type=gha,scope=${{ github.ref_name }}-${{ matrix.rust-features }}
@@ -33,3 +34,35 @@ jobs:
           build-args: |
             GIT_REVISION=${{ steps.git.outputs.GIT_REVISION }}
             RUST_FEATURES=${{ matrix.rust-features }}
+      # Test the dev compose, which should use the images built earlier. Technically this is only
+      # interesting when feature integration-testing is on, but we may as well exercise both.
+      - name: Compose (dev)
+        id: compose-dev
+        run: docker compose -f compose.dev.yaml up --wait --wait-timeout 120
+      - name: Inspect dev containers
+        if: ${{ failure() && steps.compose-dev.outcome != 'success' }}
+        run: |
+          docker compose ps
+          for NAME in `docker compose ps --format json | jq -r '.Name'`; do
+            docker inspect $NAME
+          done
+
+  # Test the non-dev compose, which we use for demo purposes. This pulls images from remote repos,
+  # so no need to build anything.
+  # Ideally we'd test on macOS and Windows, too, but those runners don't have Docker:
+  # https://github.com/actions/runner-images/issues/2150
+  # https://github.com/actions/runner/issues/904
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compose
+        id: compose
+        run: docker compose up --wait --wait-timeout 120
+      - name: Inspect containers
+        if: ${{ failure() && steps.compose.outcome != 'success' }}
+        run: |
+          docker compose ps
+          for NAME in `docker compose ps --format json | jq -r '.Name'`; do
+            docker inspect $NAME
+          done
