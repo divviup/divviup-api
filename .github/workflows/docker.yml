@@ -52,6 +52,9 @@ jobs:
   # Ideally we'd test on macOS, too, but those runners don't have Docker:
   # https://github.com/actions/runner-images/issues/2150
   compose:
+    defaults:
+      run:
+        shell: bash
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
