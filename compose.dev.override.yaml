@@ -1,14 +1,19 @@
 # Overrides for the local development docker compose setup. Meant only to be used by
 # compose.dev.yaml
 
+x-build: &build
+  build:
+    context: .
+    args:
+      RUST_PROFILE: dev
+      # We don't need both of these features in all three services, but it allows reusing one
+      # container image for both this and the divviup_api service.
+      RUST_FEATURES: integration-testing,admin
+
 services:
   divviup_api:
     image: !reset null
-    build:
-      context: .
-      args:
-        RUST_PROFILE: dev
-        RUST_FEATURES: integration-testing
+    <<: *build
     develop:
       watch:
         - path: src/
@@ -16,16 +21,54 @@ services:
 
   divviup_api_migrate:
     image: !reset null
-    build:
-      context: .
-      args:
-        RUST_PROFILE: dev
-        # This isn't strictly required for migrations, but it allows reusing one container image
-        # for both this and the divviup_api service.
-        RUST_FEATURES: integration-testing
+    <<: *build
     develop:
       watch:
         - path: migration
           action: rebuild
           ignore:
             - README.md
+
+  # TODO(#1096): Move most of this service to compose.yaml once a `divviup_api_integration_test`
+  # built with feature `admin` is released.
+  pair_aggregator:
+    image: !reset null
+    entrypoint:
+      - /divviup
+      - --url=http://localhost:8080
+      - --token=""
+      - aggregator
+      - create
+      - --name=leader
+      - --api-url=http://janus_1_aggregator:8080/aggregator-api
+      - --bearer-token=0000
+      - --first-party
+      - --shared
+    network_mode: service:divviup_api
+    depends_on:
+      divviup_api:
+        condition: service_healthy
+      janus_1_aggregator:
+        condition: service_healthy
+      janus_2_aggregator:
+        condition: service_healthy
+    <<: *build
+    develop:
+      watch:
+        - path: cli/
+          action: rebuild
+        - path: client/
+          action: rebuild
+
+  # Hack: if the last service to be started exits with status 0, then `docker compose up --wait`
+  # treats that as a failure. So we force divviup_api_vite to start last. Another option would be to
+  # add a health check to pair_aggregator as in ([1]), but the timing is brittle (the main process
+  # has to last long enough for the health check to succeed at least once) so it's easier and more
+  # reliable to add this dependency.
+  #
+  # [1]: https://github.com/docker/compose/issues/11774
+  # https://github.com/docker/compose/issues/10596
+  divviup_api_vite:
+    depends_on:
+      pair_aggregator:
+        condition: service_completed_successfully

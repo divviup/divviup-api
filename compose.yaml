@@ -5,6 +5,8 @@ x-janus-common: &janus_common
   restart: always
   healthcheck:
     test: ["CMD", "/bin/sh", "-c", "wget http://0.0.0.0:8000/healthz -O - >/dev/null"]
+    interval: 1s
+    retries: 10
   depends_on:
     janus_1_migrate:
       condition: service_completed_successfully
@@ -59,6 +61,8 @@ services:
       - "8080:8080"
     healthcheck:
       test: ["CMD", "/bin/sh", "-c", "wget http://0.0.0.0:8080/health -O - >/dev/null"]
+      interval: 1s
+      retries: 10
     environment:
       RUST_LOG: info
       AUTH_URL: https://auth.example
