@@ -25,8 +25,8 @@ jobs:
           echo "PUBLIC_TAG=us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/${IMAGE}" >> $GITHUB_OUTPUT
           echo "PRIVATE_TAG=us-west2-docker.pkg.dev/janus-artifacts/divviup-api/${IMAGE}" >> $GITHUB_OUTPUT
           # Join features with , for RUST_FEATURES, but - for cache keys, where commas are illegal
-          echo "CACHE_KEY=${{ join(matrix.rust-features, "-") }}" >> $GITHUB_OUTPUT
-          echo "RUST_FEATURES=${{ join(matrix.rust-features, ",") }}" >> $GITHUB_OUTPUT
+          echo "CACHE_KEY=${{ join(matrix.rust-features, '-') }}" >> $GITHUB_OUTPUT
+          echo "RUST_FEATURES=${{ join(matrix.rust-features, ',') }}" >> $GITHUB_OUTPUT
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
