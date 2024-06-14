@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         image: [
-          { name: "divviup_api", rust_features: ["default"] },
+          { name: "divviup_api", rust-features: ["default"] },
           { name: "divviup_api_integration_test", rust-features: ["integration-testing", "admin"] },
         ]
     permissions:
