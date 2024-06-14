@@ -10,7 +10,7 @@ jobs:
       matrix:
         image: [
           { name: "divviup_api", rust_features: ["default"] },
-          { name: "divviup_api_integration_test", rust_features: ["integration-testing", "admin"] },
+          { name: "divviup_api_integration_test", rust-features: ["integration-testing", "admin"] },
         ]
     permissions:
       id-token: write
