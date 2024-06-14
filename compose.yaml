@@ -45,7 +45,7 @@ services:
         target: /docker-entrypoint-initdb.d/postgres_init.sql
 
   divviup_api_migrate:
-    image: ${DIVVIUP_API_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api:0.3.12}
+    image: ${DIVVIUP_API_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api:0.3.16}
     entrypoint:
       - /migration
       - up
@@ -55,8 +55,30 @@ services:
       postgres:
         condition: service_started
 
+  pair_aggregator:
+    image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api_integration_test:0.3.16}
+    entrypoint:
+      - /divviup
+      - --url=http://localhost:8080
+      - --token=""
+      - aggregator
+      - create
+      - --name=leader
+      - --api-url=http://janus_1_aggregator:8080/aggregator-api
+      - --bearer-token=0000
+      - --first-party
+      - --shared
+    network_mode: service:divviup_api
+    depends_on:
+      divviup_api:
+        condition: service_healthy
+      janus_1_aggregator:
+        condition: service_healthy
+      janus_2_aggregator:
+        condition: service_healthy
+
   divviup_api:
-    image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api_integration_test:0.3.12}
+    image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api_integration_test:0.3.16}
     ports:
       - "8080:8080"
     healthcheck:
@@ -101,6 +123,17 @@ services:
       watch:
         - path: ./app/package.json
           action: rebuild
+    # Hack: if the last service to be started exits with status 0, then `docker compose up --wait`
+    # treats that as a failure. So we force divviup_api_vite to start last. Another option would be
+    # to add a health check to pair_aggregator as in ([1]), but the timing is brittle (the main
+    # process has to last long enough for the health check to succeed at least once) so it's easier
+    # and more reliable to add this dependency.
+    #
+    # [1]: https://github.com/docker/compose/issues/11774
+    # https://github.com/docker/compose/issues/10596
+    depends_on:
+      pair_aggregator:
+        condition: service_completed_successfully
 
   janus_1_migrate:
     <<: *janus_migrate
