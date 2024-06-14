@@ -9,8 +9,8 @@ jobs:
     strategy:
       matrix:
         image: [
-          { name: "divviup_api", rust_features: "default" },
-          { name: "divviup_api_integration_test", rust_features: "integration-testing,admin" },
+          { name: "divviup_api", rust_features: ["default"] },
+          { name: "divviup_api_integration_test", rust_features: ["integration-testing", "admin"] },
         ]
     permissions:
       id-token: write
@@ -24,6 +24,9 @@ jobs:
           IMAGE=${{ matrix.image.name }}:${GITHUB_REF/refs\/tags\//}
           echo "PUBLIC_TAG=us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/${IMAGE}" >> $GITHUB_OUTPUT
           echo "PRIVATE_TAG=us-west2-docker.pkg.dev/janus-artifacts/divviup-api/${IMAGE}" >> $GITHUB_OUTPUT
+          # Join features with , for RUST_FEATURES, but - for cache keys, where commas are illegal
+          echo "CACHE_KEY=${{ join(matrix.rust-features, '-') }}" >> $GITHUB_OUTPUT
+          echo "RUST_FEATURES=${{ join(matrix.rust-features, ',') }}" >> $GITHUB_OUTPUT
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -41,9 +44,9 @@ jobs:
           tags: "${{ steps.resolve_variables.outputs.PUBLIC_TAG}},${{ steps.resolve_variables.outputs.PRIVATE_TAG }}"
           build-args: |
             GIT_REVISION=${{ steps.resolve_variables.outputs.GIT_REVISION }}
-            RUST_FEATURES=${{ matrix.image.rust_features }}
+            RUST_FEATURES=${{ steps.resolve_variables.outputs.RUST_FEATURES }}
           cache-from: |
-            type=gha,scope=main-${{ matrix.image.rust_features }}
+            type=gha,scope=main-${{ steps.resolve_variables.outputs.CACHE_KEY }}
       - id: gcp-auth-private
         name: Authenticate to GCP (private repository)
         uses: google-github-actions/auth@v2

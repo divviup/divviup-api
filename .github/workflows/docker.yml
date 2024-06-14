@@ -10,12 +10,16 @@ jobs:
   build_docker:
     strategy:
       matrix:
-        rust-features: ["default", "integration-testing"]
+        rust-features: [["default"], ["integration-testing" , admin"]]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - id: git
-        run: echo "GIT_REVISION=$(git describe --always --dirty=-modified)" >> $GITHUB_OUTPUT
+      - id: resolve_variables
+        run: |
+          echo "GIT_REVISION=$(git describe --always --dirty=-modified)" >> $GITHUB_OUTPUT
+          # Join features with , for RUST_FEATURES, but - for cache keys, where commas are illegal
+          echo "CACHE_KEY=${{ join(matrix.rust-features, '-') }}" >> $GITHUB_OUTPUT
+          echo "RUST_FEATURES=${{ join(matrix.rust-features, ',') }}" >> $GITHUB_OUTPUT
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -28,12 +32,12 @@ jobs:
           push: false
           load: true
           cache-from: |
-            type=gha,scope=main-${{ matrix.rust-features }}
-            type=gha,scope=${{ github.ref_name }}-${{ matrix.rust-features }}
-          cache-to: type=gha,scope=${{ github.ref_name }}-${{ matrix.rust-features }},mode=max
+            type=gha,scope=main-${{ steps.resolve_variables.outputs.CACHE_KEY }}
+            type=gha,scope=${{ github.ref_name }}-${{ steps.resolve_variables.outputs.CACHE_KEY }}
+          cache-to: type=gha,scope=${{ github.ref_name }}-${{ steps.resolve_variables.outputs.CACHE_KEY }},mode=max
           build-args: |
-            GIT_REVISION=${{ steps.git.outputs.GIT_REVISION }}
-            RUST_FEATURES=${{ matrix.rust-features }}
+            GIT_REVISION=${{ steps.resolve_variables.outputs.GIT_REVISION }}
+            RUST_FEATURES=${{ steps.resolve_variables.outputs.RUST_FEATURES }}
       # Test the dev compose, which should use the images built earlier. Technically this is only
       # interesting when feature integration-testing is on, but we may as well exercise both.
       - name: Compose (dev)
