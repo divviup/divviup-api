@@ -10,7 +10,7 @@ jobs:
   build_docker:
     strategy:
       matrix:
-        rust-features: [["default"], ["integration-testing" , admin"]]
+        rust-features: [["default"], ["integration-testing", admin"]]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,8 +18,8 @@ jobs:
         run: |
           echo "GIT_REVISION=$(git describe --always --dirty=-modified)" >> $GITHUB_OUTPUT
           # Join features with , for RUST_FEATURES, but - for cache keys, where commas are illegal
-          echo "CACHE_KEY=${{ join(matrix.rust-features, '-') }}" >> $GITHUB_OUTPUT
-          echo "RUST_FEATURES=${{ join(matrix.rust-features, ',') }}" >> $GITHUB_OUTPUT
+          echo CACHE_KEY=${{ join(matrix.rust-features, '-') }} >> $GITHUB_OUTPUT
+          echo RUST_FEATURES=${{ join(matrix.rust-features, ',') }} >> $GITHUB_OUTPUT
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
