@@ -10,7 +10,7 @@ jobs:
   build_docker:
     strategy:
       matrix:
-        rust-features: [["default"], ["integration-testing" , admin"]]
+        rust-features: [["default"], ["integration-testing", "admin"]]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
