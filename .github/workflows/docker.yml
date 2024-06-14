@@ -46,9 +46,11 @@ jobs:
       - name: Inspect dev containers
         if: ${{ failure() && steps.compose-dev.outcome != 'success' }}
         run: |
-          docker compose ps
-          for NAME in `docker compose ps --format json | jq -r '.Name'`; do
+          docker compose ps --all
+          for NAME in `docker compose ps --all --format json | jq -r '.Name'`; do
+            echo $NAME
             docker inspect $NAME
+            docker logs $NAME
           done
 
   # Test the non-dev compose, which we use for demo purposes. This pulls images from remote repos,
@@ -66,7 +68,9 @@ jobs:
       - name: Inspect containers
         if: ${{ failure() && steps.compose.outcome != 'success' }}
         run: |
-          docker compose ps
-          for NAME in `docker compose ps --format json | jq -r '.Name'`; do
+          docker compose ps --all
+          for NAME in `docker compose ps --all --format json | jq -r '.Name'`; do
+            echo $NAME
             docker inspect $NAME
+            docker logs $NAME
           done
