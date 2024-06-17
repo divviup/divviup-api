@@ -38,3 +38,27 @@ services:
           action: rebuild
         - path: client/
           action: rebuild
+
+  # In the development context, we serve static assets using Vite and a bind mount, so that changes
+  # to the local assets will immediately be reflected.
+  static_assets:
+    image: !reset null
+    healthcheck: !reset null
+    build:
+      context: .
+      # `develop` cannot be used with an `image` directive, so we need to use a minimal dockerfile
+      # containing the image we need.
+      dockerfile: Dockerfile.vite
+    working_dir: /srv/app
+    volumes:
+     - type: bind
+       source: ./app
+       target: /srv/app
+    entrypoint:
+      - /bin/sh
+      - -c
+      - npm i && npx vite --host=0.0.0.0
+    develop:
+      watch:
+        - path: ./app/package.json
+          action: rebuild
