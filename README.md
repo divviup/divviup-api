@@ -70,13 +70,13 @@ docker compose -f compose.dev.yaml watch
 `docker compose` will automatically reload containers when you make changes. The `JANUS_IMAGE` and
 `JANUS_MIGRATOR_IMAGE` variables are honored by `compose.dev.yaml`.
 
-Two Janus aggregators will be created for you, but are not automatically paired to divviup-api.
-Their information is:
-1. Address: `http://janus_1_aggregator:8080/aggregator-api`, Token: `0000`
-1. Address: `http://janus_2_aggregator:8080/aggregator-api`, Token: `0000`
+An account named `demo` is also automatically created. Two Janus aggregators will be created for
+you, and are automatically paired to divviup-api. Their information is:
 
-If you need to talk to these aggregators from outside compose's network namespace, e.g. with a
-testing client, they are mapped to `localhost:9001` and `localhost:9002`, respectively.
+| Name | Aggregator API address | Aggregator API auth token | Paired with | DAP API outside compose network |
+| ---- | ---------------------- | ------------------------- | ----------- | ------------------------------- |
+| `leader` | `http://janus_1_aggregator:8080/aggregator-api` | `0000` | Shared, first party | `localhost:9001` |
+| `helper` | `http://janus_2_aggregator:8080/aggregator-api` | `0000` | `demo` account | `localhost:9002` |
 
 If using the divviup CLI, consider compiling with the `--features admin` option. Also, set these
 environment variables.
