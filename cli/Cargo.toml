@@ -47,7 +47,7 @@ hpke-dispatch = { version = "0.5.1", features = ["serde"], optional = true }
 rand = { version = "0.8.5", optional = true }
 janus_client = "0.7.17"
 janus_collector = "0.7.17"
-url = "2.5.0"
+url = "2.5.1"
 janus_messages = "0.7.17"
 prio = "0.16.3"
 tokio = { version = "1.37.0" }
