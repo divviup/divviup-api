@@ -24,7 +24,7 @@ x-janus-migrate: &janus_migrate
     - "60"
   depends_on:
     postgres:
-      condition: service_started
+      condition: service_healthy
 
 x-janus-environment: &janus_environment
   RUST_LOG: info
@@ -54,6 +54,17 @@ services:
     image: docker.io/library/postgres:16
     ports:
       - "5432:5432"
+    healthcheck:
+      test:
+        - "CMD"
+        - "/bin/sh"
+        - "-c"
+        - |
+          psql postgres://postgres@127.0.0.1/divviup -c "" && \
+            psql postgres://postgres@127.0.0.1/janus_1 -c ""  && \
+            psql postgres://postgres@127.0.0.1/janus_2 -c ""
+      interval: 1s
+      retries: 10
     restart: always
     environment:
       POSTGRES_PASSWORD: postgres
@@ -70,7 +81,7 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/divviup
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
 
   pair_aggregator:
     <<: *divviup_image
@@ -78,6 +89,7 @@ services:
       - /bin/sh
       - -c
       - |
+        test -f /tmp/done || \
         /divviup --url=http://localhost:8080 --token="" \
           aggregator create \
           --name=leader --api-url=http://janus_1_aggregator:8080/aggregator-api \
@@ -88,7 +100,8 @@ services:
         /divviup --url=http://localhost:8080 --token="" \
           aggregator create \
           --name=helper --api-url=http://janus_2_aggregator:8080/aggregator-api \
-          --bearer-token=0000
+          --bearer-token=0000 && \
+        touch /tmp/done
     network_mode: service:divviup_api
     depends_on:
       divviup_api:
