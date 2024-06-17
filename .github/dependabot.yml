@@ -15,6 +15,9 @@ updates:
         patterns:
           - "trillium"
           - "trillium-*"
+      janus:
+        patterns:
+          - "janus_*"
   - package-ecosystem: "npm"
     directory: "app"
     schedule:
