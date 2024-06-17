@@ -58,16 +58,20 @@ services:
   pair_aggregator:
     image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api_integration_test:0.3.16}
     entrypoint:
-      - /divviup
-      - --url=http://localhost:8080
-      - --token=""
-      - aggregator
-      - create
-      - --name=leader
-      - --api-url=http://janus_1_aggregator:8080/aggregator-api
-      - --bearer-token=0000
-      - --first-party
-      - --shared
+      - /bin/sh
+      - -c
+      - |
+        /divviup --url=http://localhost:8080 --token="" \
+          aggregator create \
+          --name=leader --api-url=http://janus_1_aggregator:8080/aggregator-api \
+          --bearer-token=0000 \
+          --first-party --shared && \
+        /divviup --url=http://localhost:8080 --token="" \
+          account create demo && \
+        /divviup --url=http://localhost:8080 --token="" \
+          aggregator create \
+          --name=helper --api-url=http://janus_2_aggregator:8080/aggregator-api \
+          --bearer-token=0000
     network_mode: service:divviup_api
     depends_on:
       divviup_api:
