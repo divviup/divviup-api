@@ -2482,9 +2482,9 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "janus_client"
-version = "0.7.16"
+version = "0.7.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30392863ebd2497392a8812d3a38b6459c085faa1f7c4b7d3b412283325f2cae"
+checksum = "d7bc54e4e9698b490035fce4b4f3ff52ee5d6209ffb24042b5008e26af1a0534"
 dependencies = [
  "backoff",
  "derivative",
