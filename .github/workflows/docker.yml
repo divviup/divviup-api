@@ -86,7 +86,7 @@ jobs:
         run: |
           export DIVVIUP_API_URL=http://localhost:8080
           export DIVVIUP_TOKEN=""
-          export DIVVIUP_ACCOUNT_ID=`./divviup account list | jq -r '.[0].id`
+          export DIVVIUP_ACCOUNT_ID=`./divviup account list | jq -r '.[0].id'`
           export LEADER_ID=`./divviup aggregator list | jq -r 'map_values(select(.name == "leader")).[0].id'`
           export HELPER_ID=`./divviup aggregator list | jq -r 'map_values(select(.name == "helper")).[0].id'`
           CRED_OUTPUT=`./divviup collector-credential generate --save`
