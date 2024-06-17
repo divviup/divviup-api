@@ -2502,9 +2502,9 @@ dependencies = [
 
 [[package]]
 name = "janus_collector"
-version = "0.7.16"
+version = "0.7.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0cec6e61077ad921a4f772aaed5579e38dd3b04c42aa870449437f2c8504960"
+checksum = "55933043d8ee72ad8c0a4ae82fb07140b6b10e04c6f475419772bcb0c22303a4"
 dependencies = [
  "backoff",
  "chrono",
@@ -2526,9 +2526,9 @@ dependencies = [
 
 [[package]]
 name = "janus_core"
-version = "0.7.16"
+version = "0.7.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cbf2542b225bed780bac2ba3a1bfa58f48aefade41cad257b01426e74287e31"
+checksum = "d05984abbe59fc46c3ee2d206ed4c3c56f7815f223c459c89d04742af4955604"
 dependencies = [
  "anyhow",
  "backoff",
