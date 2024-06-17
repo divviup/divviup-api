@@ -32,6 +32,23 @@ x-janus-environment: &janus_environment
   DATASTORE_KEYS: 1B6szboUUtMfyrLsIVE20g
   AGGREGATOR_API_AUTH_TOKENS: "0000"
 
+x-divviup-image: &divviup_image
+  image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api_integration_test:0.3.16}
+
+x-divviup-environment: &divviup_environment
+  RUST_LOG: info
+  AUTH_URL: https://auth.example
+  AUTH_CLIENT_ID: fake
+  AUTH_CLIENT_SECRET: fake
+  SESSION_SECRETS: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  DATABASE_ENCRYPTION_KEYS: heHIWC_qxHzdglI0VgLopQ
+  AUTH_AUDIENCE: https://app.example
+  APP_URL: http://localhost:8081
+  DATABASE_URL: postgres://postgres:postgres@postgres:5432/divviup
+  API_URL: http://localhost:8080
+  POSTMARK_TOKEN: fake
+  EMAIL_ADDRESS: the@from.address
+
 services:
   postgres:
     image: docker.io/library/postgres:16
@@ -56,7 +73,7 @@ services:
         condition: service_started
 
   pair_aggregator:
-    image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api_integration_test:0.3.16}
+    <<: *divviup_image
     entrypoint:
       - /bin/sh
       - -c
@@ -82,51 +99,33 @@ services:
         condition: service_healthy
 
   divviup_api:
-    image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api_integration_test:0.3.16}
-    ports:
-      - "8080:8080"
+    <<: *divviup_image
     healthcheck:
       test: ["CMD", "/bin/sh", "-c", "wget http://0.0.0.0:8080/health -O - >/dev/null"]
       interval: 1s
       retries: 10
+    ports:
+      - "8080:8080"
     environment:
-      RUST_LOG: info
-      AUTH_URL: https://auth.example
-      AUTH_CLIENT_ID: fake
-      AUTH_CLIENT_SECRET: fake
-      SESSION_SECRETS: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-      DATABASE_ENCRYPTION_KEYS: heHIWC_qxHzdglI0VgLopQ
-      AUTH_AUDIENCE: https://app.example
-      APP_URL: http://localhost:8081
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/divviup
-      API_URL: http://localhost:8080
-      POSTMARK_TOKEN: fake
-      EMAIL_ADDRESS: the@from.address
+      <<: *divviup_environment
     depends_on:
       divviup_api_migrate:
         condition: service_completed_successfully
 
-  divviup_api_vite:
-    build:
-      context: .
-      # `develop` cannot be used with an `image` directive, so we need to use a minimal dockerfile
-      # containing the image we need.
-      dockerfile: Dockerfile.vite
+  # Run a second divviup_api just to serve static assets, so that users can browse to localhost:8081
+  # and play with the console. It'd be nice to do this from service divviup_api, but it only binds a
+  # single port and insists on serving assets and its API on distinct hostnames.
+  static_assets:
+    <<: *divviup_image
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "wget http://0.0.0.0:8081/health -O - >/dev/null"]
+      interval: 1s
+      retries: 10
     ports:
       - "8081:8081"
-    working_dir: /srv/app
-    volumes:
-     - type: bind
-       source: ./app
-       target: /srv/app
-    entrypoint:
-      - /bin/sh
-      - -c
-      - npm i && npx vite --host=0.0.0.0
-    develop:
-      watch:
-        - path: ./app/package.json
-          action: rebuild
+    environment:
+      PORT: 8081
+      <<: *divviup_environment
     # Hack: if the last service to be started exits with status 0, then `docker compose up --wait`
     # treats that as a failure. So we force divviup_api_vite to start last. Another option would be
     # to add a health check to pair_aggregator as in ([1]), but the timing is brittle (the main
