@@ -33,7 +33,7 @@ jobs:
           driver: docker-container
           use: true
       - name: Build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           # Do not push in this step so we can push to the private and public repositories
