@@ -73,9 +73,9 @@ jobs:
       - run: cargo build --package divviup-cli --profile release
         working-directory: checkout
       - run: |
-        mkdir compose
-        cp checkout/target/release/divviup compose/
-        cp checkout/compose.yaml compose/
+          mkdir compose
+          cp checkout/target/release/divviup compose/
+          cp checkout/compose.yaml compose/
       - name: Compose
         id: compose
         run: docker compose up --wait --wait-timeout 120
