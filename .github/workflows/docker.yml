@@ -115,11 +115,11 @@ jobs:
           COLLECTOR_CREDENTIAL_ID=`echo $CRED_OUTPUT | ../jq -r '.id' 2>/dev/null || echo ''`
           printf 'collector credential ID %s\n' $COLLECTOR_CREDENTIAL_ID
 
-          TASK=./divviup task create --name net-promoter-score \
+          TASK=`./divviup task create --name net-promoter-score \
             --leader-aggregator-id $LEADER_ID --helper-aggregator-id $HELPER_ID \
             --collector-credential-id $COLLECTOR_CREDENTIAL_ID \
             --vdaf histogram --categorical-buckets 0,1,2,3,4,5,6,7,8,9,10 \
-            --min-batch-size 100 --max-batch-size 200 --time-precision 60sec
+            --min-batch-size 100 --max-batch-size 200 --time-precision 60sec`
           printf 'task %s\n' $TASK
           TASK_ID=`echo $TASK | ../jq -r '.id'`
 
