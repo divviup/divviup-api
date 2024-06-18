@@ -1,4 +1,5 @@
-use sea_orm::{ConnectionTrait, Database, DbConn};
+use log::LevelFilter;
+use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn};
 use std::ops::{Deref, DerefMut};
 use trillium::{async_trait, Conn, Handler};
 use trillium_api::FromConn;
@@ -8,7 +9,9 @@ pub struct Db(DbConn);
 
 impl Db {
     pub async fn connect(url: &str) -> Self {
-        Database::connect(url).await.map(Self).unwrap()
+        let mut connect_options = ConnectOptions::new(url);
+        connect_options.sqlx_logging_level(LevelFilter::Debug);
+        Database::connect(connect_options).await.map(Self).unwrap()
     }
 }
 
