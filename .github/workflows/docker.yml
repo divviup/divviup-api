@@ -123,7 +123,7 @@ jobs:
 
           echo "finished uploading measurements"
 
-          sleep 600
+          sleep 1200
 
           ./divviup dap-client collect \
             --task-id $TASK_ID \
