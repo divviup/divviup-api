@@ -84,32 +84,38 @@ jobs:
         id: demo-script
         working-directory: compose
         run: |
-          export DIVVIUP_API_URL=http://localhost:8080
-          export DIVVIUP_TOKEN=""
-          export DIVVIUP_ACCOUNT_ID=`./divviup account list | jq -r '.[0].id'`
-          export LEADER_ID=`./divviup aggregator list | jq -r 'map_values(select(.name == "leader")).[0].id'`
-          export HELPER_ID=`./divviup aggregator list | jq -r 'map_values(select(.name == "helper")).[0].id'`
-          CRED_OUTPUT=`./divviup collector-credential generate --save`
-          export COLLECTOR_CREDENTIAL_PATH=${PWD}/`echo $CRED_OUTPUT | jq -r '.name' 2>/dev/null || echo ''`.json
-          export COLLECTOR_CREDENTIAL_ID=`echo $CRED_OUTPUT | jq -r '.id' 2>/dev/null || echo ''`
+          jq --version
+          DIVVIUP_API_URL=http://localhost:8080
+          DIVVIUP_TOKEN=""
 
-          echo $DIVVIUP_API_URL
-          echo $DIVVIUP_TOKEN
-          echo $DIVVIUP_ACCOUNT_ID
-          echo $LEADER_ID
-          echo $HELPER_ID
-          echo COLLECTOR_CREDENTIAL_ID
-          echo COLLECTOR_CREDENTIAL_PATH
+          DIVVIUP_ACCOUNT_ID=`./divviup account list | jq -r '.[0].id'`
+          printf 'account ID %s\n' $DIVVIUP_ACCOUNT_ID
+
+          AGGREGATOR_LIST=`./divviup aggregator list`
+          printf 'aggregator list %s\n' $AGGREGATOR_LIST
+
+          LEADER_ID=`echo $AGGREGATOR_LIST | jq -r 'map_values(select(.name == "leader")).[0].id'`
+          printf 'leader ID %s\n' $LEADER_ID
+
+          HELPER_ID=`echo $AGGREGATOR_LIST | jq -r 'map_values(select(.name == "helper")).[0].id'`
+          printf 'helper ID %s\n' $HELPER_ID
+
+          CRED_OUTPUT=`./divviup collector-credential generate --save`
+          printf 'collector credential %s\n' $CRED_OUTPUT
+
+          COLLECTOR_CREDENTIAL_PATH=${PWD}/`echo $CRED_OUTPUT | jq -r '.name' 2>/dev/null || echo ''`.json
+          printf 'collector credential path %s\n' $COLLECTOR_CREDENTIAL_PATH
+
+          COLLECTOR_CREDENTIAL_ID=`echo $CRED_OUTPUT | jq -r '.id' 2>/dev/null || echo ''`
+          printf 'collector credential ID %s\n' $COLLECTOR_CREDENTIAL_ID
 
           TASK=./divviup task create --name net-promoter-score \
             --leader-aggregator-id $LEADER_ID --helper-aggregator-id $HELPER_ID \
             --collector-credential-id $COLLECTOR_CREDENTIAL_ID \
             --vdaf histogram --categorical-buckets 0,1,2,3,4,5,6,7,8,9,10 \
             --min-batch-size 100 --max-batch-size 200 --time-precision 60sec
-          echo $TASK
-          export TASK_ID=`echo $TASK | jq -r '.id'`
-
-          echo $TASK_ID
+          printf 'task %s\n' $TASK
+          TASK_ID=`echo $TASK | jq -r '.id'`
 
           for i in {1..150}; do
             measurement=$(( $RANDOM % 10 ))
@@ -124,7 +130,7 @@ jobs:
             --current-batch
 
       - name: Inspect containers
-        if: ${{ failure() && steps.compose.outcome != 'success' }}
+        if: ${{ failure() && (steps.compose.outcome != 'success' || steps.demo-script.outcome != 'success') }}
         working-directory: compose
         run: |
           docker compose ps --all
