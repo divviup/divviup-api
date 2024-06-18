@@ -27,7 +27,7 @@ x-janus-migrate: &janus_migrate
       condition: service_healthy
 
 x-janus-environment: &janus_environment
-  RUST_LOG: info
+  #RUST_LOG: info
   PGPASSWORD: postgres
   DATASTORE_KEYS: 1B6szboUUtMfyrLsIVE20g
   AGGREGATOR_API_AUTH_TOKENS: "0000"
@@ -165,6 +165,7 @@ services:
       - "9001:8080"
     environment:
       CONFIG_FILE: /janus_1_aggregator.yaml
+      RUST_LOG: info
       <<: *janus_environment
 
   janus_1_aggregation_job_creator:
@@ -174,6 +175,7 @@ services:
       - janus_1_aggregation_job_creator.yaml
     environment:
       CONFIG_FILE: /janus_1_aggregation_job_creator.yaml
+      RUST_LOG: debug
       <<: *janus_environment
 
   janus_1_aggregation_job_driver:
@@ -183,6 +185,7 @@ services:
       - janus_1_aggregation_job_driver.yaml
     environment:
       CONFIG_FILE: /janus_1_aggregation_job_driver.yaml
+      RUST_LOG: debug
       <<: *janus_environment
 
   janus_1_collection_job_driver:
@@ -192,6 +195,7 @@ services:
       - janus_1_collection_job_driver.yaml
     environment:
       CONFIG_FILE: /janus_1_collection_job_driver.yaml
+      RUST_LOG: debug
       <<: *janus_environment
 
   janus_1_garbage_collector:
@@ -201,6 +205,7 @@ services:
       - janus_1_garbage_collector.yaml
     environment:
       CONFIG_FILE: /janus_1_garbage_collector.yaml
+      RUST_LOG: info
       <<: *janus_environment
 
   janus_2_migrate:
@@ -217,6 +222,7 @@ services:
       - "9002:8080"
     environment:
       CONFIG_FILE: /janus_2_aggregator.yaml
+      RUST_LOG: debug
       <<: *janus_environment
 
   janus_2_aggregation_job_creator:
@@ -226,6 +232,7 @@ services:
       - janus_2_aggregation_job_creator.yaml
     environment:
       CONFIG_FILE: /janus_2_aggregation_job_creator.yaml
+      RUST_LOG: info
       <<: *janus_environment
 
   janus_2_aggregation_job_driver:
@@ -235,6 +242,7 @@ services:
       - janus_2_aggregation_job_driver.yaml
     environment:
       CONFIG_FILE: /janus_2_aggregation_job_driver.yaml
+      RUST_LOG: info
       <<: *janus_environment
 
   janus_2_collection_job_driver:
@@ -244,6 +252,7 @@ services:
       - janus_2_collection_job_driver.yaml
     environment:
       CONFIG_FILE: /janus_2_collection_job_driver.yaml
+      RUST_LOG: info
       <<: *janus_environment
 
   janus_2_garbage_collector:
@@ -253,6 +262,7 @@ services:
       - janus_2_garbage_collector.yaml
     environment:
       CONFIG_FILE: /janus_2_garbage_collector.yaml
+      RUST_LOG: info
       <<: *janus_environment
 
 configs:
