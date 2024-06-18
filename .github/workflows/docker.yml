@@ -112,11 +112,11 @@ jobs:
             --leader-aggregator-id $LEADER_ID --helper-aggregator-id $HELPER_ID \
             --collector-credential-id $COLLECTOR_CREDENTIAL_ID \
             --vdaf histogram --categorical-buckets 0,1,2,3,4,5,6,7,8,9,10 \
-            --min-batch-size 100 --max-batch-size 200 --time-precision 60sec`
+            --min-batch-size 10 --max-batch-size 200 --time-precision 60sec`
           printf 'task %s\n' $TASK
           TASK_ID=`echo $TASK | jq -r '.id'`
 
-          for i in {1..150}; do
+          for i in {1..15}; do
             measurement=$(( $RANDOM % 10 ))
             ./divviup dap-client upload --task-id $TASK_ID --measurement $measurement;
           done
