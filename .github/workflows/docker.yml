@@ -40,9 +40,14 @@ jobs:
             RUST_FEATURES=${{ steps.resolve_variables.outputs.RUST_FEATURES }}
       # Test the dev compose, which should use the images built earlier. Technically this is only
       # interesting when feature integration-testing is on, but we may as well exercise both.
+      #
+      # Bring the environment up, down and up again to ensure all services can restart
       - name: Compose (dev)
         id: compose-dev
-        run: docker compose -f compose.dev.yaml up --wait --wait-timeout 120
+        run: |
+          docker compose -f compose.dev.yaml up --wait --wait-timeout 120
+          docker compose down
+          docker compose -f compose.dev.yaml up --wait --wait-timeout 120
       - name: Inspect dev containers
         if: ${{ failure() && steps.compose-dev.outcome != 'success' }}
         run: |
