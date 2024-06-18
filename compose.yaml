@@ -90,7 +90,7 @@ services:
       - -c
       - |
         test -f /tmp/done || \
-        /divviup --url=http://localhost:8080 --token="" \
+        (/divviup --url=http://localhost:8080 --token="" \
           aggregator create \
           --name=leader --api-url=http://janus_1_aggregator:8080/aggregator-api \
           --bearer-token=0000 \
@@ -101,7 +101,7 @@ services:
           aggregator create \
           --name=helper --api-url=http://janus_2_aggregator:8080/aggregator-api \
           --bearer-token=0000 && \
-        touch /tmp/done
+        touch /tmp/done)
     network_mode: service:divviup_api
     depends_on:
       divviup_api:
