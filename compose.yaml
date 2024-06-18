@@ -291,7 +291,7 @@ configs:
         url: "postgres://postgres@postgres:5432/janus_1"
       health_check_listen_address: "0.0.0.0:8000"
       batch_aggregation_shard_count: 32
-      tasks_update_frequency_secs: 3600
+      tasks_update_frequency_secs: 10
       aggregation_job_creation_interval_secs: 10
       min_aggregation_job_size: 10
       max_aggregation_job_size: 100
@@ -350,7 +350,7 @@ configs:
         url: "postgres://postgres@postgres:5432/janus_2"
       health_check_listen_address: "0.0.0.0:8000"
       batch_aggregation_shard_count: 32
-      tasks_update_frequency_secs: 3600
+      tasks_update_frequency_secs: 10
       aggregation_job_creation_interval_secs: 10
       min_aggregation_job_size: 10
       max_aggregation_job_size: 100
