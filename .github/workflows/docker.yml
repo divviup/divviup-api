@@ -91,7 +91,8 @@ jobs:
           printf 'account ID %s\n' $DIVVIUP_ACCOUNT_ID
 
           AGGREGATOR_LIST=`./divviup aggregator list`
-          printf 'aggregator list %s\n' $AGGREGATOR_LIST
+          echo "aggregator list:"
+          echo $AGGREGATOR_LIST
 
           LEADER_ID=`echo $AGGREGATOR_LIST | jq -r '.[] |= select(.name == "leader") |.[0].id'`
           printf 'leader ID %s\n' $LEADER_ID
@@ -100,7 +101,8 @@ jobs:
           printf 'helper ID %s\n' $HELPER_ID
 
           CRED_OUTPUT=`./divviup collector-credential generate --save`
-          printf 'collector credential %s\n' $CRED_OUTPUT
+          echo "collector credential:"
+          echo $CRED_OUTPUT
 
           COLLECTOR_CREDENTIAL_PATH=${PWD}/`echo $CRED_OUTPUT | jq -r '.name' 2>/dev/null || echo ''`.json
           printf 'collector credential path %s\n' $COLLECTOR_CREDENTIAL_PATH
@@ -113,7 +115,8 @@ jobs:
             --collector-credential-id $COLLECTOR_CREDENTIAL_ID \
             --vdaf histogram --categorical-buckets 0,1,2,3,4,5,6,7,8,9,10 \
             --min-batch-size 100 --max-batch-size 200 --time-precision 60sec`
-          printf 'task %s\n' $TASK
+          echo "task:"
+          echo $TASK
           TASK_ID=`echo $TASK | jq -r '.id'`
 
           for i in {1..150}; do
