@@ -76,13 +76,6 @@ jobs:
           mkdir compose
           cp checkout/target/release/divviup compose/
           cp checkout/compose.yaml compose/
-      # ubuntu-latest is 22.04, which does not package jq newer than 1.6.1, so grab a binary from
-      # GitHub releases
-      - name: install jq 1.7
-        run: |
-          curl -Lso jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64
-          chmod +x jq
-          ./jq --version
       - name: Compose
         id: compose
         run: docker compose up --wait --wait-timeout 120
@@ -94,25 +87,25 @@ jobs:
           export DIVVIUP_API_URL=http://localhost:8080
           export DIVVIUP_TOKEN=""
 
-          export DIVVIUP_ACCOUNT_ID=`./divviup account list | ../jq -r '.[0].id'`
+          export DIVVIUP_ACCOUNT_ID=`./divviup account list | jq -r '.[0].id'`
           printf 'account ID %s\n' $DIVVIUP_ACCOUNT_ID
 
           AGGREGATOR_LIST=`./divviup aggregator list`
           printf 'aggregator list %s\n' $AGGREGATOR_LIST
 
-          LEADER_ID=`echo $AGGREGATOR_LIST | ../jq -r 'map_values(select(.name == "leader")).[0].id'`
+          LEADER_ID=`echo $AGGREGATOR_LIST | jq -r '.[] |= select(.name == "leader") |.[0].id'`
           printf 'leader ID %s\n' $LEADER_ID
 
-          HELPER_ID=`echo $AGGREGATOR_LIST | ../jq -r 'map_values(select(.name == "helper")).[0].id'`
+          HELPER_ID=`echo $AGGREGATOR_LIST | jq -r '.[] |= select(.name == "helper") |.[0].id'`
           printf 'helper ID %s\n' $HELPER_ID
 
           CRED_OUTPUT=`./divviup collector-credential generate --save`
           printf 'collector credential %s\n' $CRED_OUTPUT
 
-          COLLECTOR_CREDENTIAL_PATH=${PWD}/`echo $CRED_OUTPUT | ../jq -r '.name' 2>/dev/null || echo ''`.json
+          COLLECTOR_CREDENTIAL_PATH=${PWD}/`echo $CRED_OUTPUT | jq -r '.name' 2>/dev/null || echo ''`.json
           printf 'collector credential path %s\n' $COLLECTOR_CREDENTIAL_PATH
 
-          COLLECTOR_CREDENTIAL_ID=`echo $CRED_OUTPUT | ../jq -r '.id' 2>/dev/null || echo ''`
+          COLLECTOR_CREDENTIAL_ID=`echo $CRED_OUTPUT | jq -r '.id' 2>/dev/null || echo ''`
           printf 'collector credential ID %s\n' $COLLECTOR_CREDENTIAL_ID
 
           TASK=`./divviup task create --name net-promoter-score \
@@ -121,16 +114,16 @@ jobs:
             --vdaf histogram --categorical-buckets 0,1,2,3,4,5,6,7,8,9,10 \
             --min-batch-size 100 --max-batch-size 200 --time-precision 60sec`
           printf 'task %s\n' $TASK
-          TASK_ID=`echo $TASK | ../jq -r '.id'`
+          TASK_ID=`echo $TASK | jq -r '.id'`
 
           for i in {1..150}; do
             measurement=$(( $RANDOM % 10 ))
             ./divviup dap-client upload --task-id $TASK_ID --measurement $measurement;
           done
 
-          sleep 120
+          sleep 60
 
-          divviup dap-client collect \
+          ./divviup dap-client collect \
             --task-id $TASK_ID \
             --collector-credential-file $COLLECTOR_CREDENTIAL_PATH \
             --current-batch
