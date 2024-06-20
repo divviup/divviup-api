@@ -67,19 +67,75 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        # This should work without any of the project sources except compose.yaml
         with:
-          sparse-checkout: |
-            compose.yaml
-          # Disable cone mode so we only grab a specific file
-          # https://github.com/actions/checkout?tab=readme-ov-file#fetch-only-a-single-file
-          # https://git-scm.com/docs/git-sparse-checkout
-          sparse-checkout-cone-mode: false
+          path: checkout
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --package divviup-cli --profile release
+        working-directory: checkout
+      - run: |
+          mkdir compose
+          cp checkout/target/release/divviup compose/
+          cp checkout/compose.yaml compose/
       - name: Compose
         id: compose
         run: docker compose up --wait --wait-timeout 120
+        working-directory: compose
+      - name: Demo script
+        id: demo-script
+        working-directory: compose
+        run: |
+          export DIVVIUP_API_URL=http://localhost:8080
+          export DIVVIUP_TOKEN=""
+
+          export DIVVIUP_ACCOUNT_ID=`./divviup account list | jq -r '.[0].id'`
+          printf 'account ID %s\n' $DIVVIUP_ACCOUNT_ID
+
+          AGGREGATOR_LIST=`./divviup aggregator list`
+          echo "aggregator list:"
+          echo $AGGREGATOR_LIST
+
+          LEADER_ID=`echo $AGGREGATOR_LIST | jq -r '.[] |= select(.name == "leader") |.[0].id'`
+          printf 'leader ID %s\n' $LEADER_ID
+
+          HELPER_ID=`echo $AGGREGATOR_LIST | jq -r '.[] |= select(.name == "helper") |.[0].id'`
+          printf 'helper ID %s\n' $HELPER_ID
+
+          CRED_OUTPUT=`./divviup collector-credential generate --save`
+          echo "collector credential:"
+          echo $CRED_OUTPUT
+
+          COLLECTOR_CREDENTIAL_PATH=${PWD}/`echo $CRED_OUTPUT | jq -r '.name' 2>/dev/null || echo ''`.json
+          printf 'collector credential path %s\n' $COLLECTOR_CREDENTIAL_PATH
+
+          COLLECTOR_CREDENTIAL_ID=`echo $CRED_OUTPUT | jq -r '.id' 2>/dev/null || echo ''`
+          printf 'collector credential ID %s\n' $COLLECTOR_CREDENTIAL_ID
+
+          TASK=`./divviup task create --name net-promoter-score \
+            --leader-aggregator-id $LEADER_ID --helper-aggregator-id $HELPER_ID \
+            --collector-credential-id $COLLECTOR_CREDENTIAL_ID \
+            --vdaf histogram --categorical-buckets 0,1,2,3,4,5,6,7,8,9,10 \
+            --min-batch-size 100 --max-batch-size 200 --time-precision 60sec`
+          echo "task:"
+          echo $TASK
+          TASK_ID=`echo $TASK | jq -r '.id'`
+
+          for i in {1..150}; do
+            measurement=$(( $RANDOM % 10 ))
+            ./divviup dap-client upload --task-id $TASK_ID --measurement $measurement;
+          done
+
+          echo "finished uploading measurements"
+
+          sleep 120
+
+          ./divviup dap-client collect \
+            --task-id $TASK_ID \
+            --collector-credential-file $COLLECTOR_CREDENTIAL_PATH \
+            --current-batch
+
       - name: Inspect containers
-        if: ${{ failure() && steps.compose.outcome != 'success' }}
+        if: ${{ failure() && (steps.compose.outcome != 'success' || steps.demo-script.outcome != 'success') }}
+        working-directory: compose
         run: |
           docker compose ps --all
           for NAME in `docker compose ps --all --format json | jq -r '.Name'`; do

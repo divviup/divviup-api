@@ -158,7 +158,17 @@ services:
 
   janus_1_aggregator:
     <<: *janus_common
-    entrypoint: ["/janus_aggregator", "aggregator"]
+    entrypoint:
+      - /bin/sh
+      - -c
+      # Crimes: janus_2_aggregator's DAP API is localhost:9002 in the divviup-api aggregator object,
+      # but that address is only valid in the host network, outside of Docker Compose. But we need
+      # various parts of janus_1 to be able to reach janus_2_aggregator there. So we run nc(1)
+      # alongside the Janus processes so that it listens on localhost:9002 and forwards traffic to
+      # janus_2_aggregator:8080, which _does_ exist on the Docker Compose network.
+      - |
+        nc -p 9002 -lk -e nc janus_2_aggregator 8080 & \
+          /janus_aggregator aggregator
     configs:
       - janus_1_aggregator.yaml
     ports:
@@ -178,7 +188,12 @@ services:
 
   janus_1_aggregation_job_driver:
     <<: *janus_common
-    entrypoint: ["/janus_aggregator", "aggregation_job_driver"]
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        nc -p 9002 -lk -e nc janus_2_aggregator 8080 & \
+          /janus_aggregator aggregation_job_driver
     configs:
       - janus_1_aggregation_job_driver.yaml
     environment:
@@ -187,7 +202,12 @@ services:
 
   janus_1_collection_job_driver:
     <<: *janus_common
-    entrypoint: ["/janus_aggregator", "collection_job_driver"]
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        nc -p 9002 -lk -e nc janus_2_aggregator 8080 & \
+          /janus_aggregator collection_job_driver
     configs:
       - janus_1_collection_job_driver.yaml
     environment:
@@ -281,8 +301,8 @@ configs:
         url: "postgres://postgres@postgres:5432/janus_1"
       health_check_listen_address: "0.0.0.0:8000"
       batch_aggregation_shard_count: 32
-      tasks_update_frequency_secs: 3600
-      aggregation_job_creation_interval_secs: 60
+      tasks_update_frequency_secs: 10
+      aggregation_job_creation_interval_secs: 10
       min_aggregation_job_size: 10
       max_aggregation_job_size: 100
 
@@ -340,8 +360,8 @@ configs:
         url: "postgres://postgres@postgres:5432/janus_2"
       health_check_listen_address: "0.0.0.0:8000"
       batch_aggregation_shard_count: 32
-      tasks_update_frequency_secs: 3600
-      aggregation_job_creation_interval_secs: 60
+      tasks_update_frequency_secs: 10
+      aggregation_job_creation_interval_secs: 10
       min_aggregation_job_size: 10
       max_aggregation_job_size: 100
 
