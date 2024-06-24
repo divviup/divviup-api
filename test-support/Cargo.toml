@@ -26,7 +26,7 @@ trillium-client = { version = "0.6.2", features = ["json"] }
 trillium-http = "0.3.14"
 trillium-rustls = "0.8.0"
 trillium-tokio = "0.4.0"
-url = "2.5.1"
+url = "2.5.2"
 uuid = { version = "1.8.0", features = ["v4", "fast-rng", "serde"] }
 sea-orm = { version = "0.12.15", features = ["sqlx-sqlite"] }
 pretty_assertions = "1.4.0"
