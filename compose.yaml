@@ -52,6 +52,7 @@ x-divviup-environment: &divviup_environment
 services:
   postgres:
     image: docker.io/library/postgres:16
+    user: postgres
     ports:
       - "5432:5432"
     healthcheck:
