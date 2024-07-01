@@ -3962,9 +3962,9 @@ checksum = "ecd36cc4259e3e4514335c4a138c6b43171a8d61d8f5c9348f9fc7529416f247"
 
 [[package]]
 name = "rustls-platform-verifier"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5f0d26fa1ce3c790f9590868f0109289a044acb954525f933e2aa3b871c157d"
+checksum = "3e3beb939bcd33c269f4bf946cc829fcd336370267c4a927ac0399c84a3151a1"
 dependencies = [
  "core-foundation",
  "core-foundation-sys",
@@ -5467,9 +5467,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-rustls"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc49db92867d5f90ab53175a61d4ed803b59d043b3c991ca7c5b99b44e3af69f"
+checksum = "371e6e906bfed11c2ebe85af747976805766ca5063a39e1329f9413c5543ef9e"
 dependencies = [
  "futures-rustls",
  "log",

@@ -27,7 +27,7 @@ anyhow = "1"
 clap = { version = "4.5.7", features = ["derive", "env"] }
 thiserror = "1.0.61"
 divviup-client = { workspace = true }
-trillium-rustls = { version = "0.8.0", default-features = false }
+trillium-rustls = { version = "0.8.1", default-features = false }
 trillium-tokio = "0.4.0"
 serde = "1.0.203"
 email_address = "0.2.4"
