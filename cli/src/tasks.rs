@@ -1,6 +1,6 @@
 use crate::{CliResult, DetermineAccountId, Error, Output};
 use clap::Subcommand;
-use divviup_client::{DivviupClient, Histogram, NewTask, SumVec, Uuid, Vdaf};
+use divviup_client::{dp_strategy, DivviupClient, Histogram, NewTask, SumVec, Uuid, Vdaf};
 use humantime::{Duration, Timestamp};
 use std::time::SystemTime;
 use time::OffsetDateTime;
@@ -116,16 +116,19 @@ impl TaskAction {
                             (Some(length), None, None) => Vdaf::Histogram(Histogram::Length {
                                 length,
                                 chunk_length,
+                                dp_strategy: dp_strategy::Prio3Histogram::NoDifferentialPrivacy,
                             }),
                             (None, Some(buckets), None) => {
                                 Vdaf::Histogram(Histogram::Categorical {
                                     buckets,
                                     chunk_length,
+                                    dp_strategy: dp_strategy::Prio3Histogram::NoDifferentialPrivacy,
                                 })
                             }
                             (None, None, Some(buckets)) => Vdaf::Histogram(Histogram::Continuous {
                                 buckets,
                                 chunk_length,
+                                dp_strategy: dp_strategy::Prio3Histogram::NoDifferentialPrivacy,
                             }),
                             (None, None, None) => {
                                 return Err(Error::Other("continuous-buckets, categorical-buckets, or length are required for histogram vdaf".into()));
@@ -142,9 +145,12 @@ impl TaskAction {
                         length: length.unwrap(),
                         chunk_length,
                     },
-                    VdafName::SumVec => {
-                        Vdaf::SumVec(SumVec::new(bits.unwrap(), length.unwrap(), chunk_length))
-                    }
+                    VdafName::SumVec => Vdaf::SumVec(SumVec::new(
+                        bits.unwrap(),
+                        length.unwrap(),
+                        chunk_length,
+                        dp_strategy::Prio3SumVec::NoDifferentialPrivacy,
+                    )),
                 };
 
                 let time_precision_seconds = time_precision.as_secs();

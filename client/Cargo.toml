@@ -27,6 +27,8 @@ time = { version = "0.3.36", features = ["serde", "serde-well-known"] }
 log = "0.4.22"
 pad-adapter = "0.1.1"
 janus_messages = "0.7.25"
+num-bigint = "0.4.6"
+num-rational = "0.4.2"
 
 [dev-dependencies]
 divviup-api.workspace = true

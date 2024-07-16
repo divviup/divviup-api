@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+use crate::dp_strategy;
+
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Task {
     pub id: String,
@@ -79,14 +81,20 @@ pub enum Histogram {
     Categorical {
         buckets: Vec<String>,
         chunk_length: Option<u64>,
+        #[serde(default)]
+        dp_strategy: dp_strategy::Prio3Histogram,
     },
     Continuous {
         buckets: Vec<u64>,
         chunk_length: Option<u64>,
+        #[serde(default)]
+        dp_strategy: dp_strategy::Prio3Histogram,
     },
     Length {
         length: u64,
         chunk_length: Option<u64>,
+        #[serde(default)]
+        dp_strategy: dp_strategy::Prio3Histogram,
     },
 }
 
@@ -110,22 +118,39 @@ impl Histogram {
         .map(|c| c as usize)
         .unwrap_or_else(|| optimal_chunk_length(self.length()))
     }
+
+    /// The differential privacy strategy.
+    pub fn dp_strategy(&self) -> &dp_strategy::Prio3Histogram {
+        match self {
+            Histogram::Categorical { dp_strategy, .. }
+            | Histogram::Continuous { dp_strategy, .. }
+            | Histogram::Length { dp_strategy, .. } => dp_strategy,
+        }
+    }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct SumVec {
     pub bits: u8,
     pub length: u64,
     chunk_length: Option<u64>,
+    #[serde(default)]
+    pub dp_strategy: dp_strategy::Prio3SumVec,
 }
 
 impl SumVec {
     /// Create a new SumVec
-    pub fn new(bits: u8, length: u64, chunk_length: Option<u64>) -> Self {
+    pub fn new(
+        bits: u8,
+        length: u64,
+        chunk_length: Option<u64>,
+        dp_strategy: dp_strategy::Prio3SumVec,
+    ) -> Self {
         Self {
             bits,
             length,
             chunk_length,
+            dp_strategy,
         }
     }
 

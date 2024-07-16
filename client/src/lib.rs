@@ -13,6 +13,7 @@ mod account;
 mod aggregator;
 mod api_token;
 mod collector_credentials;
+pub mod dp_strategy;
 mod membership;
 mod protocol;
 mod task;
