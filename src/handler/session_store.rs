@@ -1,7 +1,7 @@
 use crate::{entity::session, Db};
 use async_session::{
     async_trait,
-    chrono::{DateTime, NaiveDateTime, Utc},
+    chrono::{DateTime, Utc},
     Session,
 };
 use sea_orm::{
@@ -46,10 +46,9 @@ impl TryFrom<session::Model> for Session {
             "data": db_session.data,
         }))?;
         if let Some(x) = db_session.expiry {
-            session.set_expiry(DateTime::from_naive_utc_and_offset(
-                NaiveDateTime::from_timestamp_opt(x.unix_timestamp(), x.nanosecond()).unwrap(),
-                Utc,
-            ));
+            session.set_expiry(
+                DateTime::<Utc>::from_timestamp(x.unix_timestamp(), x.nanosecond()).unwrap(),
+            );
         }
         Ok(session)
     }
