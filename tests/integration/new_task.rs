@@ -140,6 +140,176 @@ async fn time_bucketed_fixed_size(app: DivviupApi) -> TestResult {
 }
 
 #[test(harness = set_up)]
+async fn pure_dp_discrete_laplace(app: DivviupApi) -> TestResult {
+    let mut leader = fixtures::aggregator(&app, None).await.into_active_model();
+    leader.role = ActiveValue::Set(Role::Leader);
+    leader.features =
+        ActiveValue::Set(Features::from_iter([Feature::PureDpDiscreteLaplace]).into());
+    let leader = leader.update(app.db()).await?;
+
+    let mut helper = fixtures::aggregator(&app, None).await.into_active_model();
+    helper.role = ActiveValue::Set(Role::Helper);
+    helper.features =
+        ActiveValue::Set(Features::from_iter([Feature::PureDpDiscreteLaplace]).into());
+    let helper = helper.update(app.db()).await?;
+
+    assert_errors(
+        &app,
+        &mut NewTask {
+            leader_aggregator_id: Some(leader.id.to_string()),
+            helper_aggregator_id: Some(helper.id.to_string()),
+            time_precision_seconds: Some(300),
+            vdaf: Some(task::vdaf::Vdaf::Histogram(task::vdaf::Histogram::Opaque(
+                task::vdaf::BucketLength {
+                    length: 10,
+                    chunk_length: Some(3),
+                    dp_strategy: task::vdaf::DpStrategy {
+                        dp_strategy: task::vdaf::DpStrategyKind::NoDifferentialPrivacy,
+                        budget: task::vdaf::DpBudget {
+                            epsilon: Some(Vec::from([Vec::from([1]), Vec::from([1])])),
+                        },
+                    },
+                },
+            ))),
+            ..Default::default()
+        },
+        "vdaf",
+        &[],
+    )
+    .await;
+    assert_errors(
+        &app,
+        &mut NewTask {
+            leader_aggregator_id: Some(leader.id.to_string()),
+            helper_aggregator_id: Some(helper.id.to_string()),
+            time_precision_seconds: Some(300),
+            vdaf: Some(task::vdaf::Vdaf::Histogram(task::vdaf::Histogram::Opaque(
+                task::vdaf::BucketLength {
+                    length: 10,
+                    chunk_length: Some(3),
+                    dp_strategy: task::vdaf::DpStrategy {
+                        dp_strategy: task::vdaf::DpStrategyKind::PureDpDiscreteLaplace,
+                        budget: task::vdaf::DpBudget { epsilon: None },
+                    },
+                },
+            ))),
+            ..Default::default()
+        },
+        "vdaf",
+        &[],
+    )
+    .await;
+    assert_errors(
+        &app,
+        &mut NewTask {
+            leader_aggregator_id: Some(leader.id.to_string()),
+            helper_aggregator_id: Some(helper.id.to_string()),
+            time_precision_seconds: Some(300),
+            vdaf: Some(task::vdaf::Vdaf::Histogram(task::vdaf::Histogram::Opaque(
+                task::vdaf::BucketLength {
+                    length: 10,
+                    chunk_length: Some(3),
+                    dp_strategy: task::vdaf::DpStrategy {
+                        dp_strategy: task::vdaf::DpStrategyKind::PureDpDiscreteLaplace,
+                        budget: task::vdaf::DpBudget {
+                            epsilon: Some(Vec::from([Vec::from([u32::MAX, u32::MAX])])),
+                        },
+                    },
+                },
+            ))),
+            ..Default::default()
+        },
+        "vdaf",
+        &[],
+    )
+    .await;
+
+    assert_no_errors(
+        &app,
+        &mut NewTask {
+            leader_aggregator_id: Some(leader.id.to_string()),
+            helper_aggregator_id: Some(helper.id.to_string()),
+            time_precision_seconds: Some(300),
+            vdaf: Some(task::vdaf::Vdaf::Histogram(task::vdaf::Histogram::Opaque(
+                task::vdaf::BucketLength {
+                    length: 10,
+                    chunk_length: Some(3),
+                    dp_strategy: task::vdaf::DpStrategy {
+                        dp_strategy: task::vdaf::DpStrategyKind::PureDpDiscreteLaplace,
+                        budget: task::vdaf::DpBudget {
+                            epsilon: Some(Vec::from([Vec::from([1]), Vec::from([1])])),
+                        },
+                    },
+                },
+            ))),
+            ..Default::default()
+        },
+        "leader_aggregator_id",
+    )
+    .await;
+
+    let mut plain_leader = fixtures::aggregator(&app, None).await.into_active_model();
+    plain_leader.role = ActiveValue::Set(Role::Leader);
+    let plain_leader = plain_leader.update(app.db()).await?;
+
+    let mut plain_helper = fixtures::aggregator(&app, None).await.into_active_model();
+    plain_helper.role = ActiveValue::Set(Role::Helper);
+    let plain_helper = plain_helper.update(app.db()).await?;
+
+    assert_errors(
+        &app,
+        &mut NewTask {
+            leader_aggregator_id: Some(plain_leader.id.to_string()),
+            helper_aggregator_id: Some(helper.id.to_string()),
+            time_precision_seconds: Some(300),
+            vdaf: Some(task::vdaf::Vdaf::Histogram(task::vdaf::Histogram::Opaque(
+                task::vdaf::BucketLength {
+                    length: 10,
+                    chunk_length: Some(3),
+                    dp_strategy: task::vdaf::DpStrategy {
+                        dp_strategy: task::vdaf::DpStrategyKind::PureDpDiscreteLaplace,
+                        budget: task::vdaf::DpBudget {
+                            epsilon: Some(Vec::from([Vec::from([1]), Vec::from([1])])),
+                        },
+                    },
+                },
+            ))),
+            ..Default::default()
+        },
+        "leader_aggregator_id",
+        &["pure-dp-discrete-laplace-unsupported"],
+    )
+    .await;
+
+    assert_errors(
+        &app,
+        &mut NewTask {
+            leader_aggregator_id: Some(leader.id.to_string()),
+            helper_aggregator_id: Some(plain_helper.id.to_string()),
+            time_precision_seconds: Some(300),
+            vdaf: Some(task::vdaf::Vdaf::Histogram(task::vdaf::Histogram::Opaque(
+                task::vdaf::BucketLength {
+                    length: 10,
+                    chunk_length: Some(3),
+                    dp_strategy: task::vdaf::DpStrategy {
+                        dp_strategy: task::vdaf::DpStrategyKind::PureDpDiscreteLaplace,
+                        budget: task::vdaf::DpBudget {
+                            epsilon: Some(Vec::from([Vec::from([1]), Vec::from([1])])),
+                        },
+                    },
+                },
+            ))),
+            ..Default::default()
+        },
+        "helper_aggregator_id",
+        &["pure-dp-discrete-laplace-unsupported"],
+    )
+    .await;
+
+    Ok(())
+}
+
+#[test(harness = set_up)]
 async fn aggregator_roles(app: DivviupApi) -> TestResult {
     let mut leader = fixtures::aggregator(&app, None).await.into_active_model();
     leader.role = ActiveValue::Set(Role::Leader);

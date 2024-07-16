@@ -6,6 +6,7 @@ pub enum Feature {
     TokenHash,
     UploadMetrics,
     TimeBucketedFixedSize,
+    PureDpDiscreteLaplace,
     #[serde(untagged)]
     Unknown(String),
 }

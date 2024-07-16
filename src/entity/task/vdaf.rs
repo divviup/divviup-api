@@ -1,5 +1,8 @@
 use crate::{
-    clients::aggregator_client::api_types::{AggregatorVdaf, HistogramType},
+    clients::aggregator_client::api_types::{
+        dp_strategies::{self, PureDpBudget, PureDpDiscreteLaplace},
+        AggregatorVdaf, HistogramType,
+    },
     entity::{aggregator::VdafName, Protocol},
 };
 use prio::vdaf::prio3::optimal_chunk_length;
@@ -47,9 +50,18 @@ impl Histogram {
             Ok(AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
                 length: self.length(),
                 chunk_length: Some(chunk_length),
+                dp_strategy: self.dp_strategy().representation_histogram(),
             }))
         } else {
             panic!("chunk_length was not populated");
+        }
+    }
+
+    pub fn dp_strategy(&self) -> &DpStrategy {
+        match self {
+            Histogram::Opaque(BucketLength { dp_strategy, .. })
+            | Histogram::Categorical(CategoricalBuckets { dp_strategy, .. })
+            | Histogram::Continuous(ContinuousBuckets { dp_strategy, .. }) => dp_strategy,
         }
     }
 }
@@ -66,6 +78,10 @@ pub struct ContinuousBuckets {
 
     #[validate(range(min = 1))]
     pub chunk_length: Option<u64>,
+
+    #[serde(default)]
+    #[validate(nested, custom(function = "validate_dp_strategy"))]
+    pub dp_strategy: DpStrategy,
 }
 
 #[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq)]
@@ -75,15 +91,95 @@ pub struct CategoricalBuckets {
 
     #[validate(range(min = 1))]
     pub chunk_length: Option<u64>,
+
+    #[serde(default)]
+    #[validate(nested, custom(function = "validate_dp_strategy"))]
+    pub dp_strategy: DpStrategy,
 }
 
-#[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq, Copy)]
+#[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq)]
 pub struct BucketLength {
     #[validate(range(min = 1))]
     pub length: u64,
 
     #[validate(range(min = 1))]
     pub chunk_length: Option<u64>,
+
+    #[serde(default)]
+    #[validate(nested, custom(function = "validate_dp_strategy"))]
+    pub dp_strategy: DpStrategy,
+}
+
+#[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq, Default)]
+pub struct DpStrategy {
+    #[serde(default)]
+    pub dp_strategy: DpStrategyKind,
+
+    #[serde(default)]
+    #[validate(nested)]
+    pub budget: DpBudget,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq, Default)]
+pub enum DpStrategyKind {
+    #[default]
+    NoDifferentialPrivacy,
+    PureDpDiscreteLaplace,
+}
+
+#[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq, Default)]
+pub struct DpBudget {
+    #[validate(length(equal = 2))]
+    pub epsilon: Option<Vec<Vec<u32>>>,
+}
+
+impl DpStrategy {
+    fn representation_histogram(&self) -> dp_strategies::Prio3Histogram {
+        match (self.dp_strategy, &self.budget.epsilon) {
+            (DpStrategyKind::NoDifferentialPrivacy, None) => {
+                dp_strategies::Prio3Histogram::NoDifferentialPrivacy
+            }
+            (DpStrategyKind::NoDifferentialPrivacy, Some(_))
+            | (DpStrategyKind::PureDpDiscreteLaplace, None) => panic!("invalid dp strategy"),
+            (DpStrategyKind::PureDpDiscreteLaplace, Some(epsilon)) => {
+                dp_strategies::Prio3Histogram::PureDpDiscreteLaplace(PureDpDiscreteLaplace {
+                    budget: PureDpBudget {
+                        epsilon: epsilon.clone().try_into().expect("invalid epsilon"),
+                    },
+                })
+            }
+        }
+    }
+
+    fn representation_sumvec(&self) -> dp_strategies::Prio3SumVec {
+        match (self.dp_strategy, &self.budget.epsilon) {
+            (DpStrategyKind::NoDifferentialPrivacy, None) => {
+                dp_strategies::Prio3SumVec::NoDifferentialPrivacy
+            }
+            (DpStrategyKind::NoDifferentialPrivacy, Some(_))
+            | (DpStrategyKind::PureDpDiscreteLaplace, None) => panic!("invalid dp strategy"),
+            (DpStrategyKind::PureDpDiscreteLaplace, Some(epsilon)) => {
+                dp_strategies::Prio3SumVec::PureDpDiscreteLaplace(PureDpDiscreteLaplace {
+                    budget: PureDpBudget {
+                        epsilon: epsilon.clone().try_into().expect("invalid epsilon"),
+                    },
+                })
+            }
+        }
+    }
+}
+
+fn validate_dp_strategy(dp_strategy: &DpStrategy) -> Result<(), ValidationError> {
+    match (dp_strategy.dp_strategy, &dp_strategy.budget.epsilon) {
+        (DpStrategyKind::NoDifferentialPrivacy, None) => Ok(()),
+        (DpStrategyKind::NoDifferentialPrivacy, Some(_)) => {
+            Err(ValidationError::new("extra_epsilon"))
+        }
+        (DpStrategyKind::PureDpDiscreteLaplace, None) => {
+            Err(ValidationError::new("missing_epsilon"))
+        }
+        (DpStrategyKind::PureDpDiscreteLaplace, Some(_)) => Ok(()),
+    }
 }
 
 fn unique<T: Hash + Eq>(buckets: &[T]) -> Result<(), ValidationError> {
@@ -124,7 +220,7 @@ pub struct CountVec {
     pub chunk_length: Option<u64>,
 }
 
-#[derive(Serialize, Deserialize, Validate, Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Validate, Debug, Clone, Eq, PartialEq)]
 pub struct SumVec {
     #[validate(required)]
     pub bits: Option<u8>,
@@ -134,6 +230,10 @@ pub struct SumVec {
 
     #[validate(range(min = 1))]
     pub chunk_length: Option<u64>,
+
+    #[serde(default)]
+    #[validate(nested, custom(function = "validate_dp_strategy"))]
+    pub dp_strategy: DpStrategy,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
@@ -182,10 +282,12 @@ impl Vdaf {
                 length: Some(length),
                 bits: Some(bits),
                 chunk_length,
+                dp_strategy,
             }) => Ok(AggregatorVdaf::Prio3SumVec {
                 bits: *bits,
                 length: *length,
                 chunk_length: *chunk_length,
+                dp_strategy: dp_strategy.representation_sumvec(),
             }),
             Self::CountVec(CountVec {
                 length: Some(length),
@@ -243,6 +345,7 @@ impl Vdaf {
                 bits: Some(bits),
                 length: Some(length),
                 chunk_length: chunk_length @ None,
+                dp_strategy: _,
             }) => {
                 *chunk_length = Some(optimal_chunk_length(*bits as usize * *length as usize) as u64)
             }
@@ -289,6 +392,7 @@ mod tests {
         assert!(ContinuousBuckets {
             buckets: Some(vec![0, 1, 2]),
             chunk_length: None,
+            dp_strategy: DpStrategy::default(),
         }
         .validate()
         .is_ok());
@@ -297,6 +401,7 @@ mod tests {
             ContinuousBuckets {
                 buckets: Some(vec![0, 2, 1]),
                 chunk_length: None,
+                dp_strategy: DpStrategy::default(),
             },
             "buckets",
             &["sorted"],
@@ -306,6 +411,7 @@ mod tests {
             ContinuousBuckets {
                 buckets: Some(vec![0, 0, 2]),
                 chunk_length: None,
+                dp_strategy: DpStrategy::default(),
             },
             "buckets",
             &["unique"],
@@ -317,6 +423,7 @@ mod tests {
         assert!(CategoricalBuckets {
             buckets: Some(vec!["a".into(), "b".into()]),
             chunk_length: None,
+            dp_strategy: DpStrategy::default(),
         }
         .validate()
         .is_ok());
@@ -325,6 +432,7 @@ mod tests {
             CategoricalBuckets {
                 buckets: Some(vec!["a".into(), "a".into()]),
                 chunk_length: None,
+                dp_strategy: DpStrategy::default(),
             },
             "buckets",
             &["unique"],
