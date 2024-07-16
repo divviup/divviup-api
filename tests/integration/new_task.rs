@@ -30,6 +30,20 @@ pub async fn assert_no_errors(app: &DivviupApi, new_task: &mut NewTask, field: &
     assert!(errors.is_empty(), "{:?}", errors);
 }
 
+pub async fn assert_errors_nested(
+    app: &DivviupApi,
+    account: Account,
+    new_task: &mut NewTask,
+    expected_errors: Value,
+) {
+    let errors = new_task
+        .normalize_and_validate(account, app.db())
+        .await
+        .unwrap_err();
+    let serialized = serde_json::to_value(errors).unwrap();
+    assert_eq!(serialized, expected_errors);
+}
+
 #[test(harness = set_up)]
 async fn batch_size(app: DivviupApi) -> TestResult {
     assert_errors(
@@ -141,6 +155,9 @@ async fn time_bucketed_fixed_size(app: DivviupApi) -> TestResult {
 
 #[test(harness = set_up)]
 async fn pure_dp_discrete_laplace(app: DivviupApi) -> TestResult {
+    let account = fixtures::account(&app).await;
+    let collector_credential = fixtures::collector_credential(&app, &account).await;
+
     let mut leader = fixtures::aggregator(&app, None).await.into_active_model();
     leader.role = ActiveValue::Set(Role::Leader);
     leader.features =
@@ -153,12 +170,16 @@ async fn pure_dp_discrete_laplace(app: DivviupApi) -> TestResult {
         ActiveValue::Set(Features::from_iter([Feature::PureDpDiscreteLaplace]).into());
     let helper = helper.update(app.db()).await?;
 
-    assert_errors(
+    assert_errors_nested(
         &app,
+        account.clone(),
         &mut NewTask {
+            name: Some("test".into()),
             leader_aggregator_id: Some(leader.id.to_string()),
             helper_aggregator_id: Some(helper.id.to_string()),
             time_precision_seconds: Some(300),
+            min_batch_size: Some(100),
+            collector_credential_id: Some(collector_credential.id.to_string()),
             vdaf: Some(task::vdaf::Vdaf::Histogram(task::vdaf::Histogram::Opaque(
                 task::vdaf::BucketLength {
                     length: 10,
@@ -173,16 +194,34 @@ async fn pure_dp_discrete_laplace(app: DivviupApi) -> TestResult {
             ))),
             ..Default::default()
         },
-        "vdaf",
-        &[],
+        json!({
+            "vdaf": {
+                "dp_strategy": [{
+                    "code": "extra_epsilon",
+                    "message": null,
+                    "params": {
+                        "value": {
+                            "dp_strategy": "NoDifferentialPrivacy",
+                            "budget": {
+                                "epsilon": [[1], [1]],
+                            },
+                        },
+                    },
+                }],
+            },
+        }),
     )
     .await;
-    assert_errors(
+    assert_errors_nested(
         &app,
+        account.clone(),
         &mut NewTask {
+            name: Some("test".into()),
             leader_aggregator_id: Some(leader.id.to_string()),
             helper_aggregator_id: Some(helper.id.to_string()),
             time_precision_seconds: Some(300),
+            min_batch_size: Some(100),
+            collector_credential_id: Some(collector_credential.id.to_string()),
             vdaf: Some(task::vdaf::Vdaf::Histogram(task::vdaf::Histogram::Opaque(
                 task::vdaf::BucketLength {
                     length: 10,
@@ -195,16 +234,34 @@ async fn pure_dp_discrete_laplace(app: DivviupApi) -> TestResult {
             ))),
             ..Default::default()
         },
-        "vdaf",
-        &[],
+        json!({
+            "vdaf": {
+                "dp_strategy": [{
+                    "code": "missing_epsilon",
+                    "message": null,
+                    "params": {
+                        "value": {
+                            "dp_strategy": "PureDpDiscreteLaplace",
+                            "budget": {
+                                "epsilon": null,
+                            },
+                        },
+                    },
+                }],
+            },
+        }),
     )
     .await;
-    assert_errors(
+    assert_errors_nested(
         &app,
+        account.clone(),
         &mut NewTask {
+            name: Some("test".into()),
             leader_aggregator_id: Some(leader.id.to_string()),
             helper_aggregator_id: Some(helper.id.to_string()),
             time_precision_seconds: Some(300),
+            min_batch_size: Some(100),
+            collector_credential_id: Some(collector_credential.id.to_string()),
             vdaf: Some(task::vdaf::Vdaf::Histogram(task::vdaf::Histogram::Opaque(
                 task::vdaf::BucketLength {
                     length: 10,
@@ -219,8 +276,22 @@ async fn pure_dp_discrete_laplace(app: DivviupApi) -> TestResult {
             ))),
             ..Default::default()
         },
-        "vdaf",
-        &[],
+        json!({
+            "vdaf": {
+                "dp_strategy": {
+                    "budget": {
+                        "epsilon": [{
+                            "code": "length",
+                            "message": null,
+                            "params": {
+                                "equal": 2,
+                                "value": [[u32::MAX, u32::MAX]],
+                            },
+                        }],
+                    },
+                },
+            },
+        }),
     )
     .await;
 
