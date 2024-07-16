@@ -1,4 +1,4 @@
-FROM node:alpine as assets
+FROM node:alpine AS assets
 WORKDIR /src/app
 COPY app/package.json /src/app/package.json
 COPY app/package-lock.json /src/app/package-lock.json
@@ -8,7 +8,7 @@ COPY app /src/app
 RUN npm ci
 RUN npm run build
 
-FROM rust:1.79.0-alpine as chef
+FROM rust:1.79.0-alpine AS chef
 RUN apk --no-cache add libc-dev cmake make
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo install cargo-chef
@@ -25,7 +25,7 @@ COPY client /src/client
 COPY cli /src/cli
 RUN cargo chef prepare --recipe-path recipe.json
 
-FROM chef as builder
+FROM chef AS builder
 ARG RUST_FEATURES=default
 ARG RUST_PROFILE=release
 COPY --from=planner /src/recipe.json /src/recipe.json
@@ -47,7 +47,7 @@ RUN ln -s debug target/dev
 FROM alpine:3.20.1 AS final
 ARG GIT_REVISION=unknown
 ARG RUST_PROFILE=release
-LABEL revision ${GIT_REVISION}
+LABEL revision=${GIT_REVISION}
 EXPOSE 8080
 ENV HOST=0.0.0.0
 COPY --from=builder /src/target/${RUST_PROFILE}/migration /migration
