@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 #[serde(tag = "dp_strategy")]
+#[non_exhaustive]
 pub enum Prio3Histogram {
     #[default]
     NoDifferentialPrivacy,
@@ -12,6 +13,7 @@ pub enum Prio3Histogram {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Default)]
 #[serde(tag = "dp_strategy")]
+#[non_exhaustive]
 pub enum Prio3SumVec {
     #[default]
     NoDifferentialPrivacy,
