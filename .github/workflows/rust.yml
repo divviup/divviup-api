@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: lts
+          node-version: lts/Iron
           cache: "npm"
           cache-dependency-path: ./app/package-lock.json
       - run: npm ci && npm run build
