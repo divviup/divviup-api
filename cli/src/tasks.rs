@@ -1,6 +1,9 @@
 use crate::{CliResult, DetermineAccountId, Error, Output};
 use clap::Subcommand;
-use divviup_client::{dp_strategy, DivviupClient, Histogram, NewTask, SumVec, Uuid, Vdaf};
+use divviup_client::{
+    dp_strategy::{self, PureDpBudget, PureDpDiscreteLaplace},
+    BigUint, DivviupClient, Histogram, NewTask, Ratio, SumVec, Uuid, Vdaf,
+};
 use humantime::{Duration, Timestamp};
 use std::time::SystemTime;
 use time::OffsetDateTime;
@@ -12,6 +15,11 @@ pub enum VdafName {
     Sum,
     CountVec,
     SumVec,
+}
+
+#[derive(clap::ValueEnum, Clone, Debug)]
+pub enum DpStrategy {
+    PureDpDiscreteLaplace,
 }
 
 #[derive(Subcommand, Debug)]
@@ -52,6 +60,10 @@ pub enum TaskAction {
         bits: Option<u8>,
         #[arg(long)]
         chunk_length: Option<u64>,
+        #[arg(long, requires = "differential_privacy_epsilon")]
+        differential_privacy_strategy: Option<DpStrategy>,
+        #[arg(long, requires = "differential_privacy_strategy")]
+        differential_privacy_epsilon: Option<f64>,
     },
 
     /// rename a task
@@ -108,27 +120,65 @@ impl TaskAction {
                 length,
                 bits,
                 chunk_length,
+                differential_privacy_strategy,
+                differential_privacy_epsilon,
             } => {
                 let vdaf = match vdaf {
-                    VdafName::Count => Vdaf::Count,
+                    VdafName::Count => {
+                        if differential_privacy_strategy.is_some()
+                            || differential_privacy_epsilon.is_some()
+                        {
+                            return Err(Error::Other(
+                                "differential privacy noise is not yet supported with Prio3Count"
+                                    .into(),
+                            ));
+                        }
+                        Vdaf::Count
+                    }
                     VdafName::Histogram => {
+                        let dp_strategy =
+                            match (differential_privacy_strategy, differential_privacy_epsilon) {
+                                (None, None) => dp_strategy::Prio3Histogram::NoDifferentialPrivacy,
+                                (None, Some(_)) => {
+                                    return Err(Error::Other(
+                                        "missing differential-privacy-strategy".into(),
+                                    ))
+                                }
+                                (Some(_), None) => {
+                                    return Err(Error::Other(
+                                        "missing differential-privacy-epsilon".into(),
+                                    ))
+                                }
+                                (Some(DpStrategy::PureDpDiscreteLaplace), Some(epsilon)) => {
+                                    dp_strategy::Prio3Histogram::PureDpDiscreteLaplace(
+                                        PureDpDiscreteLaplace {
+                                            budget: PureDpBudget {
+                                                epsilon: float_to_biguint_ratio(epsilon)
+                                                    .ok_or_else(|| {
+                                                        Error::Other("invalid epsilon".into())
+                                                    })?,
+                                            },
+                                        },
+                                    )
+                                }
+                            };
                         match (length, categorical_buckets, continuous_buckets) {
                             (Some(length), None, None) => Vdaf::Histogram(Histogram::Length {
                                 length,
                                 chunk_length,
-                                dp_strategy: dp_strategy::Prio3Histogram::NoDifferentialPrivacy,
+                                dp_strategy,
                             }),
                             (None, Some(buckets), None) => {
                                 Vdaf::Histogram(Histogram::Categorical {
                                     buckets,
                                     chunk_length,
-                                    dp_strategy: dp_strategy::Prio3Histogram::NoDifferentialPrivacy,
+                                    dp_strategy,
                                 })
                             }
                             (None, None, Some(buckets)) => Vdaf::Histogram(Histogram::Continuous {
                                 buckets,
                                 chunk_length,
-                                dp_strategy: dp_strategy::Prio3Histogram::NoDifferentialPrivacy,
+                                dp_strategy,
                             }),
                             (None, None, None) => {
                                 return Err(Error::Other("continuous-buckets, categorical-buckets, or length are required for histogram vdaf".into()));
@@ -138,19 +188,67 @@ impl TaskAction {
                             }
                         }
                     }
-                    VdafName::Sum => Vdaf::Sum {
-                        bits: bits.unwrap(),
-                    },
-                    VdafName::CountVec => Vdaf::CountVec {
-                        length: length.unwrap(),
-                        chunk_length,
-                    },
-                    VdafName::SumVec => Vdaf::SumVec(SumVec::new(
-                        bits.unwrap(),
-                        length.unwrap(),
-                        chunk_length,
-                        dp_strategy::Prio3SumVec::NoDifferentialPrivacy,
-                    )),
+                    VdafName::Sum => {
+                        if differential_privacy_strategy.is_some()
+                            || differential_privacy_epsilon.is_some()
+                        {
+                            return Err(Error::Other(
+                                "differential privacy noise is not yet supported with Prio3Sum"
+                                    .into(),
+                            ));
+                        }
+                        Vdaf::Sum {
+                            bits: bits.unwrap(),
+                        }
+                    }
+                    VdafName::CountVec => {
+                        if differential_privacy_strategy.is_some()
+                            || differential_privacy_epsilon.is_some()
+                        {
+                            return Err(Error::Other(
+                                "differential privacy noise is not supported with Prio3CountVec"
+                                    .into(),
+                            ));
+                        }
+                        Vdaf::CountVec {
+                            length: length.unwrap(),
+                            chunk_length,
+                        }
+                    }
+                    VdafName::SumVec => {
+                        let dp_strategy =
+                            match (differential_privacy_strategy, differential_privacy_epsilon) {
+                                (None, None) => dp_strategy::Prio3SumVec::NoDifferentialPrivacy,
+                                (None, Some(_)) => {
+                                    return Err(Error::Other(
+                                        "missing differential-privacy-strategy".into(),
+                                    ))
+                                }
+                                (Some(_), None) => {
+                                    return Err(Error::Other(
+                                        "missing differential-privacy-epsilon".into(),
+                                    ))
+                                }
+                                (Some(DpStrategy::PureDpDiscreteLaplace), Some(epsilon)) => {
+                                    dp_strategy::Prio3SumVec::PureDpDiscreteLaplace(
+                                        PureDpDiscreteLaplace {
+                                            budget: PureDpBudget {
+                                                epsilon: float_to_biguint_ratio(epsilon)
+                                                    .ok_or_else(|| {
+                                                        Error::Other("invalid epsilon".into())
+                                                    })?,
+                                            },
+                                        },
+                                    )
+                                }
+                            };
+                        Vdaf::SumVec(SumVec::new(
+                            bits.unwrap(),
+                            length.unwrap(),
+                            chunk_length,
+                            dp_strategy,
+                        ))
+                    }
                 };
 
                 let time_precision_seconds = time_precision.as_secs();
@@ -206,4 +304,13 @@ impl TaskAction {
 
         Ok(())
     }
+}
+
+fn float_to_biguint_ratio(value: f64) -> Option<Ratio<BigUint>> {
+    let signed_ratio = Ratio::from_float(value)?;
+    let unsigned_ratio = Ratio::new(
+        signed_ratio.numer().clone().try_into().ok()?,
+        signed_ratio.denom().clone().try_into().ok()?,
+    );
+    Some(unsigned_ratio)
 }
