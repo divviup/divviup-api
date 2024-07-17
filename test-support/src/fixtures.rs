@@ -179,7 +179,7 @@ pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregat
         role: Role::Either,
         query_types: Default::default(),
         vdafs: Default::default(),
-        protocol: Protocol::Dap07,
+        protocol: Protocol::Dap09,
         features: Features::from(Feature::TokenHash).into(),
     }
     .into_active_model()
