@@ -41,54 +41,15 @@ impl Histogram {
 
     fn representation_for_protocol(
         &self,
-        protocol: &Protocol,
+        _protocol: &Protocol,
     ) -> Result<AggregatorVdaf, ValidationErrors> {
-        match (protocol, self) {
-            (Protocol::Dap07 | Protocol::Dap09, histogram) => {
-                if let Some(chunk_length) = histogram.chunk_length() {
-                    Ok(AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
-                        length: histogram.length(),
-                        chunk_length: Some(chunk_length),
-                    }))
-                } else {
-                    panic!("chunk_length was not populated");
-                }
-            }
-
-            (
-                Protocol::Dap04,
-                Self::Continuous(ContinuousBuckets {
-                    buckets: Some(buckets),
-                    chunk_length: None,
-                }),
-            ) => Ok(AggregatorVdaf::Prio3Histogram(HistogramType::Buckets {
-                buckets: buckets.clone(),
-                chunk_length: None,
-            })),
-
-            (
-                Protocol::Dap04,
-                Self::Continuous(ContinuousBuckets {
-                    buckets: _,
-                    chunk_length: Some(_),
-                }),
-            ) => {
-                let mut errors = ValidationErrors::new();
-                errors.add("chunk_length", ValidationError::new("not-allowed"));
-                Err(errors)
-            }
-
-            (Protocol::Dap04, Self::Categorical(_)) => {
-                let mut errors = ValidationErrors::new();
-                errors.add("buckets", ValidationError::new("must-be-numbers"));
-                Err(errors)
-            }
-
-            (Protocol::Dap04, _) => {
-                let mut errors = ValidationErrors::new();
-                errors.add("buckets", ValidationError::new("required"));
-                Err(errors)
-            }
+        if let Some(chunk_length) = self.chunk_length() {
+            Ok(AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
+                length: self.length(),
+                chunk_length: Some(chunk_length),
+            }))
+        } else {
+            panic!("chunk_length was not populated");
         }
     }
 }
@@ -237,47 +198,32 @@ impl Vdaf {
         }
     }
 
-    pub fn populate_chunk_length(&mut self, protocol: &Protocol) {
-        match (self, protocol) {
+    pub fn populate_chunk_length(&mut self, _protocol: &Protocol) {
+        match self {
             // Chunk length was already populated, don't change it.
-            (
-                Self::Histogram(Histogram::Continuous(ContinuousBuckets {
-                    chunk_length: Some(_),
-                    ..
-                })),
-                _,
-            )
-            | (
-                Self::Histogram(Histogram::Opaque(BucketLength {
-                    chunk_length: Some(_),
-                    ..
-                })),
-                _,
-            )
-            | (
-                Self::Histogram(Histogram::Categorical(CategoricalBuckets {
-                    chunk_length: Some(_),
-                    ..
-                })),
-                _,
-            )
-            | (
-                Self::CountVec(CountVec {
-                    chunk_length: Some(_),
-                    ..
-                }),
-                _,
-            )
-            | (
-                Self::SumVec(SumVec {
-                    chunk_length: Some(_),
-                    ..
-                }),
-                _,
-            ) => {}
+            Self::Histogram(Histogram::Continuous(ContinuousBuckets {
+                chunk_length: Some(_),
+                ..
+            }))
+            | Self::Histogram(Histogram::Opaque(BucketLength {
+                chunk_length: Some(_),
+                ..
+            }))
+            | Self::Histogram(Histogram::Categorical(CategoricalBuckets {
+                chunk_length: Some(_),
+                ..
+            }))
+            | Self::CountVec(CountVec {
+                chunk_length: Some(_),
+                ..
+            })
+            | Self::SumVec(SumVec {
+                chunk_length: Some(_),
+                ..
+            }) => {}
 
-            // Select a chunk length if the protocol version needs it and it isn't set yet.
-            (Self::Histogram(histogram), Protocol::Dap07 | Protocol::Dap09) => {
+            // Select a chunk length if it isn't set yet.
+            Self::Histogram(histogram) => {
                 let length = histogram.length();
                 match histogram {
                     Histogram::Opaque(BucketLength { chunk_length, .. })
@@ -288,35 +234,26 @@ impl Vdaf {
                 }
             }
 
-            (
-                Self::CountVec(CountVec {
-                    length: Some(length),
-                    chunk_length: chunk_length @ None,
-                }),
-                Protocol::Dap07 | Protocol::Dap09,
-            ) => *chunk_length = Some(optimal_chunk_length(*length as usize) as u64),
+            Self::CountVec(CountVec {
+                length: Some(length),
+                chunk_length: chunk_length @ None,
+            }) => *chunk_length = Some(optimal_chunk_length(*length as usize) as u64),
 
-            (
-                Self::SumVec(SumVec {
-                    bits: Some(bits),
-                    length: Some(length),
-                    chunk_length: chunk_length @ None,
-                }),
-                Protocol::Dap07 | Protocol::Dap09,
-            ) => {
+            Self::SumVec(SumVec {
+                bits: Some(bits),
+                length: Some(length),
+                chunk_length: chunk_length @ None,
+            }) => {
                 *chunk_length = Some(optimal_chunk_length(*bits as usize * *length as usize) as u64)
             }
 
             // Invalid, missing parameters, do nothing.
-            (Self::CountVec(CountVec { length: None, .. }), Protocol::Dap07 | Protocol::Dap09)
-            | (Self::SumVec(SumVec { bits: None, .. }), Protocol::Dap07 | Protocol::Dap09)
-            | (Self::SumVec(SumVec { length: None, .. }), Protocol::Dap07 | Protocol::Dap09) => {}
+            Self::CountVec(CountVec { length: None, .. })
+            | Self::SumVec(SumVec { bits: None, .. })
+            | Self::SumVec(SumVec { length: None, .. }) => {}
 
-            // Chunk length is not applicable, either due to VDAF choice or protocol version.
-            (Self::Count, _)
-            | (Self::Sum { .. }, _)
-            | (Self::Unrecognized, _)
-            | (_, Protocol::Dap04) => {}
+            // Chunk length is not applicable due to VDAF choice.
+            Self::Count | Self::Sum { .. } | Self::Unrecognized => {}
         }
     }
 }

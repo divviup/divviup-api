@@ -369,7 +369,6 @@ pub struct AggregatorApiConfig {
     pub role: AggregatorRole,
     pub vdafs: VdafNameSet,
     pub query_types: QueryTypeNameSet,
-    #[serde(default)]
     pub protocol: Protocol,
     #[serde(default)]
     pub features: Features,
