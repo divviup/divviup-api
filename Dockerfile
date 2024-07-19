@@ -1,4 +1,4 @@
-FROM node:iron-alpine AS assets
+FROM node:alpine AS assets
 WORKDIR /src/app
 COPY app/package.json /src/app/package.json
 COPY app/package-lock.json /src/app/package-lock.json
