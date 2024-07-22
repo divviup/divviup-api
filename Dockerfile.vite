@@ -1,1 +1,1 @@
-FROM node:iron-alpine
+FROM node:alpine
