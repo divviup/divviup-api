@@ -13,6 +13,7 @@ mod account;
 mod aggregator;
 mod api_token;
 mod collector_credentials;
+pub mod dp_strategy;
 mod membership;
 mod protocol;
 mod task;
@@ -38,6 +39,8 @@ pub use janus_messages::{
     HpkeConfig, HpkePublicKey,
 };
 pub use membership::Membership;
+pub use num_bigint::BigUint;
+pub use num_rational::Ratio;
 pub use protocol::Protocol;
 pub use task::{Histogram, NewTask, SumVec, Task, Vdaf};
 pub use time::OffsetDateTime;

@@ -3,7 +3,10 @@ use crate::{
         aggregator::{
             Features, QueryTypeName, QueryTypeNameSet, Role as AggregatorRole, VdafNameSet,
         },
-        task::vdaf::{BucketLength, ContinuousBuckets, CountVec, Histogram, Sum, SumVec, Vdaf},
+        task::vdaf::{
+            BucketLength, ContinuousBuckets, CountVec, DpBudget, DpStrategy, DpStrategyKind,
+            Histogram, Sum, SumVec, Vdaf,
+        },
         Aggregator, Protocol, ProvisionableTask, Task,
     },
     handler::Error,
@@ -17,6 +20,8 @@ pub use janus_messages::{
     Duration as JanusDuration, HpkeAeadId, HpkeConfig, HpkeConfigId, HpkeConfigList, HpkeKdfId,
     HpkeKemId, HpkePublicKey, Role, TaskId, Time as JanusTime,
 };
+
+pub mod dp_strategies;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[non_exhaustive]
@@ -34,68 +39,8 @@ pub enum AggregatorVdaf {
         bits: u8,
         length: u64,
         chunk_length: Option<u64>,
+        dp_strategy: dp_strategies::Prio3SumVec,
     },
-}
-
-impl PartialEq<Vdaf> for AggregatorVdaf {
-    fn eq(&self, other: &Vdaf) -> bool {
-        other.eq(self)
-    }
-}
-
-impl PartialEq<AggregatorVdaf> for Vdaf {
-    fn eq(&self, other: &AggregatorVdaf) -> bool {
-        match (self, other) {
-            (Vdaf::Count, AggregatorVdaf::Prio3Count) => true,
-            (
-                Vdaf::Histogram(histogram),
-                AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
-                    length,
-                    chunk_length,
-                }),
-            ) => histogram.length() == *length && histogram.chunk_length() == *chunk_length,
-            (
-                Vdaf::Histogram(Histogram::Continuous(ContinuousBuckets {
-                    buckets: Some(lhs_buckets),
-                    chunk_length: lhs_chunk_length,
-                })),
-                AggregatorVdaf::Prio3Histogram(HistogramType::Buckets {
-                    buckets: rhs_buckets,
-                    chunk_length: rhs_chunk_length,
-                }),
-            ) => lhs_buckets == rhs_buckets && lhs_chunk_length == rhs_chunk_length,
-            (Vdaf::Sum(Sum { bits: Some(lhs) }), AggregatorVdaf::Prio3Sum { bits: rhs }) => {
-                lhs == rhs
-            }
-            (
-                Vdaf::CountVec(CountVec {
-                    length: Some(lhs_length),
-                    chunk_length: lhs_chunk_length,
-                }),
-                AggregatorVdaf::Prio3CountVec {
-                    length: rhs_length,
-                    chunk_length: rhs_chunk_length,
-                },
-            ) => lhs_length == rhs_length && lhs_chunk_length == rhs_chunk_length,
-            (
-                Vdaf::SumVec(SumVec {
-                    bits: Some(lhs_bits),
-                    length: Some(lhs_length),
-                    chunk_length: lhs_chunk_length,
-                }),
-                AggregatorVdaf::Prio3SumVec {
-                    bits: rhs_bits,
-                    length: rhs_length,
-                    chunk_length: rhs_chunk_length,
-                },
-            ) => {
-                lhs_bits == rhs_bits
-                    && lhs_length == rhs_length
-                    && lhs_chunk_length == rhs_chunk_length
-            }
-            _ => false,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
@@ -104,10 +49,12 @@ pub enum HistogramType {
     Opaque {
         length: u64,
         chunk_length: Option<u64>,
+        dp_strategy: dp_strategies::Prio3Histogram,
     },
     Buckets {
         buckets: Vec<u64>,
         chunk_length: Option<u64>,
+        dp_strategy: dp_strategies::Prio3Histogram,
     },
 }
 
@@ -119,17 +66,53 @@ impl From<AggregatorVdaf> for Vdaf {
             AggregatorVdaf::Prio3Histogram(HistogramType::Buckets {
                 buckets,
                 chunk_length,
-            }) => Self::Histogram(Histogram::Continuous(ContinuousBuckets {
-                buckets: Some(buckets),
-                chunk_length,
-            })),
+                dp_strategy,
+            }) => {
+                let dp_strategy = match dp_strategy {
+                    dp_strategies::Prio3Histogram::NoDifferentialPrivacy => DpStrategy {
+                        dp_strategy: DpStrategyKind::NoDifferentialPrivacy,
+                        budget: DpBudget { epsilon: None },
+                    },
+                    dp_strategies::Prio3Histogram::PureDpDiscreteLaplace(dp_strategy) => {
+                        DpStrategy {
+                            dp_strategy: DpStrategyKind::PureDpDiscreteLaplace,
+                            budget: DpBudget {
+                                epsilon: Some(dp_strategy.budget.epsilon.to_vec()),
+                            },
+                        }
+                    }
+                };
+                Self::Histogram(Histogram::Continuous(ContinuousBuckets {
+                    buckets: Some(buckets),
+                    chunk_length,
+                    dp_strategy,
+                }))
+            }
             AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
                 length,
                 chunk_length,
-            }) => Self::Histogram(Histogram::Opaque(BucketLength {
-                length,
-                chunk_length,
-            })),
+                dp_strategy,
+            }) => {
+                let dp_strategy = match dp_strategy {
+                    dp_strategies::Prio3Histogram::NoDifferentialPrivacy => DpStrategy {
+                        dp_strategy: DpStrategyKind::NoDifferentialPrivacy,
+                        budget: DpBudget { epsilon: None },
+                    },
+                    dp_strategies::Prio3Histogram::PureDpDiscreteLaplace(dp_strategy) => {
+                        DpStrategy {
+                            dp_strategy: DpStrategyKind::PureDpDiscreteLaplace,
+                            budget: DpBudget {
+                                epsilon: Some(dp_strategy.budget.epsilon.to_vec()),
+                            },
+                        }
+                    }
+                };
+                Self::Histogram(Histogram::Opaque(BucketLength {
+                    length,
+                    chunk_length,
+                    dp_strategy,
+                }))
+            }
             AggregatorVdaf::Prio3CountVec {
                 length,
                 chunk_length,
@@ -141,11 +124,27 @@ impl From<AggregatorVdaf> for Vdaf {
                 bits,
                 length,
                 chunk_length,
-            } => Self::SumVec(SumVec {
-                length: Some(length),
-                bits: Some(bits),
-                chunk_length,
-            }),
+                dp_strategy,
+            } => {
+                let dp_strategy = match dp_strategy {
+                    dp_strategies::Prio3SumVec::NoDifferentialPrivacy => DpStrategy {
+                        dp_strategy: DpStrategyKind::NoDifferentialPrivacy,
+                        budget: DpBudget { epsilon: None },
+                    },
+                    dp_strategies::Prio3SumVec::PureDpDiscreteLaplace(dp_strategy) => DpStrategy {
+                        dp_strategy: DpStrategyKind::PureDpDiscreteLaplace,
+                        budget: DpBudget {
+                            epsilon: Some(dp_strategy.budget.epsilon.to_vec()),
+                        },
+                    },
+                };
+                Self::SumVec(SumVec {
+                    length: Some(length),
+                    bits: Some(bits),
+                    chunk_length,
+                    dp_strategy,
+                })
+            }
         }
     }
 }

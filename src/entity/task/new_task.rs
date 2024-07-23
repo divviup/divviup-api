@@ -12,6 +12,7 @@ use rand::Rng;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use sha2::{Digest, Sha256};
 use validator::{ValidationErrors, ValidationErrorsKind};
+use vdaf::{DpStrategy, DpStrategyKind, SumVec};
 
 #[derive(Deserialize, Validate, Debug, Clone, Default)]
 pub struct NewTask {
@@ -225,6 +226,38 @@ impl NewTask {
                 "leader_aggregator_id",
                 ValidationError::new("time-bucketed-fixed-size-unsupported"),
             )
+        }
+
+        let uses_pure_dp_discrete_laplace = match &self.vdaf {
+            Some(Vdaf::SumVec(SumVec {
+                dp_strategy:
+                    DpStrategy {
+                        dp_strategy: DpStrategyKind::PureDpDiscreteLaplace,
+                        ..
+                    },
+                ..
+            })) => true,
+            Some(Vdaf::Histogram(histogram)) => matches!(
+                histogram.dp_strategy().dp_strategy,
+                DpStrategyKind::PureDpDiscreteLaplace
+            ),
+            _ => false,
+        };
+        if uses_pure_dp_discrete_laplace
+            && !leader.features.contains(&Feature::PureDpDiscreteLaplace)
+        {
+            errors.add(
+                "leader_aggregator_id",
+                ValidationError::new("pure-dp-discrete-laplace-unsupported"),
+            );
+        }
+        if uses_pure_dp_discrete_laplace
+            && !helper.features.contains(&Feature::PureDpDiscreteLaplace)
+        {
+            errors.add(
+                "helper_aggregator_id",
+                ValidationError::new("pure-dp-discrete-laplace-unsupported"),
+            );
         }
 
         if errors.is_empty() {
