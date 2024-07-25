@@ -60,6 +60,12 @@ pub enum AggregatorAction {
         /// new bearer token for this aggregator
         bearer_token: String,
     },
+
+    /// Update the aggregator's configuration
+    UpdateConfig {
+        /// uuid for this aggregator
+        aggregator_id: Uuid,
+    },
 }
 
 impl AggregatorAction {
@@ -128,6 +134,12 @@ impl AggregatorAction {
             } => output.display(
                 client
                     .rotate_aggregator_bearer_token(aggregator_id, &bearer_token)
+                    .await?,
+            ),
+
+            Self::UpdateConfig { aggregator_id } => output.display(
+                client
+                    .update_aggregator_configuration(aggregator_id)
                     .await?,
             ),
         }

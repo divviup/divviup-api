@@ -230,6 +230,14 @@ impl DivviupClient {
         .await
     }
 
+    pub async fn update_aggregator_configuration(
+        &self,
+        aggregator_id: Uuid,
+    ) -> ClientResult<Aggregator> {
+        self.patch(&format!("api/aggregators/{aggregator_id}"), &json!({}))
+            .await
+    }
+
     pub async fn delete_aggregator(&self, aggregator_id: Uuid) -> ClientResult {
         self.delete(&format!("api/aggregators/{aggregator_id}"))
             .await
