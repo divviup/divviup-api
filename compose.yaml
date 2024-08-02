@@ -1,7 +1,7 @@
 # Compose file for bringing up a simple local Divvi Up environment. This is not suitable for production!
 
 x-janus-common: &janus_common
-  image: ${JANUS_AGGREGATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_aggregator:0.7.7}
+  image: ${JANUS_AGGREGATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_aggregator:0.7.28}
   restart: always
   healthcheck:
     test: ["CMD", "/bin/sh", "-c", "wget http://0.0.0.0:8000/healthz -O - >/dev/null"]
@@ -14,7 +14,7 @@ x-janus-common: &janus_common
       condition: service_completed_successfully
 
 x-janus-migrate: &janus_migrate
-  image: ${JANUS_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_db_migrator:0.7.7}
+  image: ${JANUS_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_db_migrator:0.7.28}
   command:
     - migrate
     - run
@@ -33,7 +33,7 @@ x-janus-environment: &janus_environment
   AGGREGATOR_API_AUTH_TOKENS: "0000"
 
 x-divviup-image: &divviup_image
-  image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api_integration_test:0.3.16}
+  image: ${DIVVIUP_API_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api_integration_test:0.4.1}
 
 x-divviup-environment: &divviup_environment
   RUST_LOG: info
@@ -74,7 +74,7 @@ services:
         target: /docker-entrypoint-initdb.d/postgres_init.sql
 
   divviup_api_migrate:
-    image: ${DIVVIUP_API_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api:0.3.16}
+    image: ${DIVVIUP_API_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/divviup-api/divviup_api:0.4.1}
     entrypoint:
       - /migration
       - up
