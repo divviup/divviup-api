@@ -30,7 +30,7 @@ divviup-client = { workspace = true }
 trillium-rustls = { version = "0.8.1", default-features = false }
 trillium-tokio = "0.4.0"
 serde = "1.0.204"
-email_address = "0.2.8"
+email_address = "0.2.9"
 humantime = "2.1.0"
 base64 = "0.22.1"
 time = { version = "0.3.36", features = [
