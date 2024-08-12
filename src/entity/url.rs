@@ -1,3 +1,4 @@
+use sea_orm::prelude::StringLen;
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{self, Display, Formatter},
@@ -104,7 +105,7 @@ impl sea_orm::sea_query::ValueType for Url {
     }
 
     fn column_type() -> sea_orm::entity::ColumnType {
-        sea_orm::entity::ColumnType::String(None)
+        sea_orm::entity::ColumnType::String(StringLen::None)
     }
 }
 

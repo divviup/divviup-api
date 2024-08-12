@@ -1,5 +1,5 @@
 use sea_orm::{
-    ActiveModelBehavior, DeriveEntityModel, DerivePrimaryKey, DeriveRelation, EntityTrait,
+    ActiveModelBehavior, DeriveEntityModel, DerivePrimaryKey, DeriveRelation,
     EnumIter, PrimaryKeyTrait,
 };
 use serde::{Deserialize, Serialize};

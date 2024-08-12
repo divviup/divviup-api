@@ -2,7 +2,7 @@ use janus_messages::codec::{Decode, Encode};
 use prio::codec::CodecError;
 use sea_orm::{
     entity::ColumnType,
-    sea_query::{ArrayType, BlobSize, Nullable, ValueType, ValueTypeErr},
+    sea_query::{ArrayType, Nullable, ValueType, ValueTypeErr},
     ColIdx, DbErr, QueryResult, TryGetError, TryGetable, Value,
 };
 use serde::{Deserialize, Serialize};
@@ -92,7 +92,7 @@ impl<T: Encode + Decode> ValueType for Codec<T> {
     }
 
     fn column_type() -> ColumnType {
-        ColumnType::Binary(BlobSize::Blob(None))
+        ColumnType::Blob
     }
 }
 
