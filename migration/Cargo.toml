@@ -12,7 +12,7 @@ path = "src/lib.rs"
 [dependencies]
 async-std = { version = "1", features = ["attributes", "tokio1"] }
 clap = { version = "4.5.15", features = ["env", "derive"] }
-sea-orm = "0.12.15"
+sea-orm = "1.0.0"
 serde_json = "1.0.124"
 thiserror = "1.0.63"
 time = "0.3.36"
@@ -24,4 +24,4 @@ version = "0.12.15"
 features = ["runtime-tokio-rustls", "sqlx-postgres"]
 
 [dev-dependencies]
-sea-orm = { version = "0.12.15", features = ["sqlx-sqlite"] }
+sea-orm = { version = "1.0.0", features = ["sqlx-sqlite"] }
