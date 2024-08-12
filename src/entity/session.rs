@@ -1,6 +1,6 @@
 use sea_orm::{
-    ActiveModelBehavior, DeriveEntityModel, DerivePrimaryKey, DeriveRelation, EntityTrait,
-    EnumIter, PrimaryKeyTrait,
+    ActiveModelBehavior, DeriveEntityModel, DerivePrimaryKey, DeriveRelation, EnumIter,
+    PrimaryKeyTrait,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

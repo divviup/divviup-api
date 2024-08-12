@@ -1,5 +1,5 @@
 use rand::{distributions::Standard, prelude::Distribution};
-use sea_orm::{DeriveActiveEnum, EnumIter};
+use sea_orm::{prelude::StringLen, DeriveActiveEnum, EnumIter};
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
@@ -8,7 +8,7 @@ use std::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
-#[sea_orm(rs_type = "String", db_type = "String(None)")]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::None)")]
 pub enum Protocol {
     #[sea_orm(string_value = "DAP-09")]
     #[serde(rename = "DAP-09")]
