@@ -1,5 +1,5 @@
 use rand::{distributions::Standard, prelude::Distribution};
-use sea_orm::{DeriveActiveEnum, EnumIter, prelude::StringLen};
+use sea_orm::{prelude::StringLen, DeriveActiveEnum, EnumIter};
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
