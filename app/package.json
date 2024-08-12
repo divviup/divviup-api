@@ -75,7 +75,7 @@
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.35.0",
-    "eslint-plugin-react-hooks": "^5.1.0-rc-8269d55d-20240802",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "globals": "^15.9.0",
     "postcss-nesting": "^13.0.0",
     "prettier": "^3.3.3",
