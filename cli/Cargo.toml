@@ -24,7 +24,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"
-clap = { version = "4.5.15", features = ["derive", "env"] }
+clap = { version = "4.5.16", features = ["derive", "env"] }
 thiserror = "1.0.63"
 divviup-client = { workspace = true }
 trillium-rustls = { version = "0.8.1", default-features = false }
