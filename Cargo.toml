@@ -52,7 +52,7 @@ prometheus = "0.13.4"
 querystrong = "0.3.0"
 rand = "0.8.5"
 serde = { version = "1.0.208", features = ["derive"] }
-serde_json = "1.0.125"
+serde_json = "1.0.127"
 serde_path_to_error = "0.1.16"
 sha2 = "0.10.8"
 subtle = "2.6.1"
