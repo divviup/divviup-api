@@ -102,7 +102,7 @@ default-features = false
 features = ["pkce-plain"]
 
 [dependencies.sea-orm]
-version = "1.0.0"
+version = "1.1.0-rc.1"
 features = [
         "runtime-tokio-rustls",
         "macros",
