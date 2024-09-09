@@ -707,7 +707,7 @@ dependencies = [
  "bitflags 2.4.2",
  "cexpr",
  "clang-sys",
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "lazy_static",
  "lazycell",
  "log",
@@ -2676,9 +2676,9 @@ dependencies = [
 
 [[package]]
 name = "janus_messages"
-version = "0.7.32"
+version = "0.7.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e7f0e2e84a26cc365a2798ec25f85510ab02f874af38a8886b8a0ec7c91a51e"
+checksum = "a236b7b481de3079fcc5a39b8bddbde43a4004e508c8f790cc94cbd28add494c"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -2776,7 +2776,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c2a198fb6b0eada2a8df47933734e6d35d350665a33a3593d7164fa52c75c19"
 dependencies = [
  "cfg-if 1.0.0",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.4",
 ]
 
 [[package]]
@@ -3593,7 +3593,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "18bec9b0adc4eba778b33684b7ba3e7137789434769ee3ce3930463ef904cfca"
 dependencies = [
  "anyhow",
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "proc-macro2",
  "quote",
  "syn 2.0.58",
