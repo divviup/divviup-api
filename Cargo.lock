@@ -707,7 +707,7 @@ dependencies = [
  "bitflags 2.4.2",
  "cexpr",
  "clang-sys",
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "lazy_static",
  "lazycell",
  "log",
@@ -2776,7 +2776,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c2a198fb6b0eada2a8df47933734e6d35d350665a33a3593d7164fa52c75c19"
 dependencies = [
  "cfg-if 1.0.0",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.4",
 ]
 
 [[package]]
@@ -3593,7 +3593,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "18bec9b0adc4eba778b33684b7ba3e7137789434769ee3ce3930463ef904cfca"
 dependencies = [
  "anyhow",
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "proc-macro2",
  "quote",
  "syn 2.0.58",
@@ -4227,9 +4227,9 @@ dependencies = [
 
 [[package]]
 name = "sea-orm-cli"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d525eee597817631f800857b0c2fe8645ec9c65b4304176a44bf14b93366009e"
+checksum = "5f0b8869c75cf3fbb1bd860abb025033cd2e514c5f4fa43e792697cb1fe6c882"
 dependencies = [
  "chrono",
  "clap",
@@ -4258,9 +4258,9 @@ dependencies = [
 
 [[package]]
 name = "sea-orm-migration"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5df62369752f91b9295f8d71c146d84f818301a9ae7295106ebe8bbaa989a072"
+checksum = "216643749e26ce27ab6c51d3475f2692981d4a902d34455bcd322f412900df5c"
 dependencies = [
  "async-trait",
  "clap",
