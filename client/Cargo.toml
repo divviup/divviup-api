@@ -18,7 +18,7 @@ email_address = "0.2.9"
 prio = "0.16"
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.132"
-thiserror = "1.0.64"
+thiserror = "1.0.65"
 trillium-client = { version = "0.6.2", features = ["json"] }
 trillium-http = "0.3.14"
 url = { version = "2.5.2", features = ["serde"] }
