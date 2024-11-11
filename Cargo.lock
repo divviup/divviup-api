@@ -1414,7 +1414,7 @@ dependencies = [
  "sha2 0.10.8",
  "subtle",
  "test-support",
- "thiserror",
+ "thiserror 2.0.3",
  "time",
  "tokio",
  "tracing",
@@ -1470,7 +1470,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
- "thiserror",
+ "thiserror 2.0.3",
  "time",
  "tokio",
  "trillium-rustls",
@@ -1497,7 +1497,7 @@ dependencies = [
  "serde",
  "serde_json",
  "test-support",
- "thiserror",
+ "thiserror 2.0.3",
  "time",
  "trillium",
  "trillium-client",
@@ -2620,7 +2620,7 @@ dependencies = [
  "prio",
  "rand",
  "reqwest",
- "thiserror",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
  "url",
@@ -2644,7 +2644,7 @@ dependencies = [
  "retry-after",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
  "url",
@@ -2676,7 +2676,7 @@ dependencies = [
  "ring",
  "serde",
  "serde_yaml",
- "thiserror",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
  "trillium",
@@ -2697,7 +2697,7 @@ dependencies = [
  "prio",
  "rand",
  "serde",
- "thiserror",
+ "thiserror 1.0.69",
  "url",
 ]
 
@@ -2711,7 +2711,7 @@ dependencies = [
  "combine",
  "jni-sys",
  "log",
- "thiserror",
+ "thiserror 1.0.69",
  "walkdir",
 ]
 
@@ -2876,7 +2876,7 @@ dependencies = [
  "sea-orm",
  "sea-orm-migration",
  "serde_json",
- "thiserror",
+ "thiserror 2.0.3",
  "time",
  "tracing",
  "tracing-subscriber",
@@ -3084,7 +3084,7 @@ dependencies = [
  "serde_json",
  "serde_path_to_error",
  "sha2 0.10.8",
- "thiserror",
+ "thiserror 1.0.69",
  "url",
 ]
 
@@ -3126,7 +3126,7 @@ dependencies = [
  "js-sys",
  "once_cell",
  "pin-project-lite",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3142,7 +3142,7 @@ dependencies = [
  "opentelemetry-proto",
  "opentelemetry_sdk",
  "prost",
- "thiserror",
+ "thiserror 1.0.69",
  "tokio",
  "tonic",
 ]
@@ -3194,7 +3194,7 @@ dependencies = [
  "percent-encoding",
  "rand",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.69",
  "tokio",
  "tokio-stream",
 ]
@@ -3517,7 +3517,7 @@ dependencies = [
  "sha2 0.10.8",
  "sha3",
  "subtle",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3596,7 +3596,7 @@ dependencies = [
  "memchr",
  "parking_lot",
  "protobuf",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3664,7 +3664,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb0ebafc71ad65bc24f4ba600c6ff9a5d4de5aa19c34425b0cec5b73e7ca5077"
 dependencies = [
  "percent-encoding",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3679,7 +3679,7 @@ dependencies = [
  "quinn-udp",
  "rustc-hash 1.1.0",
  "rustls 0.23.5",
- "thiserror",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
 ]
@@ -3696,7 +3696,7 @@ dependencies = [
  "rustc-hash 2.0.0",
  "rustls 0.23.5",
  "slab",
- "thiserror",
+ "thiserror 1.0.69",
  "tinyvec",
  "tracing",
 ]
@@ -3884,7 +3884,7 @@ checksum = "f0a2a3fe45c9b89f416bc92174669d954594e152d158df845e6df173a9b7aed4"
 dependencies = [
  "chrono",
  "http 1.1.0",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4221,7 +4221,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "strum",
- "thiserror",
+ "thiserror 1.0.69",
  "time",
  "tracing",
  "url",
@@ -4320,7 +4320,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.87",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4707,7 +4707,7 @@ dependencies = [
  "sha2 0.10.8",
  "smallvec",
  "sqlformat",
- "thiserror",
+ "thiserror 1.0.69",
  "time",
  "tokio",
  "tokio-stream",
@@ -4797,7 +4797,7 @@ dependencies = [
  "smallvec",
  "sqlx-core",
  "stringprep",
- "thiserror",
+ "thiserror 1.0.69",
  "time",
  "tracing",
  "uuid",
@@ -4842,7 +4842,7 @@ dependencies = [
  "smallvec",
  "sqlx-core",
  "stringprep",
- "thiserror",
+ "thiserror 1.0.69",
  "time",
  "tracing",
  "uuid",
@@ -5040,7 +5040,7 @@ dependencies = [
  "serde",
  "serde_json",
  "test-harness",
- "thiserror",
+ "thiserror 2.0.3",
  "time",
  "tracing",
  "tracing-log",
@@ -5058,18 +5058,38 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.67"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b3c6efbfc763e64eb85c11c25320f0737cb7364c4b6336db90aa9ebe27a0bbd"
+checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
 dependencies = [
- "thiserror-impl",
+ "thiserror-impl 1.0.69",
+]
+
+[[package]]
+name = "thiserror"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c006c85c7651b3cf2ada4584faa36773bd07bac24acfb39f3c431b36d7e667aa"
+dependencies = [
+ "thiserror-impl 2.0.3",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.67"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b607164372e89797d78b8e23a6d67d5d1038c1c65efd52e1389ef8b77caba2a6"
+checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f077553d607adc1caf65430528a576c757a71ed73944b66ebb58ef2bbd243568"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5363,7 +5383,7 @@ dependencies = [
  "Inflector",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.69",
  "time",
  "tracing-core",
  "tracing-subscriber",
@@ -5412,7 +5432,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_path_to_error",
- "thiserror",
+ "thiserror 1.0.69",
  "trillium",
  "trillium-macros 0.0.6",
 ]
@@ -5445,7 +5465,7 @@ dependencies = [
  "serde",
  "serde_json",
  "size",
- "thiserror",
+ "thiserror 1.0.69",
  "trillium-http",
  "trillium-server-common",
 ]
@@ -5514,7 +5534,7 @@ dependencies = [
  "smartcow",
  "smartstring",
  "stopper",
- "thiserror",
+ "thiserror 1.0.69",
  "trillium-macros 0.0.6",
 ]
 
