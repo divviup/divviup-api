@@ -1,10 +1,6 @@
 import React from "react";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  RouteObject,
-  redirect,
-} from "react-router";
+import { createBrowserRouter, RouteObject, redirect } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import { ApiClientContext } from "./ApiClientContext";
 import { ApiClient } from "./ApiClient";
 import layout from "./layout";
