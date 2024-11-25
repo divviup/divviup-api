@@ -21,21 +21,28 @@ import collectorCredentials from "./collector-credentials";
 import swaggerUi from "./swagger-ui";
 
 function buildRouter(apiClient: ApiClient) {
-  return createBrowserRouter([
-    swaggerUi(),
-    layout(apiClient, [
-      logout(apiClient),
-      root(apiClient),
-      admin(apiClient, [queue(apiClient), sharedAggregators(apiClient)]),
-      accounts(apiClient, [
-        aggregators(apiClient),
-        apiTokens(apiClient),
-        memberships(apiClient),
-        tasks(apiClient),
-        collectorCredentials(apiClient),
+  return createBrowserRouter(
+    [
+      swaggerUi(),
+      layout(apiClient, [
+        logout(apiClient),
+        root(apiClient),
+        admin(apiClient, [queue(apiClient), sharedAggregators(apiClient)]),
+        accounts(apiClient, [
+          aggregators(apiClient),
+          apiTokens(apiClient),
+          memberships(apiClient),
+          tasks(apiClient),
+          collectorCredentials(apiClient),
+        ]),
       ]),
-    ]),
-  ]);
+    ],
+    {
+      future: {
+        v7_relativeSplatPath: true,
+      },
+    },
+  );
 }
 
 export default function Router() {
