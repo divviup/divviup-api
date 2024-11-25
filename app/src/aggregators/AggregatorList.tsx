@@ -6,7 +6,7 @@ import { AccountBreadcrumbs, WithAccount } from "../util";
 import { CloudUpload } from "react-bootstrap-icons";
 import { Suspense } from "react";
 import { LinkContainer } from "react-router-bootstrap";
-import { Await, useLoaderData } from "react-router-dom";
+import { Await, useLoaderData } from "react-router";
 import { Aggregator } from "../ApiClient";
 import { ListGroup } from "react-bootstrap";
 import D from "../logo/color/svg/small.svg";

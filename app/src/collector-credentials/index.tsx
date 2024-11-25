@@ -1,4 +1,4 @@
-import { RouteObject } from "react-router-dom";
+import { RouteObject } from "react-router";
 import ApiClient from "../ApiClient";
 import CollectorCredentials from "./CollectorCredentialList";
 export default function collectorCredentials(

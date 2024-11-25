@@ -4,7 +4,7 @@ import {
   RouterProvider,
   RouteObject,
   redirect,
-} from "react-router-dom";
+} from "react-router";
 import { ApiClientContext } from "./ApiClientContext";
 import { ApiClient } from "./ApiClient";
 import layout from "./layout";

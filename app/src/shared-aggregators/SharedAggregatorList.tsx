@@ -11,12 +11,7 @@ import {
   Placeholder,
   Row,
 } from "react-bootstrap";
-import {
-  Await,
-  useFetcher,
-  useLoaderData,
-  useNavigation,
-} from "react-router-dom";
+import { Await, useFetcher, useLoaderData, useNavigation } from "react-router";
 import { Aggregator } from "../ApiClient";
 import "@github/relative-time-element";
 import { Suspense, useEffect, useState } from "react";

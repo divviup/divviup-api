@@ -14,7 +14,7 @@ import {
   Row,
 } from "react-bootstrap";
 import { KeyFill } from "react-bootstrap-icons";
-import { useFetcher } from "react-router-dom";
+import { useFetcher } from "react-router";
 import { formikErrors } from "../ApiClient";
 import { CopyCode } from "../util";
 

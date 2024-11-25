@@ -1,4 +1,4 @@
-import { RouteObject } from "react-router-dom";
+import { RouteObject } from "react-router";
 import ApiClient, { UpdateAggregator } from "../ApiClient";
 
 export default function sharedAggregators(apiClient: ApiClient): RouteObject {

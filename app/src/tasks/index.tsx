@@ -2,7 +2,7 @@ import AccountDetailFull from "./TaskList";
 import TaskForm from "./TaskForm";
 import TaskDetail from "./TaskDetail";
 import ApiClient from "../ApiClient";
-import { RouteObject, redirect } from "react-router-dom";
+import { RouteObject, redirect } from "react-router";
 
 export default function tasks(apiClient: ApiClient): RouteObject {
   return {

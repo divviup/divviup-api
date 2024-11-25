@@ -1,4 +1,4 @@
-import { RouteObject, redirect } from "react-router-dom";
+import { RouteObject, redirect } from "react-router";
 import ApiClient, { NewAccount, UpdateAccount } from "../ApiClient";
 import AccountSummary from "./AccountSummary";
 import AccountForm from "./AccountForm";

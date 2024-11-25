@@ -1,6 +1,6 @@
 import { AxiosError } from "axios";
 import Alert from "react-bootstrap/Alert";
-import { isRouteErrorResponse, useRouteError } from "react-router-dom";
+import { isRouteErrorResponse, useRouteError } from "react-router";
 import ApiClient from "../ApiClient";
 import Layout from "./Layout";
 import React from "react";
