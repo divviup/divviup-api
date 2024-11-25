@@ -11,6 +11,8 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
         index: true,
         element: <ApiTokens />,
         loader({ params }) {
+          // TODO(#1534): replace this before react-router v7 upgrade.
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
           return defer({
             apiTokens: apiClient
               .accountApiTokens(params.accountId as string)

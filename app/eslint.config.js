@@ -69,6 +69,7 @@ export default defineConfig(
         },
       ],
       "no-console": "warn",
+      "@typescript-eslint/no-deprecated": "warn",
     },
   },
 );

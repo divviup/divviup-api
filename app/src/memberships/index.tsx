@@ -7,6 +7,8 @@ export default function memberships(apiClient: ApiClient): RouteObject {
     path: "memberships",
     element: <Memberships />,
     loader({ params }) {
+      // TODO(#1534): replace this before react-router v7 upgrade.
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       return defer({
         memberships: apiClient.accountMemberships(params.accountId as string),
       });
