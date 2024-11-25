@@ -2,7 +2,7 @@ import Aggregators from "./AggregatorList";
 import AggregatorFormPage from "./AggregatorForm";
 import AggregatorDetail from "./AggregatorDetail";
 import ApiClient from "../ApiClient";
-import { RouteObject, defer, redirect } from "react-router-dom";
+import { RouteObject, redirect } from "react-router-dom";
 
 export default function aggregators(apiClient: ApiClient): RouteObject {
   return {
@@ -13,20 +13,20 @@ export default function aggregators(apiClient: ApiClient): RouteObject {
         index: true,
         element: <Aggregators />,
         loader({ params }) {
-          return defer({
+          return {
             aggregators: apiClient.accountAggregators(
               params.accountId as string,
             ),
-          });
+          };
         },
       },
       {
         path: ":aggregatorId",
         element: <AggregatorDetail />,
         loader({ params }) {
-          return defer({
+          return {
             aggregator: apiClient.aggregator(params.aggregatorId as string),
-          });
+          };
         },
 
         async action({ params, request }) {

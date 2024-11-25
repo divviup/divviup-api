@@ -1,4 +1,4 @@
-import { RouteObject, defer } from "react-router-dom";
+import { RouteObject } from "react-router-dom";
 import ApiClient from "../ApiClient";
 import ApiTokens from "./ApiTokenList";
 
@@ -11,11 +11,11 @@ export default function apiTokens(apiClient: ApiClient): RouteObject {
         index: true,
         element: <ApiTokens />,
         loader({ params }) {
-          return defer({
+          return {
             apiTokens: apiClient
               .accountApiTokens(params.accountId as string)
               .then((tokens) => tokens.reverse()),
-          });
+          };
         },
 
         shouldRevalidate(_) {

@@ -1,4 +1,4 @@
-import { RouteObject, defer, redirect } from "react-router-dom";
+import { RouteObject, redirect } from "react-router-dom";
 import ApiClient, { NewAccount, UpdateAccount } from "../ApiClient";
 import AccountSummary from "./AccountSummary";
 import AccountForm from "./AccountForm";
@@ -16,7 +16,7 @@ export default function accounts(
         path: "",
         element: <AccountList />,
         loader() {
-          return defer({ accounts: apiClient.accounts() });
+          return { accounts: apiClient.accounts() };
         },
         index: true,
       },
@@ -43,9 +43,9 @@ export default function accounts(
         id: "account",
         loader({ params }) {
           const { accountId } = params as { accountId: string };
-          return defer({
+          return {
             account: apiClient.account(accountId),
-          });
+          };
         },
         shouldRevalidate(args) {
           return (
@@ -78,14 +78,14 @@ export default function accounts(
             index: true,
             loader({ params }) {
               const { accountId } = params as { accountId: string };
-              return defer({
+              return {
                 apiTokens: apiClient.accountApiTokens(accountId),
                 tasks: apiClient.accountTasks(accountId),
                 collectorCredentials:
                   apiClient.accountCollectorCredentials(accountId),
                 aggregators: apiClient.accountAggregators(accountId),
                 account: apiClient.account(accountId),
-              });
+              };
             },
           },
           ...children,
