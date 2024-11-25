@@ -1,7 +1,7 @@
 import { FormikHelpers } from "formik";
 import ApiClient, { NewAggregator, formikErrors } from "../ApiClient";
 import { AggregatorForm } from "../aggregators/AggregatorForm";
-import { useRevalidator } from "react-router-dom";
+import { useRevalidator } from "react-router";
 import { ApiClientContext } from "../ApiClientContext";
 import React from "react";
 

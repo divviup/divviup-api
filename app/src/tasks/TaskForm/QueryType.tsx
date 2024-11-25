@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData } from "react-router";
 import React, { ChangeEvent } from "react";
 import { Aggregator } from "../../ApiClient";
 import FormCheck from "react-bootstrap/FormCheck";

@@ -1,4 +1,4 @@
-import { RouteObject } from "react-router-dom";
+import { RouteObject } from "react-router";
 import ApiClient from "../ApiClient";
 
 export default function admin(

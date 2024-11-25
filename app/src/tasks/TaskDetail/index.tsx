@@ -1,4 +1,4 @@
-import { Await, useParams, useLoaderData } from "react-router-dom";
+import { Await, useParams, useLoaderData } from "react-router";
 import Breadcrumb from "react-bootstrap/Breadcrumb";
 import React, { Suspense } from "react";
 import Row from "react-bootstrap/Row";

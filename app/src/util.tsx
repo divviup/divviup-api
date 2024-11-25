@@ -3,7 +3,7 @@ import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import { LinkContainer } from "react-router-bootstrap";
 import React, { Suspense, useRef } from "react";
-import { Await, useRouteLoaderData, useLoaderData } from "react-router-dom";
+import { Await, useRouteLoaderData, useLoaderData } from "react-router";
 import { Account } from "./ApiClient";
 import Placeholder from "react-bootstrap/Placeholder";
 import { Button, OverlayTrigger, Tooltip } from "react-bootstrap";
