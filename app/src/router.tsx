@@ -48,14 +48,7 @@ function buildRouter(apiClient: ApiClient) {
 export default function Router() {
   const apiClient = React.useContext(ApiClientContext);
   const router = React.useMemo(() => buildRouter(apiClient), [apiClient]);
-  return (
-    <RouterProvider
-      router={router}
-      future={{
-        v7_startTransition: true,
-      }}
-    />
-  );
+  return <RouterProvider router={router} />;
 }
 
 function root(_apiClient: ApiClient): RouteObject {
