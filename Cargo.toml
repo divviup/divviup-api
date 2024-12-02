@@ -64,7 +64,7 @@ trillium = "0.2.20"
 tracing-chrome = "0.7.2"
 tracing-log = "0.2.0"
 tracing-stackdriver = "0.10.0"
-tracing-subscriber = { version = "0.3.18", features = [
+tracing-subscriber = { version = "0.3.19", features = [
         "json",
         "env-filter",
         "std",
