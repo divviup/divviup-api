@@ -53,7 +53,7 @@ mod url_safe_base64 {
 
     pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
         struct Base64Visitor;
-        impl<'de> Visitor<'de> for Base64Visitor {
+        impl Visitor<'_> for Base64Visitor {
             type Value = Vec<u8>;
             fn expecting(&self, formatter: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 write!(formatter, "base64")
