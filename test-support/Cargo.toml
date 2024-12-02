@@ -16,7 +16,7 @@ serde_json = "1.0.133"
 thiserror = "2.0.3"
 tracing = "0.1.41"
 tracing-log = "0.2.0"
-tracing-subscriber = { version = "0.3.18", features = [
+tracing-subscriber = { version = "0.3.19", features = [
         "json",
         "env-filter",
         "std",
