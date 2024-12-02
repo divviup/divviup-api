@@ -48,8 +48,6 @@ pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricsError> {
             .with_trace_config(opentelemetry_sdk::trace::Config::default().with_resource(resource))
             .with_exporter(opentelemetry_otlp::new_exporter().tonic())
             .install_batch(opentelemetry_sdk::runtime::Tokio)
-            .unwrap()
-            .provider()
             .unwrap(),
     );
 
