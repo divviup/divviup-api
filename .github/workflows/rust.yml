@@ -42,6 +42,8 @@ jobs:
         run: cargo fmt --all -- --check
       - name: check +api-mocks
         run: cargo check --features api-mocks
+      - name: check +otlp-trace
+        run: cargo check --features otlp-trace
       - name: check cli -default +ring
         run: cargo check -p divviup-cli --no-default-features --features ring,common
       - name: check cli +default +admin
