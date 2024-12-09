@@ -32,7 +32,7 @@ num-rational = "0.4.2"
 
 [dev-dependencies]
 divviup-api.workspace = true
-fastrand = "2.2.0"
+fastrand = "2.3.0"
 futures-lite = "2.5.0"
 test-support.workspace = true
 trillium = "0.2.20"
