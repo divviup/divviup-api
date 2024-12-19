@@ -45,14 +45,15 @@ pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricError> {
     );
 
     #[cfg(feature = "otlp-trace")]
-    global::set_tracer_provider(
-        opentelemetry_otlp::new_pipeline()
-            .tracing()
-            .with_trace_config(opentelemetry_sdk::trace::Config::default().with_resource(resource))
-            .with_exporter(opentelemetry_otlp::new_exporter().tonic())
-            .install_batch(opentelemetry_sdk::runtime::Tokio)
-            .unwrap(),
-    );
+    global::set_tracer_provider({
+        use opentelemetry_otlp::SpanExporter;
+        use opentelemetry_sdk::{runtime::Tokio, trace::TracerProvider};
+
+        TracerProvider::builder()
+            .with_resource(resource)
+            .with_batch_exporter(SpanExporter::builder().with_tonic().build().unwrap(), Tokio)
+            .build()
+    });
 
     Ok(trillium_prometheus::text_format_handler(registry))
 }
