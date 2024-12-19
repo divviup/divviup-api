@@ -30,7 +30,6 @@ api-mocks = ["dep:trillium-testing"]
 integration-testing = []
 otlp-trace = ["opentelemetry/trace", "opentelemetry-otlp", "opentelemetry_sdk/trace", "trillium-opentelemetry/trace"]
 
-
 [dependencies]
 aes-gcm = "0.10.3"
 async-lock = "3.4.0"
@@ -43,10 +42,8 @@ futures-lite = "2.5.0"
 git-version = "0.3.9"
 janus_messages = "0.7.45"
 log = "0.4.22"
-opentelemetry = { version = "0.24.0", features = ["metrics", "logs"] }
-opentelemetry-prometheus = { version = "0.17.0", features = [
-        "prometheus-encoding",
-] }
+opentelemetry = { version = "0.27.1", features = ["metrics", "logs"] }
+opentelemetry-prometheus = { version = "0.27.0", features = ["prometheus-encoding"] }
 prio = "0.16.7"
 prometheus = "0.13.4"
 querystrong = "0.3.0"
@@ -93,8 +90,8 @@ url = "2.5.2"
 uuid = { version = "1.11.0", features = ["v4", "fast-rng", "serde"] }
 validator = { version = "0.19.0", features = ["derive"] }
 trillium-opentelemetry = { version = "0.9.0", default-features = false, features = ["metrics"] }
-opentelemetry_sdk = { version = "0.24.1", features = ["rt-tokio", "logs", "metrics"] }
-opentelemetry-otlp = { version = "0.17.0", optional = true }
+opentelemetry_sdk = { version = "0.27.1", features = ["rt-tokio", "logs", "metrics"] }
+opentelemetry-otlp = { version = "0.27.0", optional = true }
 
 [dependencies.oauth2]
 version = "4.4.2"
