@@ -11,7 +11,7 @@ import { Outlet, useLoaderData, useRevalidator } from "react-router";
 import { QueueJob } from "../ApiClient";
 import useInterval from "use-interval";
 import { LinkContainer } from "react-router-bootstrap";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import "@github/relative-time-element";
 import { DateTime } from "luxon";
 

@@ -1,4 +1,4 @@
-import { Await, useLoaderData } from "react-router-dom";
+import { Await, useLoaderData } from "react-router";
 import Col from "react-bootstrap/Col";
 import { Suspense } from "react";
 import { Aggregator, Task } from "../../ApiClient";

@@ -4,7 +4,7 @@ import { CheckSquare, Stopwatch, XCircle } from "react-bootstrap-icons";
 import { useLoaderData } from "react-router";
 import { QueueJob } from "../ApiClient";
 import { DateTime } from "luxon";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 export const Component = QueueJobComponent;
 
