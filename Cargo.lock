@@ -1396,10 +1396,10 @@ dependencies = [
  "janus_messages",
  "log",
  "oauth2",
- "opentelemetry 0.24.0",
+ "opentelemetry 0.27.1",
  "opentelemetry-otlp",
  "opentelemetry-prometheus",
- "opentelemetry_sdk 0.24.1",
+ "opentelemetry_sdk 0.27.1",
  "prio",
  "prometheus",
  "querystrong",
@@ -3221,8 +3221,6 @@ dependencies = [
  "rand",
  "serde_json",
  "thiserror 1.0.69",
- "tokio",
- "tokio-stream",
 ]
 
 [[package]]
@@ -3237,7 +3235,13 @@ dependencies = [
  "futures-util",
  "glob",
  "opentelemetry 0.27.1",
+ "percent-encoding",
+ "rand",
+ "serde_json",
  "thiserror 1.0.69",
+ "tokio",
+ "tokio-stream",
+ "tracing",
 ]
 
 [[package]]

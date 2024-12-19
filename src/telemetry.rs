@@ -1,12 +1,15 @@
 use git_version::git_version;
-use opentelemetry::{global, metrics::MetricsError, KeyValue};
-use opentelemetry_sdk::{metrics::SdkMeterProvider, Resource};
+use opentelemetry::{global, KeyValue};
+use opentelemetry_sdk::{
+    metrics::{MetricError, SdkMeterProvider},
+    Resource,
+};
 use prometheus::Registry;
 
 /// Install a Prometheus metrics provider and exporter. The
 /// OpenTelemetry global API can be used to create and update
 /// instruments, and they will be sent through this exporter.
-pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricsError> {
+pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricError> {
     let registry = Registry::new();
     let exporter = opentelemetry_prometheus::exporter()
         .with_registry(registry.clone())
