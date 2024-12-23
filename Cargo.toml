@@ -109,7 +109,7 @@ features = [
 ]
 
 [dev-dependencies]
-rcgen = "0.13.1"
+rcgen = "0.13.2"
 regex = "1.11.1"
 test-support.workspace = true
 
