@@ -20,7 +20,7 @@ import {
   useFetcher,
   useLoaderData,
   useNavigation,
-} from "react-router-dom";
+} from "react-router";
 import { ApiToken } from "../ApiClient";
 import Table from "react-bootstrap/Table";
 import React from "react";

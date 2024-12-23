@@ -3,7 +3,7 @@ import Button from "react-bootstrap/Button";
 import FormGroup from "react-bootstrap/FormGroup";
 import FormLabel from "react-bootstrap/FormLabel";
 import FormControl from "react-bootstrap/FormControl";
-import { Form } from "react-router-dom";
+import { Form } from "react-router";
 import { BuildingAdd } from "react-bootstrap-icons";
 
 export default function AccountForm() {

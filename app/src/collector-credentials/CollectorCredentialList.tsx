@@ -12,12 +12,7 @@ import {
   XCircle,
 } from "react-bootstrap-icons";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import {
-  Await,
-  useFetcher,
-  useLoaderData,
-  useNavigation,
-} from "react-router-dom";
+import { Await, useFetcher, useLoaderData, useNavigation } from "react-router";
 import { CollectorCredential } from "../ApiClient";
 import Table from "react-bootstrap/Table";
 import React from "react";
