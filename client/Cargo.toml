@@ -26,7 +26,7 @@ uuid = { version = "1.11.0", features = ["v4", "fast-rng", "serde"] }
 time = { version = "0.3.37", features = ["serde", "serde-well-known"] }
 log = "0.4.22"
 pad-adapter = "0.1.1"
-janus_messages = "0.7.45"
+janus_messages = "0.7.46"
 num-bigint = "0.4.6"
 num-rational = "0.4.2"
 
