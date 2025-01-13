@@ -44,7 +44,7 @@ RUN ASSET_DIR=/src/app/build cargo build --workspace --bins --profile ${RUST_PRO
 # we need to create this symlink.
 RUN ln -s debug target/dev
 
-FROM alpine:3.21.0 AS final
+FROM alpine:3.21.2 AS final
 ARG GIT_REVISION=unknown
 ARG RUST_PROFILE=release
 LABEL revision=${GIT_REVISION}
