@@ -146,7 +146,7 @@ impl NewTask {
 
             Some(collector_credential) => {
                 let leader_needs_token_hash =
-                    leader.map_or(false, |leader| leader.features.token_hash_enabled());
+                    leader.is_some_and(|leader| leader.features.token_hash_enabled());
 
                 if leader_needs_token_hash && collector_credential.token_hash.is_none() {
                     errors.add(

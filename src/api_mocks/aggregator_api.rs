@@ -55,7 +55,7 @@ async fn bearer_token_check(conn: Conn) -> Conn {
     let token_is_valid = conn
         .request_headers()
         .get_str(KnownHeaderName::Authorization)
-        .map_or(false, |s| match s.split_once(' ') {
+        .is_some_and(|s| match s.split_once(' ') {
             Some(("Bearer", BAD_BEARER_TOKEN)) => false,
             Some(("Bearer", _)) => true,
             _ => false,
