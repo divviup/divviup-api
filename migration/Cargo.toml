@@ -14,7 +14,7 @@ async-std = { version = "1", features = ["attributes", "tokio1"] }
 clap = { version = "4.5.26", features = ["env", "derive"] }
 sea-orm = "1.0.1"
 serde_json = "1.0.134"
-thiserror = "2.0.9"
+thiserror = "2.0.11"
 time = "0.3.37"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
