@@ -55,7 +55,7 @@ impl User {
             .count(db)
             .await
             .ok()
-            .map_or(false, |n| n > 0)
+            .is_some_and(|n| n > 0)
     }
 
     async fn populate_admin(&mut self, db: &Db) {
