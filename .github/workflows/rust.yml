@@ -48,3 +48,7 @@ jobs:
         run: cargo check -p divviup-cli --no-default-features --features ring,common
       - name: check cli +default +admin
         run: cargo check -p divviup-cli --features admin
+      - name: cargo deny
+        uses: EmbarkStudios/cargo-deny-action@v2.0.4
+        with:
+          command: check bans

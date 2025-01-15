@@ -126,3 +126,7 @@ path = "src/bin.rs"
 
 [profile.release]
 lto = "fat"
+
+[patch.crates-io]
+# TODO(#1485): upgrade to the next release of trillium-opentelemetry once it is available
+trillium-opentelemetry = { git = "https://github.com/divviup/trillium-opentelemetry.git", rev = "da2f578c4684e50a03ba177ceefd183e43a5367f" }
