@@ -75,7 +75,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build
-        uses: houseabsolute/actions-rust-cross@v0
+        uses: houseabsolute/actions-rust-cross@v1
         with:
           target: ${{ steps.resolve-inputs.outputs.triple }}
           args: ${{ format('--locked --release --package divviup-cli {0}', matrix.target.extra-build-flags) }}
