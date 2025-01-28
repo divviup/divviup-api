@@ -11,6 +11,7 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::Rng;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use sha2::{Digest, Sha256};
+use std::borrow::Cow;
 use validator::{ValidationErrors, ValidationErrorsKind};
 use vdaf::{DpStrategy, DpStrategyKind, SumVec};
 
@@ -282,7 +283,7 @@ impl NewTask {
             Err(e) => {
                 let errors = errors
                     .errors_mut()
-                    .entry(std::borrow::Cow::Borrowed("vdaf"))
+                    .entry(Cow::Borrowed("vdaf"))
                     .or_insert_with(|| {
                         ValidationErrorsKind::Struct(Box::new(ValidationErrors::new()))
                     });
@@ -299,7 +300,7 @@ impl NewTask {
         if !leader.vdafs.contains(&name) || !helper.vdafs.contains(&name) {
             let errors = errors
                 .errors_mut()
-                .entry(std::borrow::Cow::Borrowed("vdaf"))
+                .entry(Cow::Borrowed("vdaf"))
                 .or_insert_with(|| ValidationErrorsKind::Struct(Box::new(ValidationErrors::new())));
             match errors {
                 ValidationErrorsKind::Struct(errors) => {
