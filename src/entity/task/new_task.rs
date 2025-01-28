@@ -280,9 +280,12 @@ impl NewTask {
         let aggregator_vdaf = match vdaf.representation_for_protocol(protocol) {
             Ok(vdaf) => vdaf,
             Err(e) => {
-                let errors = errors.errors_mut().entry("vdaf").or_insert_with(|| {
-                    ValidationErrorsKind::Struct(Box::new(ValidationErrors::new()))
-                });
+                let errors = errors
+                    .errors_mut()
+                    .entry(std::borrow::Cow::Borrowed("vdaf"))
+                    .or_insert_with(|| {
+                        ValidationErrorsKind::Struct(Box::new(ValidationErrors::new()))
+                    });
                 match errors {
                     ValidationErrorsKind::Struct(errors) => {
                         errors.errors_mut().extend(e.into_errors())
@@ -296,7 +299,7 @@ impl NewTask {
         if !leader.vdafs.contains(&name) || !helper.vdafs.contains(&name) {
             let errors = errors
                 .errors_mut()
-                .entry("vdaf")
+                .entry(std::borrow::Cow::Borrowed("vdaf"))
                 .or_insert_with(|| ValidationErrorsKind::Struct(Box::new(ValidationErrors::new())));
             match errors {
                 ValidationErrorsKind::Struct(errors) => {
