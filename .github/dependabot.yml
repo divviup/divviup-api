@@ -7,18 +7,6 @@ updates:
       interval: "weekly"
     target-branch: "main"
     open-pull-requests-limit: 20
-    ignore:
-      # opentelemetry-rust removed support for pull exporters, including
-      # opentelemetry-prometheus, and will add it back after the 1.0 release.
-      - dependency-name: opentelemetry
-        versions:
-          - ">= 0.25, < 1.0"
-      - dependency-name: opentelemetry_sdk
-        versions:
-          - ">= 0.25, < 1.0"
-      - dependency-name: opentelemetry-otlp
-        versions:
-          - ">= 0.25, < 1.0"
     groups:
       opentelemetry:
         patterns:
