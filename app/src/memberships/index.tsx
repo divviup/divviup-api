@@ -1,4 +1,4 @@
-import { RouteObject, defer } from "react-router-dom";
+import { RouteObject } from "react-router";
 import ApiClient from "../ApiClient";
 import Memberships from "./Memberships";
 
@@ -7,9 +7,9 @@ export default function memberships(apiClient: ApiClient): RouteObject {
     path: "memberships",
     element: <Memberships />,
     loader({ params }) {
-      return defer({
+      return {
         memberships: apiClient.accountMemberships(params.accountId as string),
-      });
+      };
     },
 
     shouldRevalidate(_) {

@@ -2,7 +2,7 @@ import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import ListGroup from "react-bootstrap/ListGroup";
-import { useFetcher, useParams, useRouteLoaderData } from "react-router-dom";
+import { useFetcher, useParams, useRouteLoaderData } from "react-router";
 import {
   ChangeEvent,
   FormEvent,

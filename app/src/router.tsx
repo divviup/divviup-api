@@ -1,10 +1,6 @@
 import React from "react";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  RouteObject,
-  redirect,
-} from "react-router-dom";
+import { createBrowserRouter, RouteObject, redirect } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import { ApiClientContext } from "./ApiClientContext";
 import { ApiClient } from "./ApiClient";
 import layout from "./layout";
@@ -21,21 +17,32 @@ import collectorCredentials from "./collector-credentials";
 import swaggerUi from "./swagger-ui";
 
 function buildRouter(apiClient: ApiClient) {
-  return createBrowserRouter([
-    swaggerUi(),
-    layout(apiClient, [
-      logout(apiClient),
-      root(apiClient),
-      admin(apiClient, [queue(apiClient), sharedAggregators(apiClient)]),
-      accounts(apiClient, [
-        aggregators(apiClient),
-        apiTokens(apiClient),
-        memberships(apiClient),
-        tasks(apiClient),
-        collectorCredentials(apiClient),
+  return createBrowserRouter(
+    [
+      swaggerUi(),
+      layout(apiClient, [
+        logout(apiClient),
+        root(apiClient),
+        admin(apiClient, [queue(apiClient), sharedAggregators(apiClient)]),
+        accounts(apiClient, [
+          aggregators(apiClient),
+          apiTokens(apiClient),
+          memberships(apiClient),
+          tasks(apiClient),
+          collectorCredentials(apiClient),
+        ]),
       ]),
-    ]),
-  ]);
+    ],
+    {
+      future: {
+        v7_relativeSplatPath: true,
+        v7_fetcherPersist: true,
+        v7_normalizeFormMethod: true,
+        v7_partialHydration: true,
+        v7_skipActionErrorRevalidation: true,
+      },
+    },
+  );
 }
 
 export default function Router() {

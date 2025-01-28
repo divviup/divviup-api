@@ -1,4 +1,4 @@
-import { useFetcher } from "react-router-dom";
+import { useFetcher } from "react-router";
 import Col from "react-bootstrap/Col";
 import React from "react";
 import { Aggregator, CollectorAuthToken } from "../../ApiClient";
