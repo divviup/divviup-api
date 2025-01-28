@@ -11,7 +11,7 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::Rng;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use sha2::{Digest, Sha256};
-use std::Cow::Borrowed;
+use std::borrow::Cow;
 use validator::{ValidationErrors, ValidationErrorsKind};
 use vdaf::{DpStrategy, DpStrategyKind, SumVec};
 
