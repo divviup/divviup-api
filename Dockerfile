@@ -8,7 +8,7 @@ COPY app /src/app
 RUN npm ci
 RUN npm run build
 
-FROM rust:1.84.0-alpine AS chef
+FROM rust:1.84.1-alpine AS chef
 RUN apk --no-cache add libc-dev cmake make
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo install cargo-chef
