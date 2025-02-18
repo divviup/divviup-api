@@ -47,9 +47,9 @@ pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricError> {
     #[cfg(feature = "otlp-trace")]
     global::set_tracer_provider({
         use opentelemetry_otlp::SpanExporter;
-        use opentelemetry_sdk::{runtime::Tokio, trace::TracerProvider};
+        use opentelemetry_sdk::{runtime::Tokio, trace::SdkTracerProvider};
 
-        TracerProvider::builder()
+        SdkTracerProvider::builder()
             .with_resource(resource)
             .with_batch_exporter(SpanExporter::builder().with_tonic().build().unwrap(), Tokio)
             .build()
