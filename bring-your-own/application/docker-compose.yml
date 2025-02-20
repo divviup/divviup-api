@@ -1,0 +1,152 @@
+x-divviup_common: &divviup_common
+  depends_on:
+    divviup-api-migrator:
+      condition: service_completed_successfully
+  image: ${DIVVIUP_API_IMAGE?}
+  environment: &divviup_environment
+    AUTH_AUDIENCE: https://${PUBLIC_HOST_APP?}
+    AUTH_CLIENT_ID: ${AUTH_CLIENT_ID?}
+    AUTH_CLIENT_SECRET: ${AUTH_CLIENT_SECRET?}
+    AUTH_URL: ${AUTH_URL?}
+    DATABASE_ENCRYPTION_KEYS: ${DATABASE_ENCRYPTION_KEYS?}
+    DATABASE_URL: postgres://${POSTGRES_USER?}:${POSTGRES_PASSWORD?}@postgres:5432/${POSTGRES_DB?}
+    EMAIL_ADDRESS: ${EMAIL_ADDRESS?}
+    POSTMARK_TOKEN: ${POSTMARK_TOKEN?}
+    RUST_LOG: info
+    SESSION_SECRETS: ${SESSION_SECRETS?}
+  healthcheck:
+    test: wget -O - http://127.0.0.1:8080/health
+    start_period: 60s
+  restart: ${RESTART_POLICY?}
+
+services:
+
+  postgres:
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB?}
+      POSTGRES_USER: ${POSTGRES_USER?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?}
+    healthcheck:
+      test: pg_isready -U ${POSTGRES_USER?} -d ${POSTGRES_DB?}
+      start_period: 60s
+    restart: ${RESTART_POLICY?}
+
+  divviup-api-migrator:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    image: ${DIVVIUP_API_MIGRATOR_IMAGE?}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER?}:${POSTGRES_PASSWORD?}@postgres:5432/${POSTGRES_DB?}
+    entrypoint: /migration up
+
+  divviup-api-http:
+    <<: *divviup_common
+    profiles:
+      - http-one-host
+      - http-two-host
+    extra_hosts:
+      host.docker.internal: host-gateway
+    entrypoint: |
+      sh -c '
+        case ${PUBLIC_PORT_HTTP_API?} in 80)
+          API_URL=http://${PUBLIC_HOST_API?}
+        ;; *)
+          API_URL=http://${PUBLIC_HOST_API?}:${PUBLIC_PORT_HTTP_API?}
+        esac
+        case ${PUBLIC_PORT_HTTP_APP?} in 80)
+          APP_URL=http://${PUBLIC_HOST_APP?}
+        ;; *)
+          APP_URL=http://${PUBLIC_HOST_APP?}:${PUBLIC_PORT_HTTP_APP?}
+        esac
+        export API_URL
+        export APP_URL
+        /divviup_api_bin
+      '
+    ports:
+      - "${LISTEN_HOST?}:${LISTEN_PORT_HTTP_API?}:8080"
+
+  divviup-app-http:
+    profiles:
+      - http-one-host
+    depends_on:
+      divviup-api-http:
+        condition: service_healthy
+    image: ${NGINX_IMAGE?}
+    configs:
+      - source: divviup-app-http-nginx.conf
+        target: /etc/nginx/nginx.conf
+    ports:
+      - "${LISTEN_HOST?}:${LISTEN_PORT_HTTP_APP?}:80"
+
+  divviup-api-https:
+    <<: *divviup_common
+    profiles:
+      - https
+    environment:
+      <<: *divviup_environment
+      LETSENCRYPT_EMAIL: ${HTTPS_ADMIN_EMAIL?}
+      LETSENCRYPT_HOST: ${PUBLIC_HOST_API?},${PUBLIC_HOST_APP?}
+      VIRTUAL_HOST: ${PUBLIC_HOST_API?},${PUBLIC_HOST_APP?}
+    entrypoint: |
+      sh -c '
+        case ${PUBLIC_PORT_HTTPS?} in 443)
+          API_URL=https://${PUBLIC_HOST_API?}
+          APP_URL=https://${PUBLIC_HOST_APP?}
+        ;; *)
+          API_URL=https://${PUBLIC_HOST_API?}:${PUBLIC_PORT_HTTPS?}
+          APP_URL=https://${PUBLIC_HOST_APP?}:${PUBLIC_PORT_HTTPS?}
+        esac
+        export API_URL
+        export APP_URL
+        /divviup_api_bin
+      '
+
+  nginx-proxy:
+    profiles:
+      - https
+    image: ${NGINX_PROXY_IMAGE?}
+    ports:
+      - "${LISTEN_HOST?}:${LISTEN_PORT_HTTP_API?}:80"
+      - "${LISTEN_HOST?}:${LISTEN_PORT_HTTPS?}:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs
+      - html:/usr/share/nginx/html
+    restart: ${RESTART_POLICY?}
+
+  acme-companion:
+    profiles:
+      - https
+    image: ${ACME_COMPANION_IMAGE?}
+    environment:
+      ACME_CA_URI: ${ACME_CA_URI?}
+      DEFAULT_EMAIL: ${HTTPS_ADMIN_EMAIL?}
+    volumes_from:
+      - nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - acme:/etc/acme.sh
+    restart: ${RESTART_POLICY?}
+
+volumes:
+  acme:
+  certs:
+  html:
+
+configs:
+
+  divviup-app-http-nginx.conf:
+    content: |
+      events {
+      }
+      http {
+        server {
+          listen 80 default_server;
+          location / {
+            proxy_set_header Host ${PUBLIC_HOST_APP?}:${PUBLIC_PORT_HTTP_APP?};
+            proxy_pass http://divviup-api-http:8080;
+          }
+        }
+      }
