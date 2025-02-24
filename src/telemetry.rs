@@ -16,26 +16,27 @@ pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricError> {
         .build()
         .unwrap();
 
-    // Note that the implementation of `Default` pulls in attributes set via environment variables.
-    let default_resource = Resource::default();
-
     let mut git_revision: &str = git_version!(fallback = "unknown");
     if git_revision == "unknown" {
         if let Some(value) = option_env!("GIT_REVISION") {
             git_revision = value;
         }
     }
-    let version_info_resource = Resource::new([
-        KeyValue::new("service.name", "divviup-api"),
-        KeyValue::new(
+
+    // Note that builder() includes the EnvResourceDetector, which
+    // provides further configuration via environment variables.
+    let resource = Resource::builder()
+        .with_service_name("divviup-api")
+        .with_attribute(KeyValue::new(
             "service.version",
             format!("{}-{}", env!("CARGO_PKG_VERSION"), git_revision),
-        ),
-        KeyValue::new("process.runtime.name", "Rust"),
-        KeyValue::new("process.runtime.version", env!("RUSTC_SEMVER")),
-    ]);
-
-    let resource = default_resource.merge(&version_info_resource);
+        ))
+        .with_attribute(KeyValue::new("process.runtime.name", "Rust"))
+        .with_attribute(KeyValue::new(
+            "process.runtime.version",
+            env!("RUSTC_SEMVER"),
+        ))
+        .build();
 
     global::set_meter_provider(
         SdkMeterProvider::builder()
@@ -47,9 +48,9 @@ pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricError> {
     #[cfg(feature = "otlp-trace")]
     global::set_tracer_provider({
         use opentelemetry_otlp::SpanExporter;
-        use opentelemetry_sdk::{runtime::Tokio, trace::TracerProvider};
+        use opentelemetry_sdk::{runtime::Tokio, trace::SdkTracerProvider};
 
-        TracerProvider::builder()
+        SdkTracerProvider::builder()
             .with_resource(resource)
             .with_batch_exporter(SpanExporter::builder().with_tonic().build().unwrap(), Tokio)
             .build()
