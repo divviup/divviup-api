@@ -41,10 +41,8 @@ export default tseslint.config(
     },
     plugins: {
       react: eslintPluginReact,
-      // @ts-expect-error: types of eslint-plugin-react-hooks do not match flat config types
       "react-hooks": fixupPluginRules(eslintPluginReactHooks),
     },
-    // @ts-expect-error: types of eslint-plugin-react-hooks do not match flat config types
     rules: {
       // Recommended rules from plugins that don't yet support flat config:
       ...eslintPluginReact.configs.recommended.rules,
