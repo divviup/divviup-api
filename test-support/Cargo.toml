@@ -13,7 +13,7 @@ trillium-testing = { version = "0.7.0", features = ["tokio"] }
 divviup-api.workspace = true
 serde = "1.0.218"
 serde_json = "1.0.139"
-thiserror = "2.0.11"
+thiserror = "2.0.12"
 tracing = "0.1.41"
 tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3.19", features = [
