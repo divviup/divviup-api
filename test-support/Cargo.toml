@@ -12,7 +12,7 @@ trillium-macros = "0.0.6"
 trillium-testing = { version = "0.7.0", features = ["tokio"] }
 divviup-api.workspace = true
 serde = "1.0.218"
-serde_json = "1.0.139"
+serde_json = "1.0.140"
 thiserror = "2.0.12"
 tracing = "0.1.41"
 tracing-log = "0.2.0"
