@@ -31,7 +31,7 @@ struct Args {
     database_url: String,
 }
 
-#[async_std::main]
+#[tokio::main]
 async fn main() -> Result<(), Error> {
     let args = Args::parse();
     tracing_subscriber::fmt()
@@ -314,7 +314,7 @@ mod tests {
             .unwrap()
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn migrate_up_latest() {
         install_tracing_subscriber();
         let db = test_database().await;
@@ -332,7 +332,7 @@ mod tests {
         assert_eq!(applied_migrations(&db).await.unwrap(), all_migrations());
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn migrate_up_works() {
         install_tracing_subscriber();
         let db = test_database().await;
@@ -382,7 +382,7 @@ mod tests {
         );
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn migrate_down_works() {
         install_tracing_subscriber();
         let db = test_database().await;
@@ -446,7 +446,7 @@ mod tests {
         );
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn accept_compatible_db() {
         install_tracing_subscriber();
         let db = test_database().await;
@@ -476,7 +476,7 @@ mod tests {
             .unwrap();
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn reject_incompatible_db_using_wrong_migrator() {
         install_tracing_subscriber();
 
@@ -529,7 +529,7 @@ mod tests {
         }
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn reject_incompatible_db_using_outdated_migrator() {
         install_tracing_subscriber();
 
@@ -561,7 +561,7 @@ mod tests {
         ));
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn reject_incompatible_db_tampered() {
         install_tracing_subscriber();
 
