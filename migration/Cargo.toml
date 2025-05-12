@@ -15,7 +15,7 @@ sea-orm = "1.0.1"
 serde_json = "1.0.140"
 thiserror = "2.0.12"
 time = "0.3.41"
-tokio = { version = "1.44.2", features = ["full"] }
+tokio = { version = "1.45.0", features = ["full"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 
