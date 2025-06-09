@@ -49,5 +49,5 @@ janus_client = "0.7.30"
 janus_collector = "0.7.21"
 url = "2.5.2"
 janus_messages = "0.7.66"
-prio = "0.16.7"
+prio = "0.17.0"
 tokio = { version = "1.45.1" }

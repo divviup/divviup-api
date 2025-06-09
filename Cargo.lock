@@ -1288,7 +1288,7 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry-prometheus",
  "opentelemetry_sdk",
- "prio",
+ "prio 0.17.0",
  "prometheus",
  "querystrong",
  "rand 0.8.5",
@@ -1353,7 +1353,7 @@ dependencies = [
  "janus_client",
  "janus_collector",
  "janus_messages",
- "prio",
+ "prio 0.17.0",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -1381,7 +1381,7 @@ dependencies = [
  "num-bigint",
  "num-rational",
  "pad-adapter",
- "prio",
+ "prio 0.17.0",
  "serde",
  "serde_json",
  "test-support",
@@ -2505,7 +2505,7 @@ dependencies = [
  "itertools",
  "janus_core",
  "janus_messages",
- "prio",
+ "prio 0.16.7",
  "rand 0.8.5",
  "reqwest",
  "thiserror 1.0.69",
@@ -2526,7 +2526,7 @@ dependencies = [
  "hpke-dispatch 0.6.0",
  "janus_core",
  "janus_messages",
- "prio",
+ "prio 0.16.7",
  "rand 0.8.5",
  "reqwest",
  "retry-after",
@@ -2557,7 +2557,7 @@ dependencies = [
  "http",
  "http-api-problem",
  "janus_messages",
- "prio",
+ "prio 0.16.7",
  "rand 0.8.5",
  "regex",
  "reqwest",
@@ -2582,7 +2582,7 @@ dependencies = [
  "educe 0.6.0",
  "hex",
  "num_enum",
- "prio",
+ "prio 0.16.7",
  "rand 0.8.5",
  "serde",
  "thiserror 2.0.12",
@@ -3365,6 +3365,26 @@ dependencies = [
  "sha3",
  "subtle",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "prio"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac0b3cb73cf53e2608f559ac116f67436318cafa7004498395d9f419e2611063"
+dependencies = [
+ "aes",
+ "byteorder",
+ "ctr",
+ "hmac 0.12.1",
+ "num-traits",
+ "rand 0.9.0",
+ "rand_core 0.9.0",
+ "serde",
+ "sha2 0.10.9",
+ "sha3",
+ "subtle",
+ "thiserror 2.0.12",
 ]
 
 [[package]]

@@ -44,7 +44,7 @@ janus_messages = "0.7.66"
 log = "0.4.27"
 opentelemetry = { version = "0.27.1", features = ["metrics", "logs"] }
 opentelemetry-prometheus = { version = "0.27.0", features = ["prometheus-encoding"] }
-prio = "0.16.7"
+prio = "0.17.0"
 prometheus = "0.13.4"
 querystrong = "0.3.0"
 rand = "0.8.5"
