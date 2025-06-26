@@ -27,7 +27,7 @@ pub async fn assert_no_errors(app: &DivviupApi, new_task: &mut NewTask, field: &
         .get(field)
         .map(|c| c.iter().map(|error| &error.code).collect::<Vec<_>>())
         .unwrap_or_default();
-    assert!(errors.is_empty(), "{:?}", errors);
+    assert!(errors.is_empty(), "{errors:?}");
 }
 
 pub async fn assert_errors_nested(
