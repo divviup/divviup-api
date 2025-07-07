@@ -269,8 +269,8 @@ impl DivviupClient {
         self.get(&format!("api/accounts/{account_id}/tasks")).await
     }
 
-    pub async fn task(&self, task_id: &str) -> ClientResult<Task> {
-        self.get(&format!("api/tasks/{task_id}")).await
+    pub async fn task(&self, task_uuid: &str) -> ClientResult<Task> {
+        self.get(&format!("api/tasks/{task_uuid}")).await
     }
 
     pub async fn create_task(&self, account_id: Uuid, task: NewTask) -> ClientResult<Task> {
@@ -280,24 +280,27 @@ impl DivviupClient {
 
     pub async fn task_collector_auth_tokens(
         &self,
-        task_id: &str,
+        task_uuid: &str,
     ) -> ClientResult<Vec<CollectorAuthenticationToken>> {
-        self.get(&format!("api/tasks/{task_id}/collector_auth_tokens"))
+        self.get(&format!("api/tasks/{task_uuid}/collector_auth_tokens"))
             .await
     }
 
-    pub async fn rename_task(&self, task_id: &str, new_name: &str) -> ClientResult<Task> {
-        self.patch(&format!("api/tasks/{task_id}"), &json!({"name": new_name}))
-            .await
+    pub async fn rename_task(&self, task_uuid: &str, new_name: &str) -> ClientResult<Task> {
+        self.patch(
+            &format!("api/tasks/{task_uuid}"),
+            &json!({"name": new_name}),
+        )
+        .await
     }
 
     pub async fn set_task_expiration(
         &self,
-        task_id: &str,
+        task_uuid: &str,
         expiration: Option<&OffsetDateTime>,
     ) -> ClientResult<Task> {
         self.patch(
-            &format!("api/tasks/{task_id}"),
+            &format!("api/tasks/{task_uuid}"),
             &json!({
                 "expiration": expiration.map(|e| e.format(&Rfc3339)).transpose()?
             }),
@@ -305,12 +308,12 @@ impl DivviupClient {
         .await
     }
 
-    pub async fn delete_task(&self, task_id: &str) -> ClientResult<()> {
-        self.delete(&format!("api/tasks/{task_id}")).await
+    pub async fn delete_task(&self, task_uuid: &str) -> ClientResult<()> {
+        self.delete(&format!("api/tasks/{task_uuid}")).await
     }
 
-    pub async fn force_delete_task(&self, task_id: &str) -> ClientResult<()> {
-        self.delete(&format!("api/tasks/{task_id}?force=true"))
+    pub async fn force_delete_task(&self, task_uuid: &str) -> ClientResult<()> {
+        self.delete(&format!("api/tasks/{task_uuid}?force=true"))
             .await
     }
 

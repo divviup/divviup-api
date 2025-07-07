@@ -28,7 +28,7 @@ pub enum TaskAction {
     List,
 
     /// retrieve details of a single task. this also refreshes cached data, such as metrics.
-    Get { task_id: String },
+    Get { task_uuid: String },
 
     /// create a new task for the target account
     Create {
@@ -67,11 +67,11 @@ pub enum TaskAction {
     },
 
     /// rename a task
-    Rename { task_id: String, name: String },
+    Rename { task_uuid: String, name: String },
 
     /// delete a task
     Delete {
-        task_id: String,
+        task_uuid: String,
         /// delete the task even if the aggregators are unreachable
         #[arg(long, action)]
         force: bool,
@@ -79,7 +79,7 @@ pub enum TaskAction {
 
     /// set the expiration date of a task
     SetExpiration {
-        task_id: String,
+        task_uuid: String,
         /// the date and time to set to.
         ///
         /// if omitted, unset the expiration. the format is RFC 3339.
@@ -90,7 +90,7 @@ pub enum TaskAction {
     },
 
     /// retrieve the collector auth tokens for a task
-    CollectorAuthTokens { task_id: String },
+    CollectorAuthTokens { task_uuid: String },
 }
 
 impl TaskAction {
@@ -104,7 +104,7 @@ impl TaskAction {
 
         match self {
             TaskAction::List => output.display(client.tasks(account_id).await?),
-            TaskAction::Get { task_id } => output.display(client.task(&task_id).await?),
+            TaskAction::Get { task_uuid } => output.display(client.task(&task_uuid).await?),
             TaskAction::Create {
                 name,
                 leader_aggregator_id,
@@ -270,22 +270,22 @@ impl TaskAction {
                 output.display(client.create_task(account_id, task).await?)
             }
 
-            TaskAction::Rename { task_id, name } => {
-                output.display(client.rename_task(&task_id, &name).await?)
+            TaskAction::Rename { task_uuid, name } => {
+                output.display(client.rename_task(&task_uuid, &name).await?)
             }
 
-            TaskAction::CollectorAuthTokens { task_id } => {
-                output.display(client.task_collector_auth_tokens(&task_id).await?)
+            TaskAction::CollectorAuthTokens { task_uuid } => {
+                output.display(client.task_collector_auth_tokens(&task_uuid).await?)
             }
-            TaskAction::Delete { task_id, force } => {
+            TaskAction::Delete { task_uuid, force } => {
                 if force {
-                    client.force_delete_task(&task_id).await?
+                    client.force_delete_task(&task_uuid).await?
                 } else {
-                    client.delete_task(&task_id).await?
+                    client.delete_task(&task_uuid).await?
                 }
             }
             TaskAction::SetExpiration {
-                task_id,
+                task_uuid,
                 expiration,
                 now,
             } => {
@@ -296,7 +296,7 @@ impl TaskAction {
                 };
                 output.display(
                     client
-                        .set_task_expiration(&task_id, expiration.as_ref())
+                        .set_task_expiration(&task_uuid, expiration.as_ref())
                         .await?,
                 )
             }
