@@ -21,7 +21,7 @@ async fn https_connection() {
     let server_config = trillium_tokio::config()
         .with_acceptor(RustlsAcceptor::from_single_cert(
             self_signed.cert.pem().as_bytes(),
-            self_signed.key_pair.serialize_pem().as_bytes(),
+            self_signed.signing_key.serialize_pem().as_bytes(),
         ))
         .without_signals()
         .with_stopper(stopper.clone())
