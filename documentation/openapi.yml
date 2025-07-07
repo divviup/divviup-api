@@ -167,10 +167,10 @@ paths:
         "400":
           $ref: "#/components/responses/Invalid"
 
-  /tasks/{task_id}:
+  /tasks/{task_uuid}:
     parameters:
       - in: path
-        name: task_id
+        name: task_uuid
         schema:
           type: string
         required: true
@@ -235,18 +235,18 @@ paths:
         "404":
           description: Not Found
 
-  /tasks/{task_id}/collector_auth_tokens:
+  /tasks/{task_uuid}/collector_auth_tokens:
     get:
       parameters:
         - in: path
-          name: task_id
+          name: task_uuid
           schema:
             type: string
           required: true
           description: UUID of the task
       tags: ["tasks"]
-      summary: retrieve the collector auth tokens for the task specified by `task_id`
-      description: retrieve the collector auth tokens for the task specified by `task_id`
+      summary: retrieve the collector auth tokens for the task specified by `task_uuid`
+      description: retrieve the collector auth tokens for the task specified by `task_uuid`
       operationId: showTaskCollectorAuthTokens
       responses:
         "200":
