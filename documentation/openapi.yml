@@ -235,37 +235,6 @@ paths:
         "404":
           description: Not Found
 
-  /tasks/{task_id}/collector_auth_tokens:
-    get:
-      parameters:
-        - in: path
-          name: task_id
-          schema:
-            type: string
-          required: true
-          description: UUID of the task
-      tags: ["tasks"]
-      summary: retrieve the collector auth tokens for the task specified by `task_id`
-      description: retrieve the collector auth tokens for the task specified by `task_id`
-      operationId: showTaskCollectorAuthTokens
-      responses:
-        "200":
-          description: success
-          content:
-            application/vnd.divviup+json;version=0.1:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type:
-                      type: string
-                      enum: [bearer]
-                    token:
-                      type: string
-        "404":
-          $ref: "#/components/responses/NotFound"
-
   /accounts/{account_id}/tasks:
     parameters:
       - $ref: "#/components/parameters/AccountId"

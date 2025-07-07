@@ -88,9 +88,6 @@ pub enum TaskAction {
         #[arg(long, action, conflicts_with = "expiration")]
         now: bool,
     },
-
-    /// retrieve the collector auth tokens for a task
-    CollectorAuthTokens { task_id: String },
 }
 
 impl TaskAction {
@@ -274,9 +271,6 @@ impl TaskAction {
                 output.display(client.rename_task(&task_id, &name).await?)
             }
 
-            TaskAction::CollectorAuthTokens { task_id } => {
-                output.display(client.task_collector_auth_tokens(&task_id).await?)
-            }
             TaskAction::Delete { task_id, force } => {
                 if force {
                     client.force_delete_task(&task_id).await?

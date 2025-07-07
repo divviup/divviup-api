@@ -177,21 +177,3 @@ pub async fn delete(
     am.update(&db).await?;
     Ok(Status::NoContent)
 }
-
-pub mod collector_auth_tokens {
-    use super::*;
-    pub async fn index(
-        conn: &mut Conn,
-        (task, db, State(client)): (Task, Db, State<Client>),
-    ) -> Result<impl Handler, Error> {
-        let leader = task.leader_aggregator(&db).await?;
-        if leader.features.token_hash_enabled() {
-            Err(Error::NotFound)
-        } else {
-            let crypter = conn.state().unwrap();
-            let client = leader.client(client, crypter)?;
-            let task_response = client.get_task(&task.id).await?;
-            Ok(Json([task_response.collector_auth_token]))
-        }
-    }
-}

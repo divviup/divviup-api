@@ -64,18 +64,6 @@ export default function tasks(apiClient: ApiClient): RouteObject {
               throw new Error(`unexpected method ${request.method}`);
           }
         },
-        children: [
-          {
-            path: "collector_auth_tokens",
-            loader({ params }) {
-              return defer({
-                collectorAuthTokens: apiClient.taskCollectorAuthTokens(
-                  params.taskId as string,
-                ),
-              });
-            },
-          },
-        ],
       },
       {
         path: "new",
