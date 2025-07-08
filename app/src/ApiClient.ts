@@ -305,11 +305,6 @@ export class ApiClient {
     return res.data as Task;
   }
 
-  async taskCollectorAuthTokens(taskId: string): Promise<CollectorAuthToken[]> {
-    const res = await this.get(`/api/tasks/${taskId}/collector_auth_tokens`);
-    return res.data as CollectorAuthToken[];
-  }
-
   async deleteMembership(membershipId: string): Promise<null> {
     await this.delete(`/api/memberships/${membershipId}`);
     return null;

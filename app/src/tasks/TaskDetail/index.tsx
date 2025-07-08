@@ -7,7 +7,6 @@ import { Task } from "../../ApiClient";
 import "@github/relative-time-element";
 import { AccountBreadcrumbs } from "../../util";
 import Placeholder from "react-bootstrap/Placeholder";
-import CollectorAuthTokens from "./CollectorAuthTokens";
 import Metrics from "./Metrics";
 import ClientConfig from "./ClientConfig";
 import TaskPropertyTable from "./TaskPropertyTable";
@@ -63,7 +62,6 @@ export default function TaskDetail() {
         <TaskPropertyTable />
         <ClientConfig />
         <Metrics />
-        <CollectorAuthTokens />
       </Row>
     </>
   );

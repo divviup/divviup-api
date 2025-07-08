@@ -278,14 +278,6 @@ impl DivviupClient {
             .await
     }
 
-    pub async fn task_collector_auth_tokens(
-        &self,
-        task_id: &str,
-    ) -> ClientResult<Vec<CollectorAuthenticationToken>> {
-        self.get(&format!("api/tasks/{task_id}/collector_auth_tokens"))
-            .await
-    }
-
     pub async fn rename_task(&self, task_id: &str, new_name: &str) -> ClientResult<Task> {
         self.patch(&format!("api/tasks/{task_id}"), &json!({"name": new_name}))
             .await
