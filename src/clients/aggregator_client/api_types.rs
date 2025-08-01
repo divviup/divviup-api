@@ -362,6 +362,54 @@ impl PartialEq<Task> for TaskUploadMetrics {
     }
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TaskAggregationJobMetrics {
+    /// Reports that were successfully aggregated.
+    pub success: u64,
+
+    /// Reports rejected by the helper due to the batch being collected.
+    pub helper_batch_collected: u64,
+    /// Reports rejected by the helper due to the report replay.
+    pub helper_report_replayed: u64,
+    /// Reports rejected by the helper due to the leader dropping the report.
+    pub helper_report_dropped: u64,
+    /// Reports rejected by the helper due to unknown HPKE config ID.
+    pub helper_hpke_unknown_config_id: u64,
+    /// Reports rejected by the helper due to HPKE decryption failure.
+    pub helper_hpke_decrypt_failure: u64,
+    /// Reports rejected by the helper due to VDAF preparation error.
+    pub helper_vdaf_prep_error: u64,
+    /// Reports rejected by the helper due to task expiration.
+    pub helper_task_expired: u64,
+    /// Reports rejected by the helper due to an invalid message.
+    pub helper_invalid_message: u64,
+    /// Reports rejected by the helper due to a report arriving too early.
+    pub helper_report_too_early: u64,
+}
+
+impl PartialEq<Task> for TaskAggregationJobMetrics {
+    fn eq(&self, other: &Task) -> bool {
+        other.aggregation_job_counter_success == self.success as i64
+            && other.aggregation_job_counter_helper_batch_collected
+                == self.helper_batch_collected as i64
+            && other.aggregation_job_counter_helper_report_replayed
+                == self.helper_report_replayed as i64
+            && other.aggregation_job_counter_helper_report_dropped
+                == self.helper_report_dropped as i64
+            && other.aggregation_job_counter_helper_hpke_unknown_config_id
+                == self.helper_hpke_unknown_config_id as i64
+            && other.aggregation_job_counter_helper_hpke_decrypt_failure
+                == self.helper_hpke_decrypt_failure as i64
+            && other.aggregation_job_counter_helper_vdaf_prep_error
+                == self.helper_vdaf_prep_error as i64
+            && other.aggregation_job_counter_helper_task_expired == self.helper_task_expired as i64
+            && other.aggregation_job_counter_helper_invalid_message
+                == self.helper_invalid_message as i64
+            && other.aggregation_job_counter_helper_report_too_early
+                == self.helper_report_too_early as i64
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct AggregatorApiConfig {
     pub dap_url: Url,

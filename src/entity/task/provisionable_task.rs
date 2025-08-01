@@ -112,6 +112,16 @@ impl ProvisionableTask {
             report_counter_success: 0,
             report_counter_too_early: 0,
             report_counter_task_expired: 0,
+            aggregation_job_counter_success: 0,
+            aggregation_job_counter_helper_hpke_decrypt_failure: 0,
+            aggregation_job_counter_helper_batch_collected: 0,
+            aggregation_job_counter_helper_report_replayed: 0,
+            aggregation_job_counter_helper_report_dropped: 0,
+            aggregation_job_counter_helper_hpke_unknown_config_id: 0,
+            aggregation_job_counter_helper_vdaf_prep_error: 0,
+            aggregation_job_counter_helper_task_expired: 0,
+            aggregation_job_counter_helper_invalid_message: 0,
+            aggregation_job_counter_helper_report_too_early: 0,
         }
         .into_active_model())
     }

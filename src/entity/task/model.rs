@@ -1,5 +1,5 @@
 use crate::{
-    clients::aggregator_client::TaskUploadMetrics,
+    clients::aggregator_client::{api_types::TaskAggregationJobMetrics, TaskUploadMetrics},
     entity::{
         account, json::Json, membership, AccountColumn, Accounts, Aggregator, AggregatorColumn,
         Aggregators, CollectorCredentialColumn, CollectorCredentials,
@@ -52,6 +52,7 @@ pub struct Model {
     pub helper_aggregator_id: Uuid,
     pub collector_credential_id: Uuid,
 
+    // Report upload metrics
     pub report_counter_interval_collected: i64,
     pub report_counter_decode_failure: i64,
     pub report_counter_decrypt_failure: i64,
@@ -60,6 +61,18 @@ pub struct Model {
     pub report_counter_success: i64,
     pub report_counter_too_early: i64,
     pub report_counter_task_expired: i64,
+
+    // Aggregation job metrics
+    pub aggregation_job_counter_success: i64,
+    pub aggregation_job_counter_helper_batch_collected: i64,
+    pub aggregation_job_counter_helper_report_replayed: i64,
+    pub aggregation_job_counter_helper_report_dropped: i64,
+    pub aggregation_job_counter_helper_hpke_unknown_config_id: i64,
+    pub aggregation_job_counter_helper_hpke_decrypt_failure: i64,
+    pub aggregation_job_counter_helper_vdaf_prep_error: i64,
+    pub aggregation_job_counter_helper_task_expired: i64,
+    pub aggregation_job_counter_helper_invalid_message: i64,
+    pub aggregation_job_counter_helper_report_too_early: i64,
 }
 
 impl Model {
@@ -90,6 +103,63 @@ impl Model {
         task.report_counter_task_expired =
             ActiveValue::Set(metrics.task_expired.try_into().unwrap_or(i64::MAX));
         task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
+        task.update(&db).await
+    }
+
+    pub async fn update_task_aggregation_job_metrics(
+        self,
+        metrics: TaskAggregationJobMetrics,
+        db: impl ConnectionTrait,
+    ) -> Result<Self, DbErr> {
+        let mut task = self.into_active_model();
+        task.aggregation_job_counter_success =
+            ActiveValue::Set(metrics.success.try_into().unwrap_or(i64::MAX));
+        task.aggregation_job_counter_helper_batch_collected = ActiveValue::Set(
+            metrics
+                .helper_batch_collected
+                .try_into()
+                .unwrap_or(i64::MAX),
+        );
+        task.aggregation_job_counter_helper_report_replayed = ActiveValue::Set(
+            metrics
+                .helper_report_replayed
+                .try_into()
+                .unwrap_or(i64::MAX),
+        );
+        task.aggregation_job_counter_helper_report_dropped =
+            ActiveValue::Set(metrics.helper_report_dropped.try_into().unwrap_or(i64::MAX));
+        task.aggregation_job_counter_helper_hpke_unknown_config_id = ActiveValue::Set(
+            metrics
+                .helper_hpke_unknown_config_id
+                .try_into()
+                .unwrap_or(i64::MAX),
+        );
+        task.aggregation_job_counter_helper_hpke_decrypt_failure = ActiveValue::Set(
+            metrics
+                .helper_hpke_decrypt_failure
+                .try_into()
+                .unwrap_or(i64::MAX),
+        );
+        task.aggregation_job_counter_helper_vdaf_prep_error = ActiveValue::Set(
+            metrics
+                .helper_vdaf_prep_error
+                .try_into()
+                .unwrap_or(i64::MAX),
+        );
+        task.aggregation_job_counter_helper_task_expired =
+            ActiveValue::Set(metrics.helper_task_expired.try_into().unwrap_or(i64::MAX));
+        task.aggregation_job_counter_helper_invalid_message = ActiveValue::Set(
+            metrics
+                .helper_invalid_message
+                .try_into()
+                .unwrap_or(i64::MAX),
+        );
+        task.aggregation_job_counter_helper_report_too_early = ActiveValue::Set(
+            metrics
+                .helper_report_too_early
+                .try_into()
+                .unwrap_or(i64::MAX),
+        );
         task.update(&db).await
     }
 

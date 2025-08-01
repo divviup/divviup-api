@@ -5,6 +5,7 @@ use std::collections::HashSet;
 pub enum Feature {
     TokenHash,
     UploadMetrics,
+    AggregationJobMetrics,
     TimeBucketedFixedSize,
     PureDpDiscreteLaplace,
     #[serde(untagged)]
@@ -21,6 +22,10 @@ impl Features {
 
     pub fn upload_metrics_enabled(&self) -> bool {
         self.0.contains(&Feature::UploadMetrics)
+    }
+
+    pub fn aggregation_job_metrics_enabled(&self) -> bool {
+        self.0.contains(&Feature::AggregationJobMetrics)
     }
 
     pub fn len(&self) -> usize {

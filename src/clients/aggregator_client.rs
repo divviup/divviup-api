@@ -3,6 +3,7 @@ use crate::{
     entity::{task::ProvisionableTask, Aggregator},
     handler::Error,
 };
+use api_types::TaskAggregationJobMetrics;
 use janus_messages::Time as JanusTime;
 use serde::{de::DeserializeOwned, Serialize};
 use trillium_client::{Client, KnownHeaderName};
@@ -84,6 +85,14 @@ impl AggregatorClient {
         task_id: &str,
     ) -> Result<TaskUploadMetrics, ClientError> {
         self.get(&format!("tasks/{task_id}/metrics/uploads")).await
+    }
+
+    pub async fn get_task_aggregation_job_metrics(
+        &self,
+        task_id: &str,
+    ) -> Result<TaskAggregationJobMetrics, ClientError> {
+        self.get(&format!("tasks/{task_id}/metrics/aggregation_jobs"))
+            .await
     }
 
     pub async fn create_task(&self, task: &ProvisionableTask) -> Result<TaskResponse, Error> {
