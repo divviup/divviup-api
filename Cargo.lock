@@ -874,7 +874,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
 dependencies = [
  "lazy_static",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -883,7 +883,7 @@ version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fde0e0ec90c9dfb3b4b1a0891a7dcd0e2bffde2f7efed5fe7c9bb00e5bfb915e"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2584,9 +2584,9 @@ dependencies = [
 
 [[package]]
 name = "janus_messages"
-version = "0.7.77"
+version = "0.7.78"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3c1c81171476d5f2515a5a52a5ea843287a96d39b064ef3ec9fc5f1cf1778a7"
+checksum = "73357d80d85253921067eefdbac7c2f92e1d14d8af4a64937c80a8516a2d4769"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -2675,7 +2675,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c2a198fb6b0eada2a8df47933734e6d35d350665a33a3593d7164fa52c75c19"
 dependencies = [
  "cfg-if 1.0.0",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]
