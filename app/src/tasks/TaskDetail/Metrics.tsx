@@ -126,11 +126,15 @@ function AggregationJobMetrics({ task }: { task: Promise<Task> }) {
                 />
                 <FailedMetric
                   name="Unknown HPKE Config ID (Helper) Failure"
-                  counter={task.aggregation_job_counter_helper_hpke_unknown_config_id}
+                  counter={
+                    task.aggregation_job_counter_helper_hpke_unknown_config_id
+                  }
                 />
                 <FailedMetric
                   name="HPKE Decryption (Helper) Failure"
-                  counter={task.aggregation_job_counter_helper_hpke_decrypt_failure}
+                  counter={
+                    task.aggregation_job_counter_helper_hpke_decrypt_failure
+                  }
                 />
                 <FailedMetric
                   name="VDAF Preparation (Helper) Failure"
@@ -183,12 +187,14 @@ export default function Metrics() {
         {(leaderAggregator) => {
           return (
             <Row>
-              {leaderAggregator.features.includes("UploadMetrics") ?
-                <UploadMetrics task={task} /> : null}
-              {leaderAggregator.features.includes("AggregationJobMetrics") ?
-                <AggregationJobMetrics task={ task } /> : null}
+              {leaderAggregator.features.includes("UploadMetrics") ? (
+                <UploadMetrics task={task} />
+              ) : null}
+              {leaderAggregator.features.includes("AggregationJobMetrics") ? (
+                <AggregationJobMetrics task={task} />
+              ) : null}
             </Row>
-          )
+          );
         }}
       </Await>
     </Suspense>
