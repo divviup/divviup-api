@@ -38,6 +38,17 @@ pub struct Task {
     pub report_counter_success: i64,
     pub report_counter_too_early: i64,
     pub report_counter_task_expired: i64,
+
+    pub aggregation_job_counter_success: i64,
+    pub aggregation_job_counter_helper_batch_collected: i64,
+    pub aggregation_job_counter_helper_report_replayed: i64,
+    pub aggregation_job_counter_helper_report_dropped: i64,
+    pub aggregation_job_counter_helper_hpke_unknown_config_id: i64,
+    pub aggregation_job_counter_helper_hpke_decrypt_failure: i64,
+    pub aggregation_job_counter_helper_vdaf_prep_error: i64,
+    pub aggregation_job_counter_helper_task_expired: i64,
+    pub aggregation_job_counter_helper_invalid_message: i64,
+    pub aggregation_job_counter_helper_report_too_early: i64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
