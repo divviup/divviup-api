@@ -1,5 +1,5 @@
 use crate::{
-    clients::aggregator_client::TaskUploadMetrics,
+    clients::aggregator_client::{api_types::TaskAggregationJobMetrics, TaskUploadMetrics},
     config::FeatureFlags,
     entity::{Account, NewTask, Task, TaskColumn, Tasks, UpdateTask},
     Crypter, Db, Error, Permissions, PermissionsActor,
@@ -81,13 +81,23 @@ async fn refresh_metrics_if_needed(
     let aggregator = task.leader_aggregator(&db).await?;
     let metrics = if aggregator.features.upload_metrics_enabled() {
         aggregator
-            .client(client, crypter)?
+            .client(client.clone(), crypter)?
             .get_task_upload_metrics(&task.id)
             .await?
     } else {
         TaskUploadMetrics::default()
     };
-    task.update_task_upload_metrics(metrics, db)
+    let task = task.update_task_upload_metrics(metrics, db.clone()).await?;
+
+    let metrics = if aggregator.features.aggregation_job_metrics_enabled() {
+        aggregator
+            .client(client, crypter)?
+            .get_task_aggregation_job_metrics(&task.id)
+            .await?
+    } else {
+        TaskAggregationJobMetrics::default()
+    };
+    task.update_task_aggregation_job_metrics(metrics, db)
         .await
         .map_err(Into::into)
 }
