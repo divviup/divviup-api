@@ -5,6 +5,7 @@ import { Aggregator, Task } from "../../ApiClient";
 import Card from "react-bootstrap/Card";
 import ListGroup from "react-bootstrap/ListGroup";
 import { DateTime } from "luxon";
+import Row from "react-bootstrap/Row";
 import Placeholder from "react-bootstrap/Placeholder";
 import { OutLink, numberFormat } from "../../util";
 
@@ -91,6 +92,89 @@ function UploadMetrics({ task }: { task: Promise<Task> }) {
   );
 }
 
+function AggregationJobMetrics({ task }: { task: Promise<Task> }) {
+  return (
+    <Col md="6">
+      <Card className="my-3">
+        <Card.Body>
+          <Card.Title>Aggregation Job Metrics</Card.Title>
+          <Card.Subtitle>
+            <OutLink href="https://docs.divviup.org/product-documentation/operational-metrics#aggregation-job-metrics">
+              View Documentation
+            </OutLink>
+          </Card.Subtitle>
+        </Card.Body>
+        <Suspense fallback={<Placeholder animation="glow" xs={2} />}>
+          <Await resolve={task}>
+            {(task: Task) => (
+              <ListGroup variant="flush">
+                <ListGroup.Item>
+                  Successful Report Preparations:{" "}
+                  {numberFormat.format(task.aggregation_job_counter_success)}
+                </ListGroup.Item>
+                <FailedMetric
+                  name="Batch Collected (Helper) Failure"
+                  counter={task.aggregation_job_counter_helper_batch_collected}
+                />
+                <FailedMetric
+                  name="Report Replayed (Helper) Failure"
+                  counter={task.aggregation_job_counter_helper_report_replayed}
+                />
+                <FailedMetric
+                  name="Report Dropped (Helper) Failure"
+                  counter={task.aggregation_job_counter_helper_report_dropped}
+                />
+                <FailedMetric
+                  name="Unknown HPKE Config ID (Helper) Failure"
+                  counter={
+                    task.aggregation_job_counter_helper_hpke_unknown_config_id
+                  }
+                />
+                <FailedMetric
+                  name="HPKE Decryption (Helper) Failure"
+                  counter={
+                    task.aggregation_job_counter_helper_hpke_decrypt_failure
+                  }
+                />
+                <FailedMetric
+                  name="VDAF Preparation (Helper) Failure"
+                  counter={task.aggregation_job_counter_helper_vdaf_prep_error}
+                />
+                <FailedMetric
+                  name="Task Expiration (Helper) Failure"
+                  counter={task.aggregation_job_counter_helper_task_expired}
+                />
+                <FailedMetric
+                  name="Invalid Message (Helper) Failure"
+                  counter={task.aggregation_job_counter_helper_invalid_message}
+                />
+                <FailedMetric
+                  name="Report Too Early (Helper) Failure"
+                  counter={task.aggregation_job_counter_helper_report_too_early}
+                />
+              </ListGroup>
+            )}
+          </Await>
+        </Suspense>
+        <Card.Footer className="text-muted">
+          Last updated{" "}
+          <Suspense fallback={<Placeholder animation="glow" xs={1} />}>
+            <Await resolve={task}>
+              {(task) => (
+                <relative-time datetime={task.updated_at} format="relative">
+                  {DateTime.fromISO(task.updated_at)
+                    .toLocal()
+                    .toLocaleString(DateTime.DATETIME_SHORT)}
+                </relative-time>
+              )}
+            </Await>
+          </Suspense>
+        </Card.Footer>
+      </Card>
+    </Col>
+  );
+}
+
 export default function Metrics() {
   const { task, leaderAggregator } = useLoaderData() as {
     task: Promise<Task>;
@@ -101,9 +185,16 @@ export default function Metrics() {
     <Suspense fallback={<Placeholder animation="glow" xs={2} />}>
       <Await resolve={leaderAggregator}>
         {(leaderAggregator) => {
-          if (leaderAggregator.features.includes("UploadMetrics")) {
-            return <UploadMetrics task={task} />;
-          }
+          return (
+            <Row>
+              {leaderAggregator.features.includes("UploadMetrics") ? (
+                <UploadMetrics task={task} />
+              ) : null}
+              {leaderAggregator.features.includes("AggregationJobMetrics") ? (
+                <AggregationJobMetrics task={task} />
+              ) : null}
+            </Row>
+          );
         }}
       </Await>
     </Suspense>

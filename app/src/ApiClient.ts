@@ -82,6 +82,16 @@ export interface Task {
   report_counter_success: number;
   report_counter_too_early: number;
   report_counter_task_expired: number;
+  aggregation_job_counter_success: number;
+  aggregation_job_counter_helper_batch_collected: number;
+  aggregation_job_counter_helper_report_replayed: number;
+  aggregation_job_counter_helper_report_dropped: number;
+  aggregation_job_counter_helper_hpke_unknown_config_id: number;
+  aggregation_job_counter_helper_hpke_decrypt_failure: number;
+  aggregation_job_counter_helper_vdaf_prep_error: number;
+  aggregation_job_counter_helper_task_expired: number;
+  aggregation_job_counter_helper_invalid_message: number;
+  aggregation_job_counter_helper_report_too_early: number;
 }
 
 export interface CollectorAuthToken {

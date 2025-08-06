@@ -25,6 +25,7 @@ mod m20231012_233117_add_token_hash_to_collector_credential;
 mod m20240214_215101_upload_metrics;
 mod m20240411_195358_time_bucketed_fixed_size;
 mod m20240416_172920_task_deleted_at;
+mod m20250801_164739_aggregation_job_metrics;
 
 pub struct Migrator;
 
@@ -57,6 +58,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240214_215101_upload_metrics::Migration),
             Box::new(m20240411_195358_time_bucketed_fixed_size::Migration),
             Box::new(m20240416_172920_task_deleted_at::Migration),
+            Box::new(m20250801_164739_aggregation_job_metrics::Migration),
         ]
     }
 }
