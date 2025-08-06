@@ -28,8 +28,8 @@ impl TryFrom<&Session> for session::Model {
     fn try_from(session: &Session) -> Result<Self, Self::Error> {
         Ok(Self {
             id: session.id().to_string(),
-            // unwrap safety: session object comes from the database and will be a valid
-            // timestamp we made ourselves.
+            // unwrap safety: session object comes from the session handler, and its timestamp
+            // we made ourselves.            
             expiry: session
                 .expiry()
                 .map(|e| OffsetDateTime::from_unix_timestamp(e.timestamp()).unwrap()),
