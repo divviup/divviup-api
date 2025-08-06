@@ -28,9 +28,13 @@ impl TryFrom<&Session> for session::Model {
     fn try_from(session: &Session) -> Result<Self, Self::Error> {
         Ok(Self {
             id: session.id().to_string(),
+            // unwrap safety: session object comes from the database and will be a valid
+            // timestamp we made ourselves.
             expiry: session
                 .expiry()
                 .map(|e| OffsetDateTime::from_unix_timestamp(e.timestamp()).unwrap()),
+            // unwrap safety: if the serialization is successful, the data element
+            // will be there.
             data: serde_json::from_value(
                 serde_json::to_value(session)?.get("data").unwrap().clone(),
             )?,
@@ -46,6 +50,8 @@ impl TryFrom<session::Model> for Session {
             "data": db_session.data,
         }))?;
         if let Some(x) = db_session.expiry {
+            // unwrap safety: the expiry time from the database is a timestamp we made
+            // ourselves.
             session.set_expiry(
                 DateTime::<Utc>::from_timestamp(x.unix_timestamp(), x.nanosecond()).unwrap(),
             );
