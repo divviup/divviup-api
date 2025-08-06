@@ -29,7 +29,7 @@ impl TryFrom<&Session> for session::Model {
         Ok(Self {
             id: session.id().to_string(),
             // unwrap safety: session object comes from the session handler, and its timestamp
-            // we made ourselves.            
+            // we made ourselves.
             expiry: session
                 .expiry()
                 .map(|e| OffsetDateTime::from_unix_timestamp(e.timestamp()).unwrap()),
