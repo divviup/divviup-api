@@ -160,6 +160,7 @@ impl Model {
                 .try_into()
                 .unwrap_or(i64::MAX),
         );
+        task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
         task.update(&db).await
     }
 
