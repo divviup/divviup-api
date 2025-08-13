@@ -91,7 +91,7 @@ impl AggregatorClient {
         &self,
         task_id: &str,
     ) -> Result<TaskAggregationJobMetrics, ClientError> {
-        self.get(&format!("tasks/{task_id}/metrics/aggregation_jobs"))
+        self.get(&format!("tasks/{task_id}/metrics/aggregations"))
             .await
     }
 
