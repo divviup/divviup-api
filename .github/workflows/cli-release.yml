@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Resolve inputs
         id: resolve-inputs
         # Use tag input if available, otherwise parse it out of the git ref
@@ -73,7 +73,7 @@ jobs:
           EXECUTABLE=`printf 'divviup-%s%s' $TRIPLE ${{ matrix.target.extension }}`
           echo "executable=$EXECUTABLE" >> $GITHUB_OUTPUT
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Build
         uses: houseabsolute/actions-rust-cross@v1
         with:
