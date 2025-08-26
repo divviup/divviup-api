@@ -2,15 +2,15 @@
 members = [".", "migration", "client", "test-support", "cli"]
 
 [workspace.package]
-version = "0.4.57"
+version = "0.4.58"
 edition = "2021"
 license = "MPL-2.0"
 homepage = "https://divviup.org"
 repository = "https://github.com/divviup/divviup-api"
 
 [workspace.dependencies]
-divviup-client = { path = "./client", version = "0.4.57" }
-divviup-cli = { path = "./cli", version = "0.4.57" }
+divviup-client = { path = "./client", version = "0.4.58" }
+divviup-cli = { path = "./cli", version = "0.4.58" }
 divviup-api.path = "."
 test-support.path = "./test-support"
 
