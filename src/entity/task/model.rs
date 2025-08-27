@@ -61,6 +61,7 @@ pub struct Model {
     pub report_counter_success: i64,
     pub report_counter_too_early: i64,
     pub report_counter_task_expired: i64,
+    pub report_counter_duplicate_extension: i64,
 
     // Aggregation job metrics
     pub aggregation_job_counter_success: i64,
@@ -102,6 +103,12 @@ impl Model {
             ActiveValue::Set(metrics.report_too_early.try_into().unwrap_or(i64::MAX));
         task.report_counter_task_expired =
             ActiveValue::Set(metrics.task_expired.try_into().unwrap_or(i64::MAX));
+        task.report_counter_duplicate_extension = ActiveValue::Set(
+            metrics
+                .report_duplicate_extension
+                .try_into()
+                .unwrap_or(i64::MAX),
+        );
         task.updated_at = ActiveValue::Set(OffsetDateTime::now_utc());
         task.update(&db).await
     }
