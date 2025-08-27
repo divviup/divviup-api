@@ -93,7 +93,6 @@ export interface Task {
   aggregation_job_counter_helper_task_expired: number;
   aggregation_job_counter_helper_invalid_message: number;
   aggregation_job_counter_helper_report_too_early: number;
-
 }
 
 export interface CollectorAuthToken {
