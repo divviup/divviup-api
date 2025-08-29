@@ -17,7 +17,7 @@ thiserror = "2.0.16"
 time = "0.3.41"
 tokio = { version = "1.47.1", features = ["full"] }
 tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
+tracing-subscriber = "0.3.20"
 
 [dependencies.sea-orm-migration]
 version = "1.0.1"
