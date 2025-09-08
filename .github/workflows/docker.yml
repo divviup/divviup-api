@@ -70,7 +70,7 @@ jobs:
         with:
           path: checkout
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --package divviup-cli --profile release
+      - run: cargo build --package divviup-cli --profile release --locked
         working-directory: checkout
       - run: |
           mkdir compose
