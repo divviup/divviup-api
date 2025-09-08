@@ -112,6 +112,7 @@ impl ProvisionableTask {
             report_counter_success: 0,
             report_counter_too_early: 0,
             report_counter_task_expired: 0,
+            report_counter_duplicate_extension: 0,
             aggregation_job_counter_success: 0,
             aggregation_job_counter_helper_hpke_decrypt_failure: 0,
             aggregation_job_counter_helper_batch_collected: 0,

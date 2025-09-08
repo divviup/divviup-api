@@ -347,6 +347,8 @@ pub struct TaskUploadMetrics {
     pub report_too_early: u64,
     /// Reports that were submitted to the task after the task's expiry.
     pub task_expired: u64,
+    /// Reports that were submitted with a duplicate extension.
+    pub report_duplicate_extension: u64,
 }
 
 impl PartialEq<Task> for TaskUploadMetrics {
@@ -359,6 +361,7 @@ impl PartialEq<Task> for TaskUploadMetrics {
             && other.report_counter_success == self.report_success as i64
             && other.report_counter_too_early == self.report_too_early as i64
             && other.report_counter_task_expired == self.task_expired as i64
+            && other.report_counter_duplicate_extension == self.report_duplicate_extension as i64
     }
 }
 
