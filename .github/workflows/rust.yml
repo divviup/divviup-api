@@ -32,7 +32,7 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Collect coverage data
-        run: cargo llvm-cov nextest --lcov --output-path lcov.info --workspace
+        run: cargo llvm-cov nextest --lcov --output-path lcov.info --workspace --locked
       - name: Upload coverage data to coveralls
         uses: coverallsapp/github-action@v2
         with:
@@ -41,13 +41,13 @@ jobs:
       - name: Format
         run: cargo fmt --all -- --check
       - name: check +api-mocks
-        run: cargo check --features api-mocks
+        run: cargo check --features api-mocks --locked
       - name: check +otlp-trace
-        run: cargo check --features otlp-trace
+        run: cargo check --features otlp-trace --locked
       - name: check cli -default +ring
-        run: cargo check -p divviup-cli --no-default-features --features ring,common
+        run: cargo check -p divviup-cli --no-default-features --features ring,common --locked
       - name: check cli +default +admin
-        run: cargo check -p divviup-cli --features admin
+        run: cargo check -p divviup-cli --features admin --locked
       - name: cargo deny
         uses: EmbarkStudios/cargo-deny-action@v2.0.13
         with:
