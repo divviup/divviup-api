@@ -48,6 +48,6 @@ rand = { version = "0.8.5", optional = true }
 janus_client = "0.7.30"
 janus_collector = "0.7.21"
 url = "2.5.7"
-janus_messages = "0.7.88"
+janus_messages = "0.7.89"
 prio = "0.16.7"
 tokio = { version = "1.47.1" }
