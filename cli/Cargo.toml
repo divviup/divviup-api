@@ -33,7 +33,7 @@ serde = "1.0.226"
 email_address = "0.2.9"
 humantime = "2.3.0"
 base64 = "0.22.1"
-time = { version = "0.3.43", features = [
+time = { version = "0.3.44", features = [
     "serde",
     "serde-well-known",
     "local-offset",
