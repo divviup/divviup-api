@@ -2584,9 +2584,9 @@ dependencies = [
 
 [[package]]
 name = "janus_messages"
-version = "0.7.90"
+version = "0.7.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5061afa6997f1bb4357bda0be995518b680ef1d8bd679562d3ae67630882e3f9"
+checksum = "dff88b8da53052dae1d26ce2e01437b54612a1b3384ce6417b76171899f5cf94"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
