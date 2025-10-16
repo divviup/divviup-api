@@ -22,6 +22,7 @@ export default function RenameTaskButton() {
   useEffect(() => {
     if (fetcher.data) {
       if ("error" in fetcher.data) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setErrors(formikErrors(fetcher.data.error));
       } else {
         close();
