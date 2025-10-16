@@ -4,7 +4,7 @@ import { Tab, Tabs } from "react-bootstrap";
 import { Task, Aggregator } from "../../ApiClient";
 import Card from "react-bootstrap/Card";
 import "@github/relative-time-element";
-import { Copy, OutLink, usePromiseAll } from "../../util";
+import { Copy, OutLink, usePromiseAll3 } from "../../util";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { github as syntaxStyle } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { useCallback } from "react";
@@ -44,8 +44,10 @@ function TsClientConfig() {
     helperAggregator: Promise<Aggregator>;
   };
 
-  const taskConfig = usePromiseAll(
-    [task, leaderAggregator, helperAggregator],
+  const taskConfig = usePromiseAll3(
+    task,
+    leaderAggregator,
+    helperAggregator,
     useCallback(
       ([task, leader, helper]) => ({
         ...task.vdaf,

@@ -10,7 +10,7 @@ import {
 import { LinkContainer } from "react-router-bootstrap";
 import AggregatorTypeSelection from "./AggregatorTypeSelection";
 import InlineCollectorCredentials from "./InlineCollectorCredentials";
-import { usePromise, usePromiseAll } from "../../util";
+import { usePromise, usePromiseAll3 } from "../../util";
 import css from "./index.module.css";
 import { useCallback } from "react";
 
@@ -65,8 +65,10 @@ export default function NextSteps() {
     };
 
   const loadedTasks = usePromise(tasks, []);
-  const activeIndex = usePromiseAll(
-    [account, collectorCredentials, aggregators],
+  const activeIndex = usePromiseAll3(
+    account,
+    collectorCredentials,
+    aggregators,
     useCallback(
       ([account, collectorCredentials, aggregators]) =>
         determineModel({ account, collectorCredentials, aggregators }),

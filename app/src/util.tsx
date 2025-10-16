@@ -2,7 +2,7 @@ import Breadcrumb from "react-bootstrap/Breadcrumb";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import { LinkContainer } from "react-router-bootstrap";
-import React, { Suspense, useRef } from "react";
+import React, { Suspense } from "react";
 import { Await, useRouteLoaderData, useLoaderData } from "react-router-dom";
 import { Account } from "./ApiClient";
 import Placeholder from "react-bootstrap/Placeholder";
@@ -120,48 +120,33 @@ export function usePromise<T>(promise: PromiseLike<T>, initialState: T): T {
   return state;
 }
 
-// Adapted from https://github.com/lbfalvy/react-utils/blob/8c6e750bc6a2450c201ac34c2905aecb43b8350a/src/useArray.ts
 /**
- * Ensures referential equality of an array whenever its elements are equal.
- * This allows use of an array in a list of dependencies without unnecessary
- * updates, or changed dependency array length warnings from trying to spread
- * an array into a dependency array.
- * @param input Array
- * @returns Memoized array
- */
-function useArray<T extends unknown[]>(input: T): T {
-  const ref = useRef<T>(input);
-  const cur = ref.current;
-  if (input.length === cur.length && input.every((v, i) => v === cur[i])) {
-    return cur;
-  } else {
-    ref.current = input;
-    return input;
-  }
-}
-
-/**
- * This custom hook allows using the results of multiple promises. At first, the
+ * This custom hook allows using the results of three promises. At first, the
  * initial value is returned. Once all promises are ready, their resolved values
  * are passed to the `then` function, and the result is returned.
  *
  * Note that the `then` function should be either defined outside of any render
  * function or passed through `useCallback()`, to avoid spurious renders.
- * @param promises Array of promises
+ * @param promise1 First promise
+ * @param promise2 Second promise
+ * @param promise3 Third promise
  * @param then Function
  * @param initialState Value to be returned until promises are resolved
  * @returns `initialState` or output of `then`
  */
-export function usePromiseAll<U, T extends unknown[]>(
-  promises: [...T],
-  then: (arr: { [P in keyof T]: Awaited<T[P]> }) => U | PromiseLike<U>,
+export function usePromiseAll3<U, P1, P2, P3>(
+  promise1: P1,
+  promise2: P2,
+  promise3: P3,
+  then: (
+    outputs: [Awaited<P1>, Awaited<P2>, Awaited<P3>],
+  ) => U | PromiseLike<U>,
   initialState: U,
 ): U {
-  const memoizedPromises = useArray(promises);
   return usePromise(
     React.useMemo(
-      () => Promise.all(memoizedPromises).then(then),
-      [memoizedPromises, then],
+      () => Promise.all([promise1, promise2, promise3]).then(then),
+      [promise1, promise2, promise3, then],
     ),
     initialState,
   );
