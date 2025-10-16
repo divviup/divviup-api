@@ -113,6 +113,7 @@ function TokenName({ apiToken }: { apiToken: ApiToken }) {
   const edit = useCallback(() => setEditing(true), [setEditing]);
   const fetcher = useFetcher();
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (fetcher.data) setEditing(false);
   }, [fetcher, setEditing]);
   if (isEditing) {
@@ -170,6 +171,7 @@ function DeleteButton({ apiToken }: { apiToken: ApiToken }) {
   const fetcher = useFetcher();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (fetcher.data) close();
   }, [fetcher, close]);
 

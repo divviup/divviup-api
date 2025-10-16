@@ -93,6 +93,7 @@ function RenameAggregatorButton({ aggregator }: { aggregator: Aggregator }) {
   const fetcher = useFetcher();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (fetcher.data) close();
   }, [fetcher, close]);
 
@@ -149,6 +150,7 @@ function DeleteAggregatorButton({ aggregator }: { aggregator: Aggregator }) {
   const fetcher = useFetcher();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (fetcher.data) close();
   }, [fetcher, close]);
 
