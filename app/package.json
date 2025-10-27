@@ -5,7 +5,7 @@
   "license": "MPL-2.0",
   "type": "module",
   "dependencies": {
-    "@github/relative-time-element": "^4.4.8",
+    "@github/relative-time-element": "^4.5.0",
     "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
     "formik": "^2.4.6",
