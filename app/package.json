@@ -82,7 +82,7 @@
     "source-map-explorer": "^2.5.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
-    "vite": "^7.1.11",
+    "vite": "^7.1.12",
     "vite-plugin-eslint": "^1.8.1"
   },
   "jest": {
