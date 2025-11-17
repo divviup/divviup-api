@@ -8,7 +8,7 @@
     "@github/relative-time-element": "^4.5.0",
     "axios": "^1.13.2",
     "bootstrap": "^5.3.8",
-    "formik": "^2.4.8",
+    "formik": "^2.4.9",
     "humanize-duration": "^3.33.1",
     "luxon": "^3.7.2",
     "primereact": "^10.9.7",
