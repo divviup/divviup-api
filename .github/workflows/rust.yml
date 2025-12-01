@@ -49,6 +49,6 @@ jobs:
       - name: check cli +default +admin
         run: cargo check -p divviup-cli --features admin --locked
       - name: cargo deny
-        uses: EmbarkStudios/cargo-deny-action@v2.0.13
+        uses: EmbarkStudios/cargo-deny-action@v2.0.14
         with:
           command: check bans
