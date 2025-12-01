@@ -20,9 +20,9 @@ tracing = "0.1.41"
 tracing-subscriber = "0.3.20"
 
 [dependencies.sea-orm-migration]
-version = "1.1.17"
+version = "1.1.19"
 features = ["runtime-tokio-rustls", "sqlx-postgres"]
 
 [dev-dependencies]
 sea-orm = { version = "1.1.19", features = ["sqlx-sqlite"] }
-sea-orm-migration = { version = "1.1.17", features = ["sqlx-sqlite"] }
+sea-orm-migration = { version = "1.1.19", features = ["sqlx-sqlite"] }
