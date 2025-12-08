@@ -9,7 +9,7 @@
     "axios": "^1.13.2",
     "bootstrap": "^5.3.8",
     "formik": "^2.4.9",
-    "humanize-duration": "^3.33.1",
+    "humanize-duration": "^3.33.2",
     "luxon": "^3.7.2",
     "primereact": "^10.9.7",
     "react": "^18.2.0",
