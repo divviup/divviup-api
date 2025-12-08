@@ -24,7 +24,7 @@ trillium-http = "0.3.14"
 url = { version = "2.5.7", features = ["serde"] }
 uuid = { version = "1.18.1", features = ["v4", "fast-rng", "serde"] }
 time = { version = "0.3.44", features = ["serde", "serde-well-known"] }
-log = "0.4.28"
+log = "0.4.29"
 pad-adapter = "0.1.1"
 janus_messages = "0.7.99"
 num-bigint = "0.4.6"
