@@ -45,9 +45,9 @@ colored = "3.0.0"
 const_format = "0.2.35"
 hpke-dispatch = { version = "0.7.0", features = ["serde"], optional = true }
 rand = { version = "0.8.5", optional = true }
-janus_client = "0.7.100"
-janus_collector = "0.7.100"
+janus_client = "0.7.101"
+janus_collector = "0.7.101"
 url = "2.5.7"
-janus_messages = "0.7.100"
+janus_messages = "0.7.101"
 prio = "0.16.7"
 tokio = { version = "1.47.1" }
