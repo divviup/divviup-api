@@ -280,7 +280,7 @@ version = "1.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c2886ab563af5038f79ec016dd7b87947ed138b794e8dd64992962c9cca0411"
 dependencies = [
- "async-lock 3.4.1",
+ "async-lock 3.4.2",
  "futures-io",
 ]
 
@@ -295,9 +295,9 @@ dependencies = [
 
 [[package]]
 name = "async-lock"
-version = "3.4.1"
+version = "3.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fd03604047cee9b6ce9de9f70c6cd540a0520c813cbd49bae61f33ab80ed1dc"
+checksum = "290f7f2596bd5b78a9fec8088ccd89180d7f9f55b94b0576823bbbdc72ee8311"
 dependencies = [
  "event-listener 5.3.0",
  "event-listener-strategy 0.5.2",
@@ -1305,7 +1305,7 @@ name = "divviup-api"
 version = "0.4.74"
 dependencies = [
  "aes-gcm",
- "async-lock 3.4.1",
+ "async-lock 3.4.2",
  "async-session",
  "base64 0.22.1",
  "console-subscriber",
