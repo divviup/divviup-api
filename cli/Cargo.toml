@@ -50,4 +50,4 @@ janus_collector = "0.7.101"
 url = "2.5.7"
 janus_messages = "0.7.102"
 prio = "0.16.7"
-tokio = { version = "1.47.1" }
+tokio = { version = "1.49.0" }
