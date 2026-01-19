@@ -78,7 +78,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.0.0",
     "postcss-nesting": "^14.0.0",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.0",
     "source-map-explorer": "^2.5.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.0",
