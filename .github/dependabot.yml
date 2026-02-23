@@ -25,6 +25,9 @@ updates:
     target-branch: "main"
     open-pull-requests-limit: 20
     groups:
+      eslint:
+        patterns:
+          - "*eslint*"
       react:
         patterns:
           - 'react'
