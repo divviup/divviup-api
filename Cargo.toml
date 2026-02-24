@@ -45,7 +45,7 @@ log = "0.4.27"
 opentelemetry = { version = "0.27.1", features = ["metrics", "logs"] }
 opentelemetry-prometheus = { version = "0.27.0", features = ["prometheus-encoding"] }
 prio = "0.16.7"
-prometheus = "0.13.4"
+prometheus = "0.14.0"
 querystrong = "0.3.0"
 rand = "0.8.5"
 # This crate does not actually need to depend on rustls-webpki directly, but we need to make sure the feature "std" is enabled. See Janus issue #3744.
