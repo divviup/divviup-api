@@ -1,0 +1,9 @@
+region               = "us-west-1"
+name_prefix          = "divviup"
+resource_group_key   = "resource_group"
+resource_group_value = "divviup"
+elastic_ip_id        = "eipalloc-XXXXXXXXXXXXXXXXX"
+instance_type        = "t3.small"
+ubuntu_version       = "24.04"
+volume_size_gb       = 20
+component            = "aggregator"
