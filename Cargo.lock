@@ -1874,8 +1874,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a49c392881ce6d5c3b8cb70f98717b7c07aabbdff06687b9030dbfbe2725f8"
 dependencies = [
  "cfg-if 1.0.0",
+ "js-sys",
  "libc",
  "wasi 0.13.3+wasi-0.2.2",
+ "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
 
@@ -2708,6 +2710,12 @@ name = "log"
 version = "0.4.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
+
+[[package]]
+name = "lru-slab"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
 
 [[package]]
 name = "matchers"
@@ -3562,19 +3570,23 @@ dependencies = [
 
 [[package]]
 name = "quinn-proto"
-version = "0.11.8"
+version = "0.11.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fadfaed2cd7f389d0161bb73eeb07b7b78f8691047a6f3e73caaeae55310a4a6"
+checksum = "434b42fec591c96ef50e21e886936e66d3cc3f737104fdb9b737c40ffb94c098"
 dependencies = [
  "bytes",
- "rand 0.8.5",
+ "getrandom 0.3.1",
+ "lru-slab",
+ "rand 0.9.0",
  "ring",
  "rustc-hash 2.1.1",
  "rustls",
+ "rustls-pki-types",
  "slab",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "tinyvec",
  "tracing",
+ "web-time",
 ]
 
 [[package]]
@@ -3955,6 +3967,7 @@ version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94182ad936a0c91c324cd46c6511b9510ed16af436d7b5bab34beab0afd55f7a"
 dependencies = [
+ "web-time",
  "zeroize",
 ]
 
@@ -5922,6 +5935,16 @@ name = "web-sys"
 version = "0.3.67"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "58cd2333b6e0be7a39605f0e255892fd7418a682d8da8fe042fe25128794d2ed"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "web-time"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
