@@ -57,7 +57,7 @@ jobs:
           access_token_lifetime: "3600s"
           access_token_scopes: https://www.googleapis.com/auth/cloud-platform
       - name: Docker login (private repository)
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: us-west2-docker.pkg.dev
           username: oauth2accesstoken
@@ -74,7 +74,7 @@ jobs:
           access_token_lifetime: "3600s"
           access_token_scopes: https://www.googleapis.com/auth/cloud-platform
       - name: Docker login (public repository)
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: us-west2-docker.pkg.dev
           username: oauth2accesstoken
