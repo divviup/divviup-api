@@ -77,6 +77,7 @@ async fn get_task_upload_metrics(_: &mut Conn, (): ()) -> Json<TaskUploadMetrics
         report_outdated_key: fastrand::u64(..1000),
         report_success: fastrand::u64(..1000),
         report_too_early: fastrand::u64(..1000),
+        report_duplicate_extension: fastrand::u64(..1000),
         task_expired: fastrand::u64(..1000),
     })
 }
