@@ -9,7 +9,7 @@ RUN npm ci
 RUN npm run build
 
 FROM rust:1.94.1-alpine AS chef
-RUN apk --no-cache add libc-dev cmake make
+RUN apk --no-cache add libc-dev
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo install cargo-chef
 WORKDIR /src
