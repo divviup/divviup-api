@@ -14,6 +14,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use time::{error::ComponentRange, OffsetDateTime};
 use url::Url;
+use validator::{ValidationError, ValidationErrors};
 
 pub use janus_messages::{
     codec::{Decode, Encode},
@@ -272,9 +273,17 @@ impl TaskCreate {
             vdaf: new_task.aggregator_vdaf.clone(),
             role,
             max_batch_query_count: 1,
-            task_expiration: new_task.expiration.map(|expiration| {
-                JanusTime::from_seconds_since_epoch(expiration.unix_timestamp().try_into().unwrap())
-            }),
+            task_expiration: new_task
+                .expiration
+                .map(|expiration| {
+                    let seconds: u64 = expiration.unix_timestamp().try_into().map_err(|_| {
+                        let mut ve = ValidationErrors::new();
+                        ve.add("expiration", ValidationError::new("pre-epoch-timestamp"));
+                        Error::from(ve)
+                    })?;
+                    Ok::<_, Error>(JanusTime::from_seconds_since_epoch(seconds))
+                })
+                .transpose()?,
             min_batch_size: new_task.min_batch_size,
             time_precision: new_task.time_precision_seconds,
             collector_hpke_config: new_task.collector_credential.hpke_config().clone(),

@@ -4,7 +4,7 @@ use serde::Deserialize;
 use time::OffsetDateTime;
 use tokio::try_join;
 use trillium_client::Client;
-use validator::{Validate, ValidationError};
+use validator::{Validate, ValidationError, ValidationErrors};
 
 use crate::{deserialize_some, entity::Aggregator, handler::Error, Crypter, Db};
 
@@ -36,9 +36,20 @@ impl UpdateTask {
         http_client: &Client,
         crypter: &Crypter,
     ) -> Result<(), Error> {
-        let expiration = self.expiration.as_ref().unwrap().0.map(|expiration| {
-            JanusTime::from_seconds_since_epoch(expiration.unix_timestamp().try_into().unwrap())
-        });
+        let expiration = self
+            .expiration
+            .as_ref()
+            .unwrap()
+            .0
+            .map(|expiration| {
+                let seconds: u64 = expiration.unix_timestamp().try_into().map_err(|_| {
+                    let mut ve = ValidationErrors::new();
+                    ve.add("expiration", ValidationError::new("pre-epoch-timestamp"));
+                    Error::from(ve)
+                })?;
+                Ok::<_, Error>(JanusTime::from_seconds_since_epoch(seconds))
+            })
+            .transpose()?;
         let response = aggregator
             .client(http_client.clone(), crypter)?
             .update_task_expiration(task_id, expiration)
