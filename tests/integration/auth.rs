@@ -21,6 +21,33 @@ async fn first_use_of_a_token_updates_last_used_at(app: DivviupApi) -> TestResul
     Ok(())
 }
 
+#[test(harness = set_up)]
+async fn deleted_token_cannot_authenticate(app: DivviupApi) -> TestResult {
+    let account = fixtures::account(&app).await;
+    let (api_token, token) = fixtures::api_token(&app, &account).await;
+
+    // Token works before deletion
+    let conn = get("/api/accounts")
+        .with_api_headers()
+        .with_auth_header(token.clone())
+        .run_async(&app)
+        .await;
+    assert_ok!(conn);
+
+    // Delete (tombstone) the token
+    api_token.tombstone().update(app.db()).await.unwrap();
+
+    // Deleted token should no longer authenticate
+    let conn = get("/api/accounts")
+        .with_api_headers()
+        .with_auth_header(token)
+        .run_async(&app)
+        .await;
+    assert_status!(conn, 403);
+
+    Ok(())
+}
+
 mod login {
     use super::{assert_eq, test, *};
 

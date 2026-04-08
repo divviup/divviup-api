@@ -2,9 +2,9 @@ use super::{Account, AccountColumn, AccountRelation, Accounts, Memberships};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::random;
 use sea_orm::{
-    ActiveModelBehavior, ActiveValue, ConnectionTrait, DeriveEntityModel, DerivePrimaryKey,
-    DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef,
-    RelationTrait,
+    ActiveModelBehavior, ActiveValue, ColumnTrait, ConnectionTrait, DeriveEntityModel,
+    DerivePrimaryKey, DeriveRelation, EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait,
+    QueryFilter, Related, RelationDef, RelationTrait,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -181,6 +181,7 @@ impl Entity {
         let (id, token) = decode_token(token)?;
         let sha = Sha256::digest(token);
         let (api_token, account) = Self::find_by_id(id)
+            .filter(Column::DeletedAt.is_null())
             .find_also_related(Accounts)
             .one(db)
             .await
