@@ -4,6 +4,7 @@ use crate::{
     Crypter,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use educe::Educe;
 use email_address::EmailAddress;
 use std::{
     any::type_name,
@@ -19,7 +20,8 @@ use url::Url;
 
 const POSTMARK_URL: &str = "https://api.postmarkapp.com";
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Educe)]
+#[educe(Debug)]
 pub struct Config {
     /// The public facing base URL for this application.
     pub api_url: Url,
@@ -30,16 +32,19 @@ pub struct Config {
     /// The OAuth2 client ID.
     pub auth_client_id: String,
     /// The OAuth2 client secret.
+    #[educe(Debug = false)]
     pub auth_client_secret: String,
     /// The base URL to an OAuth2 IdP (usually Auth0).
     pub auth_url: Url,
     pub client: Client,
     pub crypter: Crypter,
     /// A libpq-compatible PostgreSQL URI.
+    #[educe(Debug = false)]
     pub database_url: Url,
     /// The email address this deployment should send from.
     pub email_address: EmailAddress,
     /// The token from the transactional stream from a [postmark](https://postmarkapp.com) account.
+    #[educe(Debug = false)]
     pub postmark_token: String,
     /// The URL to postmark.
     pub postmark_url: Url,
@@ -47,6 +52,7 @@ pub struct Config {
     pub monitoring_listen_address: SocketAddr,
     /// Comma-joined unpadded base64url encoded cryptographically random secrets, 32 bytes long
     /// after decoding. The first one is used for new sessions.
+    #[educe(Debug = false)]
     pub session_secrets: SessionSecrets,
     /// See [`TraceConfig::use_test_writer`].
     pub trace_use_test_writer: bool,
@@ -246,5 +252,49 @@ impl FromStr for SessionSecrets {
             .ok_or(SessionSecretsDecodeError::Missing)?;
         let older = secret.into();
         Ok(Self { current, older })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Crypter;
+
+    #[test]
+    fn config_debug_redacts_secrets() {
+        let config = Config {
+            api_url: "https://api.example".parse().unwrap(),
+            app_url: "https://app.example".parse().unwrap(),
+            auth_audience: "aud".into(),
+            auth_client_id: "client_id".into(),
+            auth_client_secret: "super-secret-client-secret".into(),
+            auth_url: "https://auth.example".parse().unwrap(),
+            client: Client::new(trillium_tokio::ClientConfig::default()),
+            crypter: Crypter::from(Crypter::generate_key()),
+            database_url: "postgres://user:hunter2@db.example/mydb".parse().unwrap(),
+            email_address: "test@example.test".parse().unwrap(),
+            postmark_token: "pmak-secret-token".into(),
+            postmark_url: "https://postmark.example".parse().unwrap(),
+            monitoring_listen_address: "127.0.0.1:9464".parse().unwrap(),
+            session_secrets: vec![0u8; 32].into(),
+            trace_use_test_writer: false,
+            trace_force_json_writer: false,
+            trace_stackdriver_json_output: false,
+            trace_chrome: false,
+            tokio_console_enabled: false,
+            tokio_console_listen_address: "127.0.0.1:6669".parse().unwrap(),
+            metrics_refresh_enabled: true,
+        };
+
+        let debug_output = format!("{config:?}");
+
+        // Secrets must not appear
+        assert!(!debug_output.contains("super-secret-client-secret"));
+        assert!(!debug_output.contains("hunter2"));
+        assert!(!debug_output.contains("pmak-secret-token"));
+
+        // Non-secret fields should appear
+        assert!(debug_output.contains("api.example"));
+        assert!(debug_output.contains("app.example"));
     }
 }
