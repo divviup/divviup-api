@@ -4,8 +4,8 @@ use crate::{
     Crypter,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use educe::Educe;
 use email_address::EmailAddress;
-use std::fmt;
 use std::{
     any::type_name,
     collections::VecDeque,
@@ -20,7 +20,8 @@ use url::Url;
 
 const POSTMARK_URL: &str = "https://api.postmarkapp.com";
 
-#[derive(Clone)]
+#[derive(Clone, Educe)]
+#[educe(Debug)]
 pub struct Config {
     /// The public facing base URL for this application.
     pub api_url: Url,
@@ -31,16 +32,19 @@ pub struct Config {
     /// The OAuth2 client ID.
     pub auth_client_id: String,
     /// The OAuth2 client secret.
+    #[educe(Debug = false)]
     pub auth_client_secret: String,
     /// The base URL to an OAuth2 IdP (usually Auth0).
     pub auth_url: Url,
     pub client: Client,
     pub crypter: Crypter,
     /// A libpq-compatible PostgreSQL URI.
+    #[educe(Debug = false)]
     pub database_url: Url,
     /// The email address this deployment should send from.
     pub email_address: EmailAddress,
     /// The token from the transactional stream from a [postmark](https://postmarkapp.com) account.
+    #[educe(Debug = false)]
     pub postmark_token: String,
     /// The URL to postmark.
     pub postmark_url: Url,
@@ -48,6 +52,7 @@ pub struct Config {
     pub monitoring_listen_address: SocketAddr,
     /// Comma-joined unpadded base64url encoded cryptographically random secrets, 32 bytes long
     /// after decoding. The first one is used for new sessions.
+    #[educe(Debug = false)]
     pub session_secrets: SessionSecrets,
     /// See [`TraceConfig::use_test_writer`].
     pub trace_use_test_writer: bool,
@@ -63,40 +68,6 @@ pub struct Config {
     pub tokio_console_listen_address: SocketAddr,
     /// Enables refreshing upload metrics from Janus. Enabled by default.
     pub metrics_refresh_enabled: bool,
-}
-
-impl fmt::Debug for Config {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Config")
-            .field("api_url", &self.api_url)
-            .field("app_url", &self.app_url)
-            .field("auth_audience", &self.auth_audience)
-            .field("auth_client_id", &self.auth_client_id)
-            .field("auth_client_secret", &"..")
-            .field("auth_url", &self.auth_url)
-            .field("client", &self.client)
-            .field("crypter", &self.crypter)
-            .field("database_url", &"..")
-            .field("email_address", &self.email_address)
-            .field("postmark_token", &"..")
-            .field("postmark_url", &self.postmark_url)
-            .field("monitoring_listen_address", &self.monitoring_listen_address)
-            .field("session_secrets", &"..")
-            .field("trace_use_test_writer", &self.trace_use_test_writer)
-            .field("trace_force_json_writer", &self.trace_force_json_writer)
-            .field(
-                "trace_stackdriver_json_output",
-                &self.trace_stackdriver_json_output,
-            )
-            .field("trace_chrome", &self.trace_chrome)
-            .field("tokio_console_enabled", &self.tokio_console_enabled)
-            .field(
-                "tokio_console_listen_address",
-                &self.tokio_console_listen_address,
-            )
-            .field("metrics_refresh_enabled", &self.metrics_refresh_enabled)
-            .finish()
-    }
 }
 
 #[derive(Debug, Clone, Copy)]

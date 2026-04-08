@@ -1317,6 +1317,7 @@ dependencies = [
  "async-session",
  "base64 0.22.1",
  "console-subscriber",
+ "educe",
  "email_address",
  "fastrand",
  "futures-lite",
