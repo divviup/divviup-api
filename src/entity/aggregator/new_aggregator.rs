@@ -6,11 +6,15 @@ use crate::{
 };
 use sea_orm::IntoActiveModel;
 use serde::{Deserialize, Serialize};
-use std::{net::IpAddr, str::FromStr};
+use std::{
+    net::{IpAddr, Ipv4Addr, Ipv6Addr},
+    str::FromStr,
+};
 use time::OffsetDateTime;
 use tokio::net::lookup_host;
 use trillium_client::Client;
 use trillium_http::Status;
+use url::Host;
 use uuid::Uuid;
 use validator::{Validate, ValidationError, ValidationErrors};
 
@@ -36,27 +40,25 @@ fn https(url: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-fn ssrf_error(code: &'static str) -> Error {
-    let mut ve = ValidationErrors::new();
-    ve.add("api_url", ValidationError::new(code));
-    ve.into()
-}
-
-async fn validate_aggregator_url(url_str: &str) -> Result<(), Error> {
-    let url = url::Url::from_str(url_str).map_err(|_| ssrf_error("invalid-url"))?;
+async fn validate_aggregator_url(url: &url::Url) -> Result<(), Error> {
+    fn ssrf_error(code: &'static str) -> Error {
+        let mut ve = ValidationErrors::new();
+        ve.add("api_url", ValidationError::new(code));
+        ve.into()
+    }
 
     let host = url.host_str().ok_or_else(|| ssrf_error("invalid-url"))?;
     let port = url.port().unwrap_or(443);
 
     // For IP-literal hosts, check directly without DNS.
     match url.host() {
-        Some(url::Host::Ipv4(ip)) => {
+        Some(Host::Ipv4(ip)) => {
             if is_private_ipv4(ip) {
                 return Err(ssrf_error("private-address"));
             }
             return Ok(());
         }
-        Some(url::Host::Ipv6(ip)) => {
+        Some(Host::Ipv6(ip)) => {
             if is_private_ipv6(ip) {
                 return Err(ssrf_error("private-address"));
             }
@@ -91,7 +93,7 @@ fn is_private_ip(ip: IpAddr) -> bool {
     }
 }
 
-fn is_private_ipv4(ip: std::net::Ipv4Addr) -> bool {
+fn is_private_ipv4(ip: Ipv4Addr) -> bool {
     ip.is_loopback()         // 127.0.0.0/8
         || ip.is_private()   // 10/8, 172.16/12, 192.168/16
         || ip.is_link_local()   // 169.254.0.0/16 (includes cloud metadata)
@@ -101,7 +103,7 @@ fn is_private_ipv4(ip: std::net::Ipv4Addr) -> bool {
         || ip.octets()[0] == 100 && (ip.octets()[1] & 0xC0) == 64 // 100.64.0.0/10 (RFC 6598)
 }
 
-fn is_private_ipv6(ip: std::net::Ipv6Addr) -> bool {
+fn is_private_ipv6(ip: Ipv6Addr) -> bool {
     ip.is_loopback()         // ::1
         || ip.is_unspecified() // ::
         || {
@@ -125,15 +127,15 @@ impl NewAggregator {
     ) -> Result<ActiveModel, Error> {
         self.validate()?;
 
+        let api_url: Url = self.api_url.as_ref().unwrap().parse()?;
+
         if ssrf_validation_enabled {
-            if let Some(api_url) = &self.api_url {
-                validate_aggregator_url(api_url).await?;
-            }
+            validate_aggregator_url(&api_url).await?;
         }
 
         let aggregator_config = AggregatorClient::get_config(
             client,
-            self.api_url.as_ref().unwrap().parse()?,
+            api_url.clone().into(),
             self.bearer_token.as_ref().unwrap(),
         )
         .await
@@ -173,7 +175,6 @@ impl NewAggregator {
         // double-checking these Options -- once in validate, and
         // again in the conversion to non-optional fields.
 
-        let api_url: Url = self.api_url.as_ref().unwrap().parse()?;
         let encrypted_bearer_token = crypter.encrypt(
             api_url.as_ref().as_bytes(),
             self.bearer_token.as_deref().unwrap_or_default().as_bytes(),
@@ -182,7 +183,7 @@ impl NewAggregator {
         Ok(Aggregator {
             role: aggregator_config.role,
             name: self.name.unwrap(),
-            api_url: self.api_url.unwrap().parse()?,
+            api_url,
             dap_url: aggregator_config.dap_url.into(),
             encrypted_bearer_token,
             id: Uuid::new_v4(),
@@ -203,7 +204,6 @@ impl NewAggregator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::net::{Ipv4Addr, Ipv6Addr};
 
     #[test]
     fn private_ipv4_addresses() {
@@ -237,24 +237,42 @@ mod tests {
         assert!(!is_private_ip(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8))));
     }
 
+    fn url(s: &str) -> url::Url {
+        url::Url::parse(s).unwrap()
+    }
+
     #[tokio::test]
     async fn validate_rejects_private_ip_literals() {
-        assert!(validate_aggregator_url("https://169.254.169.254/latest/")
+        assert!(
+            validate_aggregator_url(&url("https://169.254.169.254/latest/"))
+                .await
+                .is_err()
+        );
+        assert!(validate_aggregator_url(&url("https://127.0.0.1/"))
             .await
             .is_err());
-        assert!(validate_aggregator_url("https://127.0.0.1/").await.is_err());
-        assert!(validate_aggregator_url("https://10.0.0.1/").await.is_err());
-        assert!(validate_aggregator_url("https://[::1]/").await.is_err());
+        assert!(validate_aggregator_url(&url("https://10.0.0.1/"))
+            .await
+            .is_err());
+        assert!(validate_aggregator_url(&url("https://[::1]/"))
+            .await
+            .is_err());
     }
 
     #[tokio::test]
     async fn validate_rejects_localhost_hostname() {
-        assert!(validate_aggregator_url("https://localhost/").await.is_err());
-        assert!(validate_aggregator_url("https://LOCALHOST/").await.is_err());
+        assert!(validate_aggregator_url(&url("https://localhost/"))
+            .await
+            .is_err());
+        assert!(validate_aggregator_url(&url("https://LOCALHOST/"))
+            .await
+            .is_err());
     }
 
     #[tokio::test]
     async fn validate_accepts_public_ip_literal() {
-        assert!(validate_aggregator_url("https://8.8.8.8/").await.is_ok());
+        assert!(validate_aggregator_url(&url("https://8.8.8.8/"))
+            .await
+            .is_ok());
     }
 }
