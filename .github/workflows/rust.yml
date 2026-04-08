@@ -52,3 +52,13 @@ jobs:
         uses: EmbarkStudios/cargo-deny-action@v2.0.15
         with:
           command: check bans
+
+  rustsec-advisories:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: cargo deny
+        uses: EmbarkStudios/cargo-deny-action@v2.0.15
+        with:
+          command: check advisories
