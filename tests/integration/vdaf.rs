@@ -92,23 +92,101 @@ fn sumvec_representations() {
 }
 
 #[test]
-#[should_panic]
 fn histogram_representation_dap_09_no_chunk_length_1() {
-    let _ = Vdaf::Histogram(Histogram::Categorical(CategoricalBuckets {
+    let result = Vdaf::Histogram(Histogram::Categorical(CategoricalBuckets {
         buckets: Some(Vec::from(["a".to_owned(), "b".to_owned(), "c".to_owned()])),
         chunk_length: None,
         dp_strategy: DpStrategy::default(),
     }))
     .representation_for_protocol(&Protocol::Dap09);
+    assert!(result.is_err());
 }
 
 #[test]
-#[should_panic]
 fn histogram_representation_dap_09_no_chunk_length_2() {
-    let _ = Vdaf::Histogram(Histogram::Opaque(BucketLength {
+    let result = Vdaf::Histogram(Histogram::Opaque(BucketLength {
         length: 3,
         chunk_length: None,
         dp_strategy: DpStrategy::default(),
     }))
     .representation_for_protocol(&Protocol::Dap09);
+    assert!(result.is_err());
+}
+
+#[test]
+fn histogram_invalid_dp_strategy_returns_error() {
+    use task::vdaf::{DpBudget, DpStrategyKind};
+
+    // NoDifferentialPrivacy with epsilon present
+    let result = Vdaf::Histogram(Histogram::Opaque(BucketLength {
+        length: 3,
+        chunk_length: Some(1),
+        dp_strategy: DpStrategy {
+            dp_strategy: DpStrategyKind::NoDifferentialPrivacy,
+            budget: DpBudget {
+                epsilon: Some(vec![vec![1], vec![1]]),
+            },
+        },
+    }))
+    .representation_for_protocol(&Protocol::Dap09);
+    assert!(result.is_err());
+
+    // PureDpDiscreteLaplace without epsilon
+    let result = Vdaf::Histogram(Histogram::Opaque(BucketLength {
+        length: 3,
+        chunk_length: Some(1),
+        dp_strategy: DpStrategy {
+            dp_strategy: DpStrategyKind::PureDpDiscreteLaplace,
+            budget: DpBudget { epsilon: None },
+        },
+    }))
+    .representation_for_protocol(&Protocol::Dap09);
+    assert!(result.is_err());
+
+    // PureDpDiscreteLaplace with wrong-length epsilon
+    let result = Vdaf::Histogram(Histogram::Opaque(BucketLength {
+        length: 3,
+        chunk_length: Some(1),
+        dp_strategy: DpStrategy {
+            dp_strategy: DpStrategyKind::PureDpDiscreteLaplace,
+            budget: DpBudget {
+                epsilon: Some(vec![vec![1], vec![2], vec![3]]),
+            },
+        },
+    }))
+    .representation_for_protocol(&Protocol::Dap09);
+    assert!(result.is_err());
+}
+
+#[test]
+fn sumvec_invalid_dp_strategy_returns_error() {
+    use task::vdaf::{DpBudget, DpStrategyKind, SumVec};
+
+    // NoDifferentialPrivacy with epsilon present
+    let result = Vdaf::SumVec(SumVec {
+        bits: Some(1),
+        length: Some(3),
+        chunk_length: Some(1),
+        dp_strategy: DpStrategy {
+            dp_strategy: DpStrategyKind::NoDifferentialPrivacy,
+            budget: DpBudget {
+                epsilon: Some(vec![vec![1], vec![1]]),
+            },
+        },
+    })
+    .representation_for_protocol(&Protocol::Dap09);
+    assert!(result.is_err());
+
+    // PureDpDiscreteLaplace without epsilon
+    let result = Vdaf::SumVec(SumVec {
+        bits: Some(1),
+        length: Some(3),
+        chunk_length: Some(1),
+        dp_strategy: DpStrategy {
+            dp_strategy: DpStrategyKind::PureDpDiscreteLaplace,
+            budget: DpBudget { epsilon: None },
+        },
+    })
+    .representation_for_protocol(&Protocol::Dap09);
+    assert!(result.is_err());
 }
