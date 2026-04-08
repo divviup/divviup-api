@@ -2,8 +2,13 @@ use divviup_api::{
     trace::{install_trace_subscriber, traceconfig_handler},
     Config, DivviupApi, Queue,
 };
+use trillium::HttpConfig;
 use trillium_http::Stopper;
 use trillium_tokio::CloneCounterObserver;
+
+/// Maximum request body size: 1 MiB. This JSON API never needs bodies
+/// larger than this under normal operation.
+const MAX_REQUEST_BODY_SIZE: u64 = 1024 * 1024;
 
 #[tokio::main]
 async fn main() {
@@ -43,6 +48,7 @@ async fn main() {
         .spawn_workers();
 
     trillium_tokio::config()
+        .with_http_config(HttpConfig::default().with_received_body_max_len(MAX_REQUEST_BODY_SIZE))
         .with_stopper(stopper)
         .with_observer(observer)
         .spawn(app)
