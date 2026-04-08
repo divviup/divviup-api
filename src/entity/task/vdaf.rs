@@ -50,10 +50,15 @@ impl Histogram {
             Ok(AggregatorVdaf::Prio3Histogram(HistogramType::Opaque {
                 length: self.length(),
                 chunk_length: Some(chunk_length),
-                dp_strategy: self.dp_strategy().representation_histogram(),
+                dp_strategy: self.dp_strategy().representation_histogram()?,
             }))
         } else {
-            panic!("chunk_length was not populated");
+            let mut errors = ValidationErrors::new();
+            errors.add(
+                "chunk_length",
+                ValidationError::new("chunk_length_not_populated"),
+            );
+            Err(errors)
         }
     }
 
@@ -134,39 +139,57 @@ pub struct DpBudget {
 }
 
 impl DpStrategy {
-    fn representation_histogram(&self) -> dp_strategies::Prio3Histogram {
+    fn representation_histogram(&self) -> Result<dp_strategies::Prio3Histogram, ValidationErrors> {
         match (self.dp_strategy, &self.budget.epsilon) {
             (DpStrategyKind::NoDifferentialPrivacy, None) => {
-                dp_strategies::Prio3Histogram::NoDifferentialPrivacy
+                Ok(dp_strategies::Prio3Histogram::NoDifferentialPrivacy)
             }
             (DpStrategyKind::NoDifferentialPrivacy, Some(_))
-            | (DpStrategyKind::PureDpDiscreteLaplace, None) => panic!("invalid dp strategy"),
+            | (DpStrategyKind::PureDpDiscreteLaplace, None) => {
+                Err(dp_strategy_error("invalid_dp_strategy"))
+            }
             (DpStrategyKind::PureDpDiscreteLaplace, Some(epsilon)) => {
-                dp_strategies::Prio3Histogram::PureDpDiscreteLaplace(PureDpDiscreteLaplace {
-                    budget: PureDpBudget {
-                        epsilon: epsilon.clone().try_into().expect("invalid epsilon"),
+                let epsilon: [Vec<u32>; 2] = epsilon
+                    .clone()
+                    .try_into()
+                    .map_err(|_| dp_strategy_error("invalid_epsilon"))?;
+                Ok(dp_strategies::Prio3Histogram::PureDpDiscreteLaplace(
+                    PureDpDiscreteLaplace {
+                        budget: PureDpBudget { epsilon },
                     },
-                })
+                ))
             }
         }
     }
 
-    fn representation_sumvec(&self) -> dp_strategies::Prio3SumVec {
+    fn representation_sumvec(&self) -> Result<dp_strategies::Prio3SumVec, ValidationErrors> {
         match (self.dp_strategy, &self.budget.epsilon) {
             (DpStrategyKind::NoDifferentialPrivacy, None) => {
-                dp_strategies::Prio3SumVec::NoDifferentialPrivacy
+                Ok(dp_strategies::Prio3SumVec::NoDifferentialPrivacy)
             }
             (DpStrategyKind::NoDifferentialPrivacy, Some(_))
-            | (DpStrategyKind::PureDpDiscreteLaplace, None) => panic!("invalid dp strategy"),
+            | (DpStrategyKind::PureDpDiscreteLaplace, None) => {
+                Err(dp_strategy_error("invalid_dp_strategy"))
+            }
             (DpStrategyKind::PureDpDiscreteLaplace, Some(epsilon)) => {
-                dp_strategies::Prio3SumVec::PureDpDiscreteLaplace(PureDpDiscreteLaplace {
-                    budget: PureDpBudget {
-                        epsilon: epsilon.clone().try_into().expect("invalid epsilon"),
+                let epsilon: [Vec<u32>; 2] = epsilon
+                    .clone()
+                    .try_into()
+                    .map_err(|_| dp_strategy_error("invalid_epsilon"))?;
+                Ok(dp_strategies::Prio3SumVec::PureDpDiscreteLaplace(
+                    PureDpDiscreteLaplace {
+                        budget: PureDpBudget { epsilon },
                     },
-                })
+                ))
             }
         }
     }
+}
+
+fn dp_strategy_error(code: &'static str) -> ValidationErrors {
+    let mut errors = ValidationErrors::new();
+    errors.add("dp_strategy", ValidationError::new(code));
+    errors
 }
 
 fn validate_dp_strategy(dp_strategy: &DpStrategy) -> Result<(), ValidationError> {
@@ -287,7 +310,7 @@ impl Vdaf {
                 bits: *bits,
                 length: *length,
                 chunk_length: *chunk_length,
-                dp_strategy: dp_strategy.representation_sumvec(),
+                dp_strategy: dp_strategy.representation_sumvec()?,
             }),
             Self::CountVec(CountVec {
                 length: Some(length),
