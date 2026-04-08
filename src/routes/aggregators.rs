@@ -1,4 +1,5 @@
 use crate::{
+    config::FeatureFlags,
     entity::{Account, Aggregator, AggregatorColumn, Aggregators, NewAggregator, UpdateAggregator},
     Db, Error, Permissions, PermissionsActor,
 };
@@ -7,7 +8,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter,
 };
 use trillium::{Conn, Handler, Status};
-use trillium_api::{FromConn, Json};
+use trillium_api::{FromConn, Json, State};
 
 use trillium_router::RouterConnExt;
 use uuid::Uuid;
@@ -79,13 +80,23 @@ pub async fn index(
 
 pub async fn create(
     conn: &mut Conn,
-    (db, account, Json(new_aggregator)): (Db, Account, Json<NewAggregator>),
+    (db, account, Json(new_aggregator), State(feature_flags)): (
+        Db,
+        Account,
+        Json<NewAggregator>,
+        State<FeatureFlags>,
+    ),
 ) -> Result<impl Handler, Error> {
     let client = conn.take_state().unwrap();
     let crypter = conn.take_state().unwrap();
 
     new_aggregator
-        .build(Some(&account), client, &crypter)
+        .build(
+            Some(&account),
+            client,
+            &crypter,
+            feature_flags.ssrf_validation_enabled,
+        )
         .await?
         .insert(&db)
         .await
@@ -115,12 +126,16 @@ pub async fn update(
 
 pub async fn admin_create(
     conn: &mut Conn,
-    (db, Json(new_aggregator)): (Db, Json<NewAggregator>),
+    (db, Json(new_aggregator), State(feature_flags)): (
+        Db,
+        Json<NewAggregator>,
+        State<FeatureFlags>,
+    ),
 ) -> Result<impl Handler, Error> {
     let client = conn.take_state().unwrap();
     let crypter = conn.state().unwrap();
     new_aggregator
-        .build(None, client, crypter)
+        .build(None, client, crypter, feature_flags.ssrf_validation_enabled)
         .await?
         .insert(&db)
         .await
