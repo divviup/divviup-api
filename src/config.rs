@@ -5,6 +5,7 @@ use crate::{
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use email_address::EmailAddress;
+use std::fmt;
 use std::{
     any::type_name,
     collections::VecDeque,
@@ -19,7 +20,7 @@ use url::Url;
 
 const POSTMARK_URL: &str = "https://api.postmarkapp.com";
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Config {
     /// The public facing base URL for this application.
     pub api_url: Url,
@@ -62,6 +63,40 @@ pub struct Config {
     pub tokio_console_listen_address: SocketAddr,
     /// Enables refreshing upload metrics from Janus. Enabled by default.
     pub metrics_refresh_enabled: bool,
+}
+
+impl fmt::Debug for Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Config")
+            .field("api_url", &self.api_url)
+            .field("app_url", &self.app_url)
+            .field("auth_audience", &self.auth_audience)
+            .field("auth_client_id", &self.auth_client_id)
+            .field("auth_client_secret", &"..")
+            .field("auth_url", &self.auth_url)
+            .field("client", &self.client)
+            .field("crypter", &self.crypter)
+            .field("database_url", &"..")
+            .field("email_address", &self.email_address)
+            .field("postmark_token", &"..")
+            .field("postmark_url", &self.postmark_url)
+            .field("monitoring_listen_address", &self.monitoring_listen_address)
+            .field("session_secrets", &"..")
+            .field("trace_use_test_writer", &self.trace_use_test_writer)
+            .field("trace_force_json_writer", &self.trace_force_json_writer)
+            .field(
+                "trace_stackdriver_json_output",
+                &self.trace_stackdriver_json_output,
+            )
+            .field("trace_chrome", &self.trace_chrome)
+            .field("tokio_console_enabled", &self.tokio_console_enabled)
+            .field(
+                "tokio_console_listen_address",
+                &self.tokio_console_listen_address,
+            )
+            .field("metrics_refresh_enabled", &self.metrics_refresh_enabled)
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -246,5 +281,49 @@ impl FromStr for SessionSecrets {
             .ok_or(SessionSecretsDecodeError::Missing)?;
         let older = secret.into();
         Ok(Self { current, older })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Crypter;
+
+    #[test]
+    fn config_debug_redacts_secrets() {
+        let config = Config {
+            api_url: "https://api.example".parse().unwrap(),
+            app_url: "https://app.example".parse().unwrap(),
+            auth_audience: "aud".into(),
+            auth_client_id: "client_id".into(),
+            auth_client_secret: "super-secret-client-secret".into(),
+            auth_url: "https://auth.example".parse().unwrap(),
+            client: Client::new(trillium_tokio::ClientConfig::default()),
+            crypter: Crypter::from(Crypter::generate_key()),
+            database_url: "postgres://user:hunter2@db.example/mydb".parse().unwrap(),
+            email_address: "test@example.test".parse().unwrap(),
+            postmark_token: "pmak-secret-token".into(),
+            postmark_url: "https://postmark.example".parse().unwrap(),
+            monitoring_listen_address: "127.0.0.1:9464".parse().unwrap(),
+            session_secrets: vec![0u8; 32].into(),
+            trace_use_test_writer: false,
+            trace_force_json_writer: false,
+            trace_stackdriver_json_output: false,
+            trace_chrome: false,
+            tokio_console_enabled: false,
+            tokio_console_listen_address: "127.0.0.1:6669".parse().unwrap(),
+            metrics_refresh_enabled: true,
+        };
+
+        let debug_output = format!("{config:?}");
+
+        // Secrets must not appear
+        assert!(!debug_output.contains("super-secret-client-secret"));
+        assert!(!debug_output.contains("hunter2"));
+        assert!(!debug_output.contains("pmak-secret-token"));
+
+        // Non-secret fields should appear
+        assert!(debug_output.contains("api.example"));
+        assert!(debug_output.contains("app.example"));
     }
 }
