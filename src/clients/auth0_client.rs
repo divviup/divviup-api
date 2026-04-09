@@ -10,6 +10,7 @@ use std::{
 use trillium::{
     Conn,
     KnownHeaderName::{Accept, Authorization},
+    Status,
 };
 use trillium_api::FromConn;
 use trillium_client::Client;
@@ -38,6 +39,14 @@ impl FromConn for Auth0Client {
 
 fn generate_password() -> String {
     Alphanumeric.sample_string(&mut rand::thread_rng(), 60)
+}
+
+fn extract_user_id(user: &serde_json::Value) -> Result<String, ClientError> {
+    user.get("user_id")
+        .ok_or_else(|| ClientError::Other("expected user_id".into()))?
+        .as_str()
+        .ok_or_else(|| ClientError::Other("expected user_id to be a string".into()))
+        .map(String::from)
 }
 
 impl Auth0Client {
@@ -93,8 +102,8 @@ impl Auth0Client {
     }
 
     pub async fn create_user(&self, email: &str) -> Result<String, ClientError> {
-        let user: serde_json::Value = self
-            .post(
+        match self
+            .post::<serde_json::Value>(
                 "/api/v2/users",
                 &json!({
                     "connection": "Username-Password-Authentication",
@@ -103,13 +112,27 @@ impl Auth0Client {
                     "verify_email": false
                 }),
             )
-            .await?;
+            .await
+        {
+            Ok(user) => extract_user_id(&user),
+            Err(ClientError::HttpStatusNotSuccess {
+                status: Some(Status::Conflict),
+                ..
+            }) => self.find_user_id_by_email(email).await,
+            Err(e) => Err(e),
+        }
+    }
 
-        user.get("user_id")
-            .ok_or_else(|| ClientError::Other("expected user_id".into()))?
-            .as_str()
-            .ok_or_else(|| ClientError::Other("expected user_id to be a string".into()))
-            .map(String::from)
+    async fn find_user_id_by_email(&self, email: &str) -> Result<String, ClientError> {
+        let query: String = url::form_urlencoded::Serializer::new(String::new())
+            .append_pair("q", &format!("email:\"{email}\""))
+            .append_pair("search_engine", "v3")
+            .finish();
+        let users: Vec<serde_json::Value> = self.get(&format!("/api/v2/users?{query}")).await?;
+        users
+            .first()
+            .ok_or_else(|| ClientError::Other("user not found after conflict".into()))
+            .and_then(extract_user_id)
     }
 
     pub async fn users(&self) -> Result<Vec<Value>, ClientError> {
