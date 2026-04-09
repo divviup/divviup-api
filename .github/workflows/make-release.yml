@@ -31,7 +31,7 @@ jobs:
         # number is unstructured.
         run: |
           cargo metadata --no-deps --format-version 1 | \
-          jq -r '.packages | .[] | select(.name == "janus_aggregator") | .version' | \
+          jq -r '.packages | .[] | select(.name == "divviup-api") | .version' | \
           grep '^\(0\|[1-9][0-9]*\)\.\(0\|[1-9][0-9]*\)\.\(0\|[1-9][0-9]*\)$'
 
       - name: Install Rust toolchain
