@@ -54,7 +54,7 @@ impl Model {
     }
 
     pub fn new_token() -> (String, String) {
-        let token_bytes: [u8; 16] = random();
+        let token_bytes: [u8; 32] = random();
         // The canonical form of the auth token is the Base64URL unpadded encoding of the bytes.
         let token = URL_SAFE_NO_PAD.encode(token_bytes);
         let token_hash = URL_SAFE_NO_PAD.encode(Sha256::digest(token.as_bytes()));
