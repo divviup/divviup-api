@@ -773,6 +773,26 @@ mod update {
     }
 
     #[test(harness = set_up)]
+    async fn pre_epoch_expiration_returns_error(app: DivviupApi) -> TestResult {
+        let (user, account, ..) = fixtures::member(&app).await;
+        let task = fixtures::task(&app, &account).await;
+
+        let conn = patch(format!("/api/tasks/{}", task.id))
+            .with_api_headers()
+            .with_request_json(json!({ "expiration": "1969-01-01T00:00:00Z" }))
+            .with_state(user)
+            .run_async(&app)
+            .await;
+        assert_eq!(conn.status(), Some(Status::BadRequest));
+
+        // Task should be unchanged.
+        let task_reload = task.reload(app.db()).await?.unwrap();
+        assert_eq!(task_reload.expiration, task.expiration);
+
+        Ok(())
+    }
+
+    #[test(harness = set_up)]
     async fn not_member(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
         let account = fixtures::account(&app).await;
