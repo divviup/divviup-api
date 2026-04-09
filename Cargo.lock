@@ -1310,7 +1310,7 @@ dependencies = [
 
 [[package]]
 name = "divviup-api"
-version = "0.4.88"
+version = "0.5.0-pre.1"
 dependencies = [
  "aes-gcm",
  "async-lock 3.4.2",
@@ -1380,7 +1380,7 @@ dependencies = [
 
 [[package]]
 name = "divviup-cli"
-version = "0.4.88"
+version = "0.5.0-pre.1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1397,20 +1397,19 @@ dependencies = [
  "janus_messages",
  "prio",
  "rand 0.8.5",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_yaml",
  "thiserror 2.0.18",
  "time",
  "tokio",
- "trillium-rustls",
- "trillium-tokio",
  "url",
 ]
 
 [[package]]
 name = "divviup-client"
-version = "0.4.88"
+version = "0.5.0-pre.1"
 dependencies = [
  "base64 0.22.1",
  "divviup-api",
@@ -1418,22 +1417,22 @@ dependencies = [
  "email_address",
  "fastrand",
  "futures-lite",
+ "http",
  "janus_messages",
  "log",
  "num-bigint",
  "num-rational",
  "pad-adapter",
  "prio",
+ "reqwest",
  "serde",
  "serde_json",
  "test-support",
  "thiserror 2.0.18",
  "time",
+ "tokio",
  "trillium",
- "trillium-client",
  "trillium-http",
- "trillium-macros 0.0.6",
- "trillium-rustls",
  "trillium-testing",
  "trillium-tokio",
  "url",
@@ -2787,7 +2786,7 @@ dependencies = [
 
 [[package]]
 name = "migration"
-version = "0.4.88"
+version = "0.5.0-pre.1"
 dependencies = [
  "clap",
  "sea-orm",
@@ -4932,7 +4931,7 @@ dependencies = [
 
 [[package]]
 name = "test-support"
-version = "0.4.88"
+version = "0.5.0-pre.1"
 dependencies = [
  "base64 0.22.1",
  "divviup-api",

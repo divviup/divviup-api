@@ -15,12 +15,12 @@ admin = []
 [dependencies]
 base64 = "0.22.1"
 email_address = "0.2.9"
+http = "1"
 prio = "0.16"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 thiserror = "2.0.18"
-trillium-client = { version = "0.6.2", features = ["json"] }
-trillium-http = "0.3.14"
 url = { version = "2.5.8", features = ["serde"] }
 uuid = { version = "1.20.0", features = ["v4", "fast-rng", "serde"] }
 time = { version = "0.3.47", features = ["serde", "serde-well-known"] }
@@ -35,9 +35,9 @@ divviup-api.workspace = true
 fastrand = "2.4.1"
 futures-lite = "2.6.1"
 test-support.workspace = true
+tokio = { version = "1", features = ["net"] }
 trillium = "0.2.20"
-trillium-macros = "0.0.6"
+trillium-http = "0.3.14"
 trillium-testing = { version = "0.7.0", features = ["tokio"] }
-trillium-rustls = "0.9.0"
 trillium-tokio = "0.4.0"
-divviup-client =  { path = ".", features = ["admin"] }
+divviup-client = { path = ".", features = ["admin"] }
