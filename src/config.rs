@@ -291,6 +291,7 @@ mod tests {
             tokio_console_enabled: false,
             tokio_console_listen_address: "127.0.0.1:6669".parse().unwrap(),
             metrics_refresh_enabled: true,
+            ssrf_validation_enabled: false,
         };
 
         let debug_output = format!("{config:?}");
