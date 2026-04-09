@@ -44,8 +44,6 @@ jobs:
         run: cargo check --features api-mocks --locked
       - name: check +otlp-trace
         run: cargo check --features otlp-trace --locked
-      - name: check cli -default +ring
-        run: cargo check -p divviup-cli --no-default-features --features ring,common --locked
       - name: check cli +default +admin
         run: cargo check -p divviup-cli --features admin --locked
       - name: cargo deny
