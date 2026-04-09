@@ -1,4 +1,5 @@
 use async_lock::RwLock;
+use educe::Educe;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
@@ -21,10 +22,13 @@ use crate::{
     Config,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Educe)]
+#[educe(Debug)]
 pub struct Auth0Client {
+    #[educe(Debug = false)]
     token: Arc<RwLock<Option<TokenWithExpiry>>>,
     client: Client,
+    #[educe(Debug = false)]
     secret: String,
     client_id: String,
     postmark_client: PostmarkClient,
@@ -214,16 +218,20 @@ impl Auth0Client {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Educe)]
+#[educe(Debug)]
 pub struct Token {
+    #[educe(Debug = false)]
     pub access_token: String,
     pub expires_in: u64,
     pub scope: String,
     pub token_type: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Educe)]
+#[educe(Debug)]
 struct TokenWithExpiry {
+    #[educe(Debug = false)]
     token: String,
     expires_at: SystemTime,
 }
