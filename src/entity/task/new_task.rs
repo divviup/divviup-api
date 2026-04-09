@@ -17,7 +17,7 @@ use vdaf::{DpStrategy, DpStrategyKind, SumVec};
 
 #[derive(Deserialize, Validate, Debug, Clone, Default)]
 pub struct NewTask {
-    #[validate(required, length(min = 1))]
+    #[validate(required, length(min = 1, max = 255))]
     pub name: Option<String>,
 
     #[validate(required)]

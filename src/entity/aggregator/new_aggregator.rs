@@ -20,13 +20,15 @@ use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(Deserialize, Serialize, Validate, Debug, Clone, Default)]
 pub struct NewAggregator {
-    #[validate(required, length(min = 1))]
+    #[validate(required, length(min = 1, max = 255))]
     pub name: Option<String>,
     #[cfg_attr(
         not(feature = "integration-testing"),
         validate(custom(function = "https"))
     )]
+    #[validate(length(max = 2048))]
     pub api_url: Option<String>,
+    #[validate(length(max = 4096))]
     pub bearer_token: Option<String>,
     pub is_first_party: Option<bool>,
 }
