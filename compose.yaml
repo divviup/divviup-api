@@ -48,6 +48,7 @@ x-divviup-environment: &divviup_environment
   API_URL: http://localhost:8080
   POSTMARK_TOKEN: fake
   EMAIL_ADDRESS: the@from.address
+  SSRF_VALIDATION_ENABLED: false
 
 services:
   postgres:

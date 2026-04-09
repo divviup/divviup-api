@@ -68,12 +68,17 @@ pub struct Config {
     pub tokio_console_listen_address: SocketAddr,
     /// Enables refreshing upload metrics from Janus. Enabled by default.
     pub metrics_refresh_enabled: bool,
+    /// Enables SSRF validation on aggregator API URLs, rejecting private/internal
+    /// IP addresses. Enabled by default.
+    pub ssrf_validation_enabled: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct FeatureFlags {
     /// Enables refreshing upload metrics from Janus. Enabled by default.
     pub metrics_refresh_enabled: bool,
+    /// Enables SSRF validation on aggregator API URLs.
+    pub ssrf_validation_enabled: bool,
 }
 
 #[derive(Debug, Error)]
@@ -168,6 +173,7 @@ impl Config {
                 "127.0.0.1:6669".parse().unwrap(),
             )?,
             metrics_refresh_enabled: var_optional("METRICS_REFRESH_ENABLED", true)?,
+            ssrf_validation_enabled: var_optional("SSRF_VALIDATION_ENABLED", true)?,
         })
     }
 
@@ -200,6 +206,7 @@ impl Config {
     pub fn feature_flags(&self) -> FeatureFlags {
         FeatureFlags {
             metrics_refresh_enabled: self.metrics_refresh_enabled,
+            ssrf_validation_enabled: self.ssrf_validation_enabled,
         }
     }
 }

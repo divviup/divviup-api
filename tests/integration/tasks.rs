@@ -546,6 +546,7 @@ mod show {
             .with_api_headers()
             .with_state(FeatureFlags {
                 metrics_refresh_enabled: false,
+                ssrf_validation_enabled: false,
             })
             .with_state(user.clone())
             .run_async(&app)
