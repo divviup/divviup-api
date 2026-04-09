@@ -12,7 +12,7 @@ use crate::{
     handler::Error,
 };
 use serde::{Deserialize, Serialize};
-use time::{error::ComponentRange, OffsetDateTime};
+use time::OffsetDateTime;
 use url::Url;
 use validator::{ValidationError, ValidationErrors};
 
@@ -323,10 +323,11 @@ pub struct TaskResponse {
 }
 
 impl TaskResponse {
-    pub fn task_expiration(&self) -> Result<Option<OffsetDateTime>, ComponentRange> {
+    pub fn task_expiration(&self) -> Result<Option<OffsetDateTime>, Error> {
         self.task_expiration
             .map(|t| {
-                OffsetDateTime::from_unix_timestamp(t.as_seconds_since_epoch().try_into().unwrap())
+                let seconds: i64 = t.as_seconds_since_epoch().try_into()?;
+                Ok(OffsetDateTime::from_unix_timestamp(seconds)?)
             })
             .transpose()
     }
