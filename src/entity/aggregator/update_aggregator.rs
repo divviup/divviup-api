@@ -12,8 +12,9 @@ use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(Deserialize, Validate, Debug)]
 pub struct UpdateAggregator {
-    #[validate(length(min = 1))]
+    #[validate(length(min = 1, max = 255))]
     pub name: Option<String>,
+    #[validate(length(max = 4096))]
     pub bearer_token: Option<String>,
 }
 
