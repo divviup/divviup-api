@@ -50,8 +50,7 @@ jobs:
             os: "windows-latest",
             triple-suffix: "pc-windows-msvc",
             extension: ".exe",
-            # Build with ring on Windows so we don't have to set up aws-lc-rs' toolchain
-            extra-build-flags: "--no-default-features --features ring,common"
+            extra-build-flags: ""
           },
           {
             os: "macos-latest",

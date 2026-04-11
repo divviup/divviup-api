@@ -24,16 +24,17 @@ pub const DEFAULT_URL: &str = "https://api.divviup.org/";
 pub const USER_AGENT: &str = concat!("divviup-client/", env!("CARGO_PKG_VERSION"));
 
 use base64::{engine::general_purpose::STANDARD, Engine};
+use http::StatusCode;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
-use std::{fmt::Display, future::Future, pin::Pin};
+use std::fmt::Display;
 use time::format_description::well_known::Rfc3339;
-use trillium_http::{HeaderName, HeaderValues};
 
 pub use account::Account;
 pub use aggregator::{Aggregator, CollectorAuthenticationToken, NewAggregator, Role};
 pub use api_token::ApiToken;
 pub use collector_credentials::CollectorCredential;
+pub use http;
 pub use janus_messages::{
     codec::{CodecError, Decode, Encode},
     HpkeConfig, HpkePublicKey,
@@ -42,12 +43,9 @@ pub use membership::Membership;
 pub use num_bigint::BigUint;
 pub use num_rational::Ratio;
 pub use protocol::Protocol;
+pub use reqwest;
 pub use task::{Histogram, NewTask, SumVec, Task, Vdaf};
 pub use time::OffsetDateTime;
-pub use trillium_client;
-pub use trillium_client::Client;
-pub use trillium_client::Conn;
-pub use trillium_http::{HeaderValue, Headers, KnownHeaderName, Method, Status};
 pub use url::Url;
 pub use uuid::Uuid;
 pub use validation_errors::ValidationErrors;
@@ -55,61 +53,20 @@ pub use validation_errors::ValidationErrors;
 #[cfg(feature = "admin")]
 pub use aggregator::NewSharedAggregator;
 
-trait ErrInto<T, E1, E2> {
-    fn err_into(self) -> Result<T, E2>;
-}
-impl<T, E1, E2> ErrInto<T, E1, E2> for Result<T, E1>
-where
-    E2: From<E1>,
-{
-    fn err_into(self) -> Result<T, E2> {
-        self.map_err(Into::into)
-    }
-}
-
 #[derive(Debug, Clone)]
-pub struct DivviupClient(Client);
+pub struct DivviupClient {
+    client: reqwest::Client,
+    base_url: Url,
+    token: String,
+}
 
 impl DivviupClient {
-    pub fn new(token: impl Display, http_client: impl Into<Client>) -> Self {
-        Self(
-            http_client
-                .into()
-                .with_default_header(KnownHeaderName::UserAgent, USER_AGENT)
-                .with_default_header(KnownHeaderName::Accept, CONTENT_TYPE)
-                .with_default_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
-                .with_base(DEFAULT_URL),
-        )
-    }
-
-    pub fn with_default_pool(mut self) -> Self {
-        self.0 = self.0.with_default_pool();
-        self
-    }
-
-    pub fn with_header(
-        mut self,
-        name: impl Into<HeaderName<'static>>,
-        value: impl Into<HeaderValues>,
-    ) -> Self {
-        self.insert_header(name, value);
-        self
-    }
-
-    pub fn insert_header(
-        &mut self,
-        name: impl Into<HeaderName<'static>>,
-        value: impl Into<HeaderValues>,
-    ) {
-        self.headers_mut().insert(name, value);
-    }
-
-    pub fn headers(&self) -> &Headers {
-        self.0.default_headers()
-    }
-
-    pub fn headers_mut(&mut self) -> &mut Headers {
-        self.0.default_headers_mut()
+    pub fn new(token: impl Display, client: reqwest::Client) -> Self {
+        Self {
+            client,
+            base_url: Url::parse(DEFAULT_URL).unwrap(),
+            token: token.to_string(),
+        }
     }
 
     pub fn with_url(mut self, url: Url) -> Self {
@@ -118,58 +75,97 @@ impl DivviupClient {
     }
 
     pub fn set_url(&mut self, url: Url) {
-        self.0.set_base(url).unwrap();
+        self.base_url = url;
+    }
+
+    pub fn base_url(&self) -> &Url {
+        &self.base_url
+    }
+
+    fn url(&self, path: &str) -> ClientResult<Url> {
+        self.base_url.join(path).map_err(Error::from)
+    }
+
+    fn request(&self, method: http::Method, path: &str) -> ClientResult<reqwest::RequestBuilder> {
+        let url = self.url(path)?;
+        Ok(self
+            .client
+            .request(method, url)
+            .header(http::header::ACCEPT, CONTENT_TYPE)
+            .header(
+                http::header::AUTHORIZATION,
+                format!("Bearer {}", self.token),
+            ))
+    }
+
+    async fn check_response(
+        method: http::Method,
+        response: reqwest::Response,
+    ) -> ClientResult<reqwest::Response> {
+        let status = response.status();
+        if status.is_success() {
+            return Ok(response);
+        }
+
+        if status == StatusCode::BAD_REQUEST {
+            let body = response.text().await?;
+            log::trace!("{body}");
+            return Err(Error::ValidationErrors(serde_json::from_str(&body)?));
+        }
+
+        let url = response.url().clone();
+        let body = response.text().await.unwrap_or_default();
+        Err(Error::HttpStatusNotSuccess {
+            method,
+            url,
+            status,
+            body,
+        })
     }
 
     async fn get<T>(&self, path: &str) -> ClientResult<T>
     where
         T: DeserializeOwned,
     {
-        self.0
-            .get(path)
-            .success_or_error()
-            .await?
-            .response_json()
-            .await
-            .err_into()
+        let resp = self.request(http::Method::GET, path)?.send().await?;
+        let resp = Self::check_response(http::Method::GET, resp).await?;
+        Ok(resp.json().await?)
     }
 
     async fn patch<T>(&self, path: &str, body: &impl Serialize) -> ClientResult<T>
     where
         T: DeserializeOwned,
     {
-        self.0
-            .patch(path)
-            .with_json_body(body)?
-            .with_request_header(KnownHeaderName::ContentType, CONTENT_TYPE)
-            .success_or_error()
-            .await?
-            .response_json()
-            .await
-            .err_into()
+        let resp = self
+            .request(http::Method::PATCH, path)?
+            .header(http::header::CONTENT_TYPE, CONTENT_TYPE)
+            .body(serde_json::to_vec(body)?)
+            .send()
+            .await?;
+        let resp = Self::check_response(http::Method::PATCH, resp).await?;
+        Ok(resp.json().await?)
     }
 
     async fn post<T>(&self, path: &str, body: Option<&impl Serialize>) -> ClientResult<T>
     where
         T: DeserializeOwned,
     {
-        let mut conn = self.0.post(path);
+        let mut req = self.request(http::Method::POST, path)?;
 
         if let Some(body) = body {
-            conn = conn
-                .with_json_body(body)?
-                .with_request_header(KnownHeaderName::ContentType, CONTENT_TYPE);
+            req = req
+                .header(http::header::CONTENT_TYPE, CONTENT_TYPE)
+                .body(serde_json::to_vec(body)?);
         }
 
-        conn.success_or_error()
-            .await?
-            .response_json()
-            .await
-            .err_into()
+        let resp = req.send().await?;
+        let resp = Self::check_response(http::Method::POST, resp).await?;
+        Ok(resp.json().await?)
     }
 
     async fn delete(&self, path: &str) -> ClientResult {
-        let _ = self.0.delete(path).success_or_error().await?;
+        let resp = self.request(http::Method::DELETE, path)?.send().await?;
+        Self::check_response(http::Method::DELETE, resp).await?;
         Ok(())
     }
 
@@ -391,10 +387,7 @@ pub type ClientResult<T = ()> = Result<T, Error>;
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    Http(#[from] trillium_http::Error),
-
-    #[error(transparent)]
-    Client(#[from] trillium_client::ClientSerdeError),
+    Reqwest(#[from] reqwest::Error),
 
     #[error(transparent)]
     Url(#[from] url::ParseError),
@@ -402,11 +395,11 @@ pub enum Error {
     #[error(transparent)]
     Json(#[from] serde_json::Error),
 
-    #[error("unexpected http status {method} {url} {status:?}: {body}")]
+    #[error("unexpected http status {method} {url} {status}: {body}")]
     HttpStatusNotSuccess {
-        method: Method,
+        method: http::Method,
         url: Url,
-        status: Option<Status>,
+        status: StatusCode,
         body: String,
     },
 
@@ -418,38 +411,4 @@ pub enum Error {
 
     #[error("time formatting error: {0}")]
     TimeFormat(#[from] time::error::Format),
-}
-
-pub trait ClientConnExt: Sized {
-    fn success_or_error(self)
-        -> Pin<Box<dyn Future<Output = ClientResult<Self>> + Send + 'static>>;
-}
-impl ClientConnExt for Conn {
-    fn success_or_error(
-        self,
-    ) -> Pin<Box<dyn Future<Output = ClientResult<Self>> + Send + 'static>> {
-        Box::pin(async move {
-            let mut error = match self.await?.success() {
-                Ok(conn) => return Ok(conn),
-                Err(error) => error,
-            };
-
-            let status = error.status();
-            if let Some(Status::BadRequest) = status {
-                let body = error.response_body().read_string().await?;
-                log::trace!("{body}");
-                Err(Error::ValidationErrors(serde_json::from_str(&body)?))
-            } else {
-                let url = error.url().clone();
-                let method = error.method();
-                let body = error.response_body().await?;
-                Err(Error::HttpStatusNotSuccess {
-                    method,
-                    url,
-                    status,
-                    body,
-                })
-            }
-        })
-    }
 }

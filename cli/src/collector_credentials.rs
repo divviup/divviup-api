@@ -3,7 +3,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use clap::Subcommand;
 use divviup_client::{Decode, DivviupClient, HpkeConfig, Uuid};
 use std::{borrow::Cow, path::PathBuf};
-use trillium_tokio::tokio::fs;
+use tokio::fs;
 
 #[cfg(feature = "hpke")]
 use hpke_dispatch::{Aead, Kdf, Kem};
