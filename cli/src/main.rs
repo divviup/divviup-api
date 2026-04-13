@@ -159,18 +159,24 @@ pub enum Error {
 pub type CliResult<T = ()> = Result<T, Error>;
 
 impl ClientBin {
-    fn client(&self) -> DivviupClient {
+    fn client(&self) -> CliResult<DivviupClient> {
         let http_client = reqwest::Client::builder()
             .user_agent(USER_AGENT)
             .build()
-            .expect("failed to build HTTP client");
+            .map_err(divviup_client::Error::from)?;
         let mut client = DivviupClient::new(self.token.clone(), http_client);
         client.set_url(self.url.clone());
-        client
+        Ok(client)
     }
 
     pub async fn run(self) -> ExitCode {
-        let client = self.client();
+        let client = match self.client() {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("{e}");
+                return ExitCode::FAILURE;
+            }
+        };
         match self.command.run(self.account_id, client, self.output).await {
             Ok(()) => ExitCode::SUCCESS,
             Err(e) => {
@@ -188,8 +194,7 @@ impl ClientBin {
 #[tokio::main]
 pub async fn main() -> ExitCode {
     env_logger::init();
-    let args = ClientBin::parse();
-    args.run().await
+    ClientBin::parse().run().await
 }
 
 type DetermineAccountId = Pin<Box<dyn Future<Output = Result<Uuid, Error>> + Send + 'static>>;

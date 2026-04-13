@@ -1,14 +1,14 @@
 pub use divviup_client::DivviupClient;
+use std::{future::Future, net::Ipv6Addr, process::Termination};
 use test_support::tracing::install_test_trace_subscriber;
 use tokio::net::TcpListener;
 use trillium_http::Stopper;
+use url::Url;
 
 pub use std::sync::Arc;
 pub use test_support::*;
 
-use std::{future::Future, net::Ipv6Addr, process::Termination};
-
-async fn spawn_test_server(app: impl trillium::Handler) -> (url::Url, Stopper) {
+async fn spawn_test_server(app: impl trillium::Handler) -> (Url, Stopper) {
     let listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0)).await.unwrap();
     let port = listener.local_addr().unwrap().port();
     let stopper = Stopper::new();
@@ -21,7 +21,7 @@ async fn spawn_test_server(app: impl trillium::Handler) -> (url::Url, Stopper) {
             .run_async(app),
     );
 
-    let url = url::Url::parse(&format!("http://[::1]:{port}/")).unwrap();
+    let url = Url::parse(&format!("http://[::1]:{port}/")).unwrap();
     (url, stopper)
 }
 

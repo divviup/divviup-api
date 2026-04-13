@@ -24,7 +24,10 @@ pub const DEFAULT_URL: &str = "https://api.divviup.org/";
 pub const USER_AGENT: &str = concat!("divviup-client/", env!("CARGO_PKG_VERSION"));
 
 use base64::{engine::general_purpose::STANDARD, Engine};
-use http::StatusCode;
+use http::{
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE as CONTENT_TYPE_HEADER},
+    Method, StatusCode,
+};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::json;
 use std::fmt::Display;
@@ -64,6 +67,7 @@ impl DivviupClient {
     pub fn new(token: impl Display, client: reqwest::Client) -> Self {
         Self {
             client,
+            // Safety: DEFAULT_URL is a compile-time constant known to be valid.
             base_url: Url::parse(DEFAULT_URL).unwrap(),
             token: token.to_string(),
         }
@@ -86,20 +90,17 @@ impl DivviupClient {
         self.base_url.join(path).map_err(Error::from)
     }
 
-    fn request(&self, method: http::Method, path: &str) -> ClientResult<reqwest::RequestBuilder> {
+    fn request(&self, method: Method, path: &str) -> ClientResult<reqwest::RequestBuilder> {
         let url = self.url(path)?;
         Ok(self
             .client
             .request(method, url)
-            .header(http::header::ACCEPT, CONTENT_TYPE)
-            .header(
-                http::header::AUTHORIZATION,
-                format!("Bearer {}", self.token),
-            ))
+            .header(ACCEPT, CONTENT_TYPE)
+            .header(AUTHORIZATION, format!("Bearer {}", self.token)))
     }
 
     async fn check_response(
-        method: http::Method,
+        method: Method,
         response: reqwest::Response,
     ) -> ClientResult<reqwest::Response> {
         let status = response.status();
@@ -127,8 +128,8 @@ impl DivviupClient {
     where
         T: DeserializeOwned,
     {
-        let resp = self.request(http::Method::GET, path)?.send().await?;
-        let resp = Self::check_response(http::Method::GET, resp).await?;
+        let resp = self.request(Method::GET, path)?.send().await?;
+        let resp = Self::check_response(Method::GET, resp).await?;
         Ok(resp.json().await?)
     }
 
@@ -137,12 +138,12 @@ impl DivviupClient {
         T: DeserializeOwned,
     {
         let resp = self
-            .request(http::Method::PATCH, path)?
-            .header(http::header::CONTENT_TYPE, CONTENT_TYPE)
-            .body(serde_json::to_vec(body)?)
+            .request(Method::PATCH, path)?
+            .header(CONTENT_TYPE_HEADER, CONTENT_TYPE)
+            .json(body)
             .send()
             .await?;
-        let resp = Self::check_response(http::Method::PATCH, resp).await?;
+        let resp = Self::check_response(Method::PATCH, resp).await?;
         Ok(resp.json().await?)
     }
 
@@ -150,22 +151,20 @@ impl DivviupClient {
     where
         T: DeserializeOwned,
     {
-        let mut req = self.request(http::Method::POST, path)?;
+        let mut req = self.request(Method::POST, path)?;
 
         if let Some(body) = body {
-            req = req
-                .header(http::header::CONTENT_TYPE, CONTENT_TYPE)
-                .body(serde_json::to_vec(body)?);
+            req = req.header(CONTENT_TYPE_HEADER, CONTENT_TYPE).json(body);
         }
 
         let resp = req.send().await?;
-        let resp = Self::check_response(http::Method::POST, resp).await?;
+        let resp = Self::check_response(Method::POST, resp).await?;
         Ok(resp.json().await?)
     }
 
     async fn delete(&self, path: &str) -> ClientResult {
-        let resp = self.request(http::Method::DELETE, path)?.send().await?;
-        Self::check_response(http::Method::DELETE, resp).await?;
+        let resp = self.request(Method::DELETE, path)?.send().await?;
+        Self::check_response(Method::DELETE, resp).await?;
         Ok(())
     }
 
@@ -397,7 +396,7 @@ pub enum Error {
 
     #[error("unexpected http status {method} {url} {status}: {body}")]
     HttpStatusNotSuccess {
-        method: http::Method,
+        method: Method,
         url: Url,
         status: StatusCode,
         body: String,
