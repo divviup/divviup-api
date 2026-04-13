@@ -25,6 +25,9 @@ fn validate_name(name: &str) -> Result<(), ValidationError> {
     if name.is_empty() {
         return Err(ValidationError::new("name-too-short"));
     }
+    if name.len() > 255 {
+        return Err(ValidationError::new("name-too-long"));
+    }
     Ok(())
 }
 
