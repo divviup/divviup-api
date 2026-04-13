@@ -67,7 +67,7 @@ impl DivviupClient {
     pub fn new(token: impl Display, client: reqwest::Client) -> Self {
         Self {
             client,
-            // Safety: DEFAULT_URL is a compile-time constant known to be valid.
+            // Unwrap Safety: DEFAULT_URL is a compile-time constant known to be valid.
             base_url: Url::parse(DEFAULT_URL).unwrap(),
             token: token.to_string(),
         }
@@ -109,9 +109,7 @@ impl DivviupClient {
         }
 
         if status == StatusCode::BAD_REQUEST {
-            let body = response.text().await?;
-            log::trace!("{body}");
-            return Err(Error::ValidationErrors(serde_json::from_str(&body)?));
+            return Err(Error::ValidationErrors(response.json().await?));
         }
 
         let url = response.url().clone();
