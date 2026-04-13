@@ -25,7 +25,7 @@ use collector_credentials::CollectorCredentialAction;
 use colored::Colorize;
 use const_format::concatcp;
 use dap_client::DapClientAction;
-use divviup_client::{Client, CodecError, DivviupClient, HeaderValue, KnownHeaderName, Url, Uuid};
+use divviup_client::{CodecError, DivviupClient, Url, Uuid};
 use memberships::MembershipAction;
 use serde::Serialize;
 use std::{
@@ -36,9 +36,6 @@ use std::{
     process::ExitCode,
 };
 use tasks::TaskAction;
-use trillium_rustls::RustlsConfig;
-use trillium_tokio::ClientConfig;
-
 pub const USER_AGENT: &str = concatcp!(
     "divviup-cli/",
     env!("CARGO_PKG_VERSION"),
@@ -162,18 +159,24 @@ pub enum Error {
 pub type CliResult<T = ()> = Result<T, Error>;
 
 impl ClientBin {
-    fn client(&self) -> DivviupClient {
-        let mut client = DivviupClient::new(
-            self.token.clone(),
-            Client::new(RustlsConfig::<ClientConfig>::default()).with_default_pool(),
-        )
-        .with_header(KnownHeaderName::UserAgent, HeaderValue::from(USER_AGENT));
+    fn client(&self) -> CliResult<DivviupClient> {
+        let http_client = reqwest::Client::builder()
+            .user_agent(USER_AGENT)
+            .build()
+            .map_err(divviup_client::Error::from)?;
+        let mut client = DivviupClient::new(self.token.clone(), http_client);
         client.set_url(self.url.clone());
-        client
+        Ok(client)
     }
 
     pub async fn run(self) -> ExitCode {
-        let client = self.client();
+        let client = match self.client() {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("{e}");
+                return ExitCode::FAILURE;
+            }
+        };
         match self.command.run(self.account_id, client, self.output).await {
             Ok(()) => ExitCode::SUCCESS,
             Err(e) => {
@@ -188,18 +191,10 @@ impl ClientBin {
     }
 }
 
-pub fn main() -> ExitCode {
-    // Install a default rustls crypto provider based on enabled features. Specifying a default
-    // provider here prevents runtime errors if another dependency enables a different crypto
-    // provider.
-    #[cfg(feature = "aws-lc-rs")]
-    let _ = trillium_rustls::rustls::crypto::aws_lc_rs::default_provider().install_default();
-    #[cfg(feature = "ring")]
-    let _ = trillium_rustls::rustls::crypto::ring::default_provider().install_default();
-
+#[tokio::main]
+pub async fn main() -> ExitCode {
     env_logger::init();
-    let args = ClientBin::parse();
-    trillium_tokio::block_on(async move { args.run().await })
+    ClientBin::parse().run().await
 }
 
 type DetermineAccountId = Pin<Box<dyn Future<Output = Result<Uuid, Error>> + Send + 'static>>;

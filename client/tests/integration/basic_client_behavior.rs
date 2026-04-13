@@ -1,5 +1,5 @@
 use crate::harness::{assert_eq, test, *};
-use divviup_client::{CONTENT_TYPE, USER_AGENT};
+use divviup_client::CONTENT_TYPE;
 
 #[test(harness = with_configured_client_and_logs)]
 async fn default_headers(
@@ -11,21 +11,13 @@ async fn default_headers(
     let _ = client.aggregators(account.id).await;
     let log = logs.last();
     assert_eq!(
-        log.url.as_str(),
-        &format!(
-            "https://api.divviup.org/api/accounts/{}/aggregators",
-            account.id
-        )
+        log.url.path(),
+        &format!("/api/accounts/{}/aggregators", account.id)
     );
 
     assert_eq!(
         log.request_headers.get_str(KnownHeaderName::Accept),
         Some(CONTENT_TYPE)
-    );
-
-    assert_eq!(
-        log.request_headers.get_str(KnownHeaderName::UserAgent),
-        Some(USER_AGENT)
     );
 
     assert!(log
