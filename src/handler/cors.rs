@@ -1,5 +1,6 @@
 use crate::Config;
 use axum::http::{header, HeaderValue, Method as HttpMethod};
+use time::Duration;
 use tower_http::cors::CorsLayer;
 use trillium::{
     Conn, Handler,
@@ -63,7 +64,13 @@ pub fn axum_cors_layer(config: &Config) -> CorsLayer {
     origin.pop(); // strip trailing slash, matching Trillium behavior
 
     CorsLayer::new()
-        .allow_origin(origin.parse::<HeaderValue>().expect("valid origin"))
+        // unwrap safety: config.app_url is a valid URL, so stripping the
+        // trailing slash still leaves a valid HTTP header value.
+        .allow_origin(
+            origin
+                .parse::<HeaderValue>()
+                .expect("config.app_url must be a valid header value"),
+        )
         .allow_methods([
             HttpMethod::POST,
             HttpMethod::DELETE,
@@ -78,5 +85,5 @@ pub fn axum_cors_layer(config: &Config) -> CorsLayer {
             header::ETAG,
         ])
         .allow_credentials(true)
-        .max_age(std::time::Duration::from_secs(86400))
+        .max_age(Duration::DAY.unsigned_abs())
 }

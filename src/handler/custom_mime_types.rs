@@ -12,6 +12,8 @@ use trillium::{
 };
 
 pub const CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
+#[cfg_attr(not(test), expect(dead_code))] // Used in ReplaceMimeTypesService; wired in Part 7.
+const APPLICATION_JSON: header::HeaderValue = header::HeaderValue::from_static("application/json");
 
 pub struct ReplaceMimeTypes;
 
@@ -88,10 +90,8 @@ where
             .map(str::to_owned);
         match ct.as_deref() {
             Some(CONTENT_TYPE) | None => {
-                req.headers_mut().insert(
-                    header::CONTENT_TYPE,
-                    header::HeaderValue::from_static("application/json"),
-                );
+                req.headers_mut()
+                    .insert(header::CONTENT_TYPE, APPLICATION_JSON);
             }
             _ => {
                 return Box::pin(async { Ok(StatusCode::UNSUPPORTED_MEDIA_TYPE.into_response()) });
@@ -104,10 +104,7 @@ where
             .get(header::ACCEPT)
             .and_then(|v| v.to_str().ok());
         if accept == Some(CONTENT_TYPE) {
-            req.headers_mut().insert(
-                header::ACCEPT,
-                header::HeaderValue::from_static("application/json"),
-            );
+            req.headers_mut().insert(header::ACCEPT, APPLICATION_JSON);
         } else {
             return Box::pin(async { Ok(StatusCode::NOT_ACCEPTABLE.into_response()) });
         }
