@@ -64,7 +64,6 @@ pub struct DivviupApi {
     handler: Box<dyn Handler>,
     db: Db,
     config: Arc<Config>,
-    #[handler(skip)]
     axum_addr: SocketAddr,
 }
 
@@ -148,7 +147,7 @@ impl DivviupApi {
         &self.config.crypter
     }
 
-    #[allow(dead_code)] // Scaffolded for later migration parts.
+    #[expect(dead_code)] // Scaffolded for later migration parts.
     pub(crate) fn axum_addr(&self) -> SocketAddr {
         self.axum_addr
     }
