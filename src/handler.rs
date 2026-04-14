@@ -15,6 +15,7 @@ pub(crate) mod proxy;
 
 use crate::{routes, Config, Db};
 
+use axum::extract::DefaultBodyLimit;
 use cors::cors_headers;
 use error::ErrorHandler;
 use logger::logger;
@@ -95,12 +96,17 @@ impl DivviupApi {
                 "/internal/test/axum_ready",
                 axum::routing::get(|| async { "axum OK" }),
             )
+            .layer(DefaultBodyLimit::max(1024 * 1024))
             // Basic request tracing only for now; full telemetry (metrics,
             // OpenTelemetry, structured logging) will be added in Part 4.
             .layer(TraceLayer::new_for_http())
             .with_state(axum_state);
-        let axum_listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0)).await.unwrap();
-        let axum_addr = axum_listener.local_addr().unwrap();
+        let axum_listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0))
+            .await
+            .expect("failed to bind Axum listener on IPv6 loopback");
+        let axum_addr = axum_listener
+            .local_addr()
+            .expect("failed to get Axum listener address");
         // TODO: Wire graceful shutdown into axum::serve(...).with_graceful_shutdown()
         // so that in-flight requests are drained when the Trillium server stops.
         tokio::spawn(async move {
@@ -143,7 +149,8 @@ impl DivviupApi {
         &self.config.crypter
     }
 
-    pub fn axum_addr(&self) -> SocketAddr {
+    #[allow(dead_code)] // Scaffolded for later migration parts.
+    pub(crate) fn axum_addr(&self) -> SocketAddr {
         self.axum_addr
     }
 }

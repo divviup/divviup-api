@@ -2,7 +2,7 @@
 //! the local Axum server. This exists only during the incremental migration and
 //! will be removed once all routes have been moved to Axum.
 
-use reqwest::header::{HeaderName, CONNECTION, HOST, TRANSFER_ENCODING};
+use reqwest::header::{HeaderName, CONNECTION, HOST, TE, TRAILER, TRANSFER_ENCODING};
 use std::net::SocketAddr;
 use trillium::{Conn, Handler, Status};
 
@@ -25,8 +25,8 @@ impl AxumProxy {
     }
 }
 
-/// Headers that should not be forwarded through the proxy.
-const UNPROXYABLE_HEADERS: [HeaderName; 3] = [HOST, TRANSFER_ENCODING, CONNECTION];
+/// Hop-by-hop headers that should not be forwarded through the proxy (RFC 7230 §6.1).
+const UNPROXYABLE_HEADERS: [HeaderName; 5] = [HOST, TRANSFER_ENCODING, CONNECTION, TE, TRAILER];
 
 #[trillium::async_trait]
 impl Handler for AxumProxy {
