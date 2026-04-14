@@ -83,8 +83,7 @@ impl DivviupApi {
         let db = Db::connect(config.database_url.as_ref()).await;
 
         // Spawn the Axum server on an ephemeral port. Routes will be migrated
-        // here incrementally; for now the router is empty and the proxy below
-        // is a no-op fallback.
+        // here incrementally.
         let axum_state = AxumAppState {
             db: db.clone(),
             config: config.clone(),
