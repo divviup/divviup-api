@@ -16,13 +16,17 @@ pub(crate) mod proxy;
 use crate::{routes, Config, Db};
 
 use axum::extract::DefaultBodyLimit;
-use cors::cors_headers;
+use axum::http::{header, HeaderValue};
+use cors::{axum_cors_layer, cors_headers};
 use error::ErrorHandler;
 use logger::logger;
 use proxy::AxumProxy;
 use session_store::SessionStore;
 use std::{borrow::Cow, net::Ipv6Addr, net::SocketAddr, sync::Arc};
 use tokio::net::TcpListener;
+use tower::ServiceBuilder;
+use tower_http::compression::CompressionLayer;
+use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::trace::TraceLayer;
 use trillium::{state, Handler, Info};
 use trillium_caching_headers::{
@@ -87,6 +91,21 @@ impl DivviupApi {
             db: db.clone(),
             config: config.clone(),
         };
+        // Middleware stack in logical order (outermost first), matching the
+        // Trillium api() handler chain.
+        //
+        // TODO(Part 7): ReplaceMimeTypesLayer goes on the /api/* sub-router.
+        // TODO(Part 6): SessionManagerLayer goes here once auth routes migrate.
+        let middleware = ServiceBuilder::new()
+            .layer(TraceLayer::new_for_http())
+            .layer(DefaultBodyLimit::max(1024 * 1024))
+            .layer(CompressionLayer::new())
+            .layer(SetResponseHeaderLayer::if_not_present(
+                header::CACHE_CONTROL,
+                HeaderValue::from_static("private, must-revalidate"),
+            ))
+            .layer(axum_cors_layer(&config));
+
         let axum_router = axum::Router::new()
             // Temporary test endpoint to verify the proxy bridge works.
             // TODO: Remove once a real endpoint has been migrated.
@@ -94,10 +113,7 @@ impl DivviupApi {
                 "/internal/test/axum_ready",
                 axum::routing::get(|| async { "axum OK" }),
             )
-            .layer(DefaultBodyLimit::max(1024 * 1024))
-            // Basic request tracing only for now; full telemetry (metrics,
-            // OpenTelemetry, structured logging) will be added in Part 4.
-            .layer(TraceLayer::new_for_http())
+            .layer(middleware)
             .with_state(axum_state);
         let axum_listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0))
             .await
