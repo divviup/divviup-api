@@ -60,8 +60,11 @@ pub fn cors_headers(config: &Config) -> impl Handler {
 /// Build a [`tower_http::cors::CorsLayer`] matching the Trillium [`CorsHeaders`]
 /// behavior above.
 pub fn axum_cors_layer(config: &Config) -> CorsLayer {
-    let mut origin = config.app_url.to_string();
-    origin.pop(); // strip trailing slash, matching Trillium behavior
+    let origin = config
+        .app_url
+        .as_str()
+        .strip_suffix('/')
+        .unwrap_or(config.app_url.as_str());
 
     CorsLayer::new()
         // unwrap safety: config.app_url is a valid URL, so stripping the

@@ -83,13 +83,8 @@ where
 
     fn call(&mut self, mut req: Request<Body>) -> Self::Future {
         // --- Request-side: Content-Type ---
-        let ct = req
-            .headers()
-            .get(header::CONTENT_TYPE)
-            .and_then(|v| v.to_str().ok())
-            .map(str::to_owned);
-        match ct.as_deref() {
-            Some(CONTENT_TYPE) | None => {
+        match req.headers().get(header::CONTENT_TYPE).map(|v| v.to_str()) {
+            Some(Ok(CONTENT_TYPE)) | None => {
                 req.headers_mut()
                     .insert(header::CONTENT_TYPE, APPLICATION_JSON);
             }
@@ -99,21 +94,19 @@ where
         }
 
         // --- Request-side: Accept ---
-        let accept = req
-            .headers()
-            .get(header::ACCEPT)
-            .and_then(|v| v.to_str().ok());
-        if accept == Some(CONTENT_TYPE) {
-            req.headers_mut().insert(header::ACCEPT, APPLICATION_JSON);
-        } else {
-            return Box::pin(async { Ok(StatusCode::NOT_ACCEPTABLE.into_response()) });
+        match req.headers().get(header::ACCEPT).map(|v| v.to_str()) {
+            Some(Ok(CONTENT_TYPE)) => {
+                req.headers_mut().insert(header::ACCEPT, APPLICATION_JSON);
+            }
+            _ => {
+                return Box::pin(async { Ok(StatusCode::NOT_ACCEPTABLE.into_response()) });
+            }
         }
 
         // --- Call the inner service, then set response Content-Type ---
-        let clone = self.inner.clone();
-        let mut inner = std::mem::replace(&mut self.inner, clone);
+        let inner_future = self.inner.call(req);
         Box::pin(async move {
-            let mut resp = inner.call(req).await?;
+            let mut resp = inner_future.await?;
             resp.headers_mut().insert(
                 header::CONTENT_TYPE,
                 header::HeaderValue::from_static(CONTENT_TYPE),
