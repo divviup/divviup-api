@@ -3,6 +3,7 @@ name = "test-support"
 version.workspace = true
 edition = "2021"
 publish = false
+license.workspace = true
 
 [dependencies]
 fastrand = "2.4.1"
