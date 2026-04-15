@@ -11,7 +11,7 @@ use trillium::{
     Status::{NotAcceptable, UnsupportedMediaType},
 };
 
-pub const CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
+pub const DIVVIUP_API_MEDIA_TYPE: &str = "application/vnd.divviup+json;version=0.1";
 #[cfg_attr(not(test), expect(dead_code))] // Used in ReplaceMimeTypesService; wired in Part 7.
 const APPLICATION_JSON: header::HeaderValue = header::HeaderValue::from_static("application/json");
 
@@ -21,13 +21,13 @@ pub struct ReplaceMimeTypes;
 impl Handler for ReplaceMimeTypes {
     async fn run(&self, mut conn: Conn) -> Conn {
         let request_headers = conn.inner_mut().request_headers_mut();
-        if let Some(CONTENT_TYPE) | None = request_headers.get_str(ContentType) {
+        if let Some(DIVVIUP_API_MEDIA_TYPE) | None = request_headers.get_str(ContentType) {
             request_headers.insert(ContentType, "application/json");
         } else {
             return conn.with_status(UnsupportedMediaType).halt();
         }
 
-        if Some(CONTENT_TYPE) == request_headers.get_str(Accept) {
+        if Some(DIVVIUP_API_MEDIA_TYPE) == request_headers.get_str(Accept) {
             request_headers.insert(Accept, "application/json");
         } else {
             return conn.with_status(NotAcceptable).halt();
@@ -37,7 +37,7 @@ impl Handler for ReplaceMimeTypes {
     }
 
     async fn before_send(&self, conn: Conn) -> Conn {
-        conn.with_response_header(ContentType, CONTENT_TYPE)
+        conn.with_response_header(ContentType, DIVVIUP_API_MEDIA_TYPE)
     }
 }
 
@@ -82,9 +82,8 @@ where
     }
 
     fn call(&mut self, mut req: Request<Body>) -> Self::Future {
-        // --- Request-side: Content-Type ---
         match req.headers().get(header::CONTENT_TYPE).map(|v| v.to_str()) {
-            Some(Ok(CONTENT_TYPE)) | None => {
+            Some(Ok(DIVVIUP_API_MEDIA_TYPE)) | None => {
                 req.headers_mut()
                     .insert(header::CONTENT_TYPE, APPLICATION_JSON);
             }
@@ -93,9 +92,8 @@ where
             }
         }
 
-        // --- Request-side: Accept ---
         match req.headers().get(header::ACCEPT).map(|v| v.to_str()) {
-            Some(Ok(CONTENT_TYPE)) => {
+            Some(Ok(DIVVIUP_API_MEDIA_TYPE)) => {
                 req.headers_mut().insert(header::ACCEPT, APPLICATION_JSON);
             }
             _ => {
@@ -103,13 +101,13 @@ where
             }
         }
 
-        // --- Call the inner service, then set response Content-Type ---
+        // Call the inner service, then set the response Content-Type
         let inner_future = self.inner.call(req);
         Box::pin(async move {
             let mut resp = inner_future.await?;
             resp.headers_mut().insert(
                 header::CONTENT_TYPE,
-                header::HeaderValue::from_static(CONTENT_TYPE),
+                header::HeaderValue::from_static(DIVVIUP_API_MEDIA_TYPE),
             );
             Ok(resp)
         })
@@ -136,8 +134,8 @@ mod tests {
         let resp = test_router()
             .oneshot(
                 Request::get("/test")
-                    .header(header::CONTENT_TYPE, CONTENT_TYPE)
-                    .header(header::ACCEPT, CONTENT_TYPE)
+                    .header(header::CONTENT_TYPE, DIVVIUP_API_MEDIA_TYPE)
+                    .header(header::ACCEPT, DIVVIUP_API_MEDIA_TYPE)
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -146,7 +144,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::OK);
         assert_eq!(
             resp.headers().get(header::CONTENT_TYPE).unwrap(),
-            CONTENT_TYPE
+            DIVVIUP_API_MEDIA_TYPE
         );
     }
 
@@ -155,7 +153,7 @@ mod tests {
         let resp = test_router()
             .oneshot(
                 Request::get("/test")
-                    .header(header::ACCEPT, CONTENT_TYPE)
+                    .header(header::ACCEPT, DIVVIUP_API_MEDIA_TYPE)
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -170,7 +168,7 @@ mod tests {
             .oneshot(
                 Request::get("/test")
                     .header(header::CONTENT_TYPE, "text/plain")
-                    .header(header::ACCEPT, CONTENT_TYPE)
+                    .header(header::ACCEPT, DIVVIUP_API_MEDIA_TYPE)
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -184,7 +182,7 @@ mod tests {
         let resp = test_router()
             .oneshot(
                 Request::get("/test")
-                    .header(header::CONTENT_TYPE, CONTENT_TYPE)
+                    .header(header::CONTENT_TYPE, DIVVIUP_API_MEDIA_TYPE)
                     .header(header::ACCEPT, "text/html")
                     .body(Body::empty())
                     .unwrap(),
@@ -199,7 +197,7 @@ mod tests {
         let resp = test_router()
             .oneshot(
                 Request::get("/test")
-                    .header(header::CONTENT_TYPE, CONTENT_TYPE)
+                    .header(header::CONTENT_TYPE, DIVVIUP_API_MEDIA_TYPE)
                     .body(Body::empty())
                     .unwrap(),
             )
