@@ -33,5 +33,5 @@ sea-orm = { version = "1.1.20", features = ["sqlx-sqlite"] }
 pretty_assertions = "1.4.1"
 rand = "0.8.5"
 base64 = "0.22.1"
-querystrong = "0.3.0"
+querystrong = "0.4.0"
 test-harness = "0.3.1"

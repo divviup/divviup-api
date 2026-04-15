@@ -57,7 +57,7 @@ pub async fn redirect(conn: Conn) -> Conn {
 }
 
 pub async fn callback(conn: Conn) -> Conn {
-    let qs = QueryStrong::parse(conn.querystring()).unwrap_or_default();
+    let qs = QueryStrong::parse(conn.querystring());
 
     let Some(auth_code) = qs
         .get_str("code")

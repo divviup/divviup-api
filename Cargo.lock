@@ -3622,12 +3622,12 @@ dependencies = [
 
 [[package]]
 name = "querystrong"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb0ebafc71ad65bc24f4ba600c6ff9a5d4de5aa19c34425b0cec5b73e7ca5077"
+checksum = "6763dfe63d3d703b2c0fa28abb3bc2955555bccad333bcff115417f143d081df"
 dependencies = [
- "percent-encoding",
- "thiserror 1.0.69",
+ "memchr",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
