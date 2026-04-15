@@ -168,7 +168,8 @@ pub fn random_hpke_config() -> HpkeConfig {
 }
 
 async fn task_ids(conn: &mut Conn, (): ()) -> Result<Json<TaskIds>, Status> {
-    let query = QueryStrong::parse(conn.querystring()).map_err(|_| Status::InternalServerError)?;
+    let query =
+        QueryStrong::parse_strict(conn.querystring()).map_err(|_| Status::InternalServerError)?;
     match query.get_str("pagination_token") {
         None => Ok(Json(TaskIds {
             task_ids: repeat_with(|| Uuid::new_v4().to_string())

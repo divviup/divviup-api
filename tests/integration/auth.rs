@@ -63,7 +63,7 @@ mod login {
             .unwrap();
         assert!(location.starts_with(auth_base.as_ref()));
         let url = Url::parse(location)?;
-        let query = QueryStrong::parse(url.query().unwrap())?;
+        let query = QueryStrong::parse_strict(url.query().unwrap()).unwrap();
         assert_eq!(query["response_type"], "code");
         assert!(query.get_str("code_challenge").is_some());
         assert_eq!(query["client_id"], app.config().auth_client_id);
@@ -112,7 +112,7 @@ async fn logout(app: DivviupApi) -> TestResult {
         .as_ref()
         .starts_with(app.config().auth_url.join("/v2/logout")?.as_ref()));
 
-    let query = QueryStrong::parse(location.query().unwrap()).unwrap();
+    let query = QueryStrong::parse_strict(location.query().unwrap()).unwrap();
     assert_eq!(query["client_id"], app.config().auth_client_id);
     assert_eq!(query["returnTo"], app.config().app_url.as_ref());
 

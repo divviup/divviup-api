@@ -135,7 +135,7 @@ pub async fn delete(
     conn: &mut Conn,
     (task, client, db): (Task, State<Client>, Db),
 ) -> Result<impl Handler, Error> {
-    let params = QueryStrong::parse(conn.querystring()).unwrap_or_default();
+    let params = QueryStrong::parse(conn.querystring());
     let force = params
         .get_str("force")
         .and_then(|param| param.parse().ok())
