@@ -9,7 +9,12 @@ use sea_orm::{
     ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter,
 };
 use serde_json::json;
+use std::collections::HashMap;
 use time::OffsetDateTime;
+use tower_sessions_core::{
+    session::{Id as TowerSessionId, Record},
+    session_store as tower_store,
+};
 
 #[derive(Debug, Clone)]
 pub struct SessionStore {
@@ -99,6 +104,88 @@ impl async_session::SessionStore for SessionStore {
 
     async fn clear_store(&self) -> async_session::Result {
         session::Entity::delete_many().exec(&self.db).await?;
+        Ok(())
+    }
+}
+
+/// Axum-side session store implementing [`tower_sessions_core::SessionStore`].
+///
+/// Uses the same `session` database table as the Trillium-side [`SessionStore`],
+/// but with a different session ID format (`tower-sessions` uses base64-encoded
+/// `i128` rather than `async_session`'s UUID strings). During the proxy
+/// transition period, Trillium handles all session-dependent routes; this store
+/// will be wired into the Axum session middleware when auth routes migrate in
+/// Part 6.
+#[derive(Debug, Clone)]
+pub struct TowerSessionStore {
+    db: Db,
+}
+
+impl TowerSessionStore {
+    #[expect(dead_code)] // Wired in Part 6 when session-dependent routes migrate.
+    pub fn new(db: Db) -> Self {
+        Self { db }
+    }
+}
+
+#[async_trait]
+impl tower_store::SessionStore for TowerSessionStore {
+    async fn save(&self, record: &Record) -> tower_store::Result<()> {
+        let model = session::Model {
+            id: record.id.to_string(),
+            expiry: Some(record.expiry_date),
+            data: serde_json::to_value(&record.data)
+                .map_err(|e| tower_store::Error::Encode(e.to_string()))?,
+        };
+
+        session::Entity::insert(model.into_active_model())
+            .on_conflict(
+                OnConflict::column(session::Column::Id)
+                    .update_columns([session::Column::Data, session::Column::Expiry])
+                    .clone(),
+            )
+            .exec(&self.db)
+            .await
+            .map_err(|e| tower_store::Error::Backend(e.to_string()))?;
+
+        Ok(())
+    }
+
+    async fn load(&self, session_id: &TowerSessionId) -> tower_store::Result<Option<Record>> {
+        let model = session::Entity::find_by_id(session_id.to_string())
+            .filter(any![
+                session::Column::Expiry.is_null(),
+                session::Column::Expiry.gt(OffsetDateTime::now_utc())
+            ])
+            .one(&self.db)
+            .await
+            .map_err(|e| tower_store::Error::Backend(e.to_string()))?;
+
+        model
+            .map(|m| {
+                let data: HashMap<String, serde_json::Value> = serde_json::from_value(m.data)
+                    .map_err(|e| tower_store::Error::Decode(e.to_string()))?;
+                let id: TowerSessionId = m.id.parse().map_err(|e: base64::DecodeSliceError| {
+                    tower_store::Error::Decode(e.to_string())
+                })?;
+                Ok(Record {
+                    id,
+                    data,
+                    expiry_date: m.expiry.unwrap_or_else(|| {
+                        // The DB allows null expiry, but tower-sessions requires a
+                        // value. Use a far-future sentinel.
+                        OffsetDateTime::now_utc() + time::Duration::weeks(52)
+                    }),
+                })
+            })
+            .transpose()
+    }
+
+    async fn delete(&self, session_id: &TowerSessionId) -> tower_store::Result<()> {
+        session::Entity::delete_by_id(session_id.to_string())
+            .exec(&self.db)
+            .await
+            .map_err(|e| tower_store::Error::Backend(e.to_string()))?;
         Ok(())
     }
 }

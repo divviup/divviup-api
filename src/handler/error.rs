@@ -1,4 +1,7 @@
 use crate::clients::ClientError;
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::Json as AxumJson;
 use sea_orm::DbErr;
 use serde_json::json;
 use std::{backtrace::Backtrace, sync::Arc};
@@ -130,5 +133,89 @@ impl Handler for Error {
     async fn run(&self, conn: Conn) -> Conn {
         conn.with_state(self.clone())
             .with_state(Backtrace::capture())
+    }
+}
+
+/// Axum-side error-to-response conversion, mirroring the Trillium
+/// [`ErrorHandler::before_send`] logic above.
+impl IntoResponse for Error {
+    fn into_response(self) -> Response {
+        match self {
+            Error::AccessDenied => StatusCode::FORBIDDEN.into_response(),
+
+            Error::NotFound => StatusCode::NOT_FOUND.into_response(),
+
+            Error::Json(ApiError::UnsupportedMimeType { .. }) => {
+                StatusCode::NOT_ACCEPTABLE.into_response()
+            }
+
+            Error::Json(ApiError::ParseError { path, message }) => (
+                StatusCode::BAD_REQUEST,
+                AxumJson(json!({"path": path, "message": message})),
+            )
+                .into_response(),
+
+            Error::Validation(e) => (StatusCode::BAD_REQUEST, AxumJson(e)).into_response(),
+
+            e => {
+                log::error!("{e}");
+                if cfg!(debug_assertions) {
+                    (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+                } else {
+                    StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::response::IntoResponse;
+
+    #[test]
+    fn access_denied_is_403() {
+        let resp = Error::AccessDenied.into_response();
+        assert_eq!(resp.status(), StatusCode::FORBIDDEN);
+    }
+
+    #[test]
+    fn not_found_is_404() {
+        let resp = Error::NotFound.into_response();
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn unsupported_mime_type_is_406() {
+        let err = Error::Json(ApiError::UnsupportedMimeType {
+            mime_type: "text/plain".into(),
+        });
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE);
+    }
+
+    #[test]
+    fn parse_error_is_400() {
+        let err = Error::Json(ApiError::ParseError {
+            path: ".field".into(),
+            message: "expected string".into(),
+        });
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn validation_error_is_400() {
+        let err = Error::Validation(ValidationErrors::new());
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn other_error_is_500() {
+        let err = Error::String("something broke");
+        let resp = err.into_response();
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 }
