@@ -4,6 +4,7 @@ pub(crate) mod assets;
 pub(crate) mod cors;
 pub(crate) mod custom_mime_types;
 pub(crate) mod error;
+pub(crate) mod extract;
 pub(crate) mod logger;
 pub(crate) mod misc;
 pub(crate) mod oauth2;
@@ -13,9 +14,9 @@ pub(crate) mod session_store;
 
 pub(crate) mod proxy;
 
-use crate::{routes, Config, Db};
+use crate::{clients::Auth0Client, routes, Config, Crypter, Db, FeatureFlags};
 
-use axum::extract::DefaultBodyLimit;
+use axum::extract::{DefaultBodyLimit, FromRef};
 use axum::http::{header, HeaderValue};
 use cors::{axum_cors_layer, cors_headers};
 use error::ErrorHandler;
@@ -58,8 +59,41 @@ fn instrument_handler(handler: impl Handler) -> impl Handler {
 /// Shared state for the Axum side of the application during migration.
 #[derive(Clone, Debug)]
 pub struct AxumAppState {
-    pub db: Db,
-    pub config: Arc<Config>,
+    pub(crate) db: Db,
+    pub(crate) config: Arc<Config>,
+    pub(crate) auth0_client: Auth0Client,
+    pub(crate) crypter: Crypter,
+    pub(crate) feature_flags: FeatureFlags,
+}
+
+impl FromRef<AxumAppState> for Db {
+    fn from_ref(state: &AxumAppState) -> Self {
+        state.db.clone()
+    }
+}
+
+impl FromRef<AxumAppState> for Arc<Config> {
+    fn from_ref(state: &AxumAppState) -> Self {
+        state.config.clone()
+    }
+}
+
+impl FromRef<AxumAppState> for Auth0Client {
+    fn from_ref(state: &AxumAppState) -> Self {
+        state.auth0_client.clone()
+    }
+}
+
+impl FromRef<AxumAppState> for Crypter {
+    fn from_ref(state: &AxumAppState) -> Self {
+        state.crypter.clone()
+    }
+}
+
+impl FromRef<AxumAppState> for FeatureFlags {
+    fn from_ref(state: &AxumAppState) -> Self {
+        state.feature_flags
+    }
 }
 
 #[derive(Handler, Debug)]
@@ -90,6 +124,9 @@ impl DivviupApi {
         let axum_state = AxumAppState {
             db: db.clone(),
             config: config.clone(),
+            auth0_client: Auth0Client::new(&config),
+            crypter: config.crypter.clone(),
+            feature_flags: config.feature_flags(),
         };
         // Middleware stack in logical order (outermost first), matching the
         // Trillium api() handler chain.

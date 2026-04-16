@@ -1,12 +1,16 @@
 use crate::{
     entity::{AccountColumn, Accounts, MembershipColumn, Memberships},
+    handler::Error,
     Db,
 };
+use axum::extract::FromRef;
+use axum::http::request::Parts;
 use sea_orm::{
     sea_query::all, ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect, Select,
 };
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
+use tower_sessions_core::Session;
 use trillium::{async_trait, Conn};
 use trillium_api::FromConn;
 use trillium_sessions::SessionConnExt;
@@ -79,5 +83,46 @@ impl FromConn for User {
         user.populate_admin(db).await;
         conn.insert_state(user.clone());
         Some(user)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Axum extractor — mirrors the Trillium FromConn above
+// ---------------------------------------------------------------------------
+//
+// Dead until Part 6 wires SessionManagerLayer onto the Axum router.
+// The tower-sessions Session is placed in request extensions by that layer;
+// without it, extraction will fail at runtime (which is fine — nothing calls
+// this until Part 6).
+
+impl User {
+    pub(crate) async fn from_parts<S>(parts: &mut Parts, state: &S) -> Result<Self, Error>
+    where
+        Db: FromRef<S>,
+        S: Send + Sync,
+    {
+        // Cache: return early if already extracted for this request.
+        if let Some(user) = parts.extensions.get::<Self>() {
+            return Ok(user.clone());
+        }
+
+        let session = parts
+            .extensions
+            .get::<Session>()
+            .ok_or(Error::AccessDenied)?;
+
+        let mut user: Self = session
+            .get(USER_SESSION_KEY)
+            .await
+            .map_err(|e| {
+                log::error!("session store error: {e}");
+                Error::String("session store error")
+            })?
+            .ok_or(Error::AccessDenied)?;
+
+        let db = Db::from_ref(state);
+        user.populate_admin(&db).await;
+        parts.extensions.insert(user.clone());
+        Ok(user)
     }
 }

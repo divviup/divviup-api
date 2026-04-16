@@ -1,8 +1,10 @@
 use crate::{
     entity::{Account, Accounts, CreateMembership, NewAccount, UpdateAccount},
-    handler::Error,
+    handler::{extract::extract_entity, Error},
     Db, Permissions, PermissionsActor,
 };
+use axum::extract::{FromRef, FromRequestParts};
+use axum::http::request::Parts;
 use sea_orm::{ActiveModelTrait, EntityTrait, TransactionTrait};
 use trillium::{async_trait, Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
@@ -30,6 +32,17 @@ impl FromConn for Account {
                 None
             }
         }
+    }
+}
+
+impl<S> FromRequestParts<S> for Account
+where
+    Db: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = Error;
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Error> {
+        extract_entity::<Accounts, S>(parts, state, "account_id").await
     }
 }
 

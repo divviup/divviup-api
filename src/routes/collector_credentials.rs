@@ -3,8 +3,11 @@ use crate::{
         Account, CollectorCredential, CollectorCredentialColumn, CollectorCredentials,
         NewCollectorCredential, UpdateCollectorCredential,
     },
+    handler::extract::extract_entity,
     Db, Error, Permissions, PermissionsActor,
 };
+use axum::extract::{FromRef, FromRequestParts};
+use axum::http::request::Parts;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter};
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
@@ -39,6 +42,17 @@ impl FromConn for CollectorCredential {
                 None
             }
         }
+    }
+}
+
+impl<S> FromRequestParts<S> for CollectorCredential
+where
+    Db: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = Error;
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Error> {
+        extract_entity::<CollectorCredentials, S>(parts, state, "collector_credential_id").await
     }
 }
 

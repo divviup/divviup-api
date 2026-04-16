@@ -1,7 +1,10 @@
 use crate::{
     entity::{Account, ApiToken, ApiTokenColumn, ApiTokens, UpdateApiToken},
+    handler::extract::extract_entity,
     Db, Error, Permissions, PermissionsActor,
 };
+use axum::extract::{FromRef, FromRequestParts};
+use axum::http::request::Parts;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter, QueryOrder};
 use trillium::{Conn, Handler, Status};
 use trillium_api::{FromConn, Json};
@@ -33,6 +36,17 @@ impl FromConn for ApiToken {
                 None
             }
         }
+    }
+}
+
+impl<S> FromRequestParts<S> for ApiToken
+where
+    Db: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = Error;
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Error> {
+        extract_entity::<ApiTokens, S>(parts, state, "api_token_id").await
     }
 }
 
