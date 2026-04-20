@@ -34,10 +34,6 @@ impl FromConn for AccountBearerToken {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Axum extractor — mirrors the Trillium FromConn above
-// ---------------------------------------------------------------------------
-
 impl AccountBearerToken {
     /// Try to extract a bearer token from the request, returning `None` on
     /// any failure (missing header, invalid token, DB miss). This is
