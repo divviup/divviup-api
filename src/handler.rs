@@ -145,11 +145,12 @@ impl DivviupApi {
 
         let axum_router = axum::Router::new()
             // Temporary test endpoint to verify the proxy bridge works.
-            // TODO: Remove once a real endpoint has been migrated.
+            // TODO: Remove once enough routes have migrated to make it redundant.
             .route(
                 "/internal/test/axum_ready",
                 axum::routing::get(|| async { "axum OK" }),
             )
+            .route("/health", axum::routing::get(routes::health_check))
             .layer(middleware)
             .with_state(axum_state);
         let axum_listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0))
@@ -171,7 +172,6 @@ impl DivviupApi {
         Self {
             handler: Box::new((
                 conn_id(),
-                routes::health_check(&db),
                 Forwarding::trust_always(),
                 opentelemetry(),
                 caching_headers(),
