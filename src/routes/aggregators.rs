@@ -1,8 +1,11 @@
 use crate::{
     config::FeatureFlags,
     entity::{Account, Aggregator, AggregatorColumn, Aggregators, NewAggregator, UpdateAggregator},
+    handler::extract::extract_entity,
     Db, Error, Permissions, PermissionsActor,
 };
+use axum::extract::{FromRef, FromRequestParts};
+use axum::http::request::Parts;
 use sea_orm::{
     sea_query::{all, any},
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter,
@@ -28,6 +31,17 @@ impl FromConn for Aggregator {
                 None
             }
         }
+    }
+}
+
+impl<S> FromRequestParts<S> for Aggregator
+where
+    Db: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = Error;
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Error> {
+        extract_entity::<Aggregators, S>(parts, state, "aggregator_id").await
     }
 }
 

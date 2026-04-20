@@ -1,4 +1,10 @@
-use crate::{entity::Membership, handler::account_bearer_token::AccountBearerToken, Db, User};
+use crate::{
+    entity::Membership,
+    handler::{account_bearer_token::AccountBearerToken, Error},
+    Db, User,
+};
+use axum::extract::{FromRef, FromRequestParts};
+use axum::http::{self, request::Parts};
 use trillium::Conn;
 use trillium_api::FromConn;
 
@@ -16,16 +22,34 @@ impl PermissionsActor {
         }
     }
 
-    pub fn is_allowed<T: Permissions>(&self, method: trillium::Method, t: &T) -> bool {
-        if method.is_safe() {
+    fn check_permission<T: Permissions>(&self, is_safe: bool, t: &T) -> bool {
+        if is_safe {
             t.allow_read(self)
         } else {
             t.allow_write(self)
         }
     }
 
+    pub fn is_allowed<T: Permissions>(&self, method: trillium::Method, t: &T) -> bool {
+        self.check_permission(method.is_safe(), t)
+    }
+
     pub fn if_allowed<T: Permissions>(&self, method: trillium::Method, t: T) -> Option<T> {
         if self.is_allowed(method, &t) {
+            Some(t)
+        } else {
+            None
+        }
+    }
+
+    /// Axum-side equivalent of [`is_allowed`](Self::is_allowed).
+    pub fn is_allowed_http<T: Permissions>(&self, method: &http::Method, t: &T) -> bool {
+        self.check_permission(method.is_safe(), t)
+    }
+
+    /// Axum-side equivalent of [`if_allowed`](Self::if_allowed).
+    pub fn if_allowed_http<T: Permissions>(&self, method: &http::Method, t: T) -> Option<T> {
+        if self.is_allowed_http(method, &t) {
             Some(t)
         } else {
             None
@@ -73,6 +97,45 @@ impl FromConn for PermissionsActor {
         }
 
         actor
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Axum extractor — mirrors the Trillium FromConn above
+// ---------------------------------------------------------------------------
+
+impl<S> FromRequestParts<S> for PermissionsActor
+where
+    Db: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = Error;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Error> {
+        // Cache: return early if already extracted for this request.
+        if let Some(actor) = parts.extensions.get::<Self>() {
+            return Ok(actor.clone());
+        }
+
+        let abt = AccountBearerToken::from_parts(parts, state).await;
+        let user_result = User::from_parts(parts, state).await;
+
+        // Match the Trillium behavior: if both a bearer token and a session
+        // user are present, reject the request. A request should authenticate
+        // via exactly one mechanism.
+        let actor = match (abt, user_result) {
+            (Some(abt), Err(_)) => Self::ApiToken(abt),
+            (None, Ok(user)) => {
+                let db = Db::from_ref(state);
+                let memberships = user.memberships().all(&db).await.map_err(Error::from)?;
+                Self::User(user, memberships)
+            }
+            // Both present, or neither present.
+            _ => return Err(Error::AccessDenied),
+        };
+
+        parts.extensions.insert(actor.clone());
+        Ok(actor)
     }
 }
 

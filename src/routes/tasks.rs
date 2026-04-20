@@ -2,8 +2,11 @@ use crate::{
     clients::aggregator_client::{api_types::TaskAggregationJobMetrics, TaskUploadMetrics},
     config::FeatureFlags,
     entity::{Account, NewTask, Task, TaskColumn, Tasks, UpdateTask},
+    handler::extract::extract_entity,
     Crypter, Db, Error, Permissions, PermissionsActor,
 };
+use axum::extract::{FromRef, FromRequestParts};
+use axum::http::request::Parts;
 use querystrong::QueryStrong;
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, EntityTrait, IntoActiveModel, ModelTrait,
@@ -50,6 +53,17 @@ impl FromConn for Task {
                 None
             }
         }
+    }
+}
+
+impl<S> FromRequestParts<S> for Task
+where
+    Db: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = Error;
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Error> {
+        extract_entity::<Tasks, S>(parts, state, "task_id").await
     }
 }
 
