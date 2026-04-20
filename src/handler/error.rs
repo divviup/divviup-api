@@ -90,6 +90,12 @@ pub enum Error {
     String(&'static str),
     #[error(transparent)]
     Codec(Arc<janus_messages::codec::CodecError>),
+    #[error("csrf mismatch or missing")]
+    CallbackCsrfMismatch,
+    #[error("expected pkce verifier in session")]
+    CallbackMissingPkce,
+    #[error("expected code query param")]
+    CallbackMissingCode,
 }
 
 impl From<janus_messages::codec::CodecError> for Error {
@@ -113,6 +119,12 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for Error {
 impl From<serde_json::Error> for Error {
     fn from(value: serde_json::Error) -> Self {
         ApiError::from(value).into()
+    }
+}
+
+impl From<tower_sessions::session::Error> for Error {
+    fn from(value: tower_sessions::session::Error) -> Self {
+        Self::Other(Arc::new(value))
     }
 }
 
@@ -142,6 +154,14 @@ impl IntoResponse for Error {
     fn into_response(self) -> Response {
         match self {
             Error::AccessDenied => StatusCode::FORBIDDEN.into_response(),
+
+            Error::CallbackCsrfMismatch
+            | Error::CallbackMissingPkce
+            | Error::CallbackMissingCode => {
+                // Preserve the Trillium-side behavior of 403 with a plain-text
+                // explanatory body for OAuth callback validation failures.
+                (StatusCode::FORBIDDEN, self.to_string()).into_response()
+            }
 
             Error::NotFound => StatusCode::NOT_FOUND.into_response(),
 
@@ -217,5 +237,17 @@ mod tests {
         let err = Error::String("something broke");
         let resp = err.into_response();
         assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn callback_validation_errors_are_403() {
+        for err in [
+            Error::CallbackCsrfMismatch,
+            Error::CallbackMissingPkce,
+            Error::CallbackMissingCode,
+        ] {
+            let resp = err.into_response();
+            assert_eq!(resp.status(), StatusCode::FORBIDDEN);
+        }
     }
 }

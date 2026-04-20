@@ -10,11 +10,7 @@ mod users;
 
 use crate::{
     clients::Auth0Client,
-    handler::{
-        actor_required, admin_required, destroy_session, logout_from_auth0,
-        oauth2::{self, OauthClient},
-        redirect_if_logged_in, ReplaceMimeTypes,
-    },
+    handler::{actor_required, admin_required, ReplaceMimeTypes},
     Config,
 };
 pub use health_check::health_check;
@@ -23,36 +19,16 @@ use trillium::{
     Method::{Delete, Get, Patch, Post},
 };
 use trillium_api::api;
-use trillium_redirect::redirect;
 use trillium_router::router;
 
 pub fn routes(config: &Config) -> impl Handler {
-    let oauth2_client = OauthClient::new(&config.oauth_config());
     let auth0_client = Auth0Client::new(config);
 
-    router()
-        .get(
-            "/login",
-            (
-                redirect_if_logged_in(config),
-                state(oauth2_client.clone()),
-                oauth2::redirect,
-            ),
-        )
-        .get("/logout", (destroy_session, logout_from_auth0(config)))
-        .get(
-            "/callback",
-            (
-                state(oauth2_client),
-                oauth2::callback,
-                redirect(config.app_url.to_string()),
-            ),
-        )
-        .any(
-            &[Get, Post, Delete, Patch],
-            "/api/*",
-            (state(auth0_client), api_routes()),
-        )
+    router().any(
+        &[Get, Post, Delete, Patch],
+        "/api/*",
+        (state(auth0_client), api_routes()),
+    )
 }
 
 fn api_routes() -> impl Handler {

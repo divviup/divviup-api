@@ -11,7 +11,7 @@ time = "0.3.47"
 trillium = "0.2.20"
 trillium-macros = "0.0.6"
 trillium-testing = { version = "0.7.0", features = ["tokio"] }
-divviup-api.workspace = true
+divviup-api = { workspace = true, features = ["test-header-injection"] }
 serde = "1.0.228"
 serde_json = "1.0.149"
 thiserror = "2.0.18"

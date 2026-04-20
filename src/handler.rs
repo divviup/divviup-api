@@ -21,8 +21,9 @@ use axum::http::{header, HeaderValue};
 use cors::{axum_cors_layer, cors_headers};
 use error::ErrorHandler;
 use logger::logger;
+use oauth2::OauthClient;
 use proxy::AxumProxy;
-use session_store::SessionStore;
+use session_store::{axum_session_layer, SessionStore};
 use std::{borrow::Cow, net::Ipv6Addr, net::SocketAddr, sync::Arc};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
@@ -62,6 +63,7 @@ pub struct AxumAppState {
     pub(crate) db: Db,
     pub(crate) config: Arc<Config>,
     pub(crate) auth0_client: Auth0Client,
+    pub(crate) oauth_client: OauthClient,
     pub(crate) crypter: Crypter,
     pub(crate) feature_flags: FeatureFlags,
 }
@@ -81,6 +83,12 @@ impl FromRef<AxumAppState> for Arc<Config> {
 impl FromRef<AxumAppState> for Auth0Client {
     fn from_ref(state: &AxumAppState) -> Self {
         state.auth0_client.clone()
+    }
+}
+
+impl FromRef<AxumAppState> for OauthClient {
+    fn from_ref(state: &AxumAppState) -> Self {
+        state.oauth_client.clone()
     }
 }
 
@@ -125,6 +133,7 @@ impl DivviupApi {
             db: db.clone(),
             config: config.clone(),
             auth0_client: Auth0Client::new(&config),
+            oauth_client: OauthClient::new(&config.oauth_config()),
             crypter: config.crypter.clone(),
             feature_flags: config.feature_flags(),
         };
@@ -132,7 +141,6 @@ impl DivviupApi {
         // Trillium api() handler chain.
         //
         // TODO(Part 7): ReplaceMimeTypesLayer goes on the /api/* sub-router.
-        // TODO(Part 6): SessionManagerLayer goes here once auth routes migrate.
         let middleware = ServiceBuilder::new()
             .layer(TraceLayer::new_for_http())
             .layer(DefaultBodyLimit::max(1024 * 1024))
@@ -141,7 +149,12 @@ impl DivviupApi {
                 header::CACHE_CONTROL,
                 HeaderValue::from_static("private, must-revalidate"),
             ))
-            .layer(axum_cors_layer(&config));
+            .layer(axum_cors_layer(&config))
+            .layer(axum_session_layer(db.clone(), &config.session_secrets));
+
+        #[cfg(feature = "test-header-injection")]
+        let middleware =
+            middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
 
         let axum_router = axum::Router::new()
             // Temporary test endpoint to verify the proxy bridge works.
@@ -151,6 +164,9 @@ impl DivviupApi {
                 axum::routing::get(|| async { "axum OK" }),
             )
             .route("/health", axum::routing::get(routes::health_check))
+            .route("/login", axum::routing::get(oauth2::redirect))
+            .route("/logout", axum::routing::get(misc::logout))
+            .route("/callback", axum::routing::get(oauth2::callback))
             .layer(middleware)
             .with_state(axum_state);
         let axum_listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0))
@@ -210,6 +226,28 @@ impl AsRef<Db> for DivviupApi {
     fn as_ref(&self) -> &Db {
         &self.db
     }
+}
+
+/// Test-only shim: if the request carries an `X-Integration-Testing-User`
+/// header with a JSON-encoded [`crate::User`], place the user in request
+/// extensions so [`crate::User`]'s extractor picks it up without a real
+/// session.
+///
+/// Only compiled under `--features test-header-injection` (enabled by
+/// `test-support`). Never compiled into deployed builds.
+#[cfg(feature = "test-header-injection")]
+async fn inject_integration_testing_user(
+    mut request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    if let Some(user) = request
+        .headers()
+        .get("x-integration-testing-user")
+        .and_then(|v| serde_json::from_slice::<crate::User>(v.as_bytes()).ok())
+    {
+        request.extensions_mut().insert(user);
+    }
+    next.run(request).await
 }
 
 #[derive(Handler, Debug, Clone)]
