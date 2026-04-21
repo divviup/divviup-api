@@ -1,22 +1,10 @@
 use crate::Db;
+use axum::{extract::State, http::StatusCode};
 use sea_orm::ConnectionTrait;
-use trillium::{async_trait, Conn, Handler, Status};
 
-struct HealthCheck(Db);
-
-#[async_trait]
-impl Handler for HealthCheck {
-    async fn run(&self, conn: Conn) -> Conn {
-        if conn.path() != "/health" {
-            return conn;
-        }
-        if self.0.execute_unprepared("select 1").await.is_err() {
-            return conn.halt().with_status(500);
-        }
-        conn.halt().with_status(Status::Ok)
+pub async fn health_check(State(db): State<Db>) -> StatusCode {
+    if db.execute_unprepared("select 1").await.is_err() {
+        return StatusCode::INTERNAL_SERVER_ERROR;
     }
-}
-
-pub fn health_check(db: &Db) -> impl Handler {
-    HealthCheck(db.clone())
+    StatusCode::OK
 }
