@@ -165,7 +165,7 @@ impl DivviupApi {
             )
             .route("/health", axum::routing::get(routes::health_check))
             .route("/login", axum::routing::get(oauth2::redirect))
-            .route("/logout", axum::routing::get(misc::logout))
+            .route("/logout", axum::routing::get(oauth2::logout))
             .route("/callback", axum::routing::get(oauth2::callback))
             .layer(middleware)
             .with_state(axum_state);

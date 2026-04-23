@@ -31,6 +31,8 @@ integration-testing = []
 # Enables a non-production axum middleware that reads an `X-Integration-Testing-User`
 # header and injects the decoded [`User`] into request extensions. Strictly for
 # use by the test harness (`test-support`); never enable in deployed builds.
+# TODO: fold into `integration-testing` once Trillium is removed — the blanket
+# User injection in the Trillium api() handler currently makes them incompatible.
 test-header-injection = []
 otlp-trace = ["opentelemetry/trace", "opentelemetry-otlp", "opentelemetry_sdk/trace", "trillium-opentelemetry/trace"]
 

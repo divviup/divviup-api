@@ -112,6 +112,23 @@ pub async fn callback(
     Ok(found_redirect(config.app_url.as_ref()))
 }
 
+/// `GET /logout` — destroy the session and redirect to Auth0's logout URL so
+/// the IdP session is also cleared.
+pub async fn logout(
+    State(config): State<Arc<Config>>,
+    session: Session,
+) -> Result<Response, Error> {
+    session.flush().await?;
+
+    let mut logout_url = config.auth_url.join("/v2/logout")?;
+    logout_url.query_pairs_mut().extend_pairs([
+        ("client_id", &*config.auth_client_id),
+        ("returnTo", config.app_url.as_ref()),
+    ]);
+
+    Ok(found_redirect(logout_url.as_ref()))
+}
+
 fn found_redirect(location: &str) -> Response {
     (
         StatusCode::FOUND,
