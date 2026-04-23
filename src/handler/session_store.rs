@@ -1,4 +1,4 @@
-use crate::{entity::session, Db};
+use crate::{config::SessionSecrets, entity::session, Db};
 use async_session::{
     async_trait,
     chrono::{DateTime, Utc},
@@ -10,11 +10,20 @@ use sea_orm::{
 };
 use serde_json::json;
 use std::collections::HashMap;
-use time::OffsetDateTime;
-use tower_sessions_core::{
+use time::{Duration, OffsetDateTime};
+use tower_sessions::{
+    cookie::{Key, SameSite},
+    service::SignedCookie,
     session::{Id as TowerSessionId, Record},
-    session_store as tower_store,
+    session_store as tower_store, Expiry, SessionManagerLayer,
 };
+
+/// Cookie name shared with the Trillium-side session middleware. Both sides
+/// set a cookie with this name; the wire formats are incompatible, so each
+/// side only successfully parses its own.
+// TODO: remove this comment when Trillium is removed — the incompatibility
+// note will no longer apply.
+pub const SESSION_COOKIE_NAME: &str = "divviup.sid";
 
 #[derive(Debug, Clone)]
 pub struct SessionStore {
@@ -112,20 +121,40 @@ impl async_session::SessionStore for SessionStore {
 ///
 /// Uses the same `session` database table as the Trillium-side [`SessionStore`],
 /// but with a different session ID format (`tower-sessions` uses base64-encoded
-/// `i128` rather than `async_session`'s UUID strings). During the proxy
-/// transition period, Trillium handles all session-dependent routes; this store
-/// will be wired into the Axum session middleware when auth routes migrate in
-/// Part 6.
+/// `i128` rather than `async_session`'s UUID strings).
+// TODO: remove the Trillium-side `SessionStore` and the `async_session`
+// dependency when Trillium is removed.
 #[derive(Debug, Clone)]
 pub struct TowerSessionStore {
     db: Db,
 }
 
 impl TowerSessionStore {
-    #[expect(dead_code)] // Wired in Part 6 when session-dependent routes migrate.
     pub fn new(db: Db) -> Self {
         Self { db }
     }
+}
+
+/// Build the Axum-side [`SessionManagerLayer`].
+///
+/// `tower-sessions` 0.15 accepts only a single signing key; there is no
+/// `with_older_secrets` equivalent. Key rotation for the Axum cookie will be
+/// revisited once the Trillium server is removed in Part 8.
+pub fn axum_session_layer(
+    db: Db,
+    secrets: &SessionSecrets,
+) -> SessionManagerLayer<TowerSessionStore, SignedCookie> {
+    // `cookie::Key::from` panics on keys shorter than 64 bytes. We only
+    // guarantee 32, so derive a longer key from the configured secret.
+    let key = Key::derive_from(&secrets.current);
+    SessionManagerLayer::new(TowerSessionStore::new(db))
+        .with_name(SESSION_COOKIE_NAME)
+        .with_secure(true)
+        .with_http_only(true)
+        .with_same_site(SameSite::Lax)
+        .with_path("/")
+        .with_signed(key)
+        .with_expiry(Expiry::OnInactivity(Duration::days(1)))
 }
 
 #[async_trait]

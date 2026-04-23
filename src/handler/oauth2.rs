@@ -1,17 +1,21 @@
-use crate::{User, USER_SESSION_KEY};
+use crate::{handler::Error, Config, User, USER_SESSION_KEY};
+use axum::{
+    extract::{Query, State},
+    http::{header, StatusCode},
+    response::{IntoResponse, Response},
+};
 use oauth2::{
     basic::{BasicClient, BasicErrorResponseType},
     AsyncHttpClient, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, EndpointNotSet,
     EndpointSet, HttpRequest, HttpResponse, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl,
     RequestTokenError, Scope, StandardErrorResponse, TokenResponse, TokenUrl,
 };
-use querystrong::QueryStrong;
+use serde::Deserialize;
 use std::{future::Future, pin::Pin, sync::Arc};
-use trillium::{conn_try, conn_unwrap, Conn, KnownHeaderName::Authorization, Status};
+use tower_sessions::Session;
+use trillium::{KnownHeaderName::Authorization, Status};
 use trillium_client::{Client, ClientSerdeError};
 use trillium_http::Headers;
-use trillium_redirect::RedirectConnExt;
-use trillium_sessions::SessionConnExt;
 use url::Url;
 
 /// Type alias for an oauth2::Client once we've finished configuring it in `OauthClient::new`.
@@ -37,12 +41,24 @@ pub struct Oauth2Config {
     pub http_client: Client,
 }
 
-pub async fn redirect(conn: Conn) -> Conn {
-    let client: &OauthClient = conn.state().unwrap();
+const PKCE_SESSION_KEY: &str = "pkce_verifier";
+const CSRF_SESSION_KEY: &str = "csrf_token";
+
+/// `GET /login` — start the OAuth flow, or short-circuit to the app if the
+/// user is already logged in.
+pub async fn redirect(
+    State(oauth_client): State<OauthClient>,
+    State(config): State<Arc<Config>>,
+    session: Session,
+    user: Option<User>,
+) -> Result<Response, Error> {
+    if user.is_some() {
+        return Ok(found_redirect(config.app_url.as_ref()));
+    }
 
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
-    let (auth_url, csrf_token) = client
+    let (auth_url, csrf_token) = oauth_client
         .oauth2_client()
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new(String::from("openid")))
@@ -51,54 +67,78 @@ pub async fn redirect(conn: Conn) -> Conn {
         .set_pkce_challenge(pkce_challenge)
         .url();
 
-    conn.redirect(auth_url.to_string())
-        .with_session("pkce_verifier", pkce_verifier)
-        .with_session("csrf_token", csrf_token)
+    session.insert(PKCE_SESSION_KEY, pkce_verifier).await?;
+    session.insert(CSRF_SESSION_KEY, csrf_token).await?;
+
+    Ok(found_redirect(auth_url.as_str()))
 }
 
-pub async fn callback(conn: Conn) -> Conn {
-    let qs = QueryStrong::parse(conn.querystring());
+#[derive(Debug, Deserialize)]
+pub struct CallbackParams {
+    pub code: Option<String>,
+    pub state: Option<String>,
+}
 
-    let Some(auth_code) = qs
-        .get_str("code")
-        .map(|c| AuthorizationCode::new(String::from(c)))
-    else {
-        return conn
-            .with_body("expected code query param")
-            .with_status(Status::Forbidden)
-            .halt();
-    };
+/// `GET /callback` — exchange the authorization code for tokens, then stash
+/// the user in the session and redirect to the app.
+pub async fn callback(
+    State(oauth_client): State<OauthClient>,
+    State(config): State<Arc<Config>>,
+    session: Session,
+    Query(params): Query<CallbackParams>,
+) -> Result<Response, Error> {
+    let auth_code = params
+        .code
+        .map(AuthorizationCode::new)
+        .ok_or(Error::CallbackMissingCode)?;
 
-    let Some(pkce_verifier) = conn.session().get("pkce_verifier") else {
-        return conn
-            .with_body("expected pkce verifier in session")
-            .with_status(Status::Forbidden)
-            .halt();
-    };
+    let pkce_verifier: PkceCodeVerifier = session
+        .remove(PKCE_SESSION_KEY)
+        .await?
+        .ok_or(Error::CallbackMissingPkce)?;
 
-    let session_csrf: Option<String> = conn.session().get("csrf_token");
-    let qs_csrf = qs.get_str("state");
-
-    if session_csrf.is_none() || qs_csrf != session_csrf.as_deref() {
-        return conn
-            .with_body("csrf mismatch or missing")
-            .with_status(Status::Forbidden)
-            .halt();
+    let session_csrf: Option<String> = session.remove(CSRF_SESSION_KEY).await?;
+    match (session_csrf, &params.state) {
+        (Some(a), Some(b)) if a == *b => {}
+        _ => return Err(Error::CallbackCsrfMismatch),
     }
 
-    let client = conn_unwrap!(conn.state::<OauthClient>(), conn);
-    let user = conn_try!(
-        client
-            .exchange_code_for_user(auth_code, pkce_verifier)
-            .await,
-        conn
-    );
+    let user = oauth_client
+        .exchange_code_for_user(auth_code, pkce_verifier)
+        .await?;
 
-    conn.with_session(USER_SESSION_KEY, user)
+    session.insert(USER_SESSION_KEY, user).await?;
+
+    Ok(found_redirect(config.app_url.as_ref()))
+}
+
+/// `GET /logout` — destroy the session and redirect to Auth0's logout URL so
+/// the IdP session is also cleared.
+pub async fn logout(
+    State(config): State<Arc<Config>>,
+    session: Session,
+) -> Result<Response, Error> {
+    session.flush().await?;
+
+    let mut logout_url = config.auth_url.join("/v2/logout")?;
+    logout_url.query_pairs_mut().extend_pairs([
+        ("client_id", &*config.auth_client_id),
+        ("returnTo", config.app_url.as_ref()),
+    ]);
+
+    Ok(found_redirect(logout_url.as_ref()))
+}
+
+fn found_redirect(location: &str) -> Response {
+    (
+        StatusCode::FOUND,
+        [(header::LOCATION, location.to_string())],
+    )
+        .into_response()
 }
 
 #[derive(thiserror::Error, Debug)]
-enum OauthError {
+pub enum OauthError {
     #[error(transparent)]
     HttpError(#[from] trillium_client::Error),
     #[error(transparent)]
@@ -142,6 +182,12 @@ impl From<ClientSerdeError> for OauthError {
             ClientSerdeError::HttpError(e) => OauthError::HttpError(e),
             ClientSerdeError::JsonError(e) => OauthError::Serde(e),
         }
+    }
+}
+
+impl From<OauthError> for Error {
+    fn from(value: OauthError) -> Self {
+        Self::Other(Arc::new(value))
     }
 }
 
