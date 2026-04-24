@@ -105,13 +105,13 @@ mod show {
     async fn not_as_a_member(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
         let other_account = fixtures::account(&app).await;
-        let mut conn = get(format!("/api/accounts/{}", other_account.id))
+        let conn = get(format!("/api/accounts/{}", other_account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
 
         Ok(())
     }
@@ -172,12 +172,12 @@ mod show {
         let account = fixtures::account(&app).await;
         let other_account = fixtures::account(&app).await;
         let (_, header) = fixtures::api_token(&app, &account).await;
-        let mut conn = get(format!("/api/accounts/{}", other_account.id))
+        let conn = get(format!("/api/accounts/{}", other_account.id))
             .with_api_headers()
             .with_request_header(KnownHeaderName::Authorization, header)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 }
@@ -309,14 +309,14 @@ mod update {
     async fn not_as_a_member(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
         let other_account = fixtures::account(&app).await;
-        let mut conn = patch(format!("/api/accounts/{}", other_account.id))
+        let conn = patch(format!("/api/accounts/{}", other_account.id))
             .with_api_headers()
             .with_request_json(json!({ "name": "new name" }))
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
 
         Ok(())
     }
@@ -386,14 +386,14 @@ mod update {
         let other_account = fixtures::account(&app).await;
         let (_, header) = fixtures::api_token(&app, &account).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/accounts/{}", other_account.id))
+        let conn = patch(format!("/api/accounts/{}", other_account.id))
             .with_api_headers()
             .with_request_header(KnownHeaderName::Authorization, header)
             .with_request_json(json!({ "name": &name }))
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 

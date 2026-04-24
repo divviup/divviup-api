@@ -33,13 +33,13 @@ mod index {
         fixtures::api_token(&app, &account).await;
         fixtures::api_token(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = get(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
 
         Ok(())
     }
@@ -131,12 +131,12 @@ mod index {
         fixtures::api_token(&app, &account).await;
         fixtures::api_token(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = get(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 }
@@ -173,13 +173,13 @@ mod create {
         let account = fixtures::account(&app).await; // no membership
 
         let api_token_count_before = ApiTokens::find().count(app.db()).await?;
-        let mut conn = post(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = post(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         let api_token_count_after = ApiTokens::find().count(app.db()).await?;
         assert_eq!(api_token_count_before, api_token_count_after);
 
@@ -283,12 +283,12 @@ mod create {
         let (_, token) = fixtures::api_token(&app, &other_account).await;
         let account = fixtures::account(&app).await;
         let count_before = ApiTokens::find().count(app.db()).await?;
-        let mut conn = post(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = post(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         let count_after = ApiTokens::find().count(app.db()).await?;
         assert_eq!(count_before, count_after);
         Ok(())
@@ -303,12 +303,12 @@ mod delete {
     #[test(harness = set_up)]
     async fn nonexistant_api_token(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
-        let mut conn = delete(format!("/api/api_tokens/{}", Uuid::new_v4()))
+        let conn = delete(format!("/api/api_tokens/{}", Uuid::new_v4()))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -332,12 +332,12 @@ mod delete {
         let account = fixtures::account(&app).await;
         let (user, ..) = fixtures::member(&app).await;
         let (api_token, ..) = fixtures::api_token(&app, &account).await;
-        let mut conn = delete(format!("/api/api_tokens/{}", api_token.id))
+        let conn = delete(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert!(!api_token.reload(app.db()).await?.unwrap().is_tombstoned());
 
         Ok(())
@@ -396,12 +396,12 @@ mod delete {
         let (_, token) = fixtures::api_token(&app, &other_account).await;
         let account = fixtures::account(&app).await;
         let (api_token, _) = fixtures::api_token(&app, &account).await;
-        let mut conn = delete(format!("/api/api_tokens/{}", api_token.id))
+        let conn = delete(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert!(!api_token.reload(app.db()).await?.unwrap().is_tombstoned());
         Ok(())
     }
@@ -415,13 +415,13 @@ mod update {
     #[test(harness = set_up)]
     async fn nonexistant_api_token(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
-        let mut conn = patch(format!("/api/api_tokens/{}", Uuid::new_v4()))
+        let conn = patch(format!("/api/api_tokens/{}", Uuid::new_v4()))
             .with_request_json(json!({ "name": fixtures::random_name() }))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -452,14 +452,14 @@ mod update {
         let account = fixtures::account(&app).await;
         let (user, ..) = fixtures::member(&app).await;
         let (api_token, ..) = fixtures::api_token(&app, &account).await;
-        let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
+        let conn = patch(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
             .with_request_json(json!({ "name": fixtures::random_name() }))
             .with_state(user)
             .run_async(&app)
             .await;
         let name_before = api_token.name.clone();
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert_eq!(api_token.reload(app.db()).await?.unwrap().name, name_before);
 
         Ok(())
@@ -541,13 +541,13 @@ mod update {
         let account = fixtures::account(&app).await;
         let (api_token, _) = fixtures::api_token(&app, &account).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
+        let conn = patch(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
             .with_request_json(json!({ "name": name }))
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert!(api_token.reload(app.db()).await?.unwrap().name.is_none());
         Ok(())
     }
