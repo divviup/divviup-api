@@ -89,6 +89,7 @@ pub async fn callback(
 ) -> Result<Response, Error> {
     let auth_code = params
         .code
+        .filter(|s| !s.is_empty())
         .map(AuthorizationCode::new)
         .ok_or(Error::CallbackMissingCode)?;
 

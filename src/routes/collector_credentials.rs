@@ -3,27 +3,19 @@ use crate::{
         Account, CollectorCredential, CollectorCredentialColumn, CollectorCredentials,
         NewCollectorCredential, UpdateCollectorCredential,
     },
-    handler::extract::extract_entity,
+    handler::{extract::extract_entity, extract::Json},
     Db, Error, Permissions, PermissionsActor,
 };
-use axum::extract::{FromRef, FromRequestParts};
-use axum::http::request::Parts;
+use axum::{
+    extract::{FromRef, FromRequestParts, State},
+    http::{header, request::Parts, StatusCode},
+    response::IntoResponse,
+};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter};
-use trillium::{Conn, Handler, Status};
-use trillium_api::{FromConn, Json};
-use trillium_caching_headers::CachingHeadersExt;
+use trillium::Conn;
+use trillium_api::FromConn;
 use trillium_router::RouterConnExt;
 use uuid::Uuid;
-
-pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
-    account
-        .find_related(CollectorCredentials)
-        .filter(CollectorCredentialColumn::DeletedAt.is_null())
-        .all(&db)
-        .await
-        .map(Json)
-        .map_err(Error::from)
-}
 
 #[trillium::async_trait]
 impl FromConn for CollectorCredential {
@@ -62,40 +54,51 @@ impl Permissions for CollectorCredential {
     }
 }
 
-pub async fn show(
-    conn: &mut Conn,
-    collector_credential: CollectorCredential,
-) -> Result<Json<CollectorCredential>, Error> {
-    conn.set_last_modified(collector_credential.updated_at.into());
-    Ok(Json(collector_credential))
+pub async fn index(
+    account: Account,
+    State(db): State<Db>,
+) -> Result<Json<Vec<CollectorCredential>>, Error> {
+    account
+        .find_related(CollectorCredentials)
+        .filter(CollectorCredentialColumn::DeletedAt.is_null())
+        .all(&db)
+        .await
+        .map(Json)
+        .map_err(Error::from)
+}
+
+pub async fn show(collector_credential: CollectorCredential) -> impl IntoResponse {
+    let last_modified = httpdate::fmt_http_date(collector_credential.updated_at.into());
+    (
+        [(header::LAST_MODIFIED, last_modified)],
+        Json(collector_credential),
+    )
 }
 
 pub async fn create(
-    _: &mut Conn,
-    (account, db, Json(collector_credential)): (Account, Db, Json<NewCollectorCredential>),
-) -> Result<impl Handler, Error> {
+    account: Account,
+    State(db): State<Db>,
+    Json(collector_credential): Json<NewCollectorCredential>,
+) -> Result<impl IntoResponse, Error> {
     let (collector_credential, token) = collector_credential.build(&account)?;
     let mut collector_credential = collector_credential.insert(&db).await?;
     collector_credential.token = Some(token);
-    Ok((Status::Created, Json(collector_credential)))
+    Ok((StatusCode::CREATED, Json(collector_credential)))
 }
 
 pub async fn delete(
-    _: &mut Conn,
-    (collector_credential, db): (CollectorCredential, Db),
-) -> Result<Status, Error> {
+    collector_credential: CollectorCredential,
+    State(db): State<Db>,
+) -> Result<StatusCode, Error> {
     collector_credential.tombstone().update(&db).await?;
-    Ok(Status::NoContent)
+    Ok(StatusCode::NO_CONTENT)
 }
 
 pub async fn update(
-    _: &mut Conn,
-    (collector_credential, db, Json(update)): (
-        CollectorCredential,
-        Db,
-        Json<UpdateCollectorCredential>,
-    ),
-) -> Result<impl Handler, Error> {
+    collector_credential: CollectorCredential,
+    State(db): State<Db>,
+    Json(update): Json<UpdateCollectorCredential>,
+) -> Result<impl IntoResponse, Error> {
     let token = update.build(collector_credential)?.update(&db).await?;
-    Ok((Json(token), Status::Ok))
+    Ok((StatusCode::OK, Json(token)))
 }

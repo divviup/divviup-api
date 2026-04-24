@@ -1336,6 +1336,7 @@ dependencies = [
  "fastrand",
  "futures-lite",
  "git-version",
+ "httpdate",
  "janus_messages",
  "log",
  "oauth2",

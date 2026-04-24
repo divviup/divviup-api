@@ -1,23 +1,52 @@
-/// Shared helper for Axum entity extractors.
-///
-/// Each "entity extractor" (Account, Task, Aggregator, ApiToken,
-/// CollectorCredential) follows the same pattern:
-///
-///  1. Extract path parameter by name → parse as UUID
-///  2. Extract [`PermissionsActor`] (bearer token **or** session user)
-///  3. Look the entity up by primary key
-///  4. Check permissions via [`Permissions`] trait
-///
-/// [`extract_entity`] captures this pattern as a single generic async
-/// function, and the per-type [`FromRequestParts`] impls become one-liners.
+/// Shared helpers for Axum extractors and responses.
 use std::collections::HashMap;
 
-use axum::extract::{FromRef, FromRequestParts, Path};
-use axum::http::request::Parts;
+use axum::extract::{FromRef, FromRequest, FromRequestParts, Path};
+use axum::http::{request::Parts, StatusCode};
+use axum::response::{IntoResponse, Response};
 use sea_orm::EntityTrait;
+use serde::{de::DeserializeOwned, Serialize};
 use uuid::Uuid;
 
 use crate::{handler::Error, Db, Permissions, PermissionsActor};
+
+/// A JSON extractor/response that mirrors the Trillium `api()` + `Json<T>`
+/// behaviour: request bodies are deserialized via [`serde_path_to_error`] so
+/// that parse failures produce the same `{"path":…,"message":…}` error shape.
+pub struct Json<T>(pub T);
+
+impl<T, S> FromRequest<S> for Json<T>
+where
+    T: DeserializeOwned,
+    S: Send + Sync,
+{
+    type Rejection = Error;
+
+    async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self, Self::Rejection> {
+        let bytes = axum::body::Bytes::from_request(req, state).await.map_err(|e| {
+            if e.status() == StatusCode::PAYLOAD_TOO_LARGE {
+                Error::PayloadTooLarge
+            } else {
+                Error::Other(std::sync::Arc::new(e))
+            }
+        })?;
+        let deserializer = &mut serde_json::Deserializer::from_slice(&bytes);
+        serde_path_to_error::deserialize(deserializer)
+            .map(Json)
+            .map_err(|err| {
+                Error::Json(trillium_api::Error::ParseError {
+                    path: err.path().to_string(),
+                    message: err.inner().to_string(),
+                })
+            })
+    }
+}
+
+impl<T: Serialize> IntoResponse for Json<T> {
+    fn into_response(self) -> Response {
+        axum::Json(self.0).into_response()
+    }
+}
 
 /// Look up an entity by a named path parameter, check permissions, and
 /// return it — or an appropriate [`Error`].
@@ -32,8 +61,8 @@ use crate::{handler::Error, Db, Permissions, PermissionsActor};
 ///
 /// # Errors
 ///
-/// * [`Error::NotFound`] — path param missing / unparseable, or no DB row
-/// * [`Error::AccessDenied`] — actor lacks permission for the HTTP method
+/// * [`Error::NotFound`] — path param missing / unparseable, no DB row,
+///   or the actor lacks permission (intentionally hides resource existence)
 /// * Propagates DB errors and [`PermissionsActor`] extraction failures
 pub async fn extract_entity<E, S>(
     parts: &mut Parts,
@@ -63,5 +92,5 @@ where
 
     actor
         .if_allowed_http(&parts.method, entity)
-        .ok_or(Error::AccessDenied)
+        .ok_or(Error::NotFound)
 }

@@ -14,7 +14,7 @@ pub(crate) mod session_store;
 
 pub(crate) mod proxy;
 
-use crate::{clients::Auth0Client, routes, Config, Crypter, Db, FeatureFlags};
+use crate::{clients::Auth0Client, routes, routes::axum_routes, Config, Crypter, Db, FeatureFlags};
 
 use axum::extract::{DefaultBodyLimit, FromRef};
 use axum::http::{header, HeaderValue};
@@ -129,18 +129,17 @@ impl DivviupApi {
 
         // Spawn the Axum server on an ephemeral port. Routes will be migrated
         // here incrementally.
+        let auth0_client = Auth0Client::new(&config);
         let axum_state = AxumAppState {
             db: db.clone(),
             config: config.clone(),
-            auth0_client: Auth0Client::new(&config),
+            auth0_client: auth0_client.clone(),
             oauth_client: OauthClient::new(&config.oauth_config()),
             crypter: config.crypter.clone(),
             feature_flags: config.feature_flags(),
         };
         // Middleware stack in logical order (outermost first), matching the
         // Trillium api() handler chain.
-        //
-        // TODO(Part 7): ReplaceMimeTypesLayer goes on the /api/* sub-router.
         let middleware = ServiceBuilder::new()
             .layer(TraceLayer::new_for_http())
             .layer(DefaultBodyLimit::max(1024 * 1024))
@@ -167,6 +166,7 @@ impl DivviupApi {
             .route("/login", axum::routing::get(oauth2::redirect))
             .route("/logout", axum::routing::get(oauth2::logout))
             .route("/callback", axum::routing::get(oauth2::callback))
+            .nest("/api", axum_routes::api_router())
             .layer(middleware)
             .with_state(axum_state);
         let axum_listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0))
@@ -194,7 +194,7 @@ impl DivviupApi {
                 logger(),
                 #[cfg(assets)]
                 instrument_handler(assets::static_assets(&config)),
-                instrument_handler(api(&db, &config)),
+                instrument_handler(api(&db, &config, auth0_client)),
                 proxy,
                 ErrorHandler,
             )),
@@ -228,7 +228,33 @@ impl AsRef<Db> for DivviupApi {
     }
 }
 
-/// Test-only shim: if the request carries an `X-Integration-Testing-User`
+/// Trillium-side test shim that bridges user injection between the Trillium
+/// and Axum worlds during the migration:
+///
+/// - If the `X-Integration-Testing-User` header is present (set by
+///   `TestExt::with_user`), deserialize the user into connection state so
+///   `actor_required` passes.
+/// - If a `User` was injected via `.with_state()` (legacy test pattern),
+///   serialize it into the header so the proxy forwards it to Axum.
+#[cfg(feature = "test-header-injection")]
+async fn inject_test_user_trillium(mut conn: trillium::Conn) -> trillium::Conn {
+    if let Some(user) = conn
+        .request_headers()
+        .get_str("x-integration-testing-user")
+        .and_then(|v| serde_json::from_str::<crate::User>(v).ok())
+    {
+        conn.insert_state(user);
+    } else if let Some(json) = conn
+        .state::<crate::User>()
+        .and_then(|u| serde_json::to_string(u).ok())
+    {
+        conn.request_headers_mut()
+            .insert("x-integration-testing-user", json);
+    }
+    conn
+}
+
+/// Axum-side test shim: if the request carries an `X-Integration-Testing-User`
 /// header with a JSON-encoded [`crate::User`], place the user in request
 /// extensions so [`crate::User`]'s extractor picks it up without a real
 /// session.
@@ -262,20 +288,22 @@ impl<H: Handler> NamedHandler<H> {
     }
 }
 
-fn api(db: &Db, config: &Config) -> impl Handler {
+fn api(db: &Db, config: &Config, auth0_client: Auth0Client) -> impl Handler {
     NamedHandler::new(
         "api",
         (
             instrument_handler(compression()),
             #[cfg(feature = "integration-testing")]
             state(crate::User::for_integration_testing()),
+            #[cfg(feature = "test-header-injection")]
+            inject_test_user_trillium,
             instrument_handler(cookies()),
             instrument_handler(
                 sessions(
                     SessionStore::new(db.clone()),
                     &config.session_secrets.current,
                 )
-                .with_cookie_name("divviup.sid")
+                .with_cookie_name(session_store::SESSION_COOKIE_NAME)
                 .with_older_secrets(&config.session_secrets.older),
             ),
             state(config.client.clone()),
@@ -284,7 +312,7 @@ fn api(db: &Db, config: &Config) -> impl Handler {
             instrument_handler(cors_headers(config)),
             cache_control([Private, MustRevalidate]),
             db.clone(),
-            instrument_handler(routes(config)),
+            instrument_handler(routes(auth0_client)),
         ),
     )
 }
