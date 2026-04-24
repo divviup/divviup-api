@@ -61,8 +61,9 @@ impl<T: Serialize> IntoResponse for Json<T> {
 ///
 /// # Errors
 ///
-/// * [`Error::NotFound`] — path param missing / unparseable, no DB row,
-///   or the actor lacks permission (intentionally hides resource existence)
+/// * [`Error::NotFound`] — path param missing or unparseable
+/// * [`Error::AccessDenied`] — no DB row or the actor lacks permission
+///   (consistent 403 prevents resource-existence enumeration)
 /// * Propagates DB errors and [`PermissionsActor`] extraction failures
 pub async fn extract_entity<E, S>(
     parts: &mut Parts,
@@ -88,9 +89,12 @@ where
     let actor = PermissionsActor::from_request_parts(parts, state).await?;
     let db = Db::from_ref(state);
 
-    let entity = E::find_by_id(id).one(&db).await?.ok_or(Error::NotFound)?;
+    let entity = E::find_by_id(id)
+        .one(&db)
+        .await?
+        .ok_or(Error::AccessDenied)?;
 
     actor
         .if_allowed_http(&parts.method, entity)
-        .ok_or(Error::NotFound)
+        .ok_or(Error::AccessDenied)
 }
