@@ -1,26 +1,18 @@
 use crate::{
     entity::{Account, ApiToken, ApiTokenColumn, ApiTokens, UpdateApiToken},
-    handler::extract::extract_entity,
+    handler::{extract::extract_entity, extract::Json},
     Db, Error, Permissions, PermissionsActor,
 };
-use axum::extract::{FromRef, FromRequestParts};
-use axum::http::request::Parts;
+use axum::{
+    extract::{FromRef, FromRequestParts, State},
+    http::{request::Parts, StatusCode},
+    response::IntoResponse,
+};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter, QueryOrder};
-use trillium::{Conn, Handler, Status};
-use trillium_api::{FromConn, Json};
+use trillium::Conn;
+use trillium_api::FromConn;
 use trillium_router::RouterConnExt;
 use uuid::Uuid;
-
-pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
-    account
-        .find_related(ApiTokens)
-        .filter(ApiTokenColumn::DeletedAt.is_null())
-        .order_by_desc(ApiTokenColumn::CreatedAt)
-        .all(&db)
-        .await
-        .map(Json)
-        .map_err(Error::from)
-}
 
 #[trillium::async_trait]
 impl FromConn for ApiToken {
@@ -56,22 +48,34 @@ impl Permissions for ApiToken {
     }
 }
 
-pub async fn create(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
+pub async fn index(account: Account, State(db): State<Db>) -> Result<Json<Vec<ApiToken>>, Error> {
+    account
+        .find_related(ApiTokens)
+        .filter(ApiTokenColumn::DeletedAt.is_null())
+        .order_by_desc(ApiTokenColumn::CreatedAt)
+        .all(&db)
+        .await
+        .map(Json)
+        .map_err(Error::from)
+}
+
+pub async fn create(account: Account, State(db): State<Db>) -> Result<impl IntoResponse, Error> {
     let (api_token, token) = ApiToken::build(&account);
     let mut api_token = api_token.insert(&db).await?;
     api_token.token = Some(token);
-    Ok((Status::Created, Json(api_token)))
+    Ok((StatusCode::CREATED, Json(api_token)))
 }
 
-pub async fn delete(_: &mut Conn, (api_token, db): (ApiToken, Db)) -> Result<Status, Error> {
+pub async fn delete(api_token: ApiToken, State(db): State<Db>) -> Result<StatusCode, Error> {
     api_token.tombstone().update(&db).await?;
-    Ok(Status::NoContent)
+    Ok(StatusCode::NO_CONTENT)
 }
 
 pub async fn update(
-    _: &mut Conn,
-    (api_token, db, Json(update)): (ApiToken, Db, Json<UpdateApiToken>),
-) -> Result<impl Handler, Error> {
+    api_token: ApiToken,
+    State(db): State<Db>,
+    Json(update): Json<UpdateApiToken>,
+) -> Result<impl IntoResponse, Error> {
     let token = update.build(api_token)?.update(&db).await?;
-    Ok((Json(token), Status::Ok))
+    Ok((StatusCode::OK, Json(token)))
 }

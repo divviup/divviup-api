@@ -1,14 +1,16 @@
 use crate::{
     entity::{Account, Accounts, CreateMembership, NewAccount, UpdateAccount},
-    handler::{extract::extract_entity, Error},
+    handler::{extract::extract_entity, extract::Json, Error},
     Db, Permissions, PermissionsActor,
 };
-use axum::extract::{FromRef, FromRequestParts};
-use axum::http::request::Parts;
+use axum::{
+    extract::{FromRef, FromRequestParts, State},
+    http::{header, request::Parts, StatusCode},
+    response::IntoResponse,
+};
 use sea_orm::{ActiveModelTrait, EntityTrait, TransactionTrait};
-use trillium::{async_trait, Conn, Handler, Status};
-use trillium_api::{FromConn, Json};
-use trillium_caching_headers::CachingHeadersExt;
+use trillium::Conn;
+use trillium_api::FromConn;
 use trillium_router::RouterConnExt;
 use uuid::Uuid;
 
@@ -18,7 +20,7 @@ impl Permissions for Account {
     }
 }
 
-#[async_trait]
+#[trillium::async_trait]
 impl FromConn for Account {
     async fn from_conn(conn: &mut Conn) -> Option<Self> {
         let actor = PermissionsActor::from_conn(conn).await?;
@@ -46,15 +48,15 @@ where
     }
 }
 
-pub async fn show(conn: &mut Conn, account: Account) -> Json<Account> {
-    conn.set_last_modified(account.updated_at.into());
-    Json(account)
+pub async fn show(account: Account) -> impl IntoResponse {
+    let last_modified = httpdate::fmt_http_date(account.updated_at.into());
+    ([(header::LAST_MODIFIED, last_modified)], Json(account))
 }
 
 pub async fn index(
-    _: &mut Conn,
-    (actor, db): (PermissionsActor, Db),
-) -> Result<impl Handler, Error> {
+    actor: PermissionsActor,
+    State(db): State<Db>,
+) -> Result<Json<Vec<Account>>, Error> {
     Accounts::for_actor(&actor)
         .all(&db)
         .await
@@ -63,9 +65,10 @@ pub async fn index(
 }
 
 pub async fn create(
-    _: &mut Conn,
-    (Json(new_account), actor, db): (Json<NewAccount>, PermissionsActor, Db),
-) -> Result<impl Handler, Error> {
+    actor: PermissionsActor,
+    State(db): State<Db>,
+    Json(new_account): Json<NewAccount>,
+) -> Result<impl IntoResponse, Error> {
     if !(actor.is_user() || actor.is_admin()) {
         return Err(Error::AccessDenied);
     }
@@ -79,13 +82,14 @@ pub async fn create(
         membership.build(&account)?.insert(&transaction).await?;
     }
     transaction.commit().await?;
-    Ok((Json(account), Status::Accepted))
+    Ok((StatusCode::ACCEPTED, Json(account)))
 }
 
 pub async fn update(
-    _: &mut Conn,
-    (account, Json(update_account), db): (Account, Json<UpdateAccount>, Db),
-) -> Result<impl Handler, Error> {
+    account: Account,
+    State(db): State<Db>,
+    Json(update_account): Json<UpdateAccount>,
+) -> Result<impl IntoResponse, Error> {
     let account = update_account.build(account)?.update(&db).await?;
-    Ok((Json(account), Status::Accepted))
+    Ok((StatusCode::ACCEPTED, Json(account)))
 }

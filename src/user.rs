@@ -100,17 +100,24 @@ impl User {
         Db: FromRef<S>,
         S: Send + Sync,
     {
-        // Cache: return early if already extracted for this request.
+        // Cache: return early if already extracted and admin-populated.
         if let Some(user) = parts.extensions.get::<Self>() {
-            return Ok(Some(user.clone()));
+            if user.admin.is_some() {
+                return Ok(Some(user.clone()));
+            }
         }
 
-        let Some(session) = parts.extensions.get::<Session>() else {
-            return Ok(None);
-        };
-
-        let Some(mut user) = session.get::<Self>(USER_SESSION_KEY).await? else {
-            return Ok(None);
+        // Get a mutable user, preferring extensions and falling back to session.
+        let mut user = if let Some(user) = parts.extensions.remove::<Self>() {
+            user
+        } else {
+            let Some(session) = parts.extensions.get::<Session>() else {
+                return Ok(None);
+            };
+            let Some(user) = session.get::<Self>(USER_SESSION_KEY).await? else {
+                return Ok(None);
+            };
+            user
         };
 
         let db = Db::from_ref(state);

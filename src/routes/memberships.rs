@@ -1,31 +1,35 @@
 use crate::{
     entity::{Account, CreateMembership, Membership, MembershipColumn, Memberships},
+    handler::extract::Json,
     queue::Job,
     Db, Error, PermissionsActor,
 };
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+};
+use std::collections::HashMap;
 use sea_orm::{
     sea_query::all, ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter,
     TransactionTrait,
 };
-use trillium::{Conn, Handler, Status};
-use trillium_api::Json;
-
-use trillium_router::RouterConnExt;
 use uuid::Uuid;
 
-pub async fn index(_: &mut Conn, (account, db): (Account, Db)) -> Result<impl Handler, Error> {
+pub async fn index(account: Account, State(db): State<Db>) -> Result<Json<Vec<Membership>>, Error> {
     account
         .find_related(Memberships)
         .all(&db)
         .await
-        .map_err(Error::from)
         .map(Json)
+        .map_err(Error::from)
 }
 
 pub async fn create(
-    _: &mut Conn,
-    (account, Json(membership), db): (Account, Json<CreateMembership>, Db),
-) -> Result<(Json<Membership>, Status), Error> {
+    account: Account,
+    State(db): State<Db>,
+    Json(membership): Json<CreateMembership>,
+) -> Result<impl IntoResponse, Error> {
     let membership = membership.build(&account)?;
     if let Some(membership) = Memberships::find()
         .filter(all![
@@ -35,7 +39,7 @@ pub async fn create(
         .one(&db)
         .await?
     {
-        return Ok((Json(membership), Status::Ok));
+        return Ok((StatusCode::OK, Json(membership)));
     }
 
     let tx = db.begin().await?;
@@ -54,18 +58,18 @@ pub async fn create(
 
     tx.commit().await?;
 
-    Ok((Json(membership), Status::Created))
+    Ok((StatusCode::CREATED, Json(membership)))
 }
 
 pub async fn delete(
-    conn: &mut Conn,
-    (actor, db): (PermissionsActor, Db),
-) -> Result<impl Handler, Error> {
-    let membership_id = conn
-        .param("membership_id")
-        .unwrap()
-        .parse::<Uuid>()
-        .map_err(|_| Error::NotFound)?;
+    Path(params): Path<HashMap<String, String>>,
+    actor: PermissionsActor,
+    State(db): State<Db>,
+) -> Result<StatusCode, Error> {
+    let membership_id = params
+        .get("membership_id")
+        .and_then(|s| s.parse::<Uuid>().ok())
+        .ok_or(Error::NotFound)?;
 
     let membership = Memberships::find_by_id(membership_id)
         .one(&db)
@@ -76,7 +80,7 @@ pub async fn delete(
         Err(Error::AccessDenied)
     } else if actor.is_admin() || actor.account_ids().contains(&membership.account_id) {
         membership.delete(&db).await?;
-        Ok(Status::NoContent)
+        Ok(StatusCode::NO_CONTENT)
     } else {
         Err(Error::NotFound)
     }
