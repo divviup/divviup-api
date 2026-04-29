@@ -1,3 +1,9 @@
+// During the proxy migration, tests that need an authenticated user inject one
+// via the `X-Integration-Testing-User` header, read by a middleware compiled
+// only in debug builds (`#[cfg(debug_assertions)]`). This is less secure than
+// gating on a feature flag, but avoids a Cargo feature-unification problem
+// where the middleware would leak into release workspace builds. The middleware
+// is removed entirely once Trillium is gone (Part 8/9).
 use test_support::{assert_eq, test, *};
 
 #[test(harness = set_up)]

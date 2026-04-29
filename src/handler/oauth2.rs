@@ -93,11 +93,11 @@ pub async fn callback(
         .ok_or(Error::CallbackMissingCode)?;
 
     let pkce_verifier: PkceCodeVerifier = session
-        .remove(PKCE_SESSION_KEY)
+        .get(PKCE_SESSION_KEY)
         .await?
         .ok_or(Error::CallbackMissingPkce)?;
 
-    let session_csrf: Option<String> = session.remove(CSRF_SESSION_KEY).await?;
+    let session_csrf: Option<String> = session.get(CSRF_SESSION_KEY).await?;
     match (session_csrf, &params.state) {
         (Some(a), Some(b)) if a == *b => {}
         _ => return Err(Error::CallbackCsrfMismatch),

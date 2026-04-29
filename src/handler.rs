@@ -152,7 +152,9 @@ impl DivviupApi {
             .layer(axum_cors_layer(&config))
             .layer(axum_session_layer(db.clone(), &config.session_secrets));
 
-        #[cfg(feature = "test-header-injection")]
+        // TODO: remove when Trillium is removed — the test harness will switch
+        // to tower::ServiceExt::oneshot and this middleware becomes unnecessary.
+        #[cfg(debug_assertions)]
         let middleware =
             middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
 
@@ -233,9 +235,9 @@ impl AsRef<Db> for DivviupApi {
 /// extensions so [`crate::User`]'s extractor picks it up without a real
 /// session.
 ///
-/// Only compiled under `--features test-header-injection` (enabled by
-/// `test-support`). Never compiled into deployed builds.
-#[cfg(feature = "test-header-injection")]
+/// Only compiled in debug/test builds (via `debug_assertions`); stripped
+/// from release builds. TODO: remove when Trillium is removed.
+#[cfg(debug_assertions)]
 async fn inject_integration_testing_user(
     mut request: axum::extract::Request,
     next: axum::middleware::Next,
