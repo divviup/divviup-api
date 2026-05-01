@@ -23,13 +23,15 @@ where
     type Rejection = Error;
 
     async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self, Self::Rejection> {
-        let bytes = axum::body::Bytes::from_request(req, state).await.map_err(|e| {
-            if e.status() == StatusCode::PAYLOAD_TOO_LARGE {
-                Error::PayloadTooLarge
-            } else {
-                Error::Other(std::sync::Arc::new(e))
-            }
-        })?;
+        let bytes = axum::body::Bytes::from_request(req, state)
+            .await
+            .map_err(|e| {
+                if e.status() == StatusCode::PAYLOAD_TOO_LARGE {
+                    Error::PayloadTooLarge
+                } else {
+                    Error::Other(std::sync::Arc::new(e))
+                }
+            })?;
         let deserializer = &mut serde_json::Deserializer::from_slice(&bytes);
         serde_path_to_error::deserialize(deserializer)
             .map(Json)

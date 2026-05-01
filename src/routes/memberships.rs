@@ -9,11 +9,11 @@ use axum::{
     http::StatusCode,
     response::IntoResponse,
 };
-use std::collections::HashMap;
 use sea_orm::{
     sea_query::all, ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter,
     TransactionTrait,
 };
+use std::collections::HashMap;
 use uuid::Uuid;
 
 pub async fn index(account: Account, State(db): State<Db>) -> Result<Json<Vec<Membership>>, Error> {
