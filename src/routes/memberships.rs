@@ -17,7 +17,12 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 pub async fn index(account: Account, State(db): State<Db>) -> Result<Json<Vec<Membership>>, Error> {
-    Ok(Json(account.find_related(Memberships).all(&db).await?))
+    account
+        .find_related(Memberships)
+        .all(&db)
+        .await
+        .map(Json)
+        .map_err(Error::from)
 }
 
 pub async fn create(

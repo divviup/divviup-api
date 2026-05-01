@@ -96,7 +96,7 @@ mod create {
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_eq!(conn.status().unwrap_or(Status::NotFound), 404);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -179,13 +179,13 @@ mod create {
         let account = fixtures::account(&app).await;
         let email = format!("{}@example.com", fixtures::random_name());
         let count_before = Memberships::find().count(app.db()).await?;
-        let mut conn = post(format!("/api/accounts/{}/memberships", account.id))
+        let conn = post(format!("/api/accounts/{}/memberships", account.id))
             .with_api_headers()
             .with_request_json(json!({ "user_email": email }))
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         let count_after = Memberships::find().count(app.db()).await?;
         assert_eq!(count_before, count_after);
         Ok(())
@@ -217,12 +217,12 @@ mod index {
     async fn not_member(app: DivviupApi) -> TestResult {
         let (_, account, ..) = fixtures::member(&app).await;
         let (user, ..) = fixtures::member(&app).await;
-        let mut conn = get(format!("/api/accounts/{}/memberships", account.id))
+        let conn = get(format!("/api/accounts/{}/memberships", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -301,12 +301,12 @@ mod index {
         fixtures::membership(&app, &account, &fixtures::user()).await;
         fixtures::membership(&app, &account, &fixtures::user()).await;
 
-        let mut conn = get(format!("/api/accounts/{}/memberships", account.id))
+        let conn = get(format!("/api/accounts/{}/memberships", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 }

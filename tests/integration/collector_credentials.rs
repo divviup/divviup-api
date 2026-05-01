@@ -42,7 +42,7 @@ mod index {
         fixtures::collector_credential(&app, &account).await;
         fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = get(format!(
+        let conn = get(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -51,7 +51,7 @@ mod index {
         .run_async(&app)
         .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
 
         Ok(())
     }
@@ -159,7 +159,7 @@ mod index {
         fixtures::collector_credential(&app, &account).await;
         fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = get(format!(
+        let conn = get(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -167,7 +167,7 @@ mod index {
         .with_auth_header(token)
         .run_async(&app)
         .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 }
@@ -214,7 +214,7 @@ mod create {
 
         let collector_credential_count_before =
             CollectorCredentials::find().count(app.db()).await?;
-        let mut conn = post(format!(
+        let conn = post(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -224,7 +224,7 @@ mod create {
         .run_async(&app)
         .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         let collector_credential_count_after = CollectorCredentials::find().count(app.db()).await?;
         assert_eq!(
             collector_credential_count_before,
@@ -335,7 +335,7 @@ mod create {
         let (_, token) = fixtures::api_token(&app, &other_account).await;
         let account = fixtures::account(&app).await;
         let count_before = CollectorCredentials::find().count(app.db()).await?;
-        let mut conn = post(format!(
+        let conn = post(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -344,7 +344,7 @@ mod create {
         .with_request_json(valid_collector_credential_json(random_hpke_config()))
         .run_async(&app)
         .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         let count_after = CollectorCredentials::find().count(app.db()).await?;
         assert_eq!(count_before, count_after);
         Ok(())
@@ -359,12 +359,12 @@ mod delete {
     #[test(harness = set_up)]
     async fn nonexistant_collector_credential(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
-        let mut conn = delete(format!("/api/collector_credentials/{}", Uuid::new_v4()))
+        let conn = delete(format!("/api/collector_credentials/{}", Uuid::new_v4()))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -395,7 +395,7 @@ mod delete {
         let account = fixtures::account(&app).await;
         let (user, ..) = fixtures::member(&app).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
-        let mut conn = delete(format!(
+        let conn = delete(format!(
             "/api/collector_credentials/{}",
             collector_credential.id
         ))
@@ -403,7 +403,7 @@ mod delete {
         .with_state(user)
         .run_async(&app)
         .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert!(!collector_credential
             .reload(app.db())
             .await?
@@ -487,7 +487,7 @@ mod delete {
         let (_, token) = fixtures::api_token(&app, &other_account).await;
         let account = fixtures::account(&app).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
-        let mut conn = delete(format!(
+        let conn = delete(format!(
             "/api/collector_credentials/{}",
             collector_credential.id
         ))
@@ -495,7 +495,7 @@ mod delete {
         .with_auth_header(token)
         .run_async(&app)
         .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert!(!collector_credential
             .reload(app.db())
             .await?
@@ -513,13 +513,13 @@ mod update {
     #[test(harness = set_up)]
     async fn nonexistant_collector_credential(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
-        let mut conn = patch(format!("/api/collector_credentials/{}", Uuid::new_v4()))
+        let conn = patch(format!("/api/collector_credentials/{}", Uuid::new_v4()))
             .with_request_json(json!({ "name": fixtures::random_name() }))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -558,7 +558,7 @@ mod update {
         let account = fixtures::account(&app).await;
         let (user, ..) = fixtures::member(&app).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
-        let mut conn = patch(format!(
+        let conn = patch(format!(
             "/api/collector_credentials/{}",
             collector_credential.id
         ))
@@ -568,7 +568,7 @@ mod update {
         .run_async(&app)
         .await;
         let name_before = collector_credential.name.clone();
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert_eq!(
             collector_credential.reload(app.db()).await?.unwrap().name,
             name_before
@@ -678,7 +678,7 @@ mod update {
         let collector_credential = fixtures::collector_credential(&app, &account).await;
         let name_before = collector_credential.name.clone();
         let name = fixtures::random_name();
-        let mut conn = patch(format!(
+        let conn = patch(format!(
             "/api/collector_credentials/{}",
             collector_credential.id
         ))
@@ -687,7 +687,7 @@ mod update {
         .with_auth_header(token)
         .run_async(&app)
         .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert_eq!(
             collector_credential.reload(app.db()).await?.unwrap().name,
             name_before
