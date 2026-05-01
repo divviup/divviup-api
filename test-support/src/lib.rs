@@ -232,8 +232,9 @@ impl TestExt for TestConn {
     }
 
     /// Simulate an authenticated session for routes that have migrated to the
-    /// Axum side. The header is read by an axum middleware compiled only in
-    /// debug builds (`#[cfg(debug_assertions)]`); stripped from release builds.
+    /// Axum side. The header is read by an axum middleware gated on the
+    /// `test-header-injection` feature; it is not forwarded to or honored by
+    /// anything in production builds.
     fn with_user(self, user: &User) -> Self {
         self.with_request_header(
             "X-Integration-Testing-User",

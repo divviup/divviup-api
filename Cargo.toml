@@ -28,6 +28,12 @@ default-run = "divviup_api_bin"
 default = []
 api-mocks = ["dep:trillium-testing"]
 integration-testing = []
+# Enables a non-production axum middleware that reads an `X-Integration-Testing-User`
+# header and injects the decoded [`User`] into request extensions. Strictly for
+# use by the test harness (`test-support`); never enable in deployed builds.
+# TODO: fold into `integration-testing` once Trillium is removed — the blanket
+# User injection in the Trillium api() handler currently makes them incompatible.
+test-header-injection = []
 otlp-trace = ["opentelemetry/trace", "opentelemetry-otlp", "opentelemetry_sdk/trace", "trillium-opentelemetry/trace"]
 
 [dependencies]
@@ -42,6 +48,7 @@ email_address = "0.2.9"
 fastrand = "2.3.0"
 futures-lite = "2.6.1"
 git-version = "0.3.9"
+httpdate = "1.0.3"
 janus_messages = "0.7.96"
 log = "0.4.27"
 opentelemetry = { version = "0.27.1", features = ["metrics", "logs"] }

@@ -11,7 +11,6 @@ mod users;
 use crate::{
     clients::Auth0Client,
     handler::{actor_required, admin_required, ReplaceMimeTypes},
-    Config,
 };
 pub use health_check::health_check;
 use trillium::{
@@ -21,9 +20,7 @@ use trillium::{
 use trillium_api::api;
 use trillium_router::router;
 
-pub fn routes(config: &Config) -> impl Handler {
-    let auth0_client = Auth0Client::new(config);
-
+pub fn routes(auth0_client: Auth0Client) -> impl Handler {
     router().any(
         &[Get, Post, Delete, Patch],
         "/api/*",
@@ -32,14 +29,16 @@ pub fn routes(config: &Config) -> impl Handler {
 }
 
 fn api_routes() -> impl Handler {
+    // ReplaceMimeTypes stays in the outer chain because the trillium-router's
+    // before_send does not replay path adjustments, so handlers inside route
+    // entries never get their before_send called for wildcard matches. Keeping
+    // it here means it also transforms headers for requests that fall through
+    // to the Axum proxy, but that's harmless: Trillium already validated them,
+    // and the Axum side accepts pre-transformed application/json.
     (
         ReplaceMimeTypes,
         api(actor_required),
         router()
-            .get("/users/me", api(users::show))
-            .get("/accounts", api(accounts::index))
-            .post("/accounts", api(accounts::create))
-            .delete("/memberships/:membership_id", api(memberships::delete))
             .get("/tasks/:task_id", api(tasks::show))
             .patch("/tasks/:task_id", api(tasks::update))
             .delete("/tasks/:task_id", api(tasks::delete))
@@ -50,20 +49,6 @@ fn api_routes() -> impl Handler {
             .post(
                 "/aggregators",
                 (api(admin_required), api(aggregators::admin_create)),
-            )
-            .delete("/api_tokens/:api_token_id", api(api_tokens::delete))
-            .patch("/api_tokens/:api_token_id", api(api_tokens::update))
-            .delete(
-                "/collector_credentials/:collector_credential_id",
-                api(collector_credentials::delete),
-            )
-            .get(
-                "/collector_credentials/:collector_credential_id",
-                api(collector_credentials::show),
-            )
-            .patch(
-                "/collector_credentials/:collector_credential_id",
-                api(collector_credentials::update),
             )
             .any(
                 &[Patch, Get, Post],
@@ -76,16 +61,57 @@ fn api_routes() -> impl Handler {
 
 fn accounts_routes() -> impl Handler {
     router()
-        .patch("/", api(accounts::update))
-        .get("/", api(accounts::show))
-        .get("/memberships", api(memberships::index))
-        .post("/memberships", api(memberships::create))
         .get("/tasks", api(tasks::index))
         .post("/tasks", api(tasks::create))
         .post("/aggregators", api(aggregators::create))
         .get("/aggregators", api(aggregators::index))
-        .post("/api_tokens", api(api_tokens::create))
-        .get("/api_tokens", api(api_tokens::index))
-        .get("/collector_credentials", api(collector_credentials::index))
-        .post("/collector_credentials", api(collector_credentials::create))
+}
+
+pub(crate) mod axum_routes {
+    use super::{accounts, api_tokens, collector_credentials, memberships, users};
+    use crate::handler::AxumAppState;
+    use axum::routing::{delete, get};
+
+    /// Axum sub-router for `/api` routes.
+    ///
+    /// During the proxy migration, Trillium's `ReplaceMimeTypes` handler in
+    /// the outer chain already validates/normalizes request headers and sets
+    /// the response Content-Type via `before_send`. So we do NOT apply
+    /// `ReplaceMimeTypesLayer` here — it would reject the already-normalized
+    /// `application/json` Content-Type that Trillium forwarded.
+    ///
+    /// TODO: wire `ReplaceMimeTypesLayer` once the Trillium proxy is removed.
+    pub fn api_router() -> axum::Router<AxumAppState> {
+        axum::Router::new()
+            .route("/users/me", get(users::show))
+            .route("/accounts", get(accounts::index).post(accounts::create))
+            .route("/memberships/{membership_id}", delete(memberships::delete))
+            .route(
+                "/api_tokens/{api_token_id}",
+                delete(api_tokens::delete).patch(api_tokens::update),
+            )
+            .route(
+                "/collector_credentials/{collector_credential_id}",
+                delete(collector_credentials::delete)
+                    .get(collector_credentials::show)
+                    .patch(collector_credentials::update),
+            )
+            .nest(
+                "/accounts/{account_id}",
+                axum::Router::new()
+                    .route("/", get(accounts::show).patch(accounts::update))
+                    .route(
+                        "/memberships",
+                        get(memberships::index).post(memberships::create),
+                    )
+                    .route(
+                        "/api_tokens",
+                        get(api_tokens::index).post(api_tokens::create),
+                    )
+                    .route(
+                        "/collector_credentials",
+                        get(collector_credentials::index).post(collector_credentials::create),
+                    ),
+            )
+    }
 }

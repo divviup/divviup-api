@@ -82,6 +82,8 @@ pub enum Error {
     TaskProvisioning(#[from] crate::entity::task::TaskProvisioningError),
     #[error(transparent)]
     Uuid(#[from] uuid::Error),
+    #[error("payload too large")]
+    PayloadTooLarge,
     #[error("encryption error")]
     Encryption,
     #[error(transparent)]
@@ -165,6 +167,8 @@ impl IntoResponse for Error {
 
             Error::NotFound => StatusCode::NOT_FOUND.into_response(),
 
+            Error::PayloadTooLarge => StatusCode::PAYLOAD_TOO_LARGE.into_response(),
+
             Error::Json(ApiError::UnsupportedMimeType { .. }) => {
                 StatusCode::NOT_ACCEPTABLE.into_response()
             }
@@ -230,6 +234,12 @@ mod tests {
         let err = Error::Validation(ValidationErrors::new());
         let resp = err.into_response();
         assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn payload_too_large_is_413() {
+        let resp = Error::PayloadTooLarge.into_response();
+        assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE);
     }
 
     #[test]

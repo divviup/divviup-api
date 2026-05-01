@@ -1,7 +1,5 @@
-use crate::user::User;
-use trillium::Conn;
-use trillium_api::Json;
+use crate::{handler::extract::Json, User};
 
-pub async fn show(_: &mut Conn, user: User) -> Json<User> {
+pub async fn show(user: User) -> Json<User> {
     Json(user)
 }
