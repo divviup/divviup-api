@@ -101,6 +101,7 @@ impl User {
         S: Send + Sync,
     {
         // Cache: return early if already extracted and admin-populated.
+        // Cleanup after Trillium is removed.
         if let Some(user) = parts.extensions.get::<Self>() {
             if user.admin.is_some() {
                 return Ok(Some(user.clone()));

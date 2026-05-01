@@ -1,11 +1,14 @@
-/// Shared helpers for Axum extractors and responses.
+//! Shared helpers for Axum extractors and responses.
 use std::collections::HashMap;
+use std::sync::Arc;
 
-use axum::extract::{FromRef, FromRequest, FromRequestParts, Path};
+use axum::body::Bytes;
+use axum::extract::{FromRef, FromRequest, FromRequestParts, Path, Request};
 use axum::http::{request::Parts, StatusCode};
 use axum::response::{IntoResponse, Response};
 use sea_orm::EntityTrait;
 use serde::{de::DeserializeOwned, Serialize};
+use trillium_api::Error as ApiError;
 use uuid::Uuid;
 
 use crate::{handler::Error, Db, Permissions, PermissionsActor};
@@ -22,21 +25,19 @@ where
 {
     type Rejection = Error;
 
-    async fn from_request(req: axum::extract::Request, state: &S) -> Result<Self, Self::Rejection> {
-        let bytes = axum::body::Bytes::from_request(req, state)
-            .await
-            .map_err(|e| {
-                if e.status() == StatusCode::PAYLOAD_TOO_LARGE {
-                    Error::PayloadTooLarge
-                } else {
-                    Error::Other(std::sync::Arc::new(e))
-                }
-            })?;
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+        let bytes = Bytes::from_request(req, state).await.map_err(|e| {
+            if e.status() == StatusCode::PAYLOAD_TOO_LARGE {
+                Error::PayloadTooLarge
+            } else {
+                Error::Other(Arc::new(e))
+            }
+        })?;
         let deserializer = &mut serde_json::Deserializer::from_slice(&bytes);
         serde_path_to_error::deserialize(deserializer)
             .map(Json)
             .map_err(|err| {
-                Error::Json(trillium_api::Error::ParseError {
+                Error::Json(ApiError::ParseError {
                     path: err.path().to_string(),
                     message: err.inner().to_string(),
                 })
