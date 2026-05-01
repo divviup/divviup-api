@@ -15,6 +15,7 @@ pub(crate) mod session_store;
 pub(crate) mod proxy;
 
 use crate::{clients::Auth0Client, routes, routes::axum_routes, Config, Crypter, Db, FeatureFlags};
+use trillium_client::Client;
 
 use axum::extract::{DefaultBodyLimit, FromRef};
 use axum::http::{header, HeaderValue};
@@ -66,6 +67,7 @@ pub struct AxumAppState {
     pub(crate) oauth_client: OauthClient,
     pub(crate) crypter: Crypter,
     pub(crate) feature_flags: FeatureFlags,
+    pub(crate) client: Client,
 }
 
 impl FromRef<AxumAppState> for Db {
@@ -104,6 +106,12 @@ impl FromRef<AxumAppState> for FeatureFlags {
     }
 }
 
+impl FromRef<AxumAppState> for Client {
+    fn from_ref(state: &AxumAppState) -> Self {
+        state.client.clone()
+    }
+}
+
 #[derive(Handler, Debug)]
 pub struct DivviupApi {
     #[handler(except = init)]
@@ -137,6 +145,7 @@ impl DivviupApi {
             oauth_client: OauthClient::new(&config.oauth_config()),
             crypter: config.crypter.clone(),
             feature_flags: config.feature_flags(),
+            client: config.client.clone(),
         };
         // Middleware stack in logical order (outermost first), matching the
         // Trillium api() handler chain.
