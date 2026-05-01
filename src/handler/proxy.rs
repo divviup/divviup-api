@@ -2,7 +2,10 @@
 //! the local Axum server. This exists only during the incremental migration and
 //! will be removed once all routes have been moved to Axum.
 
-use reqwest::header::{HeaderName, CONNECTION, HOST, TE, TRAILER, TRANSFER_ENCODING};
+use reqwest::{
+    header::{HeaderName, CONNECTION, HOST, TE, TRAILER, TRANSFER_ENCODING},
+    redirect,
+};
 use std::net::SocketAddr;
 use trillium::{Conn, Handler, Status};
 
@@ -19,6 +22,7 @@ impl AxumProxy {
             upstream: format!("http://[::1]:{}", addr.port()),
             client: reqwest::Client::builder()
                 .no_proxy()
+                .redirect(redirect::Policy::none())
                 .build()
                 .expect("failed to build proxy HTTP client"),
         }

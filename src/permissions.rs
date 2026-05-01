@@ -118,14 +118,14 @@ where
         }
 
         let abt = AccountBearerToken::from_parts(parts, state).await;
-        let user_result = User::from_parts(parts, state).await;
+        let user = User::from_parts(parts, state).await?;
 
         // Match the Trillium behavior: if both a bearer token and a session
         // user are present, reject the request. A request should authenticate
         // via exactly one mechanism.
-        let actor = match (abt, user_result) {
-            (Some(abt), Err(_)) => Self::ApiToken(abt),
-            (None, Ok(user)) => {
+        let actor = match (abt, user) {
+            (Some(abt), None) => Self::ApiToken(abt),
+            (None, Some(user)) => {
                 let db = Db::from_ref(state);
                 let memberships = user.memberships().all(&db).await.map_err(Error::from)?;
                 Self::User(user, memberships)

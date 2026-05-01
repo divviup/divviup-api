@@ -203,6 +203,7 @@ pub trait TestExt {
     fn with_api_host(self) -> Self;
     fn with_app_host(self) -> Self;
     fn with_auth_header(self, token: HeaderValue) -> Self;
+    fn with_user(self, user: &User) -> Self;
 }
 
 impl TestExt for TestConn {
@@ -228,6 +229,16 @@ impl TestExt for TestConn {
 
     fn with_auth_header(self, token: HeaderValue) -> Self {
         self.with_request_header(KnownHeaderName::Authorization, token)
+    }
+
+    /// Simulate an authenticated session for routes that have migrated to the
+    /// Axum side. The header is read by an axum middleware compiled only in
+    /// debug builds (`#[cfg(debug_assertions)]`); stripped from release builds.
+    fn with_user(self, user: &User) -> Self {
+        self.with_request_header(
+            "X-Integration-Testing-User",
+            serde_json::to_string(user).unwrap(),
+        )
     }
 }
 
