@@ -19,32 +19,11 @@ use std::time::Duration;
 use time::OffsetDateTime;
 use tokio::join;
 use tracing::warn;
-use trillium::Conn;
-use trillium_api::FromConn;
 use trillium_client::Client;
-use trillium_router::RouterConnExt;
 
 impl Permissions for Task {
     fn allow_write(&self, actor: &PermissionsActor) -> bool {
         actor.is_admin() || actor.account_ids().contains(&self.account_id)
-    }
-}
-
-#[trillium::async_trait]
-impl FromConn for Task {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let actor = PermissionsActor::from_conn(conn).await?;
-        let db: &Db = conn.state()?;
-        let id = conn.param("task_id")?;
-
-        match Tasks::find_by_id(id).one(db).await {
-            Ok(Some(task)) => actor.if_allowed(conn.method(), task),
-            Ok(None) => None,
-            Err(error) => {
-                conn.insert_state(Error::from(error));
-                None
-            }
-        }
     }
 }
 

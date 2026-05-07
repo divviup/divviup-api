@@ -8,58 +8,18 @@ mod memberships;
 mod tasks;
 mod users;
 
-use crate::{
-    clients::Auth0Client,
-    handler::{actor_required, ReplaceMimeTypes},
-};
 pub use health_check::health_check;
-use trillium::{
-    state, Handler,
-    Method::{Delete, Get, Patch, Post},
-};
-use trillium_api::api;
-use trillium_router::router;
-
-pub fn routes(auth0_client: Auth0Client) -> impl Handler {
-    router().any(
-        &[Get, Post, Delete, Patch],
-        "/api/*",
-        (state(auth0_client), api_routes()),
-    )
-}
-
-fn api_routes() -> impl Handler {
-    // ReplaceMimeTypes stays in the outer chain because the trillium-router's
-    // before_send does not replay path adjustments, so handlers inside route
-    // entries never get their before_send called for wildcard matches. Keeping
-    // it here means it also transforms headers for requests that fall through
-    // to the Axum proxy, but that's harmless: Trillium already validated them,
-    // and the Axum side accepts pre-transformed application/json.
-    (
-        ReplaceMimeTypes,
-        api(actor_required),
-        router().all("/admin/*", admin::routes()),
-    )
-}
 
 pub(crate) mod axum_routes {
     use super::{
-        accounts, aggregators::axum_handler as aggregators, api_tokens, collector_credentials,
-        memberships, tasks::axum_handler as tasks, users,
+        accounts, admin::axum_handler as admin, aggregators::axum_handler as aggregators,
+        api_tokens, collector_credentials, memberships, tasks::axum_handler as tasks, users,
     };
-    use crate::handler::AxumAppState;
+    use crate::handler::{custom_mime_types::ReplaceMimeTypesLayer, AxumAppState};
     use axum::routing::{delete, get};
 
     /// Axum sub-router for `/api` routes.
-    ///
-    /// During the proxy migration, Trillium's `ReplaceMimeTypes` handler in
-    /// the outer chain already validates/normalizes request headers and sets
-    /// the response Content-Type via `before_send`. So we do NOT apply
-    /// `ReplaceMimeTypesLayer` here — it would reject the already-normalized
-    /// `application/json` Content-Type that Trillium forwarded.
-    ///
-    /// TODO: wire `ReplaceMimeTypesLayer` once the Trillium proxy is removed.
-    pub fn api_router() -> axum::Router<AxumAppState> {
+    pub fn api_router(state: &AxumAppState) -> axum::Router<AxumAppState> {
         axum::Router::new()
             .route("/users/me", get(users::show))
             .route("/accounts", get(accounts::index).post(accounts::create))
@@ -89,6 +49,16 @@ pub(crate) mod axum_routes {
                 get(tasks::show).patch(tasks::update).delete(tasks::delete),
             )
             .nest(
+                "/admin",
+                axum::Router::new()
+                    .route("/queue", get(admin::index))
+                    .route("/queue/{job_id}", get(admin::show).delete(admin::delete))
+                    .route_layer(axum::middleware::from_fn_with_state(
+                        state.clone(),
+                        admin::require_admin,
+                    )),
+            )
+            .nest(
                 "/accounts/{account_id}",
                 axum::Router::new()
                     .route("/", get(accounts::show).patch(accounts::update))
@@ -110,5 +80,6 @@ pub(crate) mod axum_routes {
                         get(aggregators::index_for_account).post(aggregators::create),
                     ),
             )
+            .layer(ReplaceMimeTypesLayer)
     }
 }

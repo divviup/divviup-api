@@ -34,10 +34,13 @@ pub struct Model {
 #[sea_orm(rs_type = "i32", db_type = "Integer")]
 pub enum JobStatus {
     #[sea_orm(num_value = 0)]
+    #[serde(alias = "pending")]
     Pending,
     #[sea_orm(num_value = 1)]
+    #[serde(alias = "success")]
     Success,
     #[sea_orm(num_value = 2)]
+    #[serde(alias = "failed")]
     Failed,
 }
 

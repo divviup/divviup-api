@@ -6,7 +6,6 @@ pub(crate) mod custom_mime_types;
 pub(crate) mod error;
 pub(crate) mod extract;
 pub(crate) mod logger;
-pub(crate) mod misc;
 pub(crate) mod oauth2;
 pub(crate) mod opentelemetry;
 pub(crate) mod origin_router;
@@ -19,41 +18,32 @@ use trillium_client::Client;
 
 use axum::extract::{DefaultBodyLimit, FromRef};
 use axum::http::{header, HeaderValue};
-use cors::{axum_cors_layer, cors_headers};
+use cors::axum_cors_layer;
 use error::ErrorHandler;
 use logger::logger;
 use oauth2::OauthClient;
 use proxy::AxumProxy;
-use session_store::{axum_session_layer, SessionStore};
+use session_store::axum_session_layer;
 use std::{borrow::Cow, net::Ipv6Addr, net::SocketAddr, sync::Arc};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::trace::TraceLayer;
-use trillium::{state, Handler, Info};
-use trillium_caching_headers::{
-    cache_control, caching_headers,
-    CacheControlDirective::{MustRevalidate, Private},
-};
-use trillium_compression::compression;
+use trillium::{Handler, Info};
+use trillium_caching_headers::caching_headers;
 use trillium_conn_id::conn_id;
-use trillium_cookies::cookies;
 use trillium_forwarding::Forwarding;
 use trillium_macros::Handler;
-use trillium_sessions::sessions;
-
-pub(crate) use custom_mime_types::ReplaceMimeTypes;
-pub(crate) use misc::*;
 
 pub use error::Error;
 pub use origin_router::origin_router;
 
 use self::opentelemetry::opentelemetry;
 
-#[cfg(feature = "otlp-trace")]
+#[cfg(all(assets, feature = "otlp-trace"))]
 use trillium_opentelemetry::global::instrument_handler;
-#[cfg(not(feature = "otlp-trace"))]
+#[cfg(all(assets, not(feature = "otlp-trace")))]
 fn instrument_handler(handler: impl Handler) -> impl Handler {
     handler
 }
@@ -175,7 +165,7 @@ impl DivviupApi {
             .route("/login", axum::routing::get(oauth2::redirect))
             .route("/logout", axum::routing::get(oauth2::logout))
             .route("/callback", axum::routing::get(oauth2::callback))
-            .nest("/api", axum_routes::api_router())
+            .nest("/api", axum_routes::api_router(&axum_state))
             .layer(middleware)
             .with_state(axum_state);
         let axum_listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0))
@@ -203,7 +193,8 @@ impl DivviupApi {
                 logger(),
                 #[cfg(assets)]
                 instrument_handler(assets::static_assets(&config)),
-                instrument_handler(api(&db, &config, auth0_client)),
+                #[cfg(feature = "test-header-injection")]
+                inject_test_user_trillium,
                 proxy,
                 ErrorHandler,
             )),
@@ -237,23 +228,13 @@ impl AsRef<Db> for DivviupApi {
     }
 }
 
-/// Trillium-side test shim that bridges user injection between the Trillium
-/// and Axum worlds during the migration:
-///
-/// - If the `X-Integration-Testing-User` header is present (set by
-///   `TestExt::with_user`), deserialize the user into connection state so
-///   `actor_required` passes.
-/// - If a `User` was injected via `.with_state()` (legacy test pattern),
-///   serialize it into the header so the proxy forwards it to Axum.
+/// Trillium-side test shim: if a `User` was injected via `.with_state()`
+/// (legacy test pattern), serialize it into the `X-Integration-Testing-User`
+/// header so the proxy forwards it to Axum.
+// TODO: remove in Part 8 (Trillium removal)
 #[cfg(feature = "test-header-injection")]
 async fn inject_test_user_trillium(mut conn: trillium::Conn) -> trillium::Conn {
-    if let Some(user) = conn
-        .request_headers()
-        .get_str("x-integration-testing-user")
-        .and_then(|v| serde_json::from_str::<crate::User>(v).ok())
-    {
-        conn.insert_state(user);
-    } else if let Some(json) = conn
+    if let Some(json) = conn
         .state::<crate::User>()
         .and_then(|u| serde_json::to_string(u).ok())
     {
@@ -295,33 +276,4 @@ impl<H: Handler> NamedHandler<H> {
     pub fn new(name: impl Into<Cow<'static, str>>, handler: H) -> Self {
         Self(handler, name.into())
     }
-}
-
-fn api(db: &Db, config: &Config, auth0_client: Auth0Client) -> impl Handler {
-    NamedHandler::new(
-        "api",
-        (
-            instrument_handler(compression()),
-            #[cfg(feature = "integration-testing")]
-            state(crate::User::for_integration_testing()),
-            #[cfg(feature = "test-header-injection")]
-            inject_test_user_trillium,
-            instrument_handler(cookies()),
-            instrument_handler(
-                sessions(
-                    SessionStore::new(db.clone()),
-                    &config.session_secrets.current,
-                )
-                .with_cookie_name(session_store::SESSION_COOKIE_NAME)
-                .with_older_secrets(&config.session_secrets.older),
-            ),
-            state(config.client.clone()),
-            state(config.crypter.clone()),
-            state(config.feature_flags()),
-            instrument_handler(cors_headers(config)),
-            cache_control([Private, MustRevalidate]),
-            db.clone(),
-            instrument_handler(routes(auth0_client)),
-        ),
-    )
 }

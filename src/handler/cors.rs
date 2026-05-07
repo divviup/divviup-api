@@ -53,6 +53,7 @@ impl CorsHeaders {
     }
 }
 
+#[expect(dead_code)] // TODO: remove in Part 8 (Trillium removal)
 pub fn cors_headers(config: &Config) -> impl Handler {
     CorsHeaders::new(config)
 }
