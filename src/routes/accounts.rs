@@ -8,6 +8,7 @@ use axum::{
     http::{header, request::Parts, StatusCode},
     response::IntoResponse,
 };
+use httpdate::fmt_http_date;
 use sea_orm::{ActiveModelTrait, EntityTrait, TransactionTrait};
 use trillium::Conn;
 use trillium_api::FromConn;
@@ -49,7 +50,7 @@ where
 }
 
 pub async fn show(account: Account) -> impl IntoResponse {
-    let last_modified = httpdate::fmt_http_date(account.updated_at.into());
+    let last_modified = fmt_http_date(account.updated_at.into());
     ([(header::LAST_MODIFIED, last_modified)], Json(account))
 }
 

@@ -83,13 +83,13 @@ mod index {
         fixtures::aggregator(&app, Some(&account)).await;
         fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = get(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
 
         Ok(())
     }
@@ -204,13 +204,13 @@ mod index {
         fixtures::aggregator(&app, Some(&account)).await;
         fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = get(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_request_header(KnownHeaderName::Authorization, token)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
 
         Ok(())
     }
@@ -370,14 +370,14 @@ mod create {
         let account = fixtures::account(&app).await; // no membership
 
         let aggregator_count_before = Aggregators::find().count(app.db()).await?;
-        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = post(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(fixtures::new_aggregator())
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         let aggregator_count_after = Aggregators::find().count(app.db()).await?;
         assert_eq!(aggregator_count_before, aggregator_count_after);
 
@@ -472,14 +472,14 @@ mod create {
 
         let account = fixtures::account(&app).await;
         let aggregator_count_before = Aggregators::find().count(app.db()).await?;
-        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = post(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .with_request_json(fixtures::new_aggregator())
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         let aggregator_count_after = Aggregators::find().count(app.db()).await?;
         assert_eq!(aggregator_count_before, aggregator_count_after);
 
@@ -549,12 +549,12 @@ mod show {
         let user = fixtures::user();
         let account = fixtures::account(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -703,12 +703,12 @@ mod show {
         let (_, token) = fixtures::api_token(&app, &other_account).await;
         let account = fixtures::account(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 }
@@ -822,14 +822,14 @@ mod update {
         let account = fixtures::account(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": "irrelevant" }))
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert_eq!(
             aggregator.reload(app.db()).await?.unwrap().name,
             aggregator.name // unchanged
@@ -842,14 +842,14 @@ mod update {
         let user = fixtures::user();
         let aggregator = fixtures::aggregator(&app, None).await;
         let old_name = aggregator.name.clone();
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": "irrelevant" }))
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, old_name);
         Ok(())
     }
@@ -939,13 +939,13 @@ mod update {
             .update(app.db())
             .await?;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": name }))
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -1041,13 +1041,13 @@ mod update {
         let account = fixtures::account(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
         let name_before = aggregator.name.clone();
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_auth_header(token)
             .with_request_json(json!({ "name": fixtures::random_name() }))
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert_eq!(
             aggregator.reload(app.db()).await?.unwrap().name,
             name_before
@@ -1109,12 +1109,12 @@ mod delete {
     #[ignore]
     async fn nonexistant_aggregator(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
-        let mut conn = delete(format!("/api/aggregators/{}", Uuid::new_v4()))
+        let conn = delete(format!("/api/aggregators/{}", Uuid::new_v4()))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -1137,12 +1137,12 @@ mod delete {
     async fn shared(app: DivviupApi) -> TestResult {
         let (user, ..) = fixtures::member(&app).await;
         let aggregator = fixtures::aggregator(&app, None).await;
-        let mut conn = delete(format!("/api/aggregators/{}", aggregator.id))
+        let conn = delete(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert!(!aggregator.reload(app.db()).await?.unwrap().is_tombstoned());
 
         Ok(())
@@ -1168,12 +1168,12 @@ mod delete {
         let account = fixtures::account(&app).await;
         let (user, ..) = fixtures::member(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
-        let mut conn = delete(format!("/api/aggregators/{}", aggregator.id))
+        let conn = delete(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert!(!aggregator.reload(app.db()).await?.unwrap().is_tombstoned());
 
         Ok(())
@@ -1231,12 +1231,12 @@ mod delete {
         let (_, token) = fixtures::api_token(&app, &other_account).await;
         let account = fixtures::account(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
-        let mut conn = delete(format!("/api/aggregators/{}", aggregator.id))
+        let conn = delete(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert!(!aggregator.reload(app.db()).await?.unwrap().is_tombstoned());
         Ok(())
     }
@@ -1246,12 +1246,12 @@ mod delete {
         let account = fixtures::account(&app).await;
         let (_, token) = fixtures::api_token(&app, &account).await;
         let aggregator = fixtures::aggregator(&app, None).await;
-        let mut conn = delete(format!("/api/aggregators/{}", aggregator.id))
+        let conn = delete(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert!(!aggregator.reload(app.db()).await?.unwrap().is_tombstoned());
         Ok(())
     }

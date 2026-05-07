@@ -1,18 +1,19 @@
 use crate::{
     config::FeatureFlags,
     entity::{Account, Aggregator, AggregatorColumn, Aggregators, NewAggregator, UpdateAggregator},
-    handler::extract::extract_entity,
-    Db, Error, Permissions, PermissionsActor,
+    handler::extract::{extract_entity, Json},
+    Crypter, Db, Error, Permissions, PermissionsActor,
 };
-use axum::extract::{FromRef, FromRequestParts};
-use axum::http::request::Parts;
+use axum::extract::{FromRef, FromRequestParts, State};
+use axum::http::{request::Parts, StatusCode};
+use axum::response::IntoResponse;
 use sea_orm::{
     sea_query::{all, any},
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter,
 };
-use trillium::{Conn, Handler, Status};
-use trillium_api::{FromConn, Json, State};
-
+use trillium::Conn;
+use trillium_api::FromConn;
+use trillium_client::Client;
 use trillium_router::RouterConnExt;
 use uuid::Uuid;
 
@@ -63,96 +64,110 @@ impl Permissions for Aggregator {
     }
 }
 
-pub async fn show(_: &mut Conn, aggregator: Aggregator) -> Json<Aggregator> {
-    Json(aggregator)
-}
+pub mod axum_handler {
+    use super::*;
 
-pub async fn index(
-    conn: &mut Conn,
-    (db, account): (Db, Option<Account>),
-) -> Result<Json<Vec<Aggregator>>, Error> {
-    if conn.param("account_id").is_some() && account.is_none() {
-        return Err(Error::NotFound);
+    pub async fn show(aggregator: Aggregator) -> Json<Aggregator> {
+        Json(aggregator)
     }
 
-    Aggregators::find()
-        .filter(all![
-            match account {
-                Some(account) => any![
-                    AggregatorColumn::AccountId.eq(account.id),
-                    AggregatorColumn::AccountId.is_null()
-                ],
-                None => any![AggregatorColumn::AccountId.is_null()],
-            },
-            AggregatorColumn::DeletedAt.is_null()
-        ])
-        .all(&db)
-        .await
-        .map(Json)
-        .map_err(Error::from)
-}
+    pub async fn index_shared(
+        _actor: PermissionsActor,
+        State(db): State<Db>,
+    ) -> Result<Json<Vec<Aggregator>>, Error> {
+        Ok(Json(
+            Aggregators::find()
+                .filter(all![
+                    AggregatorColumn::AccountId.is_null(),
+                    AggregatorColumn::DeletedAt.is_null()
+                ])
+                .all(&db)
+                .await?,
+        ))
+    }
 
-pub async fn create(
-    conn: &mut Conn,
-    (db, account, Json(new_aggregator), State(feature_flags)): (
-        Db,
-        Account,
-        Json<NewAggregator>,
-        State<FeatureFlags>,
-    ),
-) -> Result<impl Handler, Error> {
-    let client = conn.take_state().unwrap();
-    let crypter = conn.take_state().unwrap();
+    pub async fn index_for_account(
+        account: Account,
+        State(db): State<Db>,
+    ) -> Result<Json<Vec<Aggregator>>, Error> {
+        Ok(Json(
+            Aggregators::find()
+                .filter(all![
+                    any![
+                        AggregatorColumn::AccountId.eq(account.id),
+                        AggregatorColumn::AccountId.is_null()
+                    ],
+                    AggregatorColumn::DeletedAt.is_null()
+                ])
+                .all(&db)
+                .await?,
+        ))
+    }
 
-    new_aggregator
-        .build(
-            Some(&account),
-            client,
-            &crypter,
-            feature_flags.ssrf_validation_enabled,
-        )
-        .await?
-        .insert(&db)
-        .await
-        .map_err(Error::from)
-        .map(|agg| (Json(agg), Status::Created))
-}
+    pub async fn create(
+        account: Account,
+        State(db): State<Db>,
+        State(client): State<Client>,
+        State(crypter): State<Crypter>,
+        State(feature_flags): State<FeatureFlags>,
+        Json(new_aggregator): Json<NewAggregator>,
+    ) -> Result<impl IntoResponse, Error> {
+        let aggregator = new_aggregator
+            .build(
+                Some(&account),
+                client,
+                &crypter,
+                feature_flags.ssrf_validation_enabled,
+            )
+            .await?
+            .insert(&db)
+            .await?;
+        Ok((StatusCode::CREATED, Json(aggregator)))
+    }
 
-pub async fn delete(_: &mut Conn, (db, aggregator): (Db, Aggregator)) -> Result<Status, Error> {
-    aggregator.tombstone().update(&db).await?;
-    Ok(Status::NoContent)
-}
+    pub async fn update(
+        aggregator: Aggregator,
+        State(db): State<Db>,
+        State(client): State<Client>,
+        State(crypter): State<Crypter>,
+        Json(update_aggregator): Json<UpdateAggregator>,
+    ) -> Result<Json<Aggregator>, Error> {
+        Ok(Json(
+            update_aggregator
+                .build(aggregator, client, &crypter)
+                .await?
+                .update(&db)
+                .await?,
+        ))
+    }
 
-pub async fn update(
-    conn: &mut Conn,
-    (db, aggregator, Json(update_aggregator)): (Db, Aggregator, Json<UpdateAggregator>),
-) -> Result<Json<Aggregator>, Error> {
-    let client = conn.take_state().unwrap();
-    let crypter = conn.state().unwrap();
-    update_aggregator
-        .build(aggregator, client, crypter)
-        .await?
-        .update(&db)
-        .await
-        .map_err(Error::from)
-        .map(Json)
-}
+    pub async fn delete(aggregator: Aggregator, State(db): State<Db>) -> Result<StatusCode, Error> {
+        aggregator.tombstone().update(&db).await?;
+        Ok(StatusCode::NO_CONTENT)
+    }
 
-pub async fn admin_create(
-    conn: &mut Conn,
-    (db, Json(new_aggregator), State(feature_flags)): (
-        Db,
-        Json<NewAggregator>,
-        State<FeatureFlags>,
-    ),
-) -> Result<impl Handler, Error> {
-    let client = conn.take_state().unwrap();
-    let crypter = conn.state().unwrap();
-    new_aggregator
-        .build(None, client, crypter, feature_flags.ssrf_validation_enabled)
-        .await?
-        .insert(&db)
-        .await
-        .map_err(Error::from)
-        .map(|agg| (Json(agg), Status::Created))
+    pub async fn admin_create(
+        actor: PermissionsActor,
+        State(db): State<Db>,
+        State(client): State<Client>,
+        State(crypter): State<Crypter>,
+        State(feature_flags): State<FeatureFlags>,
+        Json(new_aggregator): Json<NewAggregator>,
+    ) -> Result<impl IntoResponse, Error> {
+        if !actor.is_admin() {
+            return Err(Error::NotFound);
+        }
+
+        let aggregator = new_aggregator
+            .build(
+                None,
+                client,
+                &crypter,
+                feature_flags.ssrf_validation_enabled,
+            )
+            .await?
+            .insert(&db)
+            .await?;
+        Ok((StatusCode::CREATED, Json(aggregator)))
+    }
 }

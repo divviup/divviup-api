@@ -10,7 +10,7 @@ mod users;
 
 use crate::{
     clients::Auth0Client,
-    handler::{actor_required, admin_required, ReplaceMimeTypes},
+    handler::{actor_required, ReplaceMimeTypes},
 };
 pub use health_check::health_check;
 use trillium::{
@@ -38,37 +38,15 @@ fn api_routes() -> impl Handler {
     (
         ReplaceMimeTypes,
         api(actor_required),
-        router()
-            .get("/tasks/:task_id", api(tasks::show))
-            .patch("/tasks/:task_id", api(tasks::update))
-            .delete("/tasks/:task_id", api(tasks::delete))
-            .patch("/aggregators/:aggregator_id", api(aggregators::update))
-            .get("/aggregators/:aggregator_id", api(aggregators::show))
-            .delete("/aggregators/:aggregator_id", api(aggregators::delete))
-            .get("/aggregators", api(aggregators::index))
-            .post(
-                "/aggregators",
-                (api(admin_required), api(aggregators::admin_create)),
-            )
-            .any(
-                &[Patch, Get, Post],
-                "/accounts/:account_id/*",
-                accounts_routes(),
-            )
-            .all("/admin/*", admin::routes()),
+        router().all("/admin/*", admin::routes()),
     )
 }
 
-fn accounts_routes() -> impl Handler {
-    router()
-        .get("/tasks", api(tasks::index))
-        .post("/tasks", api(tasks::create))
-        .post("/aggregators", api(aggregators::create))
-        .get("/aggregators", api(aggregators::index))
-}
-
 pub(crate) mod axum_routes {
-    use super::{accounts, api_tokens, collector_credentials, memberships, users};
+    use super::{
+        accounts, aggregators::axum_handler as aggregators, api_tokens, collector_credentials,
+        memberships, tasks::axum_handler as tasks, users,
+    };
     use crate::handler::AxumAppState;
     use axum::routing::{delete, get};
 
@@ -96,6 +74,20 @@ pub(crate) mod axum_routes {
                     .get(collector_credentials::show)
                     .patch(collector_credentials::update),
             )
+            .route(
+                "/aggregators",
+                get(aggregators::index_shared).post(aggregators::admin_create),
+            )
+            .route(
+                "/aggregators/{aggregator_id}",
+                get(aggregators::show)
+                    .patch(aggregators::update)
+                    .delete(aggregators::delete),
+            )
+            .route(
+                "/tasks/{task_id}",
+                get(tasks::show).patch(tasks::update).delete(tasks::delete),
+            )
             .nest(
                 "/accounts/{account_id}",
                 axum::Router::new()
@@ -111,6 +103,11 @@ pub(crate) mod axum_routes {
                     .route(
                         "/collector_credentials",
                         get(collector_credentials::index).post(collector_credentials::create),
+                    )
+                    .route("/tasks", get(tasks::index).post(tasks::create))
+                    .route(
+                        "/aggregators",
+                        get(aggregators::index_for_account).post(aggregators::create),
                     ),
             )
     }

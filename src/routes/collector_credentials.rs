@@ -11,6 +11,7 @@ use axum::{
     http::{header, request::Parts, StatusCode},
     response::IntoResponse,
 };
+use httpdate::fmt_http_date;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter};
 use trillium::Conn;
 use trillium_api::FromConn;
@@ -68,7 +69,7 @@ pub async fn index(
 }
 
 pub async fn show(collector_credential: CollectorCredential) -> impl IntoResponse {
-    let last_modified = httpdate::fmt_http_date(collector_credential.updated_at.into());
+    let last_modified = fmt_http_date(collector_credential.updated_at.into());
     (
         [(header::LAST_MODIFIED, last_modified)],
         Json(collector_credential),

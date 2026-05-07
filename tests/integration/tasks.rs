@@ -52,13 +52,13 @@ mod index {
         fixtures::task(&app, &account).await;
         fixtures::task(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+        let conn = get(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
 
         Ok(())
     }
@@ -148,13 +148,13 @@ mod index {
         fixtures::task(&app, &account).await;
         fixtures::task(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+        let conn = get(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 }
@@ -348,14 +348,14 @@ mod create {
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+        let conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
 
         Ok(())
     }
@@ -450,7 +450,7 @@ mod create {
         let collector_credential = fixtures::collector_credential(&app, &account).await;
 
         let count_before = Tasks::find().count(app.db()).await?;
-        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+        let conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
@@ -459,7 +459,7 @@ mod create {
 
         let count_after = Tasks::find().count(app.db()).await?;
         assert_eq!(count_before, count_after);
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 }
@@ -564,12 +564,12 @@ mod show {
         let user = fixtures::user();
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
-        let mut conn = get(format!("/api/tasks/{}", task.id))
+        let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -592,12 +592,12 @@ mod show {
     #[test(harness = set_up)]
     async fn nonexistant_task(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
-        let mut conn = get("/api/tasks/some-made-up-id")
+        let conn = get("/api/tasks/some-made-up-id")
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -639,12 +639,12 @@ mod show {
         let (_, token) = fixtures::api_token(&app, &other_account).await;
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
-        let mut conn = get(format!("/api/tasks/{}", task.id))
+        let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 }
@@ -799,14 +799,14 @@ mod update {
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
 
-        let mut conn = patch(format!("/api/tasks/{}", task.id))
+        let conn = patch(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_request_json(json!({ "name": "irrelevant" }))
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         assert_eq!(
             task.reload(app.db()).await?.unwrap().name,
             task.name // unchanged
@@ -837,13 +837,13 @@ mod update {
     #[test(harness = set_up)]
     async fn nonexistant_task(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
-        let mut conn = patch("/api/tasks/not-a-task-id")
+        let conn = patch("/api/tasks/not-a-task-id")
             .with_api_headers()
             .with_request_json(json!({ "name": "irrelevant" }))
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -895,7 +895,7 @@ mod update {
         let task = fixtures::task(&app, &account).await;
         let name_before = task.name.clone();
         let new_name = format!("new name {}", fixtures::random_name());
-        let mut conn = patch(format!("/api/tasks/{}", task.id))
+        let conn = patch(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_request_json(json!({ "name": &new_name }))
             .with_auth_header(token)
@@ -903,7 +903,7 @@ mod update {
             .await;
 
         assert_eq!(task.reload(app.db()).await?.unwrap().name, name_before);
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 }
@@ -1060,12 +1060,12 @@ mod delete {
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
 
-        let mut conn = delete(format!("/api/tasks/{}", task.id))
+        let conn = delete(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         let task_reload = task.reload(app.db()).await?.unwrap();
         assert_eq!(task_reload.expiration, task.expiration);
         assert_eq!(task_reload.deleted_at, None);
@@ -1095,12 +1095,12 @@ mod delete {
     #[test(harness = set_up)]
     async fn nonexistant_task(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
-        let mut conn = delete("/api/tasks/not-a-task-id")
+        let conn = delete("/api/tasks/not-a-task-id")
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 
@@ -1150,7 +1150,7 @@ mod delete {
         let (_, token) = fixtures::api_token(&app, &other_account).await;
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
-        let mut conn = delete(format!("/api/tasks/{}", task.id))
+        let conn = delete(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
@@ -1159,7 +1159,7 @@ mod delete {
         let task_reload = task.reload(app.db()).await?.unwrap();
         assert_eq!(task_reload.expiration, task.expiration);
         assert_eq!(task_reload.deleted_at, None);
-        assert_not_found!(conn);
+        assert_response!(conn, 403);
         Ok(())
     }
 }
