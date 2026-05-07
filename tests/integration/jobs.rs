@@ -3,6 +3,7 @@ use divviup_api::{
     queue::{CreateUser, JobStatus, ResetPassword, SendInvitationEmail, V1},
 };
 use test_support::{assert_eq, test, *};
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 #[test(harness = with_client_logs)]
@@ -96,7 +97,7 @@ async fn all_together(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         .await?;
 
     let mut completed_queue_jobs = vec![];
-    let queue = Queue::new(app.db(), app.config());
+    let queue = Queue::new(app.db(), app.config(), CancellationToken::new());
     while let Some(queue_job) = queue.perform_one_queue_job().await? {
         completed_queue_jobs.push(queue_job);
     }

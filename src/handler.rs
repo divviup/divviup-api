@@ -1,54 +1,45 @@
 pub(crate) mod account_bearer_token;
+// TODO: migrate assets to Axum in Part 9/10 (currently uses trillium-static-compiled)
 #[cfg(assets)]
 pub(crate) mod assets;
 pub(crate) mod cors;
 pub(crate) mod custom_mime_types;
 pub(crate) mod error;
 pub(crate) mod extract;
-pub(crate) mod logger;
 pub(crate) mod oauth2;
-pub(crate) mod opentelemetry;
+// TODO: remove origin_router in Part 9/10 (used by assets + api_mocks)
 pub(crate) mod origin_router;
 pub(crate) mod session_store;
 
+// TODO: remove proxy in Part 9 (only kept for DivviupApi test shim)
 pub(crate) mod proxy;
 
 use crate::{clients::Auth0Client, routes, routes::axum_routes, Config, Crypter, Db, FeatureFlags};
-use trillium_client::Client;
-
-use axum::extract::{DefaultBodyLimit, FromRef};
-use axum::http::{header, HeaderValue};
+use axum::{
+    extract::{DefaultBodyLimit, FromRef},
+    http::{header, HeaderValue},
+};
 use cors::axum_cors_layer;
 use error::ErrorHandler;
-use logger::logger;
 use oauth2::OauthClient;
+// TODO: remove proxy + trillium imports in Part 9 (test-support rewrite)
 use proxy::AxumProxy;
 use session_store::axum_session_layer;
-use std::{borrow::Cow, net::Ipv6Addr, net::SocketAddr, sync::Arc};
+use std::{net::Ipv6Addr, sync::Arc};
 use tokio::net::TcpListener;
+use tokio_util::sync::CancellationToken;
 use tower::ServiceBuilder;
-use tower_http::compression::CompressionLayer;
-use tower_http::set_header::SetResponseHeaderLayer;
-use tower_http::trace::TraceLayer;
+use tower_http::{
+    compression::CompressionLayer, set_header::SetResponseHeaderLayer, trace::TraceLayer,
+};
 use trillium::{Handler, Info};
-use trillium_caching_headers::caching_headers;
-use trillium_conn_id::conn_id;
-use trillium_forwarding::Forwarding;
+use trillium_client::Client;
 use trillium_macros::Handler;
 
 pub use error::Error;
 pub use origin_router::origin_router;
 
-use self::opentelemetry::opentelemetry;
-
-#[cfg(all(assets, feature = "otlp-trace"))]
-use trillium_opentelemetry::global::instrument_handler;
-#[cfg(all(assets, not(feature = "otlp-trace")))]
-fn instrument_handler(handler: impl Handler) -> impl Handler {
-    handler
-}
-
-/// Shared state for the Axum side of the application during migration.
+/// Shared state for the Axum application.
 #[derive(Clone, Debug)]
 pub struct AxumAppState {
     pub(crate) db: Db,
@@ -102,85 +93,103 @@ impl FromRef<AxumAppState> for Client {
     }
 }
 
+/// 1 MiB — this JSON API never needs bodies larger than this under normal operation.
+const MAX_REQUEST_BODY_SIZE: usize = 1024 * 1024;
+
+/// The result of [`build_app`]: an Axum router ready to serve, plus the
+/// shared state that callers (e.g. the queue) need.
+#[derive(Debug)]
+pub struct BuiltApp {
+    pub router: axum::Router,
+    pub db: Db,
+    pub config: Arc<Config>,
+}
+
+/// Build the Axum application router and connect to the database.
+pub async fn build_app(config: Config) -> BuiltApp {
+    let config = Arc::new(config);
+    let db = Db::connect(config.database_url.as_ref()).await;
+
+    let auth0_client = Auth0Client::new(&config);
+    let axum_state = AxumAppState {
+        db: db.clone(),
+        config: config.clone(),
+        auth0_client,
+        oauth_client: OauthClient::new(&config.oauth_config()),
+        crypter: config.crypter.clone(),
+        feature_flags: config.feature_flags(),
+        client: config.client.clone(),
+    };
+
+    // TODO(Part 9): add OpenTelemetry HTTP metrics middleware. The deleted
+    // trillium-opentelemetry handler provided http.server.* histograms and
+    // optional OTLP per-request spans; TraceLayer only emits tracing events.
+    let middleware = ServiceBuilder::new()
+        .layer(TraceLayer::new_for_http())
+        .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_SIZE))
+        .layer(CompressionLayer::new())
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::CACHE_CONTROL,
+            HeaderValue::from_static("private, must-revalidate"),
+        ))
+        .layer(axum_cors_layer(&config))
+        .layer(axum_session_layer(db.clone(), &config.session_secrets));
+
+    #[cfg(feature = "integration-testing")]
+    let middleware =
+        middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
+
+    #[cfg(feature = "test-header-injection")]
+    let middleware = middleware.layer(axum::middleware::from_fn(inject_test_header_user));
+
+    let router = axum::Router::new()
+        .route("/health", axum::routing::get(routes::health_check))
+        .route("/login", axum::routing::get(oauth2::redirect))
+        .route("/logout", axum::routing::get(oauth2::logout))
+        .route("/callback", axum::routing::get(oauth2::callback))
+        .nest("/api", axum_routes::api_router(&axum_state))
+        .layer(middleware)
+        .with_state(axum_state);
+
+    BuiltApp { router, db, config }
+}
+
+// ---------------------------------------------------------------------------
+// Test-only shim: DivviupApi
+//
+// test-support constructs a DivviupApi, calls .db()/.config()/.init(), and
+// passes it to trillium_testing's .run_async(&app). This shim keeps that
+// working by spawning the Axum router on a loopback port and proxying via
+// AxumProxy.
+//
+// TODO: remove in Part 9 (test-support rewrite)
+// ---------------------------------------------------------------------------
+
 #[derive(Handler, Debug)]
 pub struct DivviupApi {
     #[handler(except = init)]
     handler: Box<dyn Handler>,
     db: Db,
     config: Arc<Config>,
-    axum_addr: SocketAddr,
 }
 
 impl DivviupApi {
     pub async fn init(&mut self, info: &mut Info) {
         *info.server_description_mut() = format!("divviup-api {}", env!("CARGO_PKG_VERSION"));
-        *info.listener_description_mut() = format!(
-            "api url: {}\n             app url: {}\n             axum: {}\n",
-            self.config.api_url, self.config.app_url, self.axum_addr,
-        );
         self.handler.init(info).await
     }
 
     pub async fn new(config: Config) -> Self {
-        let config = Arc::new(config);
-        let db = Db::connect(config.database_url.as_ref()).await;
+        let app = build_app(config).await;
 
-        // Spawn the Axum server on an ephemeral port. Routes will be migrated
-        // here incrementally.
-        let auth0_client = Auth0Client::new(&config);
-        let axum_state = AxumAppState {
-            db: db.clone(),
-            config: config.clone(),
-            auth0_client: auth0_client.clone(),
-            oauth_client: OauthClient::new(&config.oauth_config()),
-            crypter: config.crypter.clone(),
-            feature_flags: config.feature_flags(),
-            client: config.client.clone(),
-        };
-        // Middleware stack in logical order (outermost first), matching the
-        // Trillium api() handler chain.
-        let middleware = ServiceBuilder::new()
-            .layer(TraceLayer::new_for_http())
-            .layer(DefaultBodyLimit::max(1024 * 1024))
-            .layer(CompressionLayer::new())
-            .layer(SetResponseHeaderLayer::if_not_present(
-                header::CACHE_CONTROL,
-                HeaderValue::from_static("private, must-revalidate"),
-            ))
-            .layer(axum_cors_layer(&config))
-            .layer(axum_session_layer(db.clone(), &config.session_secrets));
-
-        #[cfg(feature = "integration-testing")]
-        let middleware =
-            middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
-
-        #[cfg(feature = "test-header-injection")]
-        let middleware = middleware.layer(axum::middleware::from_fn(inject_test_header_user));
-
-        let axum_router = axum::Router::new()
-            // Temporary test endpoint to verify the proxy bridge works.
-            // TODO: Remove once enough routes have migrated to make it redundant.
-            .route(
-                "/internal/test/axum_ready",
-                axum::routing::get(|| async { "axum OK" }),
-            )
-            .route("/health", axum::routing::get(routes::health_check))
-            .route("/login", axum::routing::get(oauth2::redirect))
-            .route("/logout", axum::routing::get(oauth2::logout))
-            .route("/callback", axum::routing::get(oauth2::callback))
-            .nest("/api", axum_routes::api_router(&axum_state))
-            .layer(middleware)
-            .with_state(axum_state);
         let axum_listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0))
             .await
             .expect("failed to bind Axum listener on IPv6 loopback");
         let axum_addr = axum_listener
             .local_addr()
             .expect("failed to get Axum listener address");
-        // TODO: Wire graceful shutdown into axum::serve(...).with_graceful_shutdown()
-        // so that in-flight requests are drained when the Trillium server stops.
         tokio::spawn(async move {
-            if let Err(e) = axum::serve(axum_listener, axum_router).await {
+            if let Err(e) = axum::serve(axum_listener, app.router).await {
                 log::error!("axum server error: {e}");
             }
         });
@@ -189,21 +198,13 @@ impl DivviupApi {
 
         Self {
             handler: Box::new((
-                conn_id(),
-                Forwarding::trust_always(),
-                opentelemetry(),
-                caching_headers(),
-                logger(),
-                #[cfg(assets)]
-                instrument_handler(assets::static_assets(&config)),
                 #[cfg(feature = "test-header-injection")]
                 inject_test_user_trillium,
                 proxy,
                 ErrorHandler,
             )),
-            db,
-            config,
-            axum_addr,
+            db: app.db,
+            config: app.config,
         }
     }
 
@@ -218,10 +219,15 @@ impl DivviupApi {
     pub fn crypter(&self) -> &crate::Crypter {
         &self.config.crypter
     }
+}
 
-    #[expect(dead_code)] // Scaffolded for later migration parts.
-    pub(crate) fn axum_addr(&self) -> SocketAddr {
-        self.axum_addr
+// TODO: remove in Part 9 (test-support rewrite)
+// NOTE: the CancellationToken created here is never cancelled, so workers
+// spawned from this Queue would run forever. This is fine because callers
+// only use perform_one_queue_job(), never spawn_workers().
+impl From<&DivviupApi> for crate::Queue {
+    fn from(app: &DivviupApi) -> Self {
+        Self::new(app.db(), app.config(), CancellationToken::new())
     }
 }
 
@@ -234,7 +240,7 @@ impl AsRef<Db> for DivviupApi {
 /// Trillium-side test shim: if a `User` was injected via `.with_state()`
 /// (legacy test pattern), serialize it into the `X-Integration-Testing-User`
 /// header so the proxy forwards it to Axum.
-// TODO: remove in Part 8 (Trillium removal)
+// TODO: remove in Part 9 (test-support rewrite — tests will set the header directly)
 #[cfg(feature = "test-header-injection")]
 async fn inject_test_user_trillium(mut conn: trillium::Conn) -> trillium::Conn {
     if let Some(json) = conn
@@ -284,16 +290,4 @@ async fn inject_test_header_user(
         request.extensions_mut().insert(user);
     }
     next.run(request).await
-}
-
-#[derive(Handler, Debug, Clone)]
-pub struct NamedHandler<H>(#[handler(except = name)] H, Cow<'static, str>);
-impl<H: Handler> NamedHandler<H> {
-    fn name(&self) -> Cow<'static, str> {
-        self.1.clone()
-    }
-
-    pub fn new(name: impl Into<Cow<'static, str>>, handler: H) -> Self {
-        Self(handler, name.into())
-    }
 }

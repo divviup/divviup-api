@@ -11,7 +11,7 @@ use std::{
     collections::VecDeque,
     env::{self, VarError},
     error::Error,
-    net::SocketAddr,
+    net::{IpAddr, Ipv6Addr, SocketAddr},
     str::FromStr,
 };
 use thiserror::Error;
@@ -48,6 +48,8 @@ pub struct Config {
     pub postmark_token: String,
     /// The URL to postmark.
     pub postmark_url: Url,
+    /// The address to listen on for the main HTTP server.
+    pub listen_address: SocketAddr,
     /// The address to listen on for prometheus metrics and tracing configuration.
     pub monitoring_listen_address: SocketAddr,
     /// Comma-joined unpadded base64url encoded cryptographically random secrets, 32 bytes long
@@ -158,9 +160,14 @@ impl Config {
             email_address: var("EMAIL_ADDRESS")?,
             postmark_token: var("POSTMARK_TOKEN")?,
             postmark_url: Url::parse(POSTMARK_URL).unwrap(),
+            listen_address: {
+                let host: IpAddr = var_optional("HOST", IpAddr::from(Ipv6Addr::UNSPECIFIED))?;
+                let port: u16 = var_optional("PORT", 8080)?;
+                SocketAddr::new(host, port)
+            },
             monitoring_listen_address: var_optional(
                 "MONITORING_LISTEN_ADDRESS",
-                "127.0.0.1:9464".parse().unwrap(),
+                SocketAddr::from((Ipv6Addr::LOCALHOST, 9464)),
             )?,
             session_secrets: var("SESSION_SECRETS")?,
             trace_use_test_writer: false,
@@ -282,7 +289,8 @@ mod tests {
             email_address: "test@example.test".parse().unwrap(),
             postmark_token: "pmak-secret-token".into(),
             postmark_url: "https://postmark.example".parse().unwrap(),
-            monitoring_listen_address: "127.0.0.1:9464".parse().unwrap(),
+            listen_address: SocketAddr::from((Ipv6Addr::UNSPECIFIED, 8080)),
+            monitoring_listen_address: SocketAddr::from((Ipv6Addr::LOCALHOST, 9464)),
             session_secrets: vec![0u8; 32].into(),
             trace_use_test_writer: false,
             trace_force_json_writer: false,

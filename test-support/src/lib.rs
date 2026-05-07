@@ -11,7 +11,13 @@
 
 use divviup_api::{clients::aggregator_client::api_types, Config, Crypter, Db};
 use serde::{de::DeserializeOwned, Serialize};
-use std::{error::Error, future::Future, iter::repeat_with, process::Termination};
+use std::{
+    error::Error,
+    future::Future,
+    iter::repeat_with,
+    net::{Ipv6Addr, SocketAddr},
+    process::Termination,
+};
 use tracing::install_test_trace_subscriber;
 use trillium::Handler;
 use trillium_client::Client;
@@ -91,7 +97,8 @@ pub fn config(api_mocks: impl Handler) -> Config {
         auth_client_id: "client id".into(),
         auth_client_secret: "client secret".into(),
         auth_audience: "aud".into(),
-        monitoring_listen_address: "127.0.0.1:9464".parse().unwrap(),
+        listen_address: SocketAddr::from((Ipv6Addr::UNSPECIFIED, 0)),
+        monitoring_listen_address: SocketAddr::from((Ipv6Addr::LOCALHOST, 9464)),
         postmark_token: "-".into(),
         email_address: "test@example.test".parse().unwrap(),
         postmark_url: POSTMARK_URL.parse().unwrap(),

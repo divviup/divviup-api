@@ -1,8 +1,6 @@
 use log::LevelFilter;
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn};
 use std::ops::{Deref, DerefMut};
-use trillium::{async_trait, Conn, Handler};
-use trillium_api::FromConn;
 
 #[derive(Clone, Debug)]
 pub struct Db(DbConn);
@@ -12,26 +10,6 @@ impl Db {
         let mut connect_options = ConnectOptions::new(url);
         connect_options.sqlx_logging_level(LevelFilter::Debug);
         Database::connect(connect_options).await.map(Self).unwrap()
-    }
-}
-
-impl From<DbConn> for Db {
-    fn from(value: DbConn) -> Self {
-        Self(value)
-    }
-}
-
-#[async_trait]
-impl FromConn for Db {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        conn.state().cloned()
-    }
-}
-
-#[async_trait]
-impl Handler for Db {
-    async fn run(&self, conn: Conn) -> Conn {
-        conn.with_state(self.clone())
     }
 }
 
@@ -49,7 +27,7 @@ impl DerefMut for Db {
     }
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl ConnectionTrait for Db {
     fn get_database_backend(&self) -> sea_orm::DbBackend {
         self.0.get_database_backend()

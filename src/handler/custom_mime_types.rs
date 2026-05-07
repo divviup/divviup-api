@@ -5,51 +5,14 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tower::{Layer, Service};
-use trillium::{
-    Conn, Handler,
-    KnownHeaderName::{Accept, ContentType},
-    Status::{NotAcceptable, UnsupportedMediaType},
-};
 
 pub const DIVVIUP_API_MEDIA_TYPE: &str = "application/vnd.divviup+json;version=0.1";
 const APPLICATION_JSON: header::HeaderValue = header::HeaderValue::from_static("application/json");
 
-#[expect(dead_code)] // TODO: remove in Part 8 (Trillium removal)
-pub struct ReplaceMimeTypes;
-
-#[trillium::async_trait]
-impl Handler for ReplaceMimeTypes {
-    async fn run(&self, mut conn: Conn) -> Conn {
-        let request_headers = conn.inner_mut().request_headers_mut();
-        if let Some(DIVVIUP_API_MEDIA_TYPE) | None = request_headers.get_str(ContentType) {
-            request_headers.insert(ContentType, "application/json");
-        } else {
-            return conn.with_status(UnsupportedMediaType).halt();
-        }
-
-        if Some(DIVVIUP_API_MEDIA_TYPE) == request_headers.get_str(Accept) {
-            request_headers.insert(Accept, "application/json");
-        } else {
-            return conn.with_status(NotAcceptable).halt();
-        }
-
-        conn
-    }
-
-    async fn before_send(&self, conn: Conn) -> Conn {
-        conn.with_response_header(ContentType, DIVVIUP_API_MEDIA_TYPE)
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Axum / Tower equivalent of ReplaceMimeTypes
-// ---------------------------------------------------------------------------
-
 /// Tower [`Layer`] that applies [`ReplaceMimeTypesService`] to an inner service.
 ///
-/// This replicates the Trillium [`ReplaceMimeTypes`] handler for Axum routes:
-/// requests with the custom content type (or no content type) have their headers
-/// normalized to `application/json`; responses get the custom content type set.
+/// This normalizes the custom divviup content type to `application/json` on
+/// requests, and sets the custom content type on responses.
 #[derive(Clone, Debug)]
 pub struct ReplaceMimeTypesLayer;
 

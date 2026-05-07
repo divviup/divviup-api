@@ -5,7 +5,6 @@ mod aggregators;
 mod api_tokens;
 mod assets;
 mod auth;
-mod axum_proxy;
 mod collector_credentials;
 mod crypter;
 mod health_check;
