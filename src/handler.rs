@@ -136,8 +136,7 @@ pub async fn build_app(config: Config) -> BuiltApp {
         .layer(axum_session_layer(db.clone(), &config.session_secrets));
 
     #[cfg(feature = "integration-testing")]
-    let middleware =
-        middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
+    let middleware = middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
 
     #[cfg(feature = "test-header-injection")]
     let middleware = middleware.layer(axum::middleware::from_fn(inject_test_header_user));
