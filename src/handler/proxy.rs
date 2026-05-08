@@ -57,6 +57,11 @@ impl Handler for AxumProxy {
 
         let mut builder = self.client.request(reqwest_method, &url);
 
+        // Preserve the original Host for downstream host-based routing (e.g. assets).
+        if let Some(original_host) = conn.request_headers().get_str("host") {
+            builder = builder.header("x-forwarded-host", original_host);
+        }
+
         // Forward request headers, filtering out hop-by-hop headers.
         for (name, values) in conn.request_headers() {
             let header_name = match HeaderName::from_bytes(name.as_ref().as_bytes()) {

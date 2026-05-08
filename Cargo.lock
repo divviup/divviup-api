@@ -1245,14 +1245,12 @@ dependencies = [
  "tracing-subscriber",
  "trillium",
  "trillium-api",
- "trillium-caching-headers",
  "trillium-client",
  "trillium-http",
  "trillium-logger",
  "trillium-macros 0.0.6",
  "trillium-router",
  "trillium-rustls",
- "trillium-static-compiled",
  "trillium-testing",
  "trillium-tokio",
  "typenum",
@@ -1440,16 +1438,6 @@ name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
-
-[[package]]
-name = "etag"
-version = "4.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b3d0661a2ccddc26cba0b834e9b717959ed6fdd76c7129ee159c170a875bf44"
-dependencies = [
- "str-buf",
- "xxhash-rust",
-]
 
 [[package]]
 name = "etcetera"
@@ -2026,6 +2014,12 @@ dependencies = [
  "http-body",
  "pin-project-lite",
 ]
+
+[[package]]
+name = "http-range-header"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9171a2ea8a68358193d15dd5d70c1c10a2afc3e7e4c5bc92bc9f025cebd7359c"
 
 [[package]]
 name = "httparse"
@@ -4699,12 +4693,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "str-buf"
-version = "3.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ceb97b7225c713c2fd4db0153cb6b3cab244eb37900c3f634ed4d43310d8c34"
-
-[[package]]
 name = "stringprep"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5173,8 +5161,15 @@ dependencies = [
  "bitflags 2.11.0",
  "bytes",
  "futures-core",
+ "futures-util",
  "http",
  "http-body",
+ "http-body-util",
+ "http-range-header",
+ "httpdate",
+ "mime",
+ "mime_guess",
+ "percent-encoding",
  "pin-project-lite",
  "tokio",
  "tokio-util",
@@ -5375,17 +5370,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "trillium-caching-headers"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "531cab8c8b475e6d575491d96178d8d0e1265b8fdb4cd27cc3b7db18a38d8eeb"
-dependencies = [
- "etag",
- "httpdate",
- "trillium",
-]
-
-[[package]]
 name = "trillium-client"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5507,30 +5491,6 @@ dependencies = [
  "trillium",
  "trillium-http",
  "url",
-]
-
-[[package]]
-name = "trillium-static-compiled"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b9803b8da1fc54abadc8ebaa81bfaf3458a3d77b101483061134f989f6a49c7"
-dependencies = [
- "httpdate",
- "log",
- "mime",
- "mime_guess",
- "trillium",
- "trillium-static-compiled-macros",
-]
-
-[[package]]
-name = "trillium-static-compiled-macros"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f224fd6a9ad6036a0a5c955c1b8289e6e718136cb51c07a36938d1f48fc7e7b1"
-dependencies = [
- "proc-macro2",
- "quote",
 ]
 
 [[package]]
@@ -6343,12 +6303,6 @@ dependencies = [
  "thiserror 2.0.18",
  "time",
 ]
-
-[[package]]
-name = "xxhash-rust"
-version = "0.8.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53be06678ed9e83edb1745eb72efc0bbcd7b5c3c35711a860906aed827a13d61"
 
 [[package]]
 name = "yansi"

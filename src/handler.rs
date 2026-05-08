@@ -1,5 +1,4 @@
 pub(crate) mod account_bearer_token;
-// TODO: migrate assets to Axum in Part 9/10 (currently uses trillium-static-compiled)
 #[cfg(assets)]
 pub(crate) mod assets;
 pub(crate) mod cors;
@@ -7,7 +6,7 @@ pub(crate) mod custom_mime_types;
 pub(crate) mod error;
 pub(crate) mod extract;
 pub(crate) mod oauth2;
-// TODO: remove origin_router in Part 9/10 (used by assets + api_mocks)
+// TODO: remove origin_router in Part 9/10 (used by api_mocks)
 pub(crate) mod origin_router;
 pub(crate) mod session_store;
 
@@ -136,11 +135,16 @@ pub async fn build_app(config: Config) -> BuiltApp {
         .layer(axum_session_layer(db.clone(), &config.session_secrets));
 
     #[cfg(feature = "integration-testing")]
-    let middleware =
-        middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
+    let middleware = middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
 
     #[cfg(feature = "test-header-injection")]
     let middleware = middleware.layer(axum::middleware::from_fn(inject_test_header_user));
+
+    #[cfg(assets)]
+    let middleware = middleware.layer(axum::middleware::from_fn_with_state(
+        assets::AssetConfig::new(&config.api_url, &config.app_url),
+        assets::serve_assets,
+    ));
 
     let router = axum::Router::new()
         .route("/health", axum::routing::get(routes::health_check))
