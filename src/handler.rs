@@ -150,9 +150,12 @@ impl DivviupApi {
             .layer(axum_cors_layer(&config))
             .layer(axum_session_layer(db.clone(), &config.session_secrets));
 
-        #[cfg(feature = "test-header-injection")]
+        #[cfg(feature = "integration-testing")]
         let middleware =
             middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
+
+        #[cfg(feature = "test-header-injection")]
+        let middleware = middleware.layer(axum::middleware::from_fn(inject_test_header_user));
 
         let axum_router = axum::Router::new()
             // Temporary test endpoint to verify the proxy bridge works.
@@ -244,15 +247,32 @@ async fn inject_test_user_trillium(mut conn: trillium::Conn) -> trillium::Conn {
     conn
 }
 
-/// Axum-side test shim: if the request carries an `X-Integration-Testing-User`
-/// header with a JSON-encoded [`crate::User`], place the user in request
-/// extensions so [`crate::User`]'s extractor picks it up without a real
-/// session.
+/// Axum middleware that unconditionally injects an admin
+/// [`User`](crate::User) into every request. This is the Axum equivalent of
+/// the Trillium `state(User::for_integration_testing())` that was in the old
+/// `api()` handler chain.
+///
+/// Only compiled under `--features integration-testing` (enabled by
+/// `compose.dev.override.yaml`). Never compiled into deployed builds.
+#[cfg(feature = "integration-testing")]
+async fn inject_integration_testing_user(
+    mut request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    request
+        .extensions_mut()
+        .insert(crate::User::for_integration_testing());
+    next.run(request).await
+}
+
+/// Axum middleware that reads an `X-Integration-Testing-User` header and
+/// injects the decoded [`User`](crate::User) into request extensions.
+/// Used by `test-support` to impersonate specific users in tests.
 ///
 /// Only compiled under `--features test-header-injection` (enabled by
 /// `test-support`). Never compiled into deployed builds.
 #[cfg(feature = "test-header-injection")]
-async fn inject_integration_testing_user(
+async fn inject_test_header_user(
     mut request: axum::extract::Request,
     next: axum::middleware::Next,
 ) -> axum::response::Response {
