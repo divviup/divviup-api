@@ -9,32 +9,11 @@ use axum::{
     response::IntoResponse,
 };
 use httpdate::fmt_http_date;
-use sea_orm::{ActiveModelTrait, EntityTrait, TransactionTrait};
-use trillium::Conn;
-use trillium_api::FromConn;
-use trillium_router::RouterConnExt;
-use uuid::Uuid;
+use sea_orm::{ActiveModelTrait, TransactionTrait};
 
 impl Permissions for Account {
     fn allow_write(&self, actor: &PermissionsActor) -> bool {
         actor.is_admin() || actor.account_ids().contains(&self.id)
-    }
-}
-
-#[trillium::async_trait]
-impl FromConn for Account {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let actor = PermissionsActor::from_conn(conn).await?;
-        let db: &Db = conn.state()?;
-        let account_id = conn.param("account_id")?.parse::<Uuid>().ok()?;
-        match Accounts::find_by_id(account_id).one(db).await {
-            Ok(Some(account)) => actor.if_allowed(conn.method(), account),
-            Ok(None) => None,
-            Err(error) => {
-                conn.insert_state(Error::from(error));
-                None
-            }
-        }
     }
 }
 

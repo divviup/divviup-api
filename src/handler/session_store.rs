@@ -25,11 +25,13 @@ use tower_sessions::{
 // note will no longer apply.
 pub const SESSION_COOKIE_NAME: &str = "divviup.sid";
 
+#[allow(dead_code)] // TODO: remove in Part 8 (Trillium removal)
 #[derive(Debug, Clone)]
 pub struct SessionStore {
     db: Db,
 }
 
+#[allow(dead_code)] // TODO: remove in Part 8 (Trillium removal)
 impl SessionStore {
     pub fn new(db: Db) -> Self {
         Self { db }

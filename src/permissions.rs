@@ -139,6 +139,30 @@ where
     }
 }
 
+/// A [`PermissionsActor`] that has been verified to be an admin.
+///
+/// Use this as an Axum extractor on admin-only routes. Returns
+/// [`Error::NotFound`] for non-admins, hiding the endpoint's existence.
+#[derive(Debug, Clone)]
+pub struct AdminPermissionsActor(pub PermissionsActor);
+
+impl<S> FromRequestParts<S> for AdminPermissionsActor
+where
+    Db: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = Error;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Error> {
+        let actor = PermissionsActor::from_request_parts(parts, state).await?;
+        if actor.is_admin() {
+            Ok(Self(actor))
+        } else {
+            Err(Error::NotFound)
+        }
+    }
+}
+
 pub trait Permissions {
     fn allow_read(&self, actor: &PermissionsActor) -> bool {
         self.allow_write(actor)

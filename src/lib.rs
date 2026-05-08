@@ -27,9 +27,8 @@ pub use crypter::Crypter;
 pub use db::Db;
 pub use handler::{custom_mime_types::DIVVIUP_API_MEDIA_TYPE, AxumAppState, DivviupApi, Error};
 pub use opentelemetry;
-pub use permissions::{Permissions, PermissionsActor};
+pub use permissions::{AdminPermissionsActor, Permissions, PermissionsActor};
 pub use queue::Queue;
-pub use routes::routes;
 use serde::{Deserialize, Deserializer};
 pub use user::{User, USER_SESSION_KEY};
 

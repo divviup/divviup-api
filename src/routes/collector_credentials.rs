@@ -12,31 +12,7 @@ use axum::{
     response::IntoResponse,
 };
 use httpdate::fmt_http_date;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter};
-use trillium::Conn;
-use trillium_api::FromConn;
-use trillium_router::RouterConnExt;
-use uuid::Uuid;
-
-#[trillium::async_trait]
-impl FromConn for CollectorCredential {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let actor = PermissionsActor::from_conn(conn).await?;
-        let id = conn
-            .param("collector_credential_id")?
-            .parse::<Uuid>()
-            .ok()?;
-        let db: &Db = conn.state()?;
-        match CollectorCredentials::find_by_id(id).one(db).await {
-            Ok(Some(collector_credential)) => actor.if_allowed(conn.method(), collector_credential),
-            Ok(None) => None,
-            Err(error) => {
-                conn.insert_state(Error::from(error));
-                None
-            }
-        }
-    }
-}
+use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, QueryFilter};
 
 impl<S> FromRequestParts<S> for CollectorCredential
 where

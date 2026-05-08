@@ -8,28 +8,7 @@ use axum::{
     http::{request::Parts, StatusCode},
     response::IntoResponse,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter, QueryOrder};
-use trillium::Conn;
-use trillium_api::FromConn;
-use trillium_router::RouterConnExt;
-use uuid::Uuid;
-
-#[trillium::async_trait]
-impl FromConn for ApiToken {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let actor = PermissionsActor::from_conn(conn).await?;
-        let id = conn.param("api_token_id")?.parse::<Uuid>().ok()?;
-        let db: &Db = conn.state()?;
-        match ApiTokens::find_by_id(id).one(db).await {
-            Ok(Some(api_token)) => actor.if_allowed(conn.method(), api_token),
-            Ok(None) => None,
-            Err(error) => {
-                conn.insert_state(Error::from(error));
-                None
-            }
-        }
-    }
-}
+use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, QueryFilter, QueryOrder};
 
 impl<S> FromRequestParts<S> for ApiToken
 where

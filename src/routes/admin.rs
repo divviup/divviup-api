@@ -1,77 +1,87 @@
 use crate::{
     entity::queue::{self, Column, Entity, JobStatus, Model},
-    handler::{admin_required, Error},
-    Db,
+    handler::extract::Json,
+    Db, Error, PermissionsActor,
 };
-use querystrong::QueryStrong;
+use axum::extract::{FromRef, FromRequestParts, Path, Query, Request, State};
+use axum::http::{header, request::Parts, StatusCode};
+use axum::middleware::Next;
+use axum::response::IntoResponse;
+use httpdate::fmt_http_date;
 use sea_orm::{ColumnTrait, EntityTrait, ModelTrait, QueryOrder, QuerySelect};
-use trillium::{async_trait, Conn, Handler, Status};
-use trillium_api::{api, FromConn, Json};
-use trillium_caching_headers::CachingHeadersExt;
-use trillium_router::{router, RouterConnExt};
+use serde::Deserialize;
+use std::collections::HashMap;
 use uuid::Uuid;
 
-pub fn routes() -> impl Handler {
-    (
-        api(admin_required),
-        router()
-            .get("/queue", api(index))
-            .get("/queue/:job_id", api(show))
-            .delete("/queue/:job_id", api(delete)),
-    )
-}
+impl<S> FromRequestParts<S> for queue::Model
+where
+    Db: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = Error;
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Error> {
+        let Path(params) = Path::<HashMap<String, String>>::from_request_parts(parts, state)
+            .await
+            .map_err(|_| Error::NotFound)?;
 
-#[async_trait]
-impl FromConn for queue::Model {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let db = Db::from_conn(conn).await?;
-        let id: Uuid = conn.param("job_id")?.parse().ok()?;
+        let id = params
+            .get("job_id")
+            .and_then(|s| s.parse::<Uuid>().ok())
+            .ok_or(Error::NotFound)?;
 
-        match Entity::find_by_id(id).one(&db).await {
-            Ok(job) => job,
-            Err(error) => {
-                conn.insert_state(Error::from(error));
-                None
-            }
-        }
+        let db = Db::from_ref(state);
+        Entity::find_by_id(id)
+            .one(&db)
+            .await?
+            .ok_or(Error::NotFound)
     }
 }
 
-async fn index(conn: &mut Conn, db: Db) -> Result<Json<Vec<Model>>, Error> {
-    let params = QueryStrong::parse(conn.querystring());
-    let mut find = Entity::find();
-    let query = QuerySelect::query(&mut find);
-    match params.get_str("status") {
-        Some("pending") => {
-            query.cond_where(Column::Status.eq(JobStatus::Pending));
-        }
+#[derive(Deserialize)]
+pub struct IndexParams {
+    status: Option<JobStatus>,
+}
 
-        Some("success") => {
-            query.cond_where(Column::Status.eq(JobStatus::Success));
-        }
+pub mod axum_handler {
+    use super::*;
 
-        Some("failed") => {
-            query.cond_where(Column::Status.eq(JobStatus::Failed));
+    pub async fn require_admin(
+        actor: PermissionsActor,
+        request: Request,
+        next: Next,
+    ) -> axum::response::Response {
+        if actor.is_admin() {
+            next.run(request).await
+        } else {
+            StatusCode::NOT_FOUND.into_response()
         }
-
-        _ => {}
     }
 
-    find.order_by_desc(Column::UpdatedAt)
-        .limit(100)
-        .all(&db)
-        .await
-        .map(Json)
-        .map_err(Error::from)
-}
+    pub async fn index(
+        State(db): State<Db>,
+        Query(params): Query<IndexParams>,
+    ) -> Result<Json<Vec<Model>>, Error> {
+        let mut find = Entity::find();
+        if let Some(status) = params.status {
+            let query = QuerySelect::query(&mut find);
+            query.cond_where(Column::Status.eq(status));
+        }
 
-async fn show(conn: &mut Conn, queue_job: Model) -> Json<Model> {
-    conn.set_last_modified(queue_job.updated_at.into());
+        Ok(Json(
+            find.order_by_desc(Column::UpdatedAt)
+                .limit(100)
+                .all(&db)
+                .await?,
+        ))
+    }
 
-    Json(queue_job)
-}
+    pub async fn show(queue_job: Model) -> impl IntoResponse {
+        let last_modified = fmt_http_date(queue_job.updated_at.into());
+        ([(header::LAST_MODIFIED, last_modified)], Json(queue_job))
+    }
 
-async fn delete(_: &mut Conn, (queue_job, db): (Model, Db)) -> Result<Status, Error> {
-    queue_job.delete(&db).await?;
-    Ok(Status::NoContent)
+    pub async fn delete(queue_job: Model, State(db): State<Db>) -> Result<StatusCode, Error> {
+        queue_job.delete(&db).await?;
+        Ok(StatusCode::NO_CONTENT)
+    }
 }

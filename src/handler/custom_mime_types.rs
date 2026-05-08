@@ -12,9 +12,9 @@ use trillium::{
 };
 
 pub const DIVVIUP_API_MEDIA_TYPE: &str = "application/vnd.divviup+json;version=0.1";
-#[cfg_attr(not(test), expect(dead_code))] // Used once ReplaceMimeTypesLayer is wired; see TODO in routes.rs.
 const APPLICATION_JSON: header::HeaderValue = header::HeaderValue::from_static("application/json");
 
+#[expect(dead_code)] // TODO: remove in Part 8 (Trillium removal)
 pub struct ReplaceMimeTypes;
 
 #[trillium::async_trait]
@@ -50,7 +50,6 @@ impl Handler for ReplaceMimeTypes {
 /// This replicates the Trillium [`ReplaceMimeTypes`] handler for Axum routes:
 /// requests with the custom content type (or no content type) have their headers
 /// normalized to `application/json`; responses get the custom content type set.
-#[cfg_attr(not(test), expect(dead_code))] // Wired once the Trillium proxy is removed; see TODO in routes.rs.
 #[derive(Clone, Debug)]
 pub struct ReplaceMimeTypesLayer;
 
@@ -62,7 +61,6 @@ impl<S> Layer<S> for ReplaceMimeTypesLayer {
 }
 
 /// Tower [`Service`] produced by [`ReplaceMimeTypesLayer`].
-#[cfg_attr(not(test), expect(dead_code))] // Constructed by ReplaceMimeTypesLayer.
 #[derive(Clone, Debug)]
 pub struct ReplaceMimeTypesService<S> {
     inner: S,

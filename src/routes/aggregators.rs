@@ -2,7 +2,7 @@ use crate::{
     config::FeatureFlags,
     entity::{Account, Aggregator, AggregatorColumn, Aggregators, NewAggregator, UpdateAggregator},
     handler::extract::{extract_entity, Json},
-    Crypter, Db, Error, Permissions, PermissionsActor,
+    AdminPermissionsActor, Crypter, Db, Error, Permissions, PermissionsActor,
 };
 use axum::extract::{FromRef, FromRequestParts, State};
 use axum::http::{request::Parts, StatusCode};
@@ -11,29 +11,7 @@ use sea_orm::{
     sea_query::{all, any},
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter,
 };
-use trillium::Conn;
-use trillium_api::FromConn;
 use trillium_client::Client;
-use trillium_router::RouterConnExt;
-use uuid::Uuid;
-
-#[trillium::async_trait]
-impl FromConn for Aggregator {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let actor = PermissionsActor::from_conn(conn).await?;
-        let db: &Db = conn.state()?;
-        let id = conn.param("aggregator_id")?.parse::<Uuid>().ok()?;
-        let aggregator = Aggregators::find_by_id(id).one(db).await;
-        match aggregator {
-            Ok(Some(aggregator)) => actor.if_allowed(conn.method(), aggregator),
-            Ok(None) => None,
-            Err(error) => {
-                conn.insert_state(Error::from(error));
-                None
-            }
-        }
-    }
-}
 
 impl<S> FromRequestParts<S> for Aggregator
 where
@@ -147,17 +125,13 @@ pub mod axum_handler {
     }
 
     pub async fn admin_create(
-        actor: PermissionsActor,
+        _admin: AdminPermissionsActor,
         State(db): State<Db>,
         State(client): State<Client>,
         State(crypter): State<Crypter>,
         State(feature_flags): State<FeatureFlags>,
         Json(new_aggregator): Json<NewAggregator>,
     ) -> Result<impl IntoResponse, Error> {
-        if !actor.is_admin() {
-            return Err(Error::NotFound);
-        }
-
         let aggregator = new_aggregator
             .build(
                 None,
