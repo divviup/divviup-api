@@ -1,5 +1,6 @@
 use axum::{
-    extract::State,
+    body::Body,
+    extract::{Request, State},
     http::{header, HeaderMap, HeaderValue, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
@@ -48,7 +49,7 @@ fn request_host(headers: &HeaderMap) -> Option<&str> {
 /// to other hosts pass through to the API routes.
 pub async fn serve_assets(
     State(config): State<AssetConfig>,
-    request: axum::extract::Request,
+    request: Request,
     next: Next,
 ) -> Response {
     let host_matches =
@@ -75,7 +76,7 @@ pub async fn serve_assets(
     let mut response = service.call(request).await.into_response();
 
     if response.status() == StatusCode::NOT_FOUND && !is_asset_path {
-        let fallback_request = axum::extract::Request::default();
+        let fallback_request = Request::new(Body::empty());
         let mut fallback = ServeFile::new(&config.index_file);
         response = fallback.call(fallback_request).await.into_response();
     }
