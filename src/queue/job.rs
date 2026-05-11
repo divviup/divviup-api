@@ -7,7 +7,6 @@ use sea_orm::{ActiveModelTrait, ConnectionTrait, DbErr};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use time::{Duration, OffsetDateTime};
-use trillium::{Method, Status};
 use url::Url;
 
 mod v1;
@@ -32,9 +31,9 @@ pub enum JobError {
 
     #[error("unexpected http status {method} {url} {status:?}: {body}")]
     HttpStatusNotSuccess {
-        method: Method,
+        method: String,
         url: Url,
-        status: Option<Status>,
+        status: Option<u16>,
         body: String,
     },
 }
@@ -57,16 +56,11 @@ impl From<DbErr> for JobError {
 impl From<ClientError> for JobError {
     fn from(value: ClientError) -> Self {
         match value {
-            ClientError::HttpStatusNotSuccess {
-                method,
-                url,
-                status,
-                body,
-            } => Self::HttpStatusNotSuccess {
-                method,
-                url,
-                status,
-                body,
+            ClientError::HttpStatusNotSuccess(e) => Self::HttpStatusNotSuccess {
+                method: e.method,
+                url: e.url,
+                status: e.status.map(|s| s.as_u16()),
+                body: e.body,
             },
             other => Self::ClientOther(other.to_string()),
         }

@@ -1,13 +1,13 @@
+use crate::clients::HttpClient;
 use crate::{
     clients::{AggregatorClient, ClientError},
     entity::Aggregator,
     Crypter, Error,
 };
+use axum::http::StatusCode;
 use sea_orm::{ActiveValue, IntoActiveModel};
 use serde::Deserialize;
 use time::OffsetDateTime;
-use trillium_client::Client;
-use trillium_http::Status;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 #[derive(Deserialize, Validate, Debug)]
@@ -22,7 +22,7 @@ impl UpdateAggregator {
     pub async fn build(
         self,
         aggregator: Aggregator,
-        client: Client,
+        client: HttpClient,
         crypter: &Crypter,
     ) -> Result<super::ActiveModel, Error> {
         self.validate()?;
@@ -40,10 +40,12 @@ impl UpdateAggregator {
         let aggregator_config = AggregatorClient::get_config(client, api_url, &bearer_token)
             .await
             .map_err(|e| match e {
-                ClientError::HttpStatusNotSuccess {
-                    status: Some(Status::Unauthorized | Status::Forbidden),
-                    ..
-                } => {
+                ClientError::HttpStatusNotSuccess(ref e)
+                    if matches!(
+                        e.status,
+                        Some(StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN)
+                    ) =>
+                {
                     let mut validation_errors = ValidationErrors::new();
                     validation_errors
                         .add("bearer_token", ValidationError::new("token-not-recognized"));

@@ -1,3 +1,4 @@
+use divviup_api::clients::X_ORIGINAL_URL;
 use serde::Deserialize;
 use std::{
     fmt::{Display, Formatter, Result},
@@ -25,17 +26,23 @@ impl LoggedConn {
 
 impl From<&mut Conn> for LoggedConn {
     fn from(conn: &mut Conn) -> Self {
-        let url = Url::parse(&format!(
-            "{}://{}{}{}",
-            if conn.is_secure() { "https" } else { "http" },
-            conn.inner().host().unwrap(),
-            conn.path(),
-            match conn.querystring() {
-                "" => "".into(),
-                q => format!("?{q}"),
-            }
-        ))
-        .unwrap();
+        let url = conn
+            .request_headers()
+            .get_str(X_ORIGINAL_URL)
+            .and_then(|s| Url::parse(s).ok())
+            .unwrap_or_else(|| {
+                Url::parse(&format!(
+                    "{}://{}{}{}",
+                    if conn.is_secure() { "https" } else { "http" },
+                    conn.inner().host().unwrap(),
+                    conn.path(),
+                    match conn.querystring() {
+                        "" => "".into(),
+                        q => format!("?{q}"),
+                    }
+                ))
+                .unwrap()
+            });
 
         let state = Arc::new(std::mem::take(conn.inner_mut().state_mut()));
 

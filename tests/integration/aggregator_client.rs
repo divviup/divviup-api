@@ -135,7 +135,7 @@ mod prefixes {
                     router().all(format!("/{prefix}/*"), aggregator_api::mock()),
                 ),
             );
-            let mut app = DivviupApi::new(config(api_mocks)).await;
+            let mut app = DivviupApi::new(config(api_mocks).await).await;
             set_up_schema(app.db()).await;
             let mut aggregator = fixtures::aggregator(&app, None).await.into_active_model();
             aggregator.encrypted_bearer_token = ActiveValue::Set(

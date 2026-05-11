@@ -1,9 +1,9 @@
+use crate::clients::HttpClient;
 use janus_messages::Time as JanusTime;
 use sea_orm::{ActiveModelTrait, ActiveValue, IntoActiveModel};
 use serde::Deserialize;
 use time::OffsetDateTime;
 use tokio::try_join;
-use trillium_client::Client;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 use crate::{deserialize_some, entity::Aggregator, handler::Error, Crypter, Db};
@@ -36,7 +36,7 @@ impl UpdateTask {
         &self,
         aggregator: Aggregator,
         task_id: &str,
-        http_client: &Client,
+        http_client: &HttpClient,
         crypter: &Crypter,
     ) -> Result<(), Error> {
         let expiration = self
@@ -65,7 +65,7 @@ impl UpdateTask {
     /// an [`ActiveModel`] for committing to the database.
     pub async fn update(
         self,
-        http_client: &Client,
+        http_client: &HttpClient,
         db: &Db,
         crypter: &Crypter,
         model: super::Model,

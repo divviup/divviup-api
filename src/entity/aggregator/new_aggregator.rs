@@ -1,9 +1,11 @@
 use super::ActiveModel;
+use crate::clients::HttpClient;
 use crate::{
     clients::{AggregatorClient, ClientError},
     entity::{url::Url, Account, Aggregator},
     handler::Error,
 };
+use axum::http::StatusCode;
 use sea_orm::IntoActiveModel;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -12,8 +14,6 @@ use std::{
 };
 use time::OffsetDateTime;
 use tokio::net::lookup_host;
-use trillium_client::Client;
-use trillium_http::Status;
 use url::Host;
 use uuid::Uuid;
 use validator::{Validate, ValidationError, ValidationErrors};
@@ -123,7 +123,7 @@ impl NewAggregator {
     pub async fn build(
         self,
         account: Option<&Account>,
-        client: Client,
+        client: HttpClient,
         crypter: &crate::Crypter,
         ssrf_validation_enabled: bool,
     ) -> Result<ActiveModel, Error> {
@@ -142,20 +142,24 @@ impl NewAggregator {
         )
         .await
         .map_err(|e| match e {
-            ClientError::HttpStatusNotSuccess {
-                status: Some(Status::Unauthorized | Status::Forbidden),
-                ..
-            } => {
+            ClientError::HttpStatusNotSuccess(ref e)
+                if matches!(
+                    e.status,
+                    Some(StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN)
+                ) =>
+            {
                 let mut ve = ValidationErrors::new();
                 ve.add("bearer_token", ValidationError::new("token-not-recognized"));
                 ve.into()
             }
 
-            ClientError::Http(_)
-            | ClientError::HttpStatusNotSuccess {
-                status: Some(Status::NotFound),
-                ..
-            } => {
+            ClientError::Http(_) => {
+                let mut ve = ValidationErrors::new();
+                ve.add("api_url", ValidationError::new("http-error"));
+                ve.into()
+            }
+
+            ClientError::HttpStatusNotSuccess(ref e) if e.status == Some(StatusCode::NOT_FOUND) => {
                 let mut ve = ValidationErrors::new();
                 ve.add("api_url", ValidationError::new("http-error"));
                 ve.into()

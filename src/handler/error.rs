@@ -5,7 +5,6 @@ use axum::Json as AxumJson;
 use sea_orm::DbErr;
 use serde_json::json;
 use std::sync::Arc;
-use trillium_api::Error as ApiError;
 use validator::ValidationErrors;
 
 // TODO: remove in Part 9 (test-support rewrite) — ErrorHandler is only kept
@@ -16,6 +15,15 @@ impl trillium::Handler for ErrorHandler {
     async fn run(&self, conn: trillium::Conn) -> trillium::Conn {
         conn
     }
+}
+
+/// API-layer errors surfaced by extractors and content-type negotiation.
+#[derive(thiserror::Error, Debug, Clone)]
+pub enum ApiError {
+    #[error("unsupported mime type: {mime_type}")]
+    UnsupportedMimeType { mime_type: String },
+    #[error("parse error at {path}: {message}")]
+    ParseError { path: String, message: String },
 }
 
 #[derive(thiserror::Error, Debug, Clone)]
@@ -81,12 +89,6 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for Error {
     }
 }
 
-impl From<serde_json::Error> for Error {
-    fn from(value: serde_json::Error) -> Self {
-        ApiError::from(value).into()
-    }
-}
-
 impl From<tower_sessions::session::Error> for Error {
     fn from(value: tower_sessions::session::Error) -> Self {
         Self::Other(Arc::new(value))
@@ -114,8 +116,6 @@ impl IntoResponse for Error {
             Error::CallbackCsrfMismatch
             | Error::CallbackMissingPkce
             | Error::CallbackMissingCode => {
-                // Preserve the Trillium-side behavior of 403 with a plain-text
-                // explanatory body for OAuth callback validation failures.
                 (StatusCode::FORBIDDEN, self.to_string()).into_response()
             }
 

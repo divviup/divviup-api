@@ -7,7 +7,10 @@ mod update_aggregator;
 mod vdaf_name;
 
 use super::{json::Json, url::Url, AccountColumn, AccountRelation, Accounts, Memberships};
-use crate::{clients::AggregatorClient, Crypter, Error};
+use crate::{
+    clients::{AggregatorClient, HttpClient},
+    Crypter, Error,
+};
 use sea_orm::{
     ActiveModelBehavior, ActiveValue, DeriveEntityModel, DerivePrimaryKey, DeriveRelation,
     EntityTrait, EnumIter, IntoActiveModel, PrimaryKeyTrait, Related, RelationDef, RelationTrait,
@@ -65,7 +68,7 @@ impl Model {
 
     pub fn client(
         &self,
-        http_client: trillium_client::Client,
+        http_client: HttpClient,
         crypter: &Crypter,
     ) -> Result<AggregatorClient, Error> {
         Ok(AggregatorClient::new(

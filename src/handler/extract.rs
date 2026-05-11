@@ -8,10 +8,12 @@ use axum::http::{request::Parts, StatusCode};
 use axum::response::{IntoResponse, Response};
 use sea_orm::EntityTrait;
 use serde::{de::DeserializeOwned, Serialize};
-use trillium_api::Error as ApiError;
 use uuid::Uuid;
 
-use crate::{handler::Error, Db, Permissions, PermissionsActor};
+use crate::{
+    handler::{error::ApiError, Error},
+    Db, Permissions, PermissionsActor,
+};
 
 /// A JSON extractor/response that mirrors the Trillium `api()` + `Json<T>`
 /// behaviour: request bodies are deserialized via [`serde_path_to_error`] so

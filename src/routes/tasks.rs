@@ -1,3 +1,4 @@
+use crate::clients::HttpClient;
 use crate::{
     clients::aggregator_client::{api_types::TaskAggregationJobMetrics, TaskUploadMetrics},
     config::FeatureFlags,
@@ -19,7 +20,6 @@ use std::time::Duration;
 use time::OffsetDateTime;
 use tokio::join;
 use tracing::warn;
-use trillium_client::Client;
 
 impl Permissions for Task {
     fn allow_write(&self, actor: &PermissionsActor) -> bool {
@@ -57,7 +57,7 @@ where
 async fn refresh_metrics_if_needed(
     task: Task,
     db: Db,
-    client: Client,
+    client: HttpClient,
     crypter: &Crypter,
 ) -> Result<Task, Error> {
     if OffsetDateTime::now_utc() - task.updated_at <= Duration::from_secs(5 * 60) {
@@ -103,7 +103,7 @@ pub mod axum_handler {
     pub async fn create(
         account: Account,
         State(db): State<Db>,
-        State(client): State<Client>,
+        State(client): State<HttpClient>,
         State(crypter): State<Crypter>,
         Json(mut new_task): Json<NewTask>,
     ) -> Result<impl IntoResponse, Error> {
@@ -120,7 +120,7 @@ pub mod axum_handler {
     pub async fn show(
         task: Task,
         State(db): State<Db>,
-        State(client): State<Client>,
+        State(client): State<HttpClient>,
         State(crypter): State<Crypter>,
         State(feature_flags): State<FeatureFlags>,
     ) -> Result<impl IntoResponse, Error> {
@@ -136,7 +136,7 @@ pub mod axum_handler {
     pub async fn update(
         task: Task,
         State(db): State<Db>,
-        State(client): State<Client>,
+        State(client): State<HttpClient>,
         State(crypter): State<Crypter>,
         Json(update): Json<UpdateTask>,
     ) -> Result<Json<Task>, Error> {
@@ -158,7 +158,7 @@ pub mod axum_handler {
     pub async fn delete(
         task: Task,
         State(db): State<Db>,
-        State(client): State<Client>,
+        State(client): State<HttpClient>,
         State(crypter): State<Crypter>,
         Query(params): Query<DeleteParams>,
     ) -> Result<StatusCode, Error> {

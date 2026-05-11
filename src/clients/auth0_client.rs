@@ -1,4 +1,5 @@
 use async_lock::RwLock;
+use axum::http::{header, StatusCode};
 use educe::Educe;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::{de::DeserializeOwned, Serialize};
@@ -7,18 +8,10 @@ use std::{
     sync::Arc,
     time::{Duration, SystemTime},
 };
-
-use trillium::{
-    Conn,
-    KnownHeaderName::{Accept, Authorization},
-    Status,
-};
-use trillium_api::FromConn;
-use trillium_client::Client;
 use url::Url;
 
 use crate::{
-    clients::{ClientConnExt, ClientError, PostmarkClient},
+    clients::{ClientError, HttpClient, PostmarkClient, ResponseExt, ResponseJsonExt},
     Config,
 };
 
@@ -27,18 +20,11 @@ use crate::{
 pub struct Auth0Client {
     #[educe(Debug = false)]
     token: Arc<RwLock<Option<TokenWithExpiry>>>,
-    client: Client,
+    client: HttpClient,
     #[educe(Debug = false)]
     secret: String,
     client_id: String,
     postmark_client: PostmarkClient,
-}
-
-#[trillium::async_trait]
-impl FromConn for Auth0Client {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        conn.state().cloned()
-    }
 }
 
 fn generate_password() -> String {
@@ -59,7 +45,7 @@ impl Auth0Client {
             .client
             .clone()
             .with_base(config.auth_url.clone())
-            .with_default_header(Accept, "application/json");
+            .with_default_header(header::ACCEPT, "application/json");
 
         Self {
             token: Arc::new(RwLock::new(None)),
@@ -119,10 +105,9 @@ impl Auth0Client {
             .await
         {
             Ok(user) => extract_user_id(&user),
-            Err(ClientError::HttpStatusNotSuccess {
-                status: Some(Status::Conflict),
-                ..
-            }) => self.find_user_id_by_email(email).await,
+            Err(ClientError::HttpStatusNotSuccess(e)) if e.status == Some(StatusCode::CONFLICT) => {
+                self.find_user_id_by_email(email).await
+            }
             Err(e) => Err(e),
         }
     }
@@ -158,18 +143,20 @@ impl Auth0Client {
 
         guard.take();
 
-        let token = self
+        let token: Token = self
             .client
             .post("/oauth/token")
-            .with_json_body(&json!({
+            .json(&json!({
                 "grant_type": "client_credentials",
                 "client_id": self.client_id,
                 "client_secret": self.secret,
-                "audience": self.client.build_url("/api/v2/").unwrap(),
-            }))?
+                "audience": self.client.build_url("/api/v2/").unwrap().to_string(),
+            }))
+            .send()
+            .await?
             .success_or_client_error()
             .await?
-            .response_json::<Token>()
+            .response_json()
             .await?;
 
         *guard = Some(token.clone().into());
@@ -193,13 +180,14 @@ impl Auth0Client {
         let token = self.token().await?;
         self.client
             .post(path)
-            .with_request_header(Authorization, format!("Bearer {token}"))
-            .with_json_body(json)?
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .json(json)
+            .send()
+            .await?
             .success_or_client_error()
             .await?
             .response_json()
             .await
-            .map_err(ClientError::from)
     }
 
     async fn get<T>(&self, path: &str) -> Result<T, ClientError>
@@ -209,12 +197,13 @@ impl Auth0Client {
         let token = self.token().await?;
         self.client
             .get(path)
-            .with_request_header(Authorization, format!("Bearer {token}"))
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .send()
+            .await?
             .success_or_client_error()
             .await?
             .response_json()
             .await
-            .map_err(ClientError::from)
     }
 }
 

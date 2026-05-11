@@ -1,4 +1,4 @@
-use crate::{handler::Error, Config, User, USER_SESSION_KEY};
+use crate::{clients::HttpClient, handler::Error, Config, User, USER_SESSION_KEY};
 use axum::{
     extract::{Query, State},
     http::{header, StatusCode},
@@ -6,21 +6,16 @@ use axum::{
 };
 use oauth2::{
     basic::{BasicClient, BasicErrorResponseType},
-    AsyncHttpClient, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, EndpointNotSet,
-    EndpointSet, HttpRequest, HttpResponse, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl,
-    RequestTokenError, Scope, StandardErrorResponse, TokenResponse, TokenUrl,
+    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, EndpointNotSet, EndpointSet,
+    HttpClientError, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, RequestTokenError, Scope,
+    StandardErrorResponse, TokenResponse, TokenUrl,
 };
 use serde::Deserialize;
-use std::{future::Future, pin::Pin, sync::Arc};
+use std::sync::Arc;
 use tower_sessions::Session;
-use trillium::{KnownHeaderName::Authorization, Status};
-use trillium_client::{Client, ClientSerdeError};
-use trillium_http::Headers;
 use url::Url;
 
 /// Type alias for an oauth2::Client once we've finished configuring it in `OauthClient::new`.
-/// Crate oauth's guide to upgrading to 0.5 recommends defining this kind of alias:
-/// https://github.com/ramosbugs/oauth2-rs/blob/main/UPGRADE.md#add-typestate-generic-types-to-client
 pub type ConfiguredOauthClient = BasicClient<
     EndpointSet,    // HasAuthURL
     EndpointNotSet, // HasDeviceAuthURL
@@ -38,7 +33,7 @@ pub struct Oauth2Config {
     pub redirect_url: Url,
     pub base_url: Url,
     pub audience: String,
-    pub http_client: Client,
+    pub http_client: HttpClient,
 }
 
 const PKCE_SESSION_KEY: &str = "pkce_verifier";
@@ -141,11 +136,7 @@ fn found_redirect(location: &str) -> Response {
 #[derive(thiserror::Error, Debug)]
 pub enum OauthError {
     #[error(transparent)]
-    HttpError(#[from] trillium_client::Error),
-    #[error(transparent)]
-    InvalidStatusCode(#[from] oauth2::http::status::InvalidStatusCode),
-    #[error(transparent)]
-    HeaderConversionError(#[from] trillium_http::http_compat1::HeaderConversionError),
+    HttpError(#[from] reqwest::Error),
     #[error(transparent)]
     UrlError(#[from] url::ParseError),
     #[error("error response: {0}")]
@@ -154,34 +145,37 @@ pub enum OauthError {
     Serde(#[from] serde_json::error::Error),
     #[error("Other error: {0}")]
     Other(String),
-    #[error("expected a successful status, but found {0:?}")]
-    UnexpectedStatus(Option<Status>),
+    #[error("expected a successful status, but found {0}")]
+    UnexpectedStatus(StatusCode),
     #[error(transparent)]
     HttpCrateError(#[from] oauth2::http::Error),
 }
 
-impl From<RequestTokenError<OauthError, StandardErrorResponse<BasicErrorResponseType>>>
-    for OauthError
+impl
+    From<
+        RequestTokenError<
+            HttpClientError<reqwest::Error>,
+            StandardErrorResponse<BasicErrorResponseType>,
+        >,
+    > for OauthError
 {
     fn from(
-        value: RequestTokenError<OauthError, StandardErrorResponse<BasicErrorResponseType>>,
+        value: RequestTokenError<
+            HttpClientError<reqwest::Error>,
+            StandardErrorResponse<BasicErrorResponseType>,
+        >,
     ) -> Self {
         match value {
             RequestTokenError::ServerResponse(server_response) => {
                 OauthError::RequestTokenError(server_response)
             }
-            RequestTokenError::Request(e) => e,
+            RequestTokenError::Request(e) => match e {
+                HttpClientError::Reqwest(e) => OauthError::HttpError(*e),
+                HttpClientError::Http(e) => OauthError::HttpCrateError(e),
+                other => OauthError::Other(other.to_string()),
+            },
             RequestTokenError::Parse(error, _path) => OauthError::Serde(error.into_inner()),
             RequestTokenError::Other(s) => OauthError::Other(s),
-        }
-    }
-}
-
-impl From<ClientSerdeError> for OauthError {
-    fn from(value: ClientSerdeError) -> Self {
-        match value {
-            ClientSerdeError::HttpError(e) => OauthError::HttpError(e),
-            ClientSerdeError::JsonError(e) => OauthError::Serde(e),
         }
     }
 }
@@ -199,6 +193,7 @@ pub struct OauthClient(Arc<OauthClientInner>);
 struct OauthClientInner {
     oauth_config: Oauth2Config,
     oauth2_client: ConfiguredOauthClient,
+    reqwest_client: reqwest::Client,
 }
 
 impl OauthClient {
@@ -207,33 +202,32 @@ impl OauthClient {
         auth_code: AuthorizationCode,
         pkce_verifier: PkceCodeVerifier,
     ) -> Result<User, OauthError> {
-        let http_client = self.http_client().clone();
         let exchange = self
             .oauth2_client()
             .exchange_code(auth_code)
             .set_pkce_verifier(pkce_verifier)
             .add_extra_param("audience", &self.0.oauth_config.audience)
-            .request_async(&ClientWrapper(http_client))
+            .request_async(&self.0.reqwest_client)
             .await?;
 
-        let mut client_conn = self
-            .http_client()
-            .get(self.0.oauth_config.base_url.join("/userinfo")?)
-            .with_request_header(
-                Authorization,
+        let userinfo_url = self.0.oauth_config.base_url.join("/userinfo")?;
+        let response = self
+            .0
+            .oauth_config
+            .http_client
+            .get_url(userinfo_url)
+            .header(
+                header::AUTHORIZATION,
                 format!("Bearer {}", exchange.access_token().secret()),
             )
+            .send()
             .await?;
-        if !client_conn
-            .status()
-            .as_ref()
-            .map(Status::is_success)
-            .unwrap_or_default()
-        {
-            return Err(OauthError::UnexpectedStatus(client_conn.status()));
+
+        if !response.status().is_success() {
+            return Err(OauthError::UnexpectedStatus(response.status()));
         }
 
-        Ok(client_conn.response_json().await?)
+        Ok(response.json().await?)
     }
 
     pub fn new(config: &Oauth2Config) -> Self {
@@ -243,52 +237,16 @@ impl OauthClient {
             .set_token_uri(TokenUrl::from_url(config.token_url.clone()))
             .set_redirect_uri(RedirectUrl::from_url(config.redirect_url.clone()));
 
+        let reqwest_client = reqwest::Client::new();
+
         Self(Arc::new(OauthClientInner {
             oauth_config: config.clone(),
             oauth2_client,
+            reqwest_client,
         }))
     }
 
     pub fn oauth2_client(&self) -> &ConfiguredOauthClient {
         &self.0.oauth2_client
-    }
-
-    pub fn http_client(&self) -> &Client {
-        &self.0.oauth_config.http_client
-    }
-}
-
-// Wraps a [`trillium_client::Client`] so we can implement [`oauth2::AsyncHttpClient`] on it, as
-// otherwise the orphan rule would forbid this.
-struct ClientWrapper(Client);
-
-// Inspired by the impls `oauth2` provides for `reqwest::Client`
-// https://github.com/ramosbugs/oauth2-rs/blob/23b952b23e6069525bc7e4c4f2c4924b8d28ce3a/src/reqwest.rs
-impl<'c> AsyncHttpClient<'c> for ClientWrapper {
-    type Error = OauthError;
-    type Future = Pin<Box<dyn Future<Output = Result<HttpResponse, Self::Error>> + Send + 'c>>;
-
-    fn call(&'c self, req: HttpRequest) -> Self::Future {
-        Box::pin(async move {
-            // Translate the oauth2::http::Request into a Trillium request
-            let mut conn = self
-                .0
-                .build_conn(req.method(), req.uri().to_string().parse::<Url>()?)
-                .with_body(req.body().clone())
-                .with_request_headers(Headers::from(req.headers().clone()))
-                .await?;
-            let status_code: oauth2::http::StatusCode = conn.status().unwrap().try_into()?;
-            let body = conn.response_body().read_bytes().await?;
-
-            // Now transform the Trillium response back into an http::Response
-            let mut builder = oauth2::http::Response::builder().status(status_code);
-            let http_headers: oauth2::http::HeaderMap =
-                conn.response_headers().clone().try_into()?;
-            builder
-                .headers_mut()
-                .ok_or_else(|| OauthError::Other("no headers in builder?".into()))?
-                .extend(http_headers);
-            Ok::<_, OauthError>(builder.body(body)?)
-        })
     }
 }

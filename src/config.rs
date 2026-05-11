@@ -15,8 +15,9 @@ use std::{
     str::FromStr,
 };
 use thiserror::Error;
-use trillium_client::Client;
 use url::Url;
+
+use crate::clients::HttpClient;
 
 const POSTMARK_URL: &str = "https://api.postmarkapp.com";
 
@@ -36,7 +37,7 @@ pub struct Config {
     pub auth_client_secret: String,
     /// The base URL to an OAuth2 IdP (usually Auth0).
     pub auth_url: Url,
-    pub client: Client,
+    pub client: HttpClient,
     pub crypter: Crypter,
     /// A libpq-compatible PostgreSQL URI.
     #[educe(Debug = false)]
@@ -127,22 +128,13 @@ where
     }
 }
 
-#[cfg(not(feature = "api-mocks"))]
-fn build_client() -> trillium_client::Client {
-    use trillium_rustls::RustlsConfig;
-    use trillium_tokio::ClientConfig;
-    Client::new(RustlsConfig::default().with_tcp_config(ClientConfig::default()))
-        .with_default_pool()
-}
-
-#[cfg(feature = "api-mocks")]
-fn build_client() -> trillium_client::Client {
-    use crate::api_mocks::ApiMocks;
-
-    Client::new(trillium_testing::connector(ApiMocks::new(
-        POSTMARK_URL,
-        var::<Url>("AUTH_URL").unwrap().as_ref(),
-    )))
+fn build_client() -> HttpClient {
+    HttpClient::new(
+        reqwest::Client::builder()
+            .use_rustls_tls()
+            .build()
+            .expect("failed to build reqwest client"),
+    )
 }
 
 impl Config {
@@ -218,8 +210,8 @@ impl Config {
     }
 }
 
-impl AsRef<Client> for Config {
-    fn as_ref(&self) -> &Client {
+impl AsRef<HttpClient> for Config {
+    fn as_ref(&self) -> &HttpClient {
         &self.client
     }
 }
@@ -283,7 +275,7 @@ mod tests {
             auth_client_id: "client_id".into(),
             auth_client_secret: "super-secret-client-secret".into(),
             auth_url: "https://auth.example".parse().unwrap(),
-            client: Client::new(trillium_tokio::ClientConfig::default()),
+            client: HttpClient::new(reqwest::Client::new()),
             crypter: Crypter::from(Crypter::generate_key()),
             database_url: "postgres://user:hunter2@db.example/mydb".parse().unwrap(),
             email_address: "test@example.test".parse().unwrap(),

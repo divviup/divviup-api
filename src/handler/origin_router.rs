@@ -2,12 +2,8 @@
 use std::collections::HashMap;
 use trillium::{Conn, Handler, Info};
 
-fn origin(conn: &Conn) -> String {
-    let scheme = if conn.is_secure() { "https" } else { "http" };
-
-    let host = conn.inner().host().unwrap_or_default().to_lowercase();
-
-    format!("{scheme}://{host}")
+fn origin_host(conn: &Conn) -> String {
+    conn.inner().host().unwrap_or_default().to_lowercase()
 }
 
 #[derive(Default, Debug)]
@@ -17,9 +13,8 @@ pub struct OriginRouter {
 
 impl OriginRouter {
     fn handler(&self, conn: &Conn) -> Option<&dyn Handler> {
-        self.map
-            .get(&origin(conn))
-            .map(|boxed_handler| &**boxed_handler)
+        let host = origin_host(conn);
+        self.map.get(&host).map(|boxed_handler| &**boxed_handler)
     }
 
     /// Construct a new OriginRouter.
@@ -37,10 +32,13 @@ impl OriginRouter {
     /// Add a handler to this origin router at the specified exact origin.
     /// See also [`with_handler`] for chainability.
     pub fn add_handler(&mut self, origin: &str, handler: impl Handler) {
-        self.map.insert(
-            origin.to_lowercase().trim_end_matches('/').to_owned(),
-            Box::new(handler),
-        );
+        let key = origin
+            .to_lowercase()
+            .trim_end_matches('/')
+            .trim_start_matches("https://")
+            .trim_start_matches("http://")
+            .to_owned();
+        self.map.insert(key, Box::new(handler));
     }
 }
 

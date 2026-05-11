@@ -973,11 +973,14 @@ mod delete {
     async fn force() -> TestResult {
         install_test_trace_subscriber();
         let client_logs = ClientLogs::default();
-        let mut app = DivviupApi::new(config((
-            client_logs.clone(),
-            // Stub out aggregator API mocks to simulate a FUBAR aggregator.
-            |conn: Conn| async move { conn.with_status(Status::InternalServerError) },
-        )))
+        let mut app = DivviupApi::new(
+            config((
+                client_logs.clone(),
+                // Stub out aggregator API mocks to simulate a FUBAR aggregator.
+                |conn: Conn| async move { conn.with_status(Status::InternalServerError) },
+            ))
+            .await,
+        )
         .await;
         set_up_schema(app.db()).await;
         let mut info = "testing".into();
