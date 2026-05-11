@@ -5,6 +5,7 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
 };
+use std::path::PathBuf;
 use tower::Service;
 use tower_http::services::{ServeDir, ServeFile};
 use url::Url;
@@ -19,7 +20,7 @@ pub struct AssetConfig {
 
 impl AssetConfig {
     pub fn new(api_url: &Url, app_url: &Url) -> Self {
-        let asset_dir = std::path::PathBuf::from(env!("ASSET_DIR"));
+        let asset_dir = PathBuf::from(env!("ASSET_DIR"));
         let serve_index = ServeFile::new(asset_dir.join("index.html"));
         let serve_dir = ServeDir::new(asset_dir);
         let host = app_url.host_str().expect("app_url must have a host");
