@@ -35,12 +35,21 @@ impl TowerSessionStore {
 /// Build the Axum-side [`SessionManagerLayer`].
 ///
 /// `tower-sessions` 0.15 accepts only a single signing key; there is no
-/// `with_older_secrets` equivalent.
-/// TODO: revisit key rotation support in Part 9 (test-support rewrite).
+/// `with_older_secrets` equivalent. Older secrets in the config are
+/// parsed but ignored — see <https://github.com/divviup/divviup-api/issues/2252>.
 pub fn axum_session_layer(
     db: Db,
     secrets: &SessionSecrets,
 ) -> SessionManagerLayer<TowerSessionStore, SignedCookie> {
+    if !secrets.older.is_empty() {
+        tracing::warn!(
+            count = secrets.older.len(),
+            "SESSION_SECRETS contains older keys that are ignored — \
+             session cookie rotation is not yet supported, see \
+             https://github.com/divviup/divviup-api/issues/2252"
+        );
+    }
+
     // `cookie::Key::from` panics on keys shorter than 64 bytes. We only
     // guarantee 32, so derive a longer key from the configured secret.
     let key = Key::derive_from(&secrets.current);

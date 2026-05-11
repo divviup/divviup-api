@@ -1,11 +1,10 @@
 use axum::{
     body::Body,
     extract::{Request, State},
-    http::{header, HeaderMap, HeaderValue, StatusCode},
+    http::{header, HeaderMap, HeaderValue, Method, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
 };
-use std::path::PathBuf;
 use tower::Service;
 use tower_http::services::{ServeDir, ServeFile};
 use url::Url;
@@ -14,14 +13,15 @@ use url::Url;
 pub struct AssetConfig {
     pub api_url: Url,
     pub app_host: String,
-    asset_dir: PathBuf,
-    index_file: PathBuf,
+    serve_dir: ServeDir,
+    serve_index: ServeFile,
 }
 
 impl AssetConfig {
     pub fn new(api_url: &Url, app_url: &Url) -> Self {
-        let asset_dir = PathBuf::from(env!("ASSET_DIR"));
-        let index_file = asset_dir.join("index.html");
+        let asset_dir = std::path::PathBuf::from(env!("ASSET_DIR"));
+        let serve_index = ServeFile::new(asset_dir.join("index.html"));
+        let serve_dir = ServeDir::new(asset_dir);
         let host = app_url.host_str().expect("app_url must have a host");
         let app_host = match app_url.port() {
             Some(port) => format!("{host}:{port}"),
@@ -30,8 +30,8 @@ impl AssetConfig {
         Self {
             api_url: api_url.clone(),
             app_host,
-            asset_dir,
-            index_file,
+            serve_dir,
+            serve_index,
         }
     }
 }
@@ -61,25 +61,29 @@ pub async fn serve_assets(
     }
 
     if request.uri().path() == "/api_url" {
-        return (
-            [
-                (header::CONTENT_TYPE, "text/plain"),
-                (header::CACHE_CONTROL, "no-cache"),
-            ],
-            config.api_url.to_string(),
-        )
-            .into_response();
+        let headers = [
+            (header::CONTENT_TYPE, "text/plain"),
+            (header::CACHE_CONTROL, "no-cache"),
+        ];
+        return if request.method() == Method::HEAD {
+            (headers, "").into_response()
+        } else {
+            (headers, config.api_url.to_string()).into_response()
+        };
     }
 
     let is_asset_path = request.uri().path().starts_with("/assets");
 
-    let mut service = ServeDir::new(&config.asset_dir);
-    let mut response = service.call(request).await.into_response();
+    let mut response = config.serve_dir.clone().call(request).await.into_response();
 
     if response.status() == StatusCode::NOT_FOUND && !is_asset_path {
         let fallback_request = Request::new(Body::empty());
-        let mut fallback = ServeFile::new(&config.index_file);
-        response = fallback.call(fallback_request).await.into_response();
+        response = config
+            .serve_index
+            .clone()
+            .call(fallback_request)
+            .await
+            .into_response();
     }
 
     let cache_value = if response.status().is_success() && is_asset_path {

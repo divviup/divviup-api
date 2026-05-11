@@ -94,6 +94,7 @@ async fn main() {
     let serve_result = axum::serve(listener, app.router)
         .with_graceful_shutdown(shutdown_signal(cancel.clone()))
         .await;
+    // Ensure queue workers stop even if serve exits without a signal.
     cancel.cancel();
 
     if let Err(e) = serve_result {
