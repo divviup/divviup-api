@@ -16,10 +16,6 @@ impl trillium::Handler for ErrorHandler {
     async fn run(&self, conn: trillium::Conn) -> trillium::Conn {
         conn
     }
-
-    async fn before_send(&self, conn: trillium::Conn) -> trillium::Conn {
-        conn
-    }
 }
 
 #[derive(thiserror::Error, Debug, Clone)]
