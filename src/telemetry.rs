@@ -20,6 +20,7 @@ pub fn install_metrics() -> Result<Registry, MetricError> {
         .build()
         .unwrap();
 
+    // Note that the implementation of `Default` pulls in attributes set via environment variables.
     let default_resource = Resource::default();
 
     let mut git_revision: &str = git_version!(fallback = "unknown");

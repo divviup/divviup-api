@@ -183,12 +183,14 @@ pub struct TraceGuards {
 pub async fn get_traceconfig(
     State(handle): State<Arc<TraceReloadHandle>>,
 ) -> Result<String, (StatusCode, String)> {
-    handle.with_current(|f| f.to_string()).map_err(|err| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to get current filter: {err}"),
-        )
-    })
+    handle
+        .with_current(|trace_filter| trace_filter.to_string())
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to get current filter: {err}"),
+            )
+        })
 }
 
 /// Allows modifying the runtime tracing filter. Accepts a request whose body
@@ -206,10 +208,12 @@ pub async fn put_traceconfig(
             format!("failed to update filter: {err}"),
         )
     })?;
-    handle.with_current(|f| f.to_string()).map_err(|err| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("failed to get current filter: {err}"),
-        )
-    })
+    handle
+        .with_current(|trace_filter| trace_filter.to_string())
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to get current filter: {err}"),
+            )
+        })
 }
