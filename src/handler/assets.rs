@@ -5,7 +5,12 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
 };
-use std::path::PathBuf;
+use std::{
+    convert::Infallible,
+    future::Future,
+    path::{Path, PathBuf},
+    pin::Pin,
+};
 use tower::Service;
 use tower_http::services::{ServeDir, ServeFile};
 use url::Url;
@@ -14,16 +19,15 @@ use url::Url;
 pub struct AssetConfig {
     pub api_url: Url,
     pub app_host: String,
-    serve_dir: ServeDir,
-    serve_index: ServeFile,
+    serve_dir: ServeDir<IndexFallback>,
 }
 
 impl AssetConfig {
     pub fn new(api_url: &Url, app_url: &Url) -> Self {
         // TODO(#2263): move ASSET_DIR from compile-time to runtime env var
         let asset_dir = PathBuf::from(env!("ASSET_DIR"));
-        let serve_index = ServeFile::new(asset_dir.join("index.html"));
-        let serve_dir = ServeDir::new(asset_dir);
+        let fallback = IndexFallback::new(asset_dir.join("index.html"));
+        let serve_dir = ServeDir::new(asset_dir).fallback(fallback);
         let host = app_url.host_str().expect("app_url must have a host");
         let app_host = match app_url.port() {
             Some(port) => format!("{host}:{port}"),
@@ -33,7 +37,45 @@ impl AssetConfig {
             api_url: api_url.clone(),
             app_host,
             serve_dir,
-            serve_index,
+        }
+    }
+}
+
+/// Fallback service for `ServeDir` that serves `index.html` for
+/// non-asset paths (SPA routing) and returns 404 for `/assets/*` misses.
+#[derive(Clone, Debug)]
+struct IndexFallback {
+    serve_index: ServeFile,
+}
+
+impl IndexFallback {
+    fn new(index_path: impl AsRef<Path>) -> Self {
+        Self {
+            serve_index: ServeFile::new(index_path),
+        }
+    }
+}
+
+impl Service<Request<Body>> for IndexFallback {
+    type Response = Response<Body>;
+    type Error = Infallible;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+
+    fn poll_ready(
+        &mut self,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<(), Self::Error>> {
+        self.serve_index
+            .poll_ready(cx)
+            .map_err(|e: Infallible| match e {})
+    }
+
+    fn call(&mut self, req: Request<Body>) -> Self::Future {
+        if req.uri().path().starts_with("/assets") {
+            Box::pin(async { Ok(StatusCode::NOT_FOUND.into_response()) })
+        } else {
+            let future = self.serve_index.call(req);
+            Box::pin(async { Ok(future.await.into_response()) })
         }
     }
 }
@@ -77,16 +119,6 @@ pub async fn serve_assets(
     let is_asset_path = request.uri().path().starts_with("/assets");
 
     let mut response = config.serve_dir.clone().call(request).await.into_response();
-
-    if response.status() == StatusCode::NOT_FOUND && !is_asset_path {
-        let fallback_request = Request::new(Body::empty());
-        response = config
-            .serve_index
-            .clone()
-            .call(fallback_request)
-            .await
-            .into_response();
-    }
 
     let cache_value = if response.status().is_success() && is_asset_path {
         HeaderValue::from_static("max-age=31536000")
