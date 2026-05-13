@@ -65,8 +65,7 @@ impl Service<Request<Body>> for IndexFallback {
         &mut self,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.serve_index
-            .poll_ready(cx)
+        Service::<Request<Body>>::poll_ready(&mut self.serve_index, cx)
             .map_err(|e: Infallible| match e {})
     }
 
