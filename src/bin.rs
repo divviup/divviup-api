@@ -80,16 +80,16 @@ async fn main() {
     let listen_address = config.listen_address;
     let app = build_app(config).await;
 
-    tracing::info!(
-        "divviup-api {} listening on {listen_address}",
-        env!("CARGO_PKG_VERSION")
-    );
-
     let queue_handle = Queue::new(&app.db, &app.config, cancel.clone()).spawn_workers();
 
     let listener = TcpListener::bind(listen_address)
         .await
         .expect("failed to bind main listener");
+
+    tracing::info!(
+        "divviup-api {} listening on {listen_address}",
+        env!("CARGO_PKG_VERSION")
+    );
 
     let serve_result = axum::serve(listener, app.router)
         .with_graceful_shutdown(shutdown_signal(cancel.clone()))

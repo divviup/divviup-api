@@ -51,6 +51,7 @@ async fn missing_asset_is_not_cached(app: DivviupApi) -> TestResult {
         .run_async(&app)
         .await;
     assert_not_found!(&mut conn);
+    assert_headers!(&conn, "cache-control" => "no-cache");
     Ok(())
 }
 

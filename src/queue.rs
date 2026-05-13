@@ -87,6 +87,7 @@ impl Queue {
         Ok(())
     }
 
+    // TODO(#2262): use TaskTracker to wait for in-flight jobs during graceful shutdown
     pub async fn perform_one_queue_job(&self) -> Result<Option<Model>, DbErr> {
         let tx = self.db.begin().await?;
         let model = if let Some(queue_item) = Entity::next(&tx).await? {
