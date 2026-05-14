@@ -10,6 +10,7 @@ use std::{
     future::Future,
     path::{Path, PathBuf},
     pin::Pin,
+    task::{Context, Poll},
 };
 use tower::Service;
 use tower_http::services::{ServeDir, ServeFile};
@@ -61,10 +62,7 @@ impl Service<Request<Body>> for IndexFallback {
     type Error = Infallible;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
-    fn poll_ready(
-        &mut self,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), Self::Error>> {
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         Service::<Request<Body>>::poll_ready(&mut self.serve_index, cx)
             .map_err(|e: Infallible| match e {})
     }
