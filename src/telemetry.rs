@@ -1,15 +1,19 @@
+use axum::{
+    extract::State,
+    http::{header, StatusCode},
+    response::IntoResponse,
+};
 use git_version::git_version;
 use opentelemetry::{global, KeyValue};
 use opentelemetry_sdk::{
     metrics::{MetricError, SdkMeterProvider},
     Resource,
 };
-use prometheus::Registry;
+use prometheus::{Encoder, Registry, TextEncoder};
 
-/// Install a Prometheus metrics provider and exporter. The
-/// OpenTelemetry global API can be used to create and update
-/// instruments, and they will be sent through this exporter.
-pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricError> {
+/// Install the Prometheus metrics provider and return the [`Registry`] so it
+/// can be shared with the metrics HTTP handler.
+pub fn install_metrics() -> Result<Registry, MetricError> {
     let registry = Registry::new();
     let exporter = opentelemetry_prometheus::exporter()
         .with_registry(registry.clone())
@@ -55,5 +59,19 @@ pub fn metrics_exporter() -> Result<impl trillium::Handler, MetricError> {
             .build()
     });
 
-    Ok(trillium_prometheus::text_format_handler(registry))
+    Ok(registry)
+}
+
+/// Axum handler that serves Prometheus metrics in text format.
+pub async fn metrics_handler(
+    State(registry): State<Registry>,
+) -> Result<impl IntoResponse, (axum::http::StatusCode, String)> {
+    let encoder = TextEncoder::new();
+    let content_type = encoder.format_type().to_owned();
+    let metrics = registry.gather();
+    let mut buf = String::new();
+    encoder
+        .encode_utf8(&metrics, &mut buf)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(([(header::CONTENT_TYPE, content_type)], buf))
 }

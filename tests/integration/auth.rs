@@ -88,11 +88,9 @@ mod login {
 #[test(harness = set_up)]
 async fn logout(app: DivviupApi) -> TestResult {
     // Session destruction (Set-Cookie clearing the session cookie) is not
-    // exercised here: the handler runs on the Axum side and would need a
-    // live session cookie to demonstrate clearing it. The redirect target
-    // is the user-visible contract — the cookie clearing is tower-sessions'
-    // responsibility and will be covered end-to-end in Part 8 when Trillium
-    // is removed.
+    // exercised here: the test harness proxy doesn't propagate cookies, so
+    // we can't round-trip a live session. Cookie clearing is tower-sessions'
+    // responsibility; this test only asserts the redirect contract.
     let user = fixtures::user();
     let conn = get("/logout")
         .with_api_host()

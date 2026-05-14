@@ -49,7 +49,7 @@ where
             .ok_or(Error::AccessDenied)?;
 
         actor
-            .if_allowed_http(&parts.method, task)
+            .if_allowed(&parts.method, task)
             .ok_or(Error::AccessDenied)
     }
 }

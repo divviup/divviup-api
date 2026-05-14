@@ -4,7 +4,7 @@ pub use job::*;
 
 use crate::{
     entity::queue::{ActiveModel, Column, Entity, Model},
-    Config, Db, DivviupApi,
+    Config, Db,
 };
 use sea_orm::{
     sea_query::{all, Expr},
@@ -17,12 +17,11 @@ use tokio::{
     task::{JoinHandle, JoinSet},
     time::sleep,
 };
-use trillium_tokio::{CloneCounterObserver, Stopper};
+use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug)]
 pub struct Queue {
-    observer: CloneCounterObserver,
-    stopper: Stopper,
+    cancel: CancellationToken,
     db: Db,
     job_state: Arc<SharedJobState>,
 }
@@ -46,30 +45,13 @@ fn reschedule_based_on_failure_count(failure_count: i32) -> Option<OffsetDateTim
     }
 }
 
-impl From<&DivviupApi> for Queue {
-    fn from(app: &DivviupApi) -> Self {
-        Self::new(app.db(), app.config())
-    }
-}
-
 impl Queue {
-    pub fn new(db: &Db, config: &Config) -> Self {
+    pub fn new(db: &Db, config: &Config, cancel: CancellationToken) -> Self {
         Self {
-            observer: Default::default(),
+            cancel,
             db: db.clone(),
-            stopper: Default::default(),
             job_state: Arc::new(config.into()),
         }
-    }
-
-    pub fn with_observer(mut self, observer: CloneCounterObserver) -> Self {
-        self.observer = observer;
-        self
-    }
-
-    pub fn with_stopper(mut self, stopper: Stopper) -> Self {
-        self.stopper = stopper;
-        self
     }
 
     pub async fn schedule_recurring_tasks_if_needed(&self) -> Result<(), DbErr> {
@@ -105,10 +87,10 @@ impl Queue {
         Ok(())
     }
 
+    // TODO(#2262): use TaskTracker to wait for in-flight jobs during graceful shutdown
     pub async fn perform_one_queue_job(&self) -> Result<Option<Model>, DbErr> {
         let tx = self.db.begin().await?;
         let model = if let Some(queue_item) = Entity::next(&tx).await? {
-            let _counter = self.observer.counter();
             let mut queue_item = queue_item.into_active_model();
 
             let mut job = queue_item.job.take().ok_or_else(|| {
@@ -170,7 +152,7 @@ impl Queue {
     fn spawn_worker(self, join_set: &mut JoinSet<()>) {
         join_set.spawn(async move {
             loop {
-                if self.stopper.is_stopped() {
+                if self.cancel.is_cancelled() {
                     break;
                 }
 
@@ -182,9 +164,12 @@ impl Queue {
                     Ok(Some(_)) => {}
 
                     Ok(None) => {
-                        let sleep_future =
-                            sleep(Duration::from_millis(fastrand::u64(QUEUE_CHECK_INTERVAL)));
-                        self.stopper.stop_future(sleep_future).await;
+                        let sleep_duration =
+                            Duration::from_millis(fastrand::u64(QUEUE_CHECK_INTERVAL));
+                        tokio::select! {
+                            () = self.cancel.cancelled() => break,
+                            () = sleep(sleep_duration) => {}
+                        }
                     }
                 }
             }
@@ -199,7 +184,7 @@ impl Queue {
         }
 
         while join_set.join_next().await.is_some() {
-            if !self.stopper.is_stopped() {
+            if !self.cancel.is_cancelled() {
                 tracing::error!("Worker task shut down. Restarting.");
                 self.clone().spawn_worker(&mut join_set);
             }

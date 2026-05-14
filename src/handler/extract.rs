@@ -98,6 +98,6 @@ where
         .ok_or(Error::AccessDenied)?;
 
     actor
-        .if_allowed_http(&parts.method, entity)
+        .if_allowed(&parts.method, entity)
         .ok_or(Error::AccessDenied)
 }

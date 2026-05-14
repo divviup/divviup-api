@@ -1,5 +1,6 @@
 //! Configures a tracing subscriber for divviup-api.
 
+use axum::{extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use std::{
     io::{stdout, IsTerminal},
@@ -12,10 +13,6 @@ use tracing_log::LogTracer;
 use tracing_subscriber::{
     filter::FromEnvError, layer::SubscriberExt, reload, EnvFilter, Layer, Registry,
 };
-use trillium::Handler;
-use trillium_api::{api, State};
-use trillium_http::Status;
-use trillium_router::Router;
 
 /// Errors from initializing trace subscriber.
 #[derive(Debug, thiserror::Error)]
@@ -183,46 +180,40 @@ pub struct TraceGuards {
     _chrome_guard: Option<tracing_chrome::FlushGuard>,
 }
 
-pub fn traceconfig_handler(trace_reload_handle: TraceReloadHandle) -> impl Handler {
-    (
-        State(Arc::new(trace_reload_handle)),
-        Router::new()
-            .get("/traceconfig", api(get_traceconfig))
-            .put("/traceconfig", api(put_traceconfig)),
-    )
-}
-
-async fn get_traceconfig(
-    conn: &mut trillium::Conn,
-    State(trace_reload_handle): State<Arc<TraceReloadHandle>>,
-) -> Result<String, Status> {
-    trace_reload_handle
+pub async fn get_traceconfig(
+    State(handle): State<Arc<TraceReloadHandle>>,
+) -> Result<String, (StatusCode, String)> {
+    handle
         .with_current(|trace_filter| trace_filter.to_string())
         .map_err(|err| {
-            conn.set_body(format!("failed to get current filter: {err}"));
-            Status::InternalServerError
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to get current filter: {err}"),
+            )
         })
 }
 
-/// Allows modifying the runtime tracing filter. Accepts a request whose body is a valid tracing
-/// filter. Responds with the updated filter. See [`EnvFilter::try_new`] for details on the accepted
-/// format.
-async fn put_traceconfig(
-    conn: &mut trillium::Conn,
-    (State(trace_reload_handle), request): (State<Arc<TraceReloadHandle>>, String),
-) -> Result<String, Status> {
-    let new_filter = EnvFilter::try_new(request).map_err(|err| {
-        conn.set_body(format!("invalid filter: {err}"));
-        Status::BadRequest
+/// Allows modifying the runtime tracing filter. Accepts a request whose body
+/// is a valid tracing filter string. Responds with the updated filter. See
+/// [`EnvFilter::try_new`] for details on the accepted format.
+pub async fn put_traceconfig(
+    State(handle): State<Arc<TraceReloadHandle>>,
+    body: String,
+) -> Result<String, (StatusCode, String)> {
+    let new_filter = EnvFilter::try_new(body)
+        .map_err(|err| (StatusCode::BAD_REQUEST, format!("invalid filter: {err}")))?;
+    handle.reload(new_filter).map_err(|err| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to update filter: {err}"),
+        )
     })?;
-    trace_reload_handle.reload(new_filter).map_err(|err| {
-        conn.set_body(format!("failed to update filter: {err}"));
-        Status::InternalServerError
-    })?;
-    trace_reload_handle
+    handle
         .with_current(|trace_filter| trace_filter.to_string())
         .map_err(|err| {
-            conn.set_body(format!("failed to get current filter: {err}"));
-            Status::InternalServerError
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to get current filter: {err}"),
+            )
         })
 }

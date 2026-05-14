@@ -1,20 +1,42 @@
 use divviup_api::{
-    trace::{install_trace_subscriber, traceconfig_handler},
-    Config, DivviupApi, Queue,
+    handler::build_app, telemetry, trace, trace::install_trace_subscriber, Config, Queue,
 };
-use trillium::HttpConfig;
-use trillium_http::Stopper;
-use trillium_tokio::CloneCounterObserver;
+use prometheus::Registry;
+use std::sync::Arc;
+use tokio::{
+    net::TcpListener,
+    signal::{
+        self,
+        unix::{signal, SignalKind},
+    },
+};
+use tokio_util::sync::CancellationToken;
 
-/// Maximum request body size: 1 MiB. This JSON API never needs bodies
-/// larger than this under normal operation.
-const MAX_REQUEST_BODY_SIZE: u64 = 1024 * 1024;
+#[derive(Clone, Debug)]
+struct MonitoringState {
+    registry: Registry,
+    trace_reload_handle: Arc<trace::TraceReloadHandle>,
+}
+
+impl axum::extract::FromRef<MonitoringState> for Registry {
+    fn from_ref(state: &MonitoringState) -> Self {
+        state.registry.clone()
+    }
+}
+
+impl axum::extract::FromRef<MonitoringState> for Arc<trace::TraceReloadHandle> {
+    fn from_ref(state: &MonitoringState) -> Self {
+        state.trace_reload_handle.clone()
+    }
+}
 
 #[tokio::main]
 async fn main() {
-    // Choose aws-lc-rs as the default rustls crypto provider. This is what's currently enabled by
-    // the default Cargo feature. Specifying a default provider here prevents runtime errors if
-    // another dependency also enables the ring feature.
+    // Choose aws-lc-rs as the default rustls crypto provider. This is what's
+    // currently enabled by the default Cargo feature. Specifying a default
+    // provider here prevents runtime errors if another dependency also enables
+    // the ring feature.
+    // TODO: switch to a direct `rustls` dep when trillium-rustls is removed
     let _ = trillium_rustls::rustls::crypto::aws_lc_rs::default_provider().install_default();
 
     let config = match Config::from_env() {
@@ -26,31 +48,73 @@ async fn main() {
     };
 
     let (_guards, trace_reload_handle) = install_trace_subscriber(&config.trace_config()).unwrap();
+    let cancel = CancellationToken::new();
 
-    let stopper = Stopper::new();
-    let observer = CloneCounterObserver::default();
+    // Monitoring server (metrics + traceconfig)
+    let registry = telemetry::install_metrics().expect("failed to install metrics provider");
+    let monitoring_state = MonitoringState {
+        registry,
+        trace_reload_handle: Arc::new(trace_reload_handle),
+    };
+    let monitoring_router = axum::Router::new()
+        .route("/metrics", axum::routing::get(telemetry::metrics_handler))
+        .route(
+            "/traceconfig",
+            axum::routing::get(trace::get_traceconfig).put(trace::put_traceconfig),
+        )
+        .with_state(monitoring_state);
+    let monitoring_listener = TcpListener::bind(config.monitoring_listen_address)
+        .await
+        .expect("failed to bind monitoring listener");
+    let monitoring_cancel = cancel.clone();
+    let monitoring_handle = tokio::spawn(async move {
+        if let Err(e) = axum::serve(monitoring_listener, monitoring_router)
+            .with_graceful_shutdown(monitoring_cancel.cancelled_owned())
+            .await
+        {
+            tracing::error!("monitoring server error: {e}");
+        }
+    });
 
-    trillium_tokio::config()
-        .without_signals()
-        .with_socketaddr(config.monitoring_listen_address)
-        .with_observer(observer.clone())
-        .with_stopper(stopper.clone())
-        .spawn((
-            divviup_api::telemetry::metrics_exporter().unwrap(),
-            traceconfig_handler(trace_reload_handle),
-        ));
+    // Main application
+    let listen_address = config.listen_address;
+    let app = build_app(config).await;
 
-    let app = DivviupApi::new(config).await;
+    let queue_handle = Queue::new(&app.db, &app.config, cancel.clone()).spawn_workers();
 
-    Queue::new(app.db(), app.config())
-        .with_observer(observer.clone())
-        .with_stopper(stopper.clone())
-        .spawn_workers();
+    let listener = TcpListener::bind(listen_address)
+        .await
+        .expect("failed to bind main listener");
 
-    trillium_tokio::config()
-        .with_http_config(HttpConfig::default().with_received_body_max_len(MAX_REQUEST_BODY_SIZE))
-        .with_stopper(stopper)
-        .with_observer(observer)
-        .spawn(app)
+    tracing::info!(
+        "divviup-api {} listening on {listen_address}",
+        env!("CARGO_PKG_VERSION")
+    );
+
+    let serve_result = axum::serve(listener, app.router)
+        .with_graceful_shutdown(shutdown_signal(cancel.clone()))
         .await;
+    // Ensure queue workers stop even if serve exits without a signal.
+    cancel.cancel();
+
+    if let Err(e) = serve_result {
+        tracing::error!("server error: {e}");
+    }
+
+    if let Err(e) = queue_handle.await {
+        tracing::error!("queue worker panic: {e}");
+    }
+
+    let _ = monitoring_handle.await;
+}
+
+async fn shutdown_signal(cancel: CancellationToken) {
+    let ctrl_c = signal::ctrl_c();
+    let mut sigterm = signal(SignalKind::terminate()).expect("failed to register SIGTERM handler");
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = sigterm.recv() => {},
+    }
+    tracing::info!("shutdown signal received, draining connections");
+    cancel.cancel();
 }

@@ -11,9 +11,6 @@ use sea_orm::{
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
 use tower_sessions::Session;
-use trillium::{async_trait, Conn};
-use trillium_api::FromConn;
-use trillium_sessions::SessionConnExt;
 
 pub const USER_SESSION_KEY: &str = "user";
 
@@ -72,23 +69,6 @@ impl User {
         self.admin == Some(true)
     }
 }
-
-#[async_trait]
-impl FromConn for User {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        let mut user: Self = conn
-            .take_state()
-            .or_else(|| conn.session().get(USER_SESSION_KEY))?;
-        let db: &Db = conn.state()?;
-        user.populate_admin(db).await;
-        conn.insert_state(user.clone());
-        Some(user)
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Axum extractor — mirrors the Trillium FromConn above
-// ---------------------------------------------------------------------------
 
 impl User {
     /// Inner helper for the extractor impls below.

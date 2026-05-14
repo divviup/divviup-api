@@ -4,54 +4,17 @@ use axum::response::{IntoResponse, Response};
 use axum::Json as AxumJson;
 use sea_orm::DbErr;
 use serde_json::json;
-use std::{backtrace::Backtrace, sync::Arc};
-use trillium::{async_trait, Conn, Handler, Status};
-use trillium_api::{ApiConnExt, Error as ApiError};
+use std::sync::Arc;
+use trillium_api::Error as ApiError;
 use validator::ValidationErrors;
 
+// TODO: remove in Part 9 (test-support rewrite) — ErrorHandler is only kept
+// in the DivviupApi test shim's handler tuple.
 pub struct ErrorHandler;
-#[async_trait]
-impl Handler for ErrorHandler {
-    async fn run(&self, conn: Conn) -> Conn {
+#[trillium::async_trait]
+impl trillium::Handler for ErrorHandler {
+    async fn run(&self, conn: trillium::Conn) -> trillium::Conn {
         conn
-    }
-
-    async fn before_send(&self, mut conn: Conn) -> Conn {
-        if let Some(error) = conn.take_state::<ApiError>() {
-            conn.insert_state(Error::from(error));
-        };
-
-        let Some(error) = conn.state().cloned() else {
-            return conn;
-        };
-
-        match error {
-            Error::AccessDenied => conn.with_status(Status::Forbidden).with_body(""),
-
-            Error::NotFound => conn.with_status(Status::NotFound).with_body(""),
-
-            Error::Json(e @ ApiError::UnsupportedMimeType { .. }) => conn
-                .with_status(Status::NotAcceptable)
-                .with_body(e.to_string()),
-
-            Error::Json(ApiError::ParseError { path, message }) => conn
-                .with_status(Status::BadRequest)
-                .with_json(&json!({"path": path, "message": message})),
-
-            Error::Validation(e) => conn.with_status(Status::BadRequest).with_json(&e),
-
-            e => {
-                let string = e.to_string();
-                log::error!("{e}");
-                let mut conn = conn.with_status(Status::InternalServerError);
-                if cfg!(debug_assertions) {
-                    conn.with_body(string)
-                } else {
-                    conn.inner_mut().take_response_body();
-                    conn
-                }
-            }
-        }
     }
 }
 
@@ -142,16 +105,7 @@ impl From<ClientError> for Error {
     }
 }
 
-#[async_trait]
-impl Handler for Error {
-    async fn run(&self, conn: Conn) -> Conn {
-        conn.with_state(self.clone())
-            .with_state(Backtrace::capture())
-    }
-}
-
-/// Axum-side error-to-response conversion, mirroring the Trillium
-/// [`ErrorHandler::before_send`] logic above.
+/// Error-to-response conversion for Axum handlers.
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
         match self {

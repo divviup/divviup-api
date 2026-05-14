@@ -5,8 +5,6 @@ use crate::{
 };
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::{self, request::Parts};
-use trillium::Conn;
-use trillium_api::FromConn;
 
 #[derive(Debug, Clone)]
 pub enum PermissionsActor {
@@ -30,26 +28,12 @@ impl PermissionsActor {
         }
     }
 
-    pub fn is_allowed<T: Permissions>(&self, method: trillium::Method, t: &T) -> bool {
+    pub fn is_allowed<T: Permissions>(&self, method: &http::Method, t: &T) -> bool {
         self.check_permission(method.is_safe(), t)
     }
 
-    pub fn if_allowed<T: Permissions>(&self, method: trillium::Method, t: T) -> Option<T> {
+    pub fn if_allowed<T: Permissions>(&self, method: &http::Method, t: T) -> Option<T> {
         if self.is_allowed(method, &t) {
-            Some(t)
-        } else {
-            None
-        }
-    }
-
-    /// Axum-side equivalent of [`is_allowed`](Self::is_allowed).
-    pub fn is_allowed_http<T: Permissions>(&self, method: &http::Method, t: &T) -> bool {
-        self.check_permission(method.is_safe(), t)
-    }
-
-    /// Axum-side equivalent of [`if_allowed`](Self::if_allowed).
-    pub fn if_allowed_http<T: Permissions>(&self, method: &http::Method, t: T) -> Option<T> {
-        if self.is_allowed_http(method, &t) {
             Some(t)
         } else {
             None
@@ -73,36 +57,6 @@ impl PermissionsActor {
         }
     }
 }
-
-#[trillium::async_trait]
-impl FromConn for PermissionsActor {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        if let Some(actor) = conn.state::<Self>() {
-            return Some(actor.clone());
-        }
-        let abt = AccountBearerToken::from_conn(conn).await;
-        let user = User::from_conn(conn).await;
-        let actor = match (abt, user) {
-            (Some(abt), None) => Some(Self::ApiToken(abt)),
-            (None, Some(user)) => {
-                let db: &Db = conn.state()?;
-                let memberships = user.memberships().all(db).await.ok()?;
-                Some(Self::User(user, memberships))
-            }
-            _ => None,
-        };
-
-        if let Some(actor) = &actor {
-            conn.insert_state(actor.clone());
-        }
-
-        actor
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Axum extractor — mirrors the Trillium FromConn above
-// ---------------------------------------------------------------------------
 
 impl<S> FromRequestParts<S> for PermissionsActor
 where
