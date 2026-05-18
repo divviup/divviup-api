@@ -1,25 +1,16 @@
 use crate::{
-    clients::{ClientConnExt, ClientError},
+    clients::{ClientError, HttpClient, ResponseExt},
     Config,
 };
+use axum::http::{header, HeaderName};
 use email_address::EmailAddress;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
-use trillium::{async_trait, Conn, KnownHeaderName};
-use trillium_api::FromConn;
-use trillium_client::Client;
 
 #[derive(Debug, Clone)]
 pub struct PostmarkClient {
-    client: Client,
+    client: HttpClient,
     email: EmailAddress,
-}
-
-#[async_trait]
-impl FromConn for PostmarkClient {
-    async fn from_conn(conn: &mut Conn) -> Option<Self> {
-        conn.state().cloned()
-    }
 }
 
 impl PostmarkClient {
@@ -28,8 +19,11 @@ impl PostmarkClient {
             .client
             .clone()
             .with_base(config.postmark_url.clone())
-            .with_default_header("X-Postmark-Server-Token", config.postmark_token.clone())
-            .with_default_header(KnownHeaderName::Accept, "application/json");
+            .with_default_header(
+                HeaderName::from_static("x-postmark-server-token"),
+                &config.postmark_token,
+            )
+            .with_default_header(header::ACCEPT, "application/json");
 
         Self {
             client,
@@ -74,20 +68,20 @@ impl PostmarkClient {
         .await
     }
 
-    // private below here
-
     async fn post<T>(&self, path: &str, json: &impl Serialize) -> Result<T, ClientError>
     where
         T: DeserializeOwned,
     {
         self.client
             .post(path)
-            .with_json_body(json)?
+            .json(json)
+            .send()
+            .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
-            .map_err(ClientError::from)
+            .map_err(Into::into)
     }
 }
 

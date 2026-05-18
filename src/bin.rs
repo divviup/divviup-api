@@ -2,6 +2,7 @@ use divviup_api::{
     handler::build_app, telemetry, trace, trace::install_trace_subscriber, Config, Queue,
 };
 use prometheus::Registry;
+use rustls::crypto::aws_lc_rs;
 use std::sync::Arc;
 use tokio::{
     net::TcpListener,
@@ -32,12 +33,10 @@ impl axum::extract::FromRef<MonitoringState> for Arc<trace::TraceReloadHandle> {
 
 #[tokio::main]
 async fn main() {
-    // Choose aws-lc-rs as the default rustls crypto provider. This is what's
-    // currently enabled by the default Cargo feature. Specifying a default
-    // provider here prevents runtime errors if another dependency also enables
-    // the ring feature.
-    // TODO: switch to a direct `rustls` dep when trillium-rustls is removed
-    let _ = trillium_rustls::rustls::crypto::aws_lc_rs::default_provider().install_default();
+    // Choose aws-lc-rs as the default rustls crypto provider. Specifying a
+    // default provider here prevents runtime errors if another dependency also
+    // enables the ring feature.
+    let _ = aws_lc_rs::default_provider().install_default();
 
     let config = match Config::from_env() {
         Ok(config) => config,

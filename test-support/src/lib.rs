@@ -9,7 +9,10 @@
 #![allow(clippy::cargo_common_metadata)]
 #![allow(clippy::multiple_crate_versions)]
 
-use divviup_api::{clients::aggregator_client::api_types, Config, Crypter, Db};
+use divviup_api::{
+    clients::{aggregator_client::api_types, HttpClient},
+    Config, Crypter, Db,
+};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     error::Error,
@@ -18,9 +21,9 @@ use std::{
     net::{Ipv6Addr, SocketAddr},
     process::Termination,
 };
+use tokio::net::TcpListener;
 use tracing::install_test_trace_subscriber;
 use trillium::Handler;
-use trillium_client::Client;
 use trillium_http::HeaderValue;
 use trillium_testing::TestConn;
 
@@ -84,7 +87,27 @@ pub async fn set_up_schema(db: &Db) {
     set_up_schema_for(&schema, db, CollectorCredentials).await;
 }
 
-pub fn config(api_mocks: impl Handler) -> Config {
+pub async fn config(api_mocks: impl Handler) -> Config {
+    let listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0u16))
+        .await
+        .expect("failed to bind mock server");
+    let mock_addr = listener.local_addr().unwrap();
+    let mock_base = format!("http://[::1]:{}", mock_addr.port());
+
+    let stopper = trillium_http::Stopper::new();
+    let config_for_server = trillium_tokio::config()
+        .without_signals()
+        .with_stopper(stopper)
+        .with_prebound_server(listener);
+    tokio::spawn(config_for_server.run_async(api_mocks));
+
+    let reqwest_client = reqwest::Client::builder()
+        .no_proxy()
+        .build()
+        .expect("failed to build reqwest client");
+    let http_client =
+        HttpClient::new(reqwest_client).with_proxy_base(mock_base.parse::<url::Url>().unwrap());
+
     Config {
         session_secrets: repeat_with(|| fastrand::u8(..))
             .take(32)
@@ -102,7 +125,7 @@ pub fn config(api_mocks: impl Handler) -> Config {
         postmark_token: "-".into(),
         email_address: "test@example.test".parse().unwrap(),
         postmark_url: POSTMARK_URL.parse().unwrap(),
-        client: Client::new(trillium_testing::connector(api_mocks)),
+        client: http_client,
         crypter: Crypter::from(Crypter::generate_key()),
         trace_use_test_writer: true,
         trace_force_json_writer: false,
@@ -132,7 +155,7 @@ pub async fn build_test_app() -> (DivviupApi, ClientLogs) {
     install_test_trace_subscriber();
     let api_mocks = ApiMocks::new();
     let client_logs = api_mocks.client_logs();
-    let mut app = DivviupApi::new(config(api_mocks)).await;
+    let mut app = DivviupApi::new(config(api_mocks).await).await;
     set_up_schema(app.db()).await;
     let mut info = "testing".into();
     app.init(&mut info).await;

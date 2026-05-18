@@ -1,12 +1,12 @@
 use crate::{
-    clients::{ClientConnExt, ClientError},
+    clients::{ClientError, HttpClient, ResponseExt},
     entity::{task::ProvisionableTask, Aggregator},
     handler::Error,
 };
 use api_types::TaskAggregationJobMetrics;
+use axum::http::header;
 use janus_messages::Time as JanusTime;
 use serde::{de::DeserializeOwned, Serialize};
-use trillium_client::{Client, KnownHeaderName};
 use url::Url;
 pub mod api_types;
 pub use api_types::{
@@ -17,41 +17,34 @@ const CONTENT_TYPE: &str = "application/vnd.janus.aggregator+json;version=0.1";
 
 #[derive(Debug, Clone)]
 pub struct AggregatorClient {
-    client: Client,
+    client: HttpClient,
     aggregator: Aggregator,
 }
 
-impl AsRef<Client> for AggregatorClient {
-    fn as_ref(&self) -> &Client {
-        &self.client
-    }
-}
-
 impl AggregatorClient {
-    pub fn new(client: Client, aggregator: Aggregator, bearer_token: &str) -> Self {
+    pub fn new(client: HttpClient, aggregator: Aggregator, bearer_token: &str) -> Self {
         let client = client
             .with_base(aggregator.api_url.clone())
-            .with_default_header(
-                KnownHeaderName::Authorization,
-                format!("Bearer {bearer_token}"),
-            )
-            .with_default_header(KnownHeaderName::Accept, CONTENT_TYPE);
+            .with_default_header(header::AUTHORIZATION, format!("Bearer {bearer_token}"))
+            .with_default_header(header::ACCEPT, CONTENT_TYPE);
 
         Self { client, aggregator }
     }
 
     pub async fn get_config(
-        client: Client,
+        client: HttpClient,
         base_url: Url,
         token: &str,
     ) -> Result<AggregatorApiConfig, ClientError> {
         client
-            .get(base_url)
-            .with_request_header(KnownHeaderName::Authorization, format!("Bearer {token}"))
-            .with_request_header(KnownHeaderName::Accept, CONTENT_TYPE)
+            .get_url(base_url)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .header(header::ACCEPT, CONTENT_TYPE)
+            .send()
+            .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
             .map_err(Into::into)
     }
@@ -115,16 +108,16 @@ impl AggregatorClient {
         .map_err(Into::into)
     }
 
-    // private below here
-
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T, ClientError> {
         self.client
             .get(path)
+            .send()
+            .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
-            .map_err(ClientError::from)
+            .map_err(Into::into)
     }
 
     async fn post<T: DeserializeOwned>(
@@ -134,13 +127,15 @@ impl AggregatorClient {
     ) -> Result<T, ClientError> {
         self.client
             .post(path)
-            .with_json_body(body)?
-            .with_request_header(KnownHeaderName::ContentType, CONTENT_TYPE)
+            .header(header::CONTENT_TYPE, CONTENT_TYPE)
+            .json(body)
+            .send()
+            .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
-            .map_err(ClientError::from)
+            .map_err(Into::into)
     }
 
     async fn patch<T: DeserializeOwned>(
@@ -150,12 +145,14 @@ impl AggregatorClient {
     ) -> Result<T, ClientError> {
         self.client
             .patch(path)
-            .with_json_body(body)?
-            .with_request_header(KnownHeaderName::ContentType, CONTENT_TYPE)
+            .header(header::CONTENT_TYPE, CONTENT_TYPE)
+            .json(body)
+            .send()
+            .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
-            .map_err(ClientError::from)
+            .map_err(Into::into)
     }
 }

@@ -13,10 +13,15 @@ pub(crate) mod session_store;
 // TODO: remove proxy in Part 9 (only kept for DivviupApi test shim)
 pub(crate) mod proxy;
 
-use crate::{clients::Auth0Client, routes, routes::axum_routes, Config, Crypter, Db, FeatureFlags};
+use crate::{
+    clients::{Auth0Client, HttpClient},
+    routes::{axum_routes, health_check},
+    Config, Crypter, Db, FeatureFlags,
+};
 use axum::{
     extract::{DefaultBodyLimit, FromRef},
     http::{header, HeaderValue},
+    routing,
 };
 use cors::axum_cors_layer;
 use error::ErrorHandler;
@@ -32,7 +37,6 @@ use tower_http::{
     compression::CompressionLayer, set_header::SetResponseHeaderLayer, trace::TraceLayer,
 };
 use trillium::{Handler, Info};
-use trillium_client::Client;
 use trillium_macros::Handler;
 
 pub use error::Error;
@@ -47,7 +51,7 @@ pub struct AxumAppState {
     pub(crate) oauth_client: OauthClient,
     pub(crate) crypter: Crypter,
     pub(crate) feature_flags: FeatureFlags,
-    pub(crate) client: Client,
+    pub(crate) client: HttpClient,
 }
 
 impl FromRef<AxumAppState> for Db {
@@ -86,7 +90,7 @@ impl FromRef<AxumAppState> for FeatureFlags {
     }
 }
 
-impl FromRef<AxumAppState> for Client {
+impl FromRef<AxumAppState> for HttpClient {
     fn from_ref(state: &AxumAppState) -> Self {
         state.client.clone()
     }
@@ -147,10 +151,10 @@ pub async fn build_app(config: Config) -> BuiltApp {
     ));
 
     let router = axum::Router::new()
-        .route("/health", axum::routing::get(routes::health_check))
-        .route("/login", axum::routing::get(oauth2::redirect))
-        .route("/logout", axum::routing::get(oauth2::logout))
-        .route("/callback", axum::routing::get(oauth2::callback))
+        .route("/health", routing::get(health_check))
+        .route("/login", routing::get(oauth2::redirect))
+        .route("/logout", routing::get(oauth2::logout))
+        .route("/callback", routing::get(oauth2::callback))
         .nest("/api", axum_routes::api_router(&axum_state))
         .layer(middleware)
         .with_state(axum_state);

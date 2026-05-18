@@ -1,4 +1,5 @@
 use super::*;
+use crate::clients::HttpClient;
 use crate::{
     clients::aggregator_client::api_types::{AggregatorVdaf, AuthenticationToken, QueryType},
     entity::{Account, CollectorCredential, Protocol, Task},
@@ -7,7 +8,6 @@ use crate::{
 };
 use sea_orm::IntoActiveModel;
 use std::fmt::Debug;
-use trillium_client::Client;
 
 #[derive(Clone, Debug)]
 pub struct ProvisionableTask {
@@ -32,7 +32,7 @@ pub struct ProvisionableTask {
 impl ProvisionableTask {
     async fn provision_aggregator(
         &self,
-        http_client: Client,
+        http_client: HttpClient,
         aggregator: Aggregator,
         crypter: &Crypter,
     ) -> Result<TaskResponse, Error> {
@@ -70,7 +70,7 @@ impl ProvisionableTask {
 
     pub async fn provision(
         mut self,
-        client: Client,
+        client: HttpClient,
         crypter: &Crypter,
     ) -> Result<ActiveModel, Error> {
         let helper = self

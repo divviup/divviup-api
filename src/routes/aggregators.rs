@@ -1,3 +1,4 @@
+use crate::clients::HttpClient;
 use crate::{
     config::FeatureFlags,
     entity::{Account, Aggregator, AggregatorColumn, Aggregators, NewAggregator, UpdateAggregator},
@@ -11,7 +12,6 @@ use sea_orm::{
     sea_query::{all, any},
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter,
 };
-use trillium_client::Client;
 
 impl<S> FromRequestParts<S> for Aggregator
 where
@@ -85,7 +85,7 @@ pub mod axum_handler {
     pub async fn create(
         account: Account,
         State(db): State<Db>,
-        State(client): State<Client>,
+        State(client): State<HttpClient>,
         State(crypter): State<Crypter>,
         State(feature_flags): State<FeatureFlags>,
         Json(new_aggregator): Json<NewAggregator>,
@@ -106,7 +106,7 @@ pub mod axum_handler {
     pub async fn update(
         aggregator: Aggregator,
         State(db): State<Db>,
-        State(client): State<Client>,
+        State(client): State<HttpClient>,
         State(crypter): State<Crypter>,
         Json(update_aggregator): Json<UpdateAggregator>,
     ) -> Result<Json<Aggregator>, Error> {
@@ -127,7 +127,7 @@ pub mod axum_handler {
     pub async fn admin_create(
         _admin: AdminPermissionsActor,
         State(db): State<Db>,
-        State(client): State<Client>,
+        State(client): State<HttpClient>,
         State(crypter): State<Crypter>,
         State(feature_flags): State<FeatureFlags>,
         Json(new_aggregator): Json<NewAggregator>,
