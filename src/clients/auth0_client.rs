@@ -11,7 +11,7 @@ use std::{
 use url::Url;
 
 use crate::{
-    clients::{ClientError, HttpClient, PostmarkClient, ResponseExt, ResponseJsonExt},
+    clients::{ClientError, HttpClient, PostmarkClient, ResponseExt},
     Config,
 };
 
@@ -156,7 +156,7 @@ impl Auth0Client {
             .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await?;
 
         *guard = Some(token.clone().into());
@@ -186,8 +186,9 @@ impl Auth0Client {
             .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
+            .map_err(Into::into)
     }
 
     async fn get<T>(&self, path: &str) -> Result<T, ClientError>
@@ -202,8 +203,9 @@ impl Auth0Client {
             .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
+            .map_err(Into::into)
     }
 }
 

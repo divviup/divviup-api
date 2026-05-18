@@ -8,7 +8,6 @@ pub use postmark_client::PostmarkClient;
 
 use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use reqwest::{header::HOST, Method};
-use serde::de::DeserializeOwned;
 use url::Url;
 
 /// Header injected by `HttpClient` when proxy rewriting is active, carrying
@@ -186,20 +185,5 @@ impl ResponseExt for reqwest::Response {
                 },
             )))
         }
-    }
-}
-
-/// Extension trait for converting a [`reqwest::Response`] to a
-/// deserialized JSON value, wrapping serde errors into [`ClientError`].
-#[async_trait::async_trait]
-pub trait ResponseJsonExt {
-    async fn response_json<T: DeserializeOwned>(self) -> Result<T, ClientError>;
-}
-
-#[async_trait::async_trait]
-impl ResponseJsonExt for reqwest::Response {
-    async fn response_json<T: DeserializeOwned>(self) -> Result<T, ClientError> {
-        let bytes = self.bytes().await?;
-        serde_json::from_slice(&bytes).map_err(ClientError::from)
     }
 }

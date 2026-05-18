@@ -1,5 +1,5 @@
 use crate::{
-    clients::{ClientError, HttpClient, ResponseExt, ResponseJsonExt},
+    clients::{ClientError, HttpClient, ResponseExt},
     entity::{task::ProvisionableTask, Aggregator},
     handler::Error,
 };
@@ -44,8 +44,9 @@ impl AggregatorClient {
             .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
+            .map_err(Into::into)
     }
 
     pub async fn get_task_ids(&self) -> Result<Vec<String>, ClientError> {
@@ -114,8 +115,9 @@ impl AggregatorClient {
             .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
+            .map_err(Into::into)
     }
 
     async fn post<T: DeserializeOwned>(
@@ -131,8 +133,9 @@ impl AggregatorClient {
             .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
+            .map_err(Into::into)
     }
 
     async fn patch<T: DeserializeOwned>(
@@ -148,7 +151,8 @@ impl AggregatorClient {
             .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
+            .map_err(Into::into)
     }
 }

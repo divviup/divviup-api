@@ -1,5 +1,5 @@
 use crate::{
-    clients::{ClientError, HttpClient, ResponseExt, ResponseJsonExt},
+    clients::{ClientError, HttpClient, ResponseExt},
     Config,
 };
 use axum::http::{header, HeaderName};
@@ -79,8 +79,9 @@ impl PostmarkClient {
             .await?
             .success_or_client_error()
             .await?
-            .response_json()
+            .json()
             .await
+            .map_err(Into::into)
     }
 }
 
