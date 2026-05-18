@@ -27,7 +27,6 @@ default-run = "divviup_api_bin"
 [features]
 default = []
 integration-testing = []
-test-header-injection = []
 otlp-trace = ["opentelemetry/trace", "opentelemetry-otlp", "opentelemetry_sdk/trace"]
 
 [dependencies]

@@ -128,9 +128,6 @@ pub async fn build_app(config: Config) -> BuiltApp {
     #[cfg(feature = "integration-testing")]
     let middleware = middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
 
-    #[cfg(feature = "test-header-injection")]
-    let middleware = middleware.layer(axum::middleware::from_fn(inject_test_header_user));
-
     #[cfg(assets)]
     let middleware = middleware.layer(axum::middleware::from_fn_with_state(
         assets::AssetConfig::new(&config.api_url, &config.app_url),
@@ -149,9 +146,8 @@ pub async fn build_app(config: Config) -> BuiltApp {
     BuiltApp { router, db, config }
 }
 
-/// Axum middleware that unconditionally injects an admin
-/// [`User`](crate::User) into every request, unless one is already present
-/// (e.g. from the `test-header-injection` middleware).
+/// Axum middleware that injects an admin [`User`](crate::User) into every
+/// request that doesn't already have one in extensions.
 ///
 /// Only compiled under `--features integration-testing` (enabled by
 /// `compose.dev.override.yaml`). Never compiled into deployed builds.
@@ -164,27 +160,6 @@ async fn inject_integration_testing_user(
         request
             .extensions_mut()
             .insert(crate::User::for_integration_testing());
-    }
-    next.run(request).await
-}
-
-/// Axum middleware that reads an `X-Integration-Testing-User` header and
-/// injects the decoded [`User`](crate::User) into request extensions.
-/// Used by `test-support` to impersonate specific users in tests.
-///
-/// Only compiled under `--features test-header-injection` (enabled by
-/// `test-support`). Never compiled into deployed builds.
-#[cfg(feature = "test-header-injection")]
-async fn inject_test_header_user(
-    mut request: axum::extract::Request,
-    next: axum::middleware::Next,
-) -> axum::response::Response {
-    if let Some(user) = request
-        .headers()
-        .get("x-integration-testing-user")
-        .and_then(|v| serde_json::from_slice::<crate::User>(v.as_bytes()).ok())
-    {
-        request.extensions_mut().insert(user);
     }
     next.run(request).await
 }

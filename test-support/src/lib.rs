@@ -267,6 +267,7 @@ pub struct TestRequest {
     uri: String,
     headers: HeaderMap,
     body: Vec<u8>,
+    user: Option<User>,
 }
 
 pub fn get(path: impl Into<String>) -> TestRequest {
@@ -296,6 +297,7 @@ impl TestRequest {
             uri: uri.into(),
             headers: HeaderMap::new(),
             body: Vec::new(),
+            user: None,
         }
     }
 
@@ -343,11 +345,9 @@ impl TestRequest {
         self.with_request_header(header::AUTHORIZATION, token)
     }
 
-    pub fn with_user(self, user: &User) -> Self {
-        self.with_request_header(
-            "x-integration-testing-user",
-            serde_json::to_string(user).unwrap(),
-        )
+    pub fn with_user(mut self, user: &User) -> Self {
+        self.user = Some(user.clone());
+        self
     }
 
     /// In Part 10, refactor all callers from `.with_state(user)` to `.with_user(&user)`.
@@ -370,7 +370,10 @@ impl TestRequest {
         for (name, value) in &self.headers {
             builder = builder.header(name, value);
         }
-        let request = builder.body(body).expect("failed to build request");
+        let mut request = builder.body(body).expect("failed to build request");
+        if let Some(user) = self.user {
+            request.extensions_mut().insert(user);
+        }
         let response = app
             .router
             .clone()
