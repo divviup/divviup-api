@@ -14,7 +14,7 @@ use url::Url;
 /// Header injected by `HttpClient` when proxy rewriting is active, carrying
 /// the original (pre-rewrite) URL. Test infrastructure (`ClientLogs`) can
 /// read this to reconstruct the intended URL instead of the proxied one.
-pub const X_ORIGINAL_URL: &str = "x-original-url";
+pub static ORIGINAL_URL_HEADER: HeaderName = HeaderName::from_static("x-original-url");
 
 #[derive(Debug, Clone)]
 pub struct HttpClient {
@@ -99,7 +99,7 @@ impl HttpClient {
             self.inner
                 .request(method, url)
                 .header(HOST, original_host)
-                .header(X_ORIGINAL_URL, original_url.as_str())
+                .header(&ORIGINAL_URL_HEADER, original_url.as_str())
         } else {
             self.inner.request(method, url)
         };
@@ -127,7 +127,7 @@ impl HttpClient {
             self.inner
                 .get(url)
                 .header(HOST, original_host)
-                .header(X_ORIGINAL_URL, original_url.as_str())
+                .header(&ORIGINAL_URL_HEADER, original_url.as_str())
         } else {
             self.inner.get(url)
         };
@@ -172,7 +172,7 @@ impl ResponseExt for reqwest::Response {
         if status.is_success() {
             Ok(self)
         } else {
-            let url: Url = self.url().as_str().parse().unwrap();
+            let url = self.url().clone();
             let body = self.text().await.unwrap_or_default();
             Err(ClientError::HttpStatusNotSuccess(Box::new(
                 HttpStatusNotSuccess {

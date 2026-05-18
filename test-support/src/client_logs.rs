@@ -1,4 +1,4 @@
-use divviup_api::clients::X_ORIGINAL_URL;
+use divviup_api::clients::ORIGINAL_URL_HEADER;
 use serde::Deserialize;
 use std::{
     fmt::{Display, Formatter, Result},
@@ -28,7 +28,7 @@ impl From<&mut Conn> for LoggedConn {
     fn from(conn: &mut Conn) -> Self {
         let url = conn
             .request_headers()
-            .get_str(X_ORIGINAL_URL)
+            .get_str(ORIGINAL_URL_HEADER.as_str())
             .and_then(|s| Url::parse(s).ok())
             .unwrap_or_else(|| {
                 Url::parse(&format!(
