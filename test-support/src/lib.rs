@@ -21,6 +21,7 @@ use std::{
     net::{Ipv6Addr, SocketAddr},
     process::Termination,
 };
+use tokio::net::TcpListener;
 use tracing::install_test_trace_subscriber;
 use trillium::Handler;
 use trillium_http::HeaderValue;
@@ -87,8 +88,6 @@ pub async fn set_up_schema(db: &Db) {
 }
 
 pub async fn config(api_mocks: impl Handler) -> Config {
-    use tokio::net::TcpListener;
-
     let listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0u16))
         .await
         .expect("failed to bind mock server");
@@ -97,6 +96,7 @@ pub async fn config(api_mocks: impl Handler) -> Config {
 
     let stopper = trillium_http::Stopper::new();
     let config_for_server = trillium_tokio::config()
+        .without_signals()
         .with_stopper(stopper)
         .with_prebound_server(listener);
     tokio::spawn(config_for_server.run_async(api_mocks));

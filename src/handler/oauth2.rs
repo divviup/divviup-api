@@ -169,11 +169,9 @@ impl
             RequestTokenError::ServerResponse(server_response) => {
                 OauthError::RequestTokenError(server_response)
             }
-            RequestTokenError::Request(e) => match e {
-                HttpClientError::Reqwest(e) => OauthError::HttpError(*e),
-                HttpClientError::Http(e) => OauthError::HttpCrateError(e),
-                other => OauthError::Other(other.to_string()),
-            },
+            RequestTokenError::Request(HttpClientError::Reqwest(e)) => OauthError::HttpError(*e),
+            RequestTokenError::Request(HttpClientError::Http(e)) => OauthError::HttpCrateError(e),
+            RequestTokenError::Request(other) => OauthError::Other(other.to_string()),
             RequestTokenError::Parse(error, _path) => OauthError::Serde(error.into_inner()),
             RequestTokenError::Other(s) => OauthError::Other(s),
         }

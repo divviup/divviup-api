@@ -86,9 +86,12 @@ impl HttpClient {
             Some(port) => format!("{}:{port}", url.host_str().unwrap_or_default()),
             None => url.host_str().unwrap_or_default().to_string(),
         };
-        url.set_scheme(proxy.scheme()).ok();
-        url.set_host(proxy.host_str()).ok();
-        url.set_port(proxy.port()).ok();
+        url.set_scheme(proxy.scheme())
+            .expect("proxy_rewrite: failed to set scheme");
+        url.set_host(proxy.host_str())
+            .expect("proxy_rewrite: failed to set host");
+        url.set_port(proxy.port())
+            .expect("proxy_rewrite: failed to set port");
         Some(original_host)
     }
 
