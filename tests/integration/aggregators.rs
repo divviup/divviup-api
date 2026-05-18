@@ -15,14 +15,14 @@ mod index {
         let aggregator1 = fixtures::aggregator(&app, Some(&account)).await;
         let aggregator2 = fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = get(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        let aggregators: Vec<Aggregator> = conn.response_json();
         assert_same_json_representation(
             &aggregators,
             &vec![shared_aggregator, aggregator1, aggregator2],
@@ -40,14 +40,14 @@ mod index {
         aggregator1.tombstone().update(app.db()).await?;
         let aggregator2 = fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = get(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        let aggregators: Vec<Aggregator> = conn.response_json();
         assert_same_json_representation(&aggregators, &vec![aggregator2]);
         Ok(())
     }
@@ -62,14 +62,14 @@ mod index {
         aggregator1.tombstone().update(app.db()).await?;
         let aggregator2 = fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = get(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        let aggregators: Vec<Aggregator> = conn.response_json();
         assert_same_json_representation(&vec![aggregator2], &aggregators);
         Ok(())
     }
@@ -103,7 +103,7 @@ mod index {
         fixtures::aggregator(&app, Some(&account)).await;
         fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = get("/api/accounts/not-an-account/aggregators")
+        let conn = get("/api/accounts/not-an-account/aggregators")
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
@@ -123,14 +123,14 @@ mod index {
         let aggregator1 = fixtures::aggregator(&app, Some(&account)).await;
         let aggregator2 = fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = get(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        let aggregators: Vec<Aggregator> = conn.response_json();
         assert_same_json_representation(
             &aggregators,
             &vec![shared_aggregator, aggregator1, aggregator2],
@@ -149,14 +149,14 @@ mod index {
         let aggregator1 = fixtures::aggregator(&app, Some(&account)).await;
         let aggregator2 = fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = get(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
-            .with_request_header(KnownHeaderName::Authorization, token)
+            .with_request_header(headers::AUTHORIZATION, token)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        let aggregators: Vec<Aggregator> = conn.response_json();
         assert_same_json_representation(
             &aggregators,
             &vec![shared_aggregator, aggregator1, aggregator2],
@@ -177,14 +177,14 @@ mod index {
 
         let admin_token = fixtures::admin_token(&app).await;
 
-        let mut conn = get(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = get(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
-            .with_request_header(KnownHeaderName::Authorization, admin_token)
+            .with_request_header(headers::AUTHORIZATION, admin_token)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        let aggregators: Vec<Aggregator> = conn.response_json();
         assert_same_json_representation(
             &aggregators,
             &vec![shared_aggregator, aggregator1, aggregator2],
@@ -206,7 +206,7 @@ mod index {
 
         let conn = get(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
-            .with_request_header(KnownHeaderName::Authorization, token)
+            .with_request_header(headers::AUTHORIZATION, token)
             .run_async(&app)
             .await;
 
@@ -230,14 +230,14 @@ mod shared_aggregator_index {
         let (user, account, ..) = fixtures::member(&app).await;
         fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = get("/api/aggregators")
+        let conn = get("/api/aggregators")
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        let aggregators: Vec<Aggregator> = conn.response_json();
         assert_same_json_representation(
             &aggregators,
             &vec![shared_aggregator1, shared_aggregator2],
@@ -257,14 +257,14 @@ mod shared_aggregator_index {
         let (_, token) = fixtures::api_token(&app, &account).await;
         fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = get("/api/aggregators")
+        let conn = get("/api/aggregators")
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let aggregators: Vec<Aggregator> = conn.response_json().await;
+        let aggregators: Vec<Aggregator> = conn.response_json();
         assert_same_json_representation(
             &aggregators,
             &vec![shared_aggregator1, shared_aggregator2],
@@ -294,14 +294,14 @@ mod create {
         let (user, account, ..) = fixtures::member(&app).await;
 
         let new_aggregator = fixtures::new_aggregator();
-        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = post(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(new_aggregator.clone())
             .run_async(&app)
             .await;
         assert_response!(conn, 201);
-        let aggregator: Aggregator = conn.response_json().await;
+        let aggregator: Aggregator = conn.response_json();
 
         let aggregator_config: AggregatorApiConfig = client_logs.last().response_json();
 
@@ -329,14 +329,14 @@ mod create {
 
         let mut new_aggregator = fixtures::new_aggregator();
         new_aggregator.is_first_party = Some(true);
-        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = post(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(new_aggregator)
             .run_async(&app)
             .await;
         assert_response!(conn, 201);
-        let aggregator: Aggregator = conn.response_json().await;
+        let aggregator: Aggregator = conn.response_json();
         assert!(!aggregator.is_first_party);
         assert!(!aggregator.reload(app.db()).await?.unwrap().is_first_party);
 
@@ -347,7 +347,7 @@ mod create {
     async fn invalid(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
 
-        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = post(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(json!({
@@ -358,7 +358,7 @@ mod create {
             .await;
 
         assert_response!(conn, 400);
-        let error: Value = conn.response_json().await;
+        let error: Value = conn.response_json();
         assert!(error.get("name").is_some());
         assert!(error.get("api_url").is_some());
         Ok(())
@@ -389,7 +389,7 @@ mod create {
         let user = fixtures::user();
         let aggregator_count_before = Aggregators::find().count(app.db()).await?;
 
-        let mut conn = post("/api/accounts/does-not-exist/aggregators")
+        let conn = post("/api/accounts/does-not-exist/aggregators")
             .with_api_headers()
             .with_state(user)
             .with_request_json(fixtures::new_aggregator())
@@ -407,7 +407,7 @@ mod create {
     async fn admin_not_member(app: DivviupApi) -> TestResult {
         let (admin, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
-        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = post(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(admin)
             .with_request_json(fixtures::new_aggregator())
@@ -415,7 +415,7 @@ mod create {
             .await;
 
         assert_response!(conn, 201);
-        let aggregator: Aggregator = conn.response_json().await;
+        let aggregator: Aggregator = conn.response_json();
         assert!(!aggregator.is_first_party);
 
         let aggregator_from_db = aggregator.reload(app.db()).await?.unwrap();
@@ -428,7 +428,7 @@ mod create {
     async fn admin_token(app: DivviupApi) -> TestResult {
         let token = fixtures::admin_token(&app).await;
         let account = fixtures::account(&app).await;
-        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = post(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .with_request_json(fixtures::new_aggregator())
@@ -436,7 +436,7 @@ mod create {
             .await;
 
         assert_response!(conn, 201);
-        let aggregator: Aggregator = conn.response_json().await;
+        let aggregator: Aggregator = conn.response_json();
         assert!(!aggregator.is_first_party);
 
         let aggregator_from_db = aggregator.reload(app.db()).await?.unwrap();
@@ -449,7 +449,7 @@ mod create {
     async fn member_token(app: DivviupApi) -> TestResult {
         let account = fixtures::account(&app).await;
         let (_, token) = fixtures::api_token(&app, &account).await;
-        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = post(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .with_request_json(fixtures::new_aggregator())
@@ -457,7 +457,7 @@ mod create {
             .await;
 
         assert_response!(conn, 201);
-        let aggregator: Aggregator = conn.response_json().await;
+        let aggregator: Aggregator = conn.response_json();
         assert!(!aggregator.is_first_party);
 
         let aggregator_from_db = aggregator.reload(app.db()).await?.unwrap();
@@ -494,15 +494,15 @@ mod create {
         new_aggregator.bearer_token = Some(BAD_BEARER_TOKEN.to_string());
         let aggregator_count_before = Aggregators::find().count(app.db()).await?;
 
-        let mut conn = post(format!("/api/accounts/{}/aggregators", account.id))
+        let conn = post(format!("/api/accounts/{}/aggregators", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(new_aggregator.clone())
             .run_async(&app)
             .await;
         assert_response!(conn, 400);
-        assert_eq!(client_logs.last().response_status, Status::Unauthorized);
-        let error: Value = conn.response_json().await;
+        assert_eq!(client_logs.last().response_status, StatusCode::UNAUTHORIZED);
+        let error: Value = conn.response_json();
         assert!(error.get("bearer_token").is_some());
         let aggregator_count_after = Aggregators::find().count(app.db()).await?;
         assert_eq!(aggregator_count_before, aggregator_count_after);
@@ -518,13 +518,13 @@ mod show {
     async fn as_member(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
@@ -533,13 +533,13 @@ mod show {
     async fn shared_aggregator(app: DivviupApi) -> TestResult {
         let (user, _account, ..) = fixtures::member(&app).await;
         let aggregator = fixtures::aggregator(&app, None).await;
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
@@ -563,13 +563,13 @@ mod show {
         let (admin, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
@@ -577,7 +577,7 @@ mod show {
     #[test(harness = set_up)]
     async fn nonexistant_aggregator(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
-        let mut conn = get("/api/aggregators/some-made-up-id")
+        let conn = get("/api/aggregators/some-made-up-id")
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
@@ -595,13 +595,13 @@ mod show {
             .update(app.db())
             .await?;
 
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
@@ -615,13 +615,13 @@ mod show {
             .update(app.db())
             .await?;
 
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
@@ -635,13 +635,13 @@ mod show {
             .tombstone()
             .update(app.db())
             .await?;
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
@@ -654,13 +654,13 @@ mod show {
             .tombstone()
             .update(app.db())
             .await?;
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_same_json_representation(&response_aggregator, &aggregator);
         Ok(())
     }
@@ -670,13 +670,13 @@ mod show {
         let token = fixtures::admin_token(&app).await;
         let account = fixtures::account(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response: Aggregator = conn.response_json().await;
+        let response: Aggregator = conn.response_json();
         assert_same_json_representation(&aggregator, &response);
         Ok(())
     }
@@ -686,13 +686,13 @@ mod show {
         let account = fixtures::account(&app).await;
         let (_, token) = fixtures::api_token(&app, &account).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response: Aggregator = conn.response_json().await;
+        let response: Aggregator = conn.response_json();
         assert_same_json_representation(&aggregator, &response);
         Ok(())
     }
@@ -730,7 +730,7 @@ mod update {
 
         let new_name = format!("new name {}", fixtures::random_name());
         let new_bearer_token = fixtures::random_name();
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": &new_name, "bearer_token": &new_bearer_token }))
             .with_state(user)
@@ -742,11 +742,13 @@ mod update {
             client_logs
                 .last()
                 .request_headers
-                .get_str(KnownHeaderName::Authorization)
+                .get(headers::AUTHORIZATION)
+                .unwrap()
+                .to_str()
                 .unwrap(),
             format!("Bearer {new_bearer_token}")
         );
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_eq!(response_aggregator.name, new_name);
         let reloaded = aggregator.reload(app.db()).await?.unwrap();
         assert_eq!(reloaded.name, new_name);
@@ -761,7 +763,7 @@ mod update {
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
 
         let original_bearer_token = aggregator.encrypted_bearer_token.clone();
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "bearer_token": &BAD_BEARER_TOKEN }))
             .with_state(user)
@@ -773,7 +775,9 @@ mod update {
             client_logs
                 .last()
                 .request_headers
-                .get_str(KnownHeaderName::Authorization)
+                .get(headers::AUTHORIZATION)
+                .unwrap()
+                .to_str()
                 .unwrap(),
             format!("Bearer {BAD_BEARER_TOKEN}")
         );
@@ -786,8 +790,8 @@ mod update {
                 .encrypted_bearer_token,
             original_bearer_token
         );
-        assert_eq!(client_logs.last().response_status, Status::Unauthorized);
-        let errors: Value = conn.response_json().await;
+        assert_eq!(client_logs.last().response_status, StatusCode::UNAUTHORIZED);
+        let errors: Value = conn.response_json();
         assert!(errors.get("bearer_token").is_some());
 
         Ok(())
@@ -798,14 +802,14 @@ mod update {
         let (user, account, ..) = fixtures::member(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
 
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": "" }))
             .with_state(user)
             .run_async(&app)
             .await;
         assert_response!(conn, 400);
-        let errors: Value = conn.response_json().await;
+        let errors: Value = conn.response_json();
         assert!(errors.get("name").is_some());
 
         assert_eq!(
@@ -860,7 +864,7 @@ mod update {
         let aggregator = fixtures::aggregator(&app, None).await;
         let new_name = format!("new name {}", fixtures::random_name());
 
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": &new_name }))
             .with_state(admin)
@@ -868,7 +872,7 @@ mod update {
             .await;
 
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_eq!(response_aggregator.name, new_name);
         assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, new_name);
         Ok(())
@@ -881,14 +885,14 @@ mod update {
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
 
         let new_name = format!("new name {}", fixtures::random_name());
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": &new_name }))
             .with_state(admin)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_eq!(response_aggregator.name, new_name);
         assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, new_name);
 
@@ -898,7 +902,7 @@ mod update {
     #[test(harness = set_up)]
     async fn nonexistant_aggregator(app: DivviupApi) -> TestResult {
         let user = fixtures::user();
-        let mut conn = patch("/api/aggregators/not-an-aggregator-id")
+        let conn = patch("/api/aggregators/not-an-aggregator-id")
             .with_api_headers()
             .with_request_json(json!({ "name": "irrelevant" }))
             .with_state(user)
@@ -917,14 +921,14 @@ mod update {
             .update(app.db())
             .await?;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": name }))
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_eq!(response_aggregator.name, name);
         assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, name);
         Ok(())
@@ -959,14 +963,14 @@ mod update {
             .update(app.db())
             .await?;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": name }))
             .with_state(admin)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_eq!(response_aggregator.name, name);
         assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, name);
         Ok(())
@@ -981,7 +985,7 @@ mod update {
             .update(app.db())
             .await?;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({ "name": name }))
             .with_state(admin)
@@ -989,7 +993,7 @@ mod update {
             .await;
 
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_eq!(response_aggregator.name, name);
         assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, name);
         Ok(())
@@ -1001,7 +1005,7 @@ mod update {
         let account = fixtures::account(&app).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_auth_header(token)
             .with_request_json(json!({ "name": name }))
@@ -1009,7 +1013,7 @@ mod update {
             .await;
 
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_eq!(response_aggregator.name, name);
         assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, name);
         Ok(())
@@ -1021,14 +1025,14 @@ mod update {
         let (_, token) = fixtures::api_token(&app, &account).await;
         let aggregator = fixtures::aggregator(&app, Some(&account)).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_auth_header(token)
             .with_request_json(json!({ "name": name }))
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_eq!(response_aggregator.name, name);
         assert_eq!(aggregator.reload(app.db()).await?.unwrap().name, name);
         Ok(())
@@ -1071,25 +1075,25 @@ mod update {
         aggregator.features = ActiveValue::Set(Features::from_iter::<[Feature; 0]>([]).into());
         let aggregator = aggregator.update(app.db()).await?;
 
-        let mut conn = get(format!("/api/aggregators/{}", aggregator.id))
+        let conn = get(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_state(user.clone())
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert!(response_aggregator.query_types.is_empty());
         assert!(response_aggregator.vdafs.is_empty());
         assert!(response_aggregator.features.is_empty());
 
-        let mut conn = patch(format!("/api/aggregators/{}", aggregator.id))
+        let conn = patch(format!("/api/aggregators/{}", aggregator.id))
             .with_api_headers()
             .with_request_json(json!({}))
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_aggregator: Aggregator = conn.response_json().await;
+        let response_aggregator: Aggregator = conn.response_json();
         assert_eq!(
             response_aggregator.query_types,
             before_aggregator.query_types
@@ -1278,7 +1282,7 @@ mod shared_create {
     async fn as_admin(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
         let (admin, ..) = fixtures::admin(&app).await;
         let new_aggregator = fixtures::new_aggregator();
-        let mut conn = post("/api/aggregators")
+        let conn = post("/api/aggregators")
             .with_request_json(&new_aggregator)
             .with_api_headers()
             .with_state(admin)
@@ -1286,7 +1290,7 @@ mod shared_create {
             .await;
 
         assert_response!(conn, 201);
-        let aggregator: Aggregator = conn.response_json().await;
+        let aggregator: Aggregator = conn.response_json();
         let aggregator_config: AggregatorApiConfig = client_logs.last().response_json();
 
         assert!(aggregator.account_id.is_none());
@@ -1314,14 +1318,14 @@ mod shared_create {
         let (admin, ..) = fixtures::admin(&app).await;
         let mut new_aggregator = fixtures::new_aggregator();
         new_aggregator.is_first_party = Some(true);
-        let mut conn = post("/api/aggregators")
+        let conn = post("/api/aggregators")
             .with_api_headers()
             .with_state(admin)
             .with_request_json(new_aggregator)
             .run_async(&app)
             .await;
         assert_response!(conn, 201);
-        let aggregator: Aggregator = conn.response_json().await;
+        let aggregator: Aggregator = conn.response_json();
         assert!(aggregator.is_first_party);
         assert!(aggregator.reload(app.db()).await?.unwrap().is_first_party);
 
@@ -1333,14 +1337,14 @@ mod shared_create {
         let (admin, ..) = fixtures::admin(&app).await;
         let mut new_aggregator = fixtures::new_aggregator();
         new_aggregator.is_first_party = Some(false);
-        let mut conn = post("/api/aggregators")
+        let conn = post("/api/aggregators")
             .with_api_headers()
             .with_state(admin)
             .with_request_json(new_aggregator)
             .run_async(&app)
             .await;
         assert_response!(conn, 201);
-        let aggregator: Aggregator = conn.response_json().await;
+        let aggregator: Aggregator = conn.response_json();
         assert!(!aggregator.is_first_party);
         assert!(!aggregator.reload(app.db()).await?.unwrap().is_first_party);
 
@@ -1353,7 +1357,7 @@ mod shared_create {
         let new_aggregator = fixtures::new_aggregator();
         let aggregator_count_before = Aggregators::find().count(app.db()).await?;
 
-        let mut conn = post("/api/aggregators")
+        let conn = post("/api/aggregators")
             .with_request_json(&new_aggregator)
             .with_api_headers()
             .with_state(admin)
@@ -1374,7 +1378,7 @@ mod shared_create {
         let new_aggregator = fixtures::new_aggregator();
         let aggregator_count_before = Aggregators::find().count(app.db()).await?;
 
-        let mut conn = post("/api/aggregators")
+        let conn = post("/api/aggregators")
             .with_request_json(&new_aggregator)
             .with_api_headers()
             .with_auth_header(token)
@@ -1392,13 +1396,13 @@ mod shared_create {
         let token = fixtures::admin_token(&app).await;
         let new_aggregator = fixtures::new_aggregator();
         let aggregator_count_before = Aggregators::find().count(app.db()).await?;
-        let mut conn = post("/api/aggregators")
+        let conn = post("/api/aggregators")
             .with_request_json(&new_aggregator)
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        let aggregator: Aggregator = conn.response_json().await;
+        let aggregator: Aggregator = conn.response_json();
         assert_eq!(aggregator.name, new_aggregator.name.unwrap());
         let aggregator_count_after = Aggregators::find().count(app.db()).await?;
         assert_eq!(aggregator_count_after, aggregator_count_before + 1);

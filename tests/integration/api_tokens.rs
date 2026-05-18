@@ -13,14 +13,14 @@ mod index {
         let (deleted, _) = fixtures::api_token(&app, &account).await;
         let _deleted = deleted.tombstone().update(app.db()).await.unwrap();
 
-        let mut conn = get(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = get(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
 
-        let api_tokens: Vec<ApiToken> = conn.response_json().await;
+        let api_tokens: Vec<ApiToken> = conn.response_json();
         assert_same_json_representation(&api_tokens, &vec![token2, token1]);
         Ok(())
     }
@@ -52,7 +52,7 @@ mod index {
         fixtures::api_token(&app, &account).await;
         fixtures::api_token(&app, &account).await;
 
-        let mut conn = get("/api/accounts/not-an-account/api_tokens")
+        let conn = get("/api/accounts/not-an-account/api_tokens")
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
@@ -70,14 +70,14 @@ mod index {
         let (api_token1, _) = fixtures::api_token(&app, &account).await;
         let (api_token2, _) = fixtures::api_token(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = get(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let api_tokens: Vec<ApiToken> = conn.response_json().await;
+        let api_tokens: Vec<ApiToken> = conn.response_json();
         assert_same_json_representation(&api_tokens, &vec![api_token2, api_token1]);
         Ok(())
     }
@@ -89,14 +89,14 @@ mod index {
         let (api_token1, _) = fixtures::api_token(&app, &account).await;
         let (api_token2, _) = fixtures::api_token(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = get(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let api_tokens: Vec<ApiToken> = conn.response_json().await;
+        let api_tokens: Vec<ApiToken> = conn.response_json();
         assert_same_json_representation(&api_tokens, &vec![api_token2, api_token1]);
         Ok(())
     }
@@ -107,14 +107,14 @@ mod index {
         let (api_token1, token) = fixtures::api_token(&app, &account).await;
         let (api_token2, _) = fixtures::api_token(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = get(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let api_tokens: Vec<ApiToken> = conn.response_json().await;
+        let api_tokens: Vec<ApiToken> = conn.response_json();
         assert_same_json_representation(
             &api_tokens,
             &vec![api_token2, api_token1.reload(app.db()).await?.unwrap()],
@@ -148,13 +148,13 @@ mod create {
     async fn success(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
 
-        let mut conn = post(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = post(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
         assert_response!(conn, 201);
-        let mut api_token: ApiToken = conn.response_json().await;
+        let mut api_token: ApiToken = conn.response_json();
         let api_token_from_db = api_token.reload(app.db()).await?.unwrap();
         let (api_token_from_token, account_from_token) =
             ApiTokens::load_and_check(&api_token.token.take().unwrap(), app.db())
@@ -191,7 +191,7 @@ mod create {
         let user = fixtures::user();
         let api_token_count_before = ApiTokens::find().count(app.db()).await?;
 
-        let mut conn = post("/api/accounts/does-not-exist/api_tokens")
+        let conn = post("/api/accounts/does-not-exist/api_tokens")
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
@@ -208,14 +208,14 @@ mod create {
     async fn admin_not_member(app: DivviupApi) -> TestResult {
         let (admin, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
-        let mut conn = post(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = post(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
 
         assert_response!(conn, 201);
-        let mut api_token: ApiToken = conn.response_json().await;
+        let mut api_token: ApiToken = conn.response_json();
         let api_token_from_db = api_token.reload(app.db()).await?.unwrap();
         let (api_token_from_token, account_from_token) =
             ApiTokens::load_and_check(&api_token.token.take().unwrap(), app.db())
@@ -232,14 +232,14 @@ mod create {
     async fn admin_token(app: DivviupApi) -> TestResult {
         let token = fixtures::admin_token(&app).await;
         let account = fixtures::account(&app).await;
-        let mut conn = post(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = post(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
 
         assert_response!(conn, 201);
-        let mut api_token: ApiToken = conn.response_json().await;
+        let mut api_token: ApiToken = conn.response_json();
         let api_token_from_db = api_token.reload(app.db()).await?.unwrap();
         let (api_token_from_token, account_from_token) =
             ApiTokens::load_and_check(&api_token.token.take().unwrap(), app.db())
@@ -256,14 +256,14 @@ mod create {
     async fn member_token(app: DivviupApi) -> TestResult {
         let account = fixtures::account(&app).await;
         let (_, token) = fixtures::api_token(&app, &account).await;
-        let mut conn = post(format!("/api/accounts/{}/api_tokens", account.id))
+        let conn = post(format!("/api/accounts/{}/api_tokens", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
 
         assert_response!(conn, 201);
-        let mut api_token: ApiToken = conn.response_json().await;
+        let mut api_token: ApiToken = conn.response_json();
         let api_token_from_db = api_token.reload(app.db()).await?.unwrap();
         let (api_token_from_token, account_from_token) =
             ApiTokens::load_and_check(&api_token.token.take().unwrap(), app.db())
@@ -430,14 +430,14 @@ mod update {
         let (user, account, ..) = fixtures::member(&app).await;
         let (api_token, _) = fixtures::api_token(&app, &account).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
+        let conn = patch(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
             .with_request_json(json!({ "name": name }))
             .with_state(user)
             .run_async(&app)
             .await;
         assert_status!(conn, 200);
-        let response: ApiToken = conn.response_json().await;
+        let response: ApiToken = conn.response_json();
         assert_eq!(response.name.unwrap(), name);
         assert_eq!(
             api_token.reload(app.db()).await?.unwrap().name.unwrap(),
@@ -471,14 +471,14 @@ mod update {
         let account = fixtures::account(&app).await;
         let (api_token, _) = fixtures::api_token(&app, &account).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
+        let conn = patch(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
             .with_request_json(json!({ "name": name }))
             .with_state(admin)
             .run_async(&app)
             .await;
         assert_status!(conn, 200);
-        let response: ApiToken = conn.response_json().await;
+        let response: ApiToken = conn.response_json();
         assert_eq!(response.name.unwrap(), name);
         assert_eq!(
             api_token.reload(app.db()).await?.unwrap().name.unwrap(),
@@ -494,14 +494,14 @@ mod update {
         let account = fixtures::account(&app).await;
         let (api_token, _) = fixtures::api_token(&app, &account).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
+        let conn = patch(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
             .with_request_json(json!({ "name": name }))
             .with_auth_header(token)
             .run_async(&app)
             .await;
         assert_status!(conn, 200);
-        let response: ApiToken = conn.response_json().await;
+        let response: ApiToken = conn.response_json();
         assert_eq!(response.name.unwrap(), name);
         assert_eq!(
             api_token.reload(app.db()).await?.unwrap().name.unwrap(),
@@ -516,14 +516,14 @@ mod update {
         let account = fixtures::account(&app).await;
         let (api_token, token) = fixtures::api_token(&app, &account).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!("/api/api_tokens/{}", api_token.id))
+        let conn = patch(format!("/api/api_tokens/{}", api_token.id))
             .with_api_headers()
             .with_request_json(json!({ "name": name }))
             .with_auth_header(token)
             .run_async(&app)
             .await;
         assert_status!(conn, 200);
-        let response: ApiToken = conn.response_json().await;
+        let response: ApiToken = conn.response_json();
         assert_eq!(response.name.unwrap(), name);
         assert_eq!(
             api_token.reload(app.db()).await?.unwrap().name.unwrap(),

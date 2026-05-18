@@ -54,11 +54,7 @@ mod login {
         let conn = get("/login").with_api_host().run_async(&app).await;
         let auth_base = app.config().auth_url.join("/authorize")?;
         assert_status!(conn, 302);
-        let location = conn
-            .inner()
-            .response_headers()
-            .get_str(KnownHeaderName::Location)
-            .unwrap();
+        let location = conn.header_str(headers::LOCATION.as_str()).unwrap();
         assert!(location.starts_with(auth_base.as_ref()));
         let url = Url::parse(location)?;
         let query = QueryStrong::parse_strict(url.query().unwrap()).unwrap();
@@ -80,17 +76,13 @@ mod login {
             .with_user(&user)
             .run_async(&app)
             .await;
-        assert_response!(conn, 302, "", "Location" => app.config().app_url.as_ref());
+        assert_response!(conn, 302, "", headers::LOCATION => app.config().app_url.as_ref());
         Ok(())
     }
 }
 
 #[test(harness = set_up)]
 async fn logout(app: DivviupApi) -> TestResult {
-    // Session destruction (Set-Cookie clearing the session cookie) is not
-    // exercised here: the test harness proxy doesn't propagate cookies, so
-    // we can't round-trip a live session. Cookie clearing is tower-sessions'
-    // responsibility; this test only asserts the redirect contract.
     let user = fixtures::user();
     let conn = get("/logout")
         .with_api_host()
@@ -98,10 +90,10 @@ async fn logout(app: DivviupApi) -> TestResult {
         .run_async(&app)
         .await;
 
+    // TODO(Part 10): verify the session is destroyed (was `conn.session().is_destroyed()`)
     assert_response!(conn, 302);
     let location: Url = conn
-        .response_headers()
-        .get_str(KnownHeaderName::Location)
+        .header_str(headers::LOCATION.as_str())
         .unwrap()
         .parse()?;
 

@@ -77,7 +77,7 @@ async fn send_email(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
     assert!(job.perform(&app.config().into(), app.db()).await?.is_none());
 
     let reset_request = client_logs.logs().last().unwrap().clone();
-    assert_eq!(reset_request.method, Method::Post);
+    assert_eq!(reset_request.method, Method::POST);
     assert_eq!(
         reset_request.url,
         app.config()

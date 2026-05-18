@@ -16,7 +16,7 @@ mod index {
         let deleted = fixtures::collector_credential(&app, &account).await;
         let _deleted = deleted.tombstone().update(app.db()).await.unwrap();
 
-        let mut conn = get(format!(
+        let conn = get(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -26,7 +26,7 @@ mod index {
         .await;
         assert_ok!(conn);
 
-        let collector_credentials: Vec<CollectorCredential> = conn.response_json().await;
+        let collector_credentials: Vec<CollectorCredential> = conn.response_json();
         assert_same_json_representation(
             &collector_credentials,
             &vec![collector_credential1, collector_credential2],
@@ -64,7 +64,7 @@ mod index {
         fixtures::collector_credential(&app, &account).await;
         fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = get("/api/accounts/not-an-account/collector_credentials")
+        let conn = get("/api/accounts/not-an-account/collector_credentials")
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
@@ -82,7 +82,7 @@ mod index {
         let collector_credential1 = fixtures::collector_credential(&app, &account).await;
         let collector_credential2 = fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = get(format!(
+        let conn = get(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -92,7 +92,7 @@ mod index {
         .await;
 
         assert_ok!(conn);
-        let collector_credentials: Vec<CollectorCredential> = conn.response_json().await;
+        let collector_credentials: Vec<CollectorCredential> = conn.response_json();
         assert_same_json_representation(
             &collector_credentials,
             &vec![collector_credential1, collector_credential2],
@@ -107,7 +107,7 @@ mod index {
         let collector_credential1 = fixtures::collector_credential(&app, &account).await;
         let collector_credential2 = fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = get(format!(
+        let conn = get(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -117,7 +117,7 @@ mod index {
         .await;
 
         assert_ok!(conn);
-        let collector_credentials: Vec<CollectorCredential> = conn.response_json().await;
+        let collector_credentials: Vec<CollectorCredential> = conn.response_json();
         assert_same_json_representation(
             &collector_credentials,
             &vec![collector_credential1, collector_credential2],
@@ -132,7 +132,7 @@ mod index {
         let collector_credential1 = fixtures::collector_credential(&app, &account).await;
         let collector_credential2 = fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = get(format!(
+        let conn = get(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -142,7 +142,7 @@ mod index {
         .await;
 
         assert_ok!(conn);
-        let collector_credentials: Vec<CollectorCredential> = conn.response_json().await;
+        let collector_credentials: Vec<CollectorCredential> = conn.response_json();
         assert_same_json_representation(
             &collector_credentials,
             &vec![collector_credential1, collector_credential2],
@@ -187,7 +187,7 @@ mod create {
         let (user, account, ..) = fixtures::member(&app).await;
         let hpke_config = random_hpke_config();
 
-        let mut conn = post(format!(
+        let conn = post(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -197,7 +197,7 @@ mod create {
         .run_async(&app)
         .await;
         assert_response!(conn, 201);
-        let mut collector_credential: CollectorCredential = conn.response_json().await;
+        let mut collector_credential: CollectorCredential = conn.response_json();
         let token = collector_credential.token.take();
         assert!(token.is_some());
         assert!(collector_credential.token_hash.is_some());
@@ -240,7 +240,7 @@ mod create {
         let collector_credential_count_before =
             CollectorCredentials::find().count(app.db()).await?;
 
-        let mut conn = post("/api/accounts/does-not-exist/collector_credentials")
+        let conn = post("/api/accounts/does-not-exist/collector_credentials")
             .with_api_headers()
             .with_state(user)
             .with_request_json(valid_collector_credential_json(random_hpke_config()))
@@ -261,7 +261,7 @@ mod create {
     async fn admin_not_member(app: DivviupApi) -> TestResult {
         let (admin, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
-        let mut conn = post(format!(
+        let conn = post(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -272,7 +272,7 @@ mod create {
         .await;
 
         assert_response!(conn, 201);
-        let mut collector_credential: CollectorCredential = conn.response_json().await;
+        let mut collector_credential: CollectorCredential = conn.response_json();
         let token = collector_credential.token.take();
         assert!(token.is_some());
         assert!(collector_credential.token_hash.is_some());
@@ -285,7 +285,7 @@ mod create {
     async fn admin_token(app: DivviupApi) -> TestResult {
         let token = fixtures::admin_token(&app).await;
         let account = fixtures::account(&app).await;
-        let mut conn = post(format!(
+        let conn = post(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -296,7 +296,7 @@ mod create {
         .await;
 
         assert_response!(conn, 201);
-        let mut collector_credential: CollectorCredential = conn.response_json().await;
+        let mut collector_credential: CollectorCredential = conn.response_json();
         let token = collector_credential.token.take();
         assert!(token.is_some());
         assert!(collector_credential.token_hash.is_some());
@@ -309,7 +309,7 @@ mod create {
     async fn member_token(app: DivviupApi) -> TestResult {
         let account = fixtures::account(&app).await;
         let (_, token) = fixtures::api_token(&app, &account).await;
-        let mut conn = post(format!(
+        let conn = post(format!(
             "/api/accounts/{}/collector_credentials",
             account.id
         ))
@@ -320,7 +320,7 @@ mod create {
         .await;
 
         assert_response!(conn, 201);
-        let mut collector_credential: CollectorCredential = conn.response_json().await;
+        let mut collector_credential: CollectorCredential = conn.response_json();
         let token = collector_credential.token.take();
         assert!(token.is_some());
         assert!(collector_credential.token_hash.is_some());
@@ -528,7 +528,7 @@ mod update {
         let (user, account, ..) = fixtures::member(&app).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!(
+        let conn = patch(format!(
             "/api/collector_credentials/{}",
             collector_credential.id
         ))
@@ -538,7 +538,7 @@ mod update {
         .run_async(&app)
         .await;
         assert_status!(conn, 200);
-        let response: CollectorCredential = conn.response_json().await;
+        let response: CollectorCredential = conn.response_json();
         assert_eq!(response.name.unwrap(), name);
         assert_eq!(
             collector_credential
@@ -583,7 +583,7 @@ mod update {
         let account = fixtures::account(&app).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!(
+        let conn = patch(format!(
             "/api/collector_credentials/{}",
             collector_credential.id
         ))
@@ -593,7 +593,7 @@ mod update {
         .run_async(&app)
         .await;
         assert_status!(conn, 200);
-        let response: CollectorCredential = conn.response_json().await;
+        let response: CollectorCredential = conn.response_json();
         assert_eq!(response.name.unwrap(), name);
         assert_eq!(
             collector_credential
@@ -614,7 +614,7 @@ mod update {
         let account = fixtures::account(&app).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!(
+        let conn = patch(format!(
             "/api/collector_credentials/{}",
             collector_credential.id
         ))
@@ -624,7 +624,7 @@ mod update {
         .run_async(&app)
         .await;
         assert_status!(conn, 200);
-        let response: CollectorCredential = conn.response_json().await;
+        let response: CollectorCredential = conn.response_json();
         assert_eq!(response.name.unwrap(), name);
         assert_eq!(
             collector_credential
@@ -645,7 +645,7 @@ mod update {
         let (_, token) = fixtures::api_token(&app, &account).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
         let name = fixtures::random_name();
-        let mut conn = patch(format!(
+        let conn = patch(format!(
             "/api/collector_credentials/{}",
             collector_credential.id
         ))
@@ -655,7 +655,7 @@ mod update {
         .run_async(&app)
         .await;
         assert_status!(conn, 200);
-        let response: CollectorCredential = conn.response_json().await;
+        let response: CollectorCredential = conn.response_json();
         assert_eq!(response.name.unwrap(), name);
         assert_eq!(
             collector_credential

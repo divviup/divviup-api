@@ -9,6 +9,7 @@ use divviup_api::{
 };
 use rand::random;
 use uuid::Uuid;
+use HeaderValue;
 
 pub fn user() -> User {
     User {
@@ -201,7 +202,10 @@ pub async fn aggregator(app: &DivviupApi, account: Option<&Account>) -> Aggregat
 pub async fn api_token(app: &DivviupApi, account: &Account) -> (ApiToken, HeaderValue) {
     let (api_token, token) = ApiToken::build(account);
     let api_token = api_token.insert(app.db()).await.unwrap();
-    (api_token, format!("Bearer {token}").into())
+    (
+        api_token,
+        HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
+    )
 }
 
 pub async fn admin_token(app: &DivviupApi) -> HeaderValue {

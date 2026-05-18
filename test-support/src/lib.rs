@@ -9,10 +9,21 @@
 #![allow(clippy::cargo_common_metadata)]
 #![allow(clippy::multiple_crate_versions)]
 
+use axum::{
+    body::Body,
+    extract::Request,
+    http::header::{self, HeaderName, HeaderValue},
+    middleware::from_fn_with_state,
+    response::Response,
+    serve, Router,
+};
 use divviup_api::{
     clients::{aggregator_client::api_types, HttpClient},
+    handler::BuiltApp,
     Config, Crypter, Db,
 };
+use http_body_util::BodyExt;
+use reqwest::Client;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     error::Error,
@@ -20,13 +31,14 @@ use std::{
     iter::repeat_with,
     net::{Ipv6Addr, SocketAddr},
     process::Termination,
+    sync::Arc,
 };
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, runtime};
+use tokio_util::sync::CancellationToken;
+use tower::ServiceExt;
 use tracing::install_test_trace_subscriber;
-use trillium::Handler;
-use trillium_http::HeaderValue;
-use trillium_testing::TestConn;
 
+pub use axum::http::{header as headers, HeaderMap, Method, StatusCode};
 pub use base64::{
     engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
     Engine,
@@ -34,7 +46,7 @@ pub use base64::{
 pub use divviup_api::{
     entity::{self, *},
     queue::{Job, Queue},
-    DivviupApi, User,
+    User,
 };
 pub use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 pub use querystrong::QueryStrong;
@@ -45,16 +57,28 @@ pub use sea_orm::{
 pub use serde_json::{json, Value};
 pub use test_harness::test;
 pub use time::OffsetDateTime;
-pub use trillium::{Conn, KnownHeaderName, Method, Status};
-pub use trillium_testing::prelude::*;
 pub use url::Url;
 
 pub type TestResult = Result<(), Box<dyn Error>>;
 
+pub trait IntoTestStatus {
+    fn into_status(self) -> StatusCode;
+}
+impl IntoTestStatus for u16 {
+    fn into_status(self) -> StatusCode {
+        StatusCode::from_u16(self).expect("invalid status code")
+    }
+}
+impl IntoTestStatus for StatusCode {
+    fn into_status(self) -> StatusCode {
+        self
+    }
+}
+
 pub mod fixtures;
 pub mod tracing;
 
-mod client_logs;
+pub mod client_logs;
 pub use client_logs::{ClientLogs, LoggedConn};
 
 mod api_mocks;
@@ -87,21 +111,20 @@ pub async fn set_up_schema(db: &Db) {
     set_up_schema_for(&schema, db, CollectorCredentials).await;
 }
 
-pub async fn config(api_mocks: impl Handler) -> Config {
+pub async fn config(mock_router: Router) -> Config {
     let listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0u16))
         .await
         .expect("failed to bind mock server");
     let mock_addr = listener.local_addr().unwrap();
     let mock_base = format!("http://[::1]:{}", mock_addr.port());
 
-    let stopper = trillium_http::Stopper::new();
-    let config_for_server = trillium_tokio::config()
-        .without_signals()
-        .with_stopper(stopper)
-        .with_prebound_server(listener);
-    tokio::spawn(config_for_server.run_async(api_mocks));
+    tokio::spawn(async move {
+        serve(listener, mock_router)
+            .await
+            .expect("mock server error");
+    });
 
-    let reqwest_client = reqwest::Client::builder()
+    let reqwest_client = Client::builder()
         .no_proxy()
         .build()
         .expect("failed to build reqwest client");
@@ -138,27 +161,68 @@ pub async fn config(api_mocks: impl Handler) -> Config {
     }
 }
 
-pub async fn with_db<F, Fut, Out>(f: F) -> Out
-where
-    F: FnOnce(Db) -> Fut,
-    Fut: Future<Output = Out>,
-    Out: Termination,
-{
-    block_on(async move {
-        let db = Db::connect("sqlite::memory").await;
-        set_up_schema(&db).await;
-        f(db).await
-    })
+#[derive(Debug)]
+pub struct DivviupApi {
+    router: Router,
+    db: Db,
+    config: Arc<Config>,
+}
+
+impl DivviupApi {
+    pub fn router(&self) -> &Router {
+        &self.router
+    }
+
+    pub fn db(&self) -> &Db {
+        &self.db
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
+    }
+
+    pub fn crypter(&self) -> &Crypter {
+        &self.config.crypter
+    }
+}
+
+impl From<&DivviupApi> for Queue {
+    fn from(app: &DivviupApi) -> Self {
+        Self::new(app.db(), app.config(), CancellationToken::new())
+    }
+}
+
+impl AsRef<Db> for DivviupApi {
+    fn as_ref(&self) -> &Db {
+        &self.db
+    }
 }
 
 pub async fn build_test_app() -> (DivviupApi, ClientLogs) {
     install_test_trace_subscriber();
     let api_mocks = ApiMocks::new();
     let client_logs = api_mocks.client_logs();
-    let mut app = DivviupApi::new(config(api_mocks).await).await;
-    set_up_schema(app.db()).await;
-    let mut info = "testing".into();
-    app.init(&mut info).await;
+    let BuiltApp { router, db, config } =
+        divviup_api::build_app(config(api_mocks.into_router()).await).await;
+    set_up_schema(&db).await;
+    let app = DivviupApi { router, db, config };
+    (app, client_logs)
+}
+
+/// Build a test app using a custom mock `Router` instead of the default [`ApiMocks`].
+/// The provided router is wrapped with client-log middleware so all outbound
+/// aggregator API requests are captured in the returned [`ClientLogs`].
+pub async fn build_test_app_with_mock(mock: Router) -> (DivviupApi, ClientLogs) {
+    install_test_trace_subscriber();
+    let client_logs = ClientLogs::default();
+    let mock_with_logs = mock.layer(from_fn_with_state(
+        client_logs.clone(),
+        client_logs::client_logs_middleware,
+    ));
+    let BuiltApp { router, db, config } =
+        divviup_api::build_app(config(mock_with_logs).await).await;
+    set_up_schema(&db).await;
+    let app = DivviupApi { router, db, config };
     (app, client_logs)
 }
 
@@ -178,7 +242,7 @@ where
 pub fn with_client_logs<F, Fut, Out>(f: F) -> Out
 where
     F: FnOnce(DivviupApi, ClientLogs) -> Fut,
-    Fut: Future<Output = Out> + Send + 'static,
+    Fut: Future<Output = Out>,
     Out: Termination,
 {
     block_on(async move {
@@ -187,99 +251,301 @@ where
     })
 }
 
+pub fn block_on<F: Future<Output = T>, T>(future: F) -> T {
+    runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(future)
+}
+
 pub const APP_CONTENT_TYPE: &str = "application/vnd.divviup+json;version=0.1";
 
-#[macro_export]
-macro_rules! assert_not_found {
-    ($conn:expr) => {
-        assert_eq!($conn.status().unwrap_or(Status::NotFound), Status::NotFound);
-        assert_eq!($conn.take_response_body_string().unwrap_or_default(), "");
-    };
+#[derive(Debug)]
+pub struct TestRequest {
+    method: Method,
+    uri: String,
+    headers: HeaderMap,
+    body: Vec<u8>,
 }
 
-#[trillium::async_trait]
-pub trait TestingJsonExt {
-    async fn response_json<T: DeserializeOwned>(&mut self) -> T;
-    fn with_request_json<T: Serialize>(self, t: T) -> Self;
+pub fn get(path: impl Into<String>) -> TestRequest {
+    TestRequest::new(Method::GET, path)
 }
 
-#[trillium::async_trait]
-impl TestingJsonExt for TestConn {
-    async fn response_json<T: DeserializeOwned>(&mut self) -> T {
-        assert_eq!(
-            self.response_headers()
-                .get_str(KnownHeaderName::ContentType)
-                .unwrap(),
-            APP_CONTENT_TYPE
-        );
+pub fn post(path: impl Into<String>) -> TestRequest {
+    TestRequest::new(Method::POST, path)
+}
 
-        let body = self
-            .take_response_body()
-            .expect("no body was set")
-            .into_bytes()
-            .await
-            .expect("could not read body");
+pub fn put(path: impl Into<String>) -> TestRequest {
+    TestRequest::new(Method::PUT, path)
+}
 
-        serde_json::from_slice(&body).expect("could not deserialize body")
+pub fn patch(path: impl Into<String>) -> TestRequest {
+    TestRequest::new(Method::PATCH, path)
+}
+
+pub fn delete(path: impl Into<String>) -> TestRequest {
+    TestRequest::new(Method::DELETE, path)
+}
+
+impl TestRequest {
+    fn new(method: Method, uri: impl Into<String>) -> Self {
+        Self {
+            method,
+            uri: uri.into(),
+            headers: HeaderMap::new(),
+            body: Vec::new(),
+        }
     }
 
-    fn with_request_json<T: Serialize>(self, t: T) -> Self {
+    pub fn with_request_header<N, V>(mut self, name: N, value: V) -> Self
+    where
+        N: TryInto<HeaderName>,
+        N::Error: std::fmt::Debug,
+        V: TryInto<HeaderValue>,
+        V::Error: std::fmt::Debug,
+    {
+        let name = name.try_into().expect("invalid header name");
+        let value = value.try_into().expect("invalid header value");
+        self.headers.insert(name, value);
+        self
+    }
+
+    pub fn with_request_body(mut self, body: impl Into<String>) -> Self {
+        self.body = body.into().into_bytes();
+        self
+    }
+
+    pub fn with_request_json<T: Serialize>(self, t: T) -> Self {
         self.with_request_body(serde_json::to_string(&t).unwrap())
     }
-}
 
-pub trait TestExt {
-    fn with_api_headers(self) -> Self;
-    fn with_api_host(self) -> Self;
-    fn with_app_host(self) -> Self;
-    fn with_auth_header(self, token: HeaderValue) -> Self;
-    fn with_user(self, user: &User) -> Self;
-}
-
-impl TestExt for TestConn {
-    fn with_api_host(self) -> Self {
-        self.with_request_header(KnownHeaderName::Host, "api.example")
-            .secure()
+    pub fn with_api_host(self) -> Self {
+        self.with_request_header(header::HOST, "api.example")
     }
 
-    fn with_app_host(self) -> Self {
-        self.with_request_header(KnownHeaderName::Host, "app.example")
-            .secure()
+    pub fn with_app_host(self) -> Self {
+        self.with_request_header(header::HOST, "app.example")
     }
 
-    fn with_api_headers(self) -> Self {
-        if self.method() == Method::Get {
+    pub fn with_api_headers(self) -> Self {
+        (if self.method == Method::GET {
             self
         } else {
-            self.with_request_header(KnownHeaderName::ContentType, APP_CONTENT_TYPE)
-        }
-        .with_request_header(KnownHeaderName::Accept, APP_CONTENT_TYPE)
+            self.with_request_header(header::CONTENT_TYPE, APP_CONTENT_TYPE)
+        })
+        .with_request_header(header::ACCEPT, APP_CONTENT_TYPE)
         .with_api_host()
     }
 
-    fn with_auth_header(self, token: HeaderValue) -> Self {
-        self.with_request_header(KnownHeaderName::Authorization, token)
+    pub fn with_auth_header(self, token: HeaderValue) -> Self {
+        self.with_request_header(header::AUTHORIZATION, token)
     }
 
-    /// Simulate an authenticated session for routes that have migrated to the
-    /// Axum side. The header is read by an axum middleware gated on the
-    /// `test-header-injection` feature; it is not forwarded to or honored by
-    /// anything in production builds.
-    fn with_user(self, user: &User) -> Self {
+    pub fn with_user(self, user: &User) -> Self {
         self.with_request_header(
-            "X-Integration-Testing-User",
+            "x-integration-testing-user",
             serde_json::to_string(user).unwrap(),
         )
     }
+
+    /// In Part 10, refactor all callers from `.with_state(user)` to `.with_user(&user)`.
+    pub fn with_state(self, user: User) -> Self {
+        self.with_user(&user)
+    }
+
+    pub fn method(&self) -> Method {
+        self.method.clone()
+    }
+
+    pub async fn run_async(self, app: &DivviupApi) -> TestResponse {
+        let body = if self.body.is_empty() {
+            Body::empty()
+        } else {
+            Body::from(self.body)
+        };
+
+        let mut builder = Request::builder().method(self.method).uri(&self.uri);
+        for (name, value) in &self.headers {
+            builder = builder.header(name, value);
+        }
+        let request = builder.body(body).expect("failed to build request");
+        let response = app
+            .router
+            .clone()
+            .oneshot(request)
+            .await
+            .expect("oneshot request failed");
+        TestResponse::from_response(response).await
+    }
 }
 
-#[trillium::async_trait]
+#[derive(Debug)]
+pub struct TestResponse {
+    status: StatusCode,
+    headers: HeaderMap,
+    body: bytes::Bytes,
+}
+
+impl TestResponse {
+    async fn from_response(response: Response) -> Self {
+        let status = response.status();
+        let headers = response.headers().clone();
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("failed to read response body")
+            .to_bytes();
+        Self {
+            status,
+            headers,
+            body,
+        }
+    }
+
+    pub fn status(&self) -> StatusCode {
+        self.status
+    }
+
+    pub fn response_headers(&self) -> &HeaderMap {
+        &self.headers
+    }
+
+    pub fn response_json<T: DeserializeOwned>(&self) -> T {
+        assert_eq!(
+            self.headers
+                .get(header::CONTENT_TYPE)
+                .and_then(|v| v.to_str().ok()),
+            Some(APP_CONTENT_TYPE),
+            "expected Content-Type {APP_CONTENT_TYPE}"
+        );
+
+        serde_json::from_slice(&self.body).expect("could not deserialize response body")
+    }
+
+    pub fn response_body_string(&self) -> Option<String> {
+        if self.body.is_empty() {
+            None
+        } else {
+            String::from_utf8(self.body.to_vec()).ok()
+        }
+    }
+
+    pub fn header_str(&self, name: impl AsRef<str>) -> Option<&str> {
+        self.headers
+            .get(name.as_ref())
+            .and_then(|v| v.to_str().ok())
+    }
+}
+
+// These are reimplementations of the Trillium assertion macros atop Axum. In Part 10
+// we can decide whether to keep these or refactor the tests, but they're used heavily.
+
+#[macro_export]
+macro_rules! assert_ok {
+    ($conn:expr) => {{
+        let ref __conn = $conn;
+        assert_eq!(__conn.status(), $crate::StatusCode::OK);
+    }};
+
+    ($conn:expr, $body:expr $(, $header_name:expr => $header_val:expr)*) => {{
+        let ref __conn = $conn;
+        assert_eq!(__conn.status(), $crate::StatusCode::OK);
+        assert_eq!(
+            __conn.response_body_string().unwrap_or_default(),
+            $body
+        );
+        $(
+            assert_eq!(
+                __conn.header_str($header_name),
+                Some($header_val),
+                concat!("expected header ", stringify!($header_name)),
+            );
+        )*
+    }};
+}
+
+#[macro_export]
+macro_rules! assert_not_found {
+    ($conn:expr) => {{
+        let ref __conn = $conn;
+        assert_eq!(__conn.status(), $crate::StatusCode::NOT_FOUND);
+        assert_eq!(__conn.response_body_string().unwrap_or_default(), "");
+    }};
+}
+
+#[macro_export]
+macro_rules! assert_response {
+    ($conn:expr, $status:expr) => {{
+        let ref __conn = $conn;
+        let expected = $crate::IntoTestStatus::into_status($status);
+        assert_eq!(__conn.status(), expected);
+    }};
+
+    ($conn:expr, $status:expr, $body:expr $(, $header_name:expr => $header_val:expr)*) => {{
+        let ref __conn = $conn;
+        let expected = $crate::IntoTestStatus::into_status($status);
+        assert_eq!(__conn.status(), expected);
+        assert_eq!(
+            __conn.response_body_string().unwrap_or_default(),
+            $body
+        );
+        $(
+            assert_eq!(
+                __conn.header_str($header_name),
+                Some($header_val),
+                concat!("expected header ", stringify!($header_name)),
+            );
+        )*
+    }};
+}
+
+#[macro_export]
+macro_rules! assert_status {
+    ($conn:expr, $status:expr) => {{
+        let ref __conn = $conn;
+        let expected = $crate::IntoTestStatus::into_status($status);
+        assert_eq!(__conn.status(), expected);
+    }};
+}
+
+#[macro_export]
+macro_rules! assert_body_contains {
+    ($conn:expr, $pattern:expr) => {{
+        let ref __conn = $conn;
+        let body = __conn.response_body_string().unwrap_or_default();
+        assert!(
+            body.contains($pattern),
+            "expected body to contain {:?}, got {:?}",
+            $pattern,
+            body
+        );
+    }};
+}
+
+#[macro_export]
+macro_rules! assert_headers {
+    ($conn:expr, $($header_name:expr => $header_val:expr),+ $(,)?) => {{
+        let ref __conn = $conn;
+        $(
+            assert_eq!(
+                __conn.header_str($header_name),
+                Some($header_val),
+                concat!("expected header ", stringify!($header_name)),
+            );
+        )+
+    }};
+}
+
+#[async_trait::async_trait]
 pub trait Reload: Sized {
     async fn reload(&self, db: &impl ConnectionTrait) -> Result<Option<Self>, DbErr>;
 }
 macro_rules! impl_reload {
     ($model:ty, $entity:ty) => {
-        #[trillium::async_trait]
+        #[async_trait::async_trait]
         impl Reload for $model {
             async fn reload(&self, db: &impl ConnectionTrait) -> Result<Option<Self>, DbErr> {
                 <$entity>::find_by_id(self.id.clone()).one(db).await

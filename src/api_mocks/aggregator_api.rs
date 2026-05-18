@@ -7,54 +7,43 @@ use crate::{
     },
     entity::aggregator::{Feature, Features},
 };
+use axum::{
+    extract::{Path, Query, Request},
+    http::{header, StatusCode},
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
+    routing, Json, Router,
+};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use querystrong::QueryStrong;
 use rand::random;
+use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::iter::repeat_with;
-use trillium::{Conn, Handler, Status};
-use trillium_api::{api, Json, State};
-use trillium_http::KnownHeaderName;
-use trillium_router::{router, RouterConnExt};
 use uuid::Uuid;
 
 pub const BAD_BEARER_TOKEN: &str = "badbearertoken";
 
-pub fn mock() -> impl Handler {
-    (
-        bearer_token_check,
-        router()
-            .get(
-                "/",
-                api(|_: &mut Conn, _: ()| async move {
-                    Json(AggregatorApiConfig {
-                        dap_url: format!("https://dap.{}.example", random_chars(5))
-                            .parse()
-                            .unwrap(),
-                        role: random(),
-                        vdafs: Default::default(),
-                        query_types: Default::default(),
-                        protocol: random(),
-                        features: Features::from_iter([Feature::TokenHash]),
-                    })
-                }),
-            )
-            .post("/tasks", api(post_task))
-            .get("/tasks/:task_id", api(get_task))
-            .patch("/tasks/:task_id", api(patch_task))
-            .get("/task_ids", api(task_ids))
-            .delete("/tasks/:task_id", Status::Ok)
-            .get(
-                "/tasks/:task_id/metrics/uploads",
-                api(get_task_upload_metrics),
-            ),
-    )
+pub fn mock() -> Router {
+    Router::new()
+        .route("/", routing::get(get_config))
+        .route("/tasks", routing::post(post_task))
+        .route(
+            "/tasks/{task_id}",
+            routing::get(get_task).patch(patch_task).delete(delete_task),
+        )
+        .route("/task_ids", routing::get(task_ids))
+        .route(
+            "/tasks/{task_id}/metrics/uploads",
+            routing::get(get_task_upload_metrics),
+        )
+        .layer(middleware::from_fn(bearer_token_check))
 }
 
-async fn bearer_token_check(conn: Conn) -> Conn {
-    let token_is_valid = conn
-        .request_headers()
-        .get_str(KnownHeaderName::Authorization)
+async fn bearer_token_check(request: Request, next: Next) -> Response {
+    let token_is_valid = request
+        .headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
         .is_some_and(|s| match s.split_once(' ') {
             Some(("Bearer", BAD_BEARER_TOKEN)) => false,
             Some(("Bearer", _)) => true,
@@ -62,13 +51,26 @@ async fn bearer_token_check(conn: Conn) -> Conn {
         });
 
     if token_is_valid {
-        conn
+        next.run(request).await
     } else {
-        conn.with_status(Status::Unauthorized).halt()
+        StatusCode::UNAUTHORIZED.into_response()
     }
 }
 
-async fn get_task_upload_metrics(_: &mut Conn, (): ()) -> Json<TaskUploadMetrics> {
+async fn get_config() -> Json<AggregatorApiConfig> {
+    Json(AggregatorApiConfig {
+        dap_url: format!("https://dap.{}.example", random_chars(5))
+            .parse()
+            .unwrap(),
+        role: random(),
+        vdafs: Default::default(),
+        query_types: Default::default(),
+        protocol: random(),
+        features: Features::from_iter([Feature::TokenHash]),
+    })
+}
+
+async fn get_task_upload_metrics() -> Json<TaskUploadMetrics> {
     Json(TaskUploadMetrics {
         interval_collected: fastrand::u64(..1000),
         report_decode_failure: fastrand::u64(..1000),
@@ -81,8 +83,7 @@ async fn get_task_upload_metrics(_: &mut Conn, (): ()) -> Json<TaskUploadMetrics
     })
 }
 
-async fn get_task(conn: &mut Conn, (): ()) -> Json<TaskResponse> {
-    let task_id = conn.param("task_id").unwrap();
+async fn get_task(Path(task_id): Path<String>) -> Json<TaskResponse> {
     Json(TaskResponse {
         task_id: task_id.parse().unwrap(),
         peer_aggregator_endpoint: "https://_".parse().unwrap(),
@@ -103,15 +104,14 @@ async fn get_task(conn: &mut Conn, (): ()) -> Json<TaskResponse> {
     })
 }
 
-async fn post_task(
-    _: &mut Conn,
-    Json(task_create): Json<TaskCreate>,
-) -> (State<TaskCreate>, Json<TaskResponse>) {
-    (State(task_create.clone()), Json(task_response(task_create)))
+async fn post_task(Json(task_create): Json<TaskCreate>) -> Json<TaskResponse> {
+    Json(task_response(task_create))
 }
 
-async fn patch_task(conn: &mut Conn, Json(patch): Json<TaskPatch>) -> Json<TaskResponse> {
-    let task_id = conn.param("task_id").unwrap();
+async fn patch_task(
+    Path(task_id): Path<String>,
+    Json(patch): Json<TaskPatch>,
+) -> Json<TaskResponse> {
     Json(TaskResponse {
         task_id: task_id.parse().unwrap(),
         peer_aggregator_endpoint: "https://_".parse().unwrap(),
@@ -130,6 +130,10 @@ async fn patch_task(conn: &mut Conn, Json(patch): Json<TaskPatch>) -> Json<TaskR
         collector_auth_token: Some(AuthenticationToken::new(random_chars(32))),
         aggregator_hpke_configs: repeat_with(random_hpke_config).take(5).collect(),
     })
+}
+
+async fn delete_task() -> StatusCode {
+    StatusCode::OK
 }
 
 pub fn task_response(task_create: TaskCreate) -> TaskResponse {
@@ -167,27 +171,30 @@ pub fn random_hpke_config() -> HpkeConfig {
     )
 }
 
-async fn task_ids(conn: &mut Conn, (): ()) -> Result<Json<TaskIds>, Status> {
-    let query =
-        QueryStrong::parse_strict(conn.querystring()).map_err(|_| Status::InternalServerError)?;
-    match query.get_str("pagination_token") {
-        None => Ok(Json(TaskIds {
+#[derive(Deserialize)]
+struct TaskIdsQuery {
+    pagination_token: Option<String>,
+}
+
+async fn task_ids(Query(query): Query<TaskIdsQuery>) -> Json<TaskIds> {
+    match query.pagination_token.as_deref() {
+        None => Json(TaskIds {
             task_ids: repeat_with(|| Uuid::new_v4().to_string())
                 .take(10)
                 .collect(),
             pagination_token: Some("second".into()),
-        })),
+        }),
 
-        Some("second") => Ok(Json(TaskIds {
+        Some("second") => Json(TaskIds {
             task_ids: repeat_with(|| Uuid::new_v4().to_string())
                 .take(10)
                 .collect(),
             pagination_token: Some("last".into()),
-        })),
+        }),
 
-        _ => Ok(Json(TaskIds {
+        _ => Json(TaskIds {
             task_ids: repeat_with(|| Uuid::new_v4().to_string()).take(5).collect(),
             pagination_token: None,
-        })),
+        }),
     }
 }

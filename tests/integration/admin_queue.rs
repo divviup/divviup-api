@@ -10,16 +10,13 @@ mod index {
         let queue_item = Job::new_invitation_flow(&fixtures::build_membership(&app).await)
             .insert(app.db())
             .await?;
-        let mut conn = get("/api/admin/queue")
+        let conn = get("/api/admin/queue")
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        assert_eq!(
-            conn.response_json::<Vec<QueueItem>>().await,
-            vec![queue_item]
-        );
+        assert_eq!(conn.response_json::<Vec<QueueItem>>(), vec![queue_item]);
         Ok(())
     }
 
@@ -55,24 +52,21 @@ mod index {
             .with_state(admin.clone())
             .run_async(&app)
             .await
-            .response_json()
-            .await;
+            .response_json();
 
         let pending: Vec<QueueItem> = get("/api/admin/queue?status=pending")
             .with_api_headers()
             .with_state(admin.clone())
             .run_async(&app)
             .await
-            .response_json()
-            .await;
+            .response_json();
 
         let failed: Vec<QueueItem> = get("/api/admin/queue?status=failed")
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await
-            .response_json()
-            .await;
+            .response_json();
 
         assert!(success.iter().all(|item| item.status == JobStatus::Success));
         assert_eq!(success.len(), 1);

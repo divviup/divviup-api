@@ -1,45 +1,59 @@
 use rcgen::generate_simple_self_signed;
-use test_support::{assert_eq, *};
-use tokio::{net::TcpListener, spawn};
-use trillium_client::Client;
-use trillium_http::Stopper;
-use trillium_rustls::{rustls::RootCertStore, RustlsAcceptor, RustlsConfig};
-use trillium_tokio::ClientConfig;
+use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
+use std::sync::Arc;
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpListener,
+};
+use tokio_rustls::TlsAcceptor;
 
 #[tokio::test]
 async fn https_connection() {
     // Choose aws-lc-rs as the default rustls crypto provider. This is what's currently enabled by
     // the default Cargo feature. Specifying a default provider here prevents runtime errors if
     // another dependency also enables the ring feature.
-    let _ = trillium_rustls::rustls::crypto::aws_lc_rs::default_provider().install_default();
+    let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
 
     let self_signed = generate_simple_self_signed(["localhost".into()]).unwrap();
 
-    let stopper = Stopper::new();
-    let listener = TcpListener::bind("localhost:0").await.unwrap();
-    let local_addr = listener.local_addr().unwrap();
-    let server_config = trillium_tokio::config()
-        .with_acceptor(RustlsAcceptor::from_single_cert(
-            self_signed.cert.pem().as_bytes(),
-            self_signed.signing_key.serialize_pem().as_bytes(),
-        ))
-        .without_signals()
-        .with_stopper(stopper.clone())
-        .with_prebound_server(listener);
-    spawn(server_config.run_async(|conn: Conn| async { conn.ok("") }));
-
-    let mut root_store = RootCertStore::empty();
-    root_store.add_parsable_certificates([self_signed.cert.der().clone()]);
-
-    let client = Client::new(RustlsConfig::new(
-        trillium_rustls::rustls::ClientConfig::builder()
-            .with_root_certificates(root_store)
-            .with_no_client_auth(),
-        ClientConfig::default(),
+    let cert_der = CertificateDer::from(self_signed.cert.der().to_vec());
+    let key_der = PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(
+        self_signed.signing_key.serialize_der(),
     ));
-    let url = format!("https://localhost:{}/", local_addr.port());
-    let conn = client.get(url).await.unwrap();
-    assert_status!(conn, 200);
 
-    stopper.stop();
+    let mut server_config = rustls::ServerConfig::builder()
+        .with_no_client_auth()
+        .with_single_cert(vec![cert_der.clone()], key_der)
+        .unwrap();
+    server_config.alpn_protocols = vec![b"http/1.1".to_vec()];
+    let tls_acceptor = TlsAcceptor::from(Arc::new(server_config));
+
+    // Bind to "localhost" (not Ipv6Addr::LOCALHOST) so the address matches the
+    // self-signed certificate's SAN and the reqwest client's hostname validation.
+    let listener = TcpListener::bind("localhost:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+
+    tokio::spawn(async move {
+        let (tcp_stream, _) = listener.accept().await.unwrap();
+        let mut tls_stream = tls_acceptor.accept(tcp_stream).await.unwrap();
+        let mut buf = vec![0u8; 4096];
+        let _ = tls_stream.read(&mut buf).await.unwrap();
+        let response = b"HTTP/1.1 200 OK\r\ncontent-length: 0\r\nconnection: close\r\n\r\n";
+        tls_stream.write_all(response).await.unwrap();
+        tls_stream.shutdown().await.unwrap();
+    });
+
+    let root_cert = reqwest::tls::Certificate::from_der(cert_der.as_ref()).unwrap();
+    let client = reqwest::Client::builder()
+        .add_root_certificate(root_cert)
+        .http1_only()
+        .build()
+        .unwrap();
+
+    let resp = client
+        .get(format!("https://localhost:{port}/"))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
 }

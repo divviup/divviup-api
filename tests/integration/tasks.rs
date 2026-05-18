@@ -12,13 +12,13 @@ mod index {
         am.deleted_at = ActiveValue::Set(Some(OffsetDateTime::now_utc()));
         let _ = am.update(app.db()).await?;
 
-        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+        let conn = get(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let tasks: Vec<Task> = conn.response_json().await;
+        let tasks: Vec<Task> = conn.response_json();
         assert!(tasks.is_empty());
         Ok(())
     }
@@ -32,14 +32,14 @@ mod index {
         let task1 = fixtures::task(&app, &account).await;
         let task2 = fixtures::task(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+        let conn = get(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let tasks: Vec<Task> = conn.response_json().await;
+        let tasks: Vec<Task> = conn.response_json();
         assert_eq!(vec![task1, task2], tasks);
         Ok(())
     }
@@ -70,7 +70,7 @@ mod index {
         fixtures::task(&app, &account).await;
         fixtures::task(&app, &account).await;
 
-        let mut conn = get("/api/accounts/not-an-account/tasks")
+        let conn = get("/api/accounts/not-an-account/tasks")
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
@@ -89,14 +89,14 @@ mod index {
         let task1 = fixtures::task(&app, &account).await;
         let task2 = fixtures::task(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+        let conn = get(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let tasks: Vec<Task> = conn.response_json().await;
+        let tasks: Vec<Task> = conn.response_json();
         assert_eq!(vec![task1, task2], tasks);
         Ok(())
     }
@@ -108,14 +108,14 @@ mod index {
         let task1 = fixtures::task(&app, &account).await;
         let task2 = fixtures::task(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+        let conn = get(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let tasks: Vec<Task> = conn.response_json().await;
+        let tasks: Vec<Task> = conn.response_json();
         assert_eq!(vec![task1, task2], tasks);
         Ok(())
     }
@@ -127,14 +127,14 @@ mod index {
         let task1 = fixtures::task(&app, &account).await;
         let task2 = fixtures::task(&app, &account).await;
 
-        let mut conn = get(format!("/api/accounts/{}/tasks", account.id))
+        let conn = get(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
 
         assert_ok!(conn);
-        let tasks: Vec<Task> = conn.response_json().await;
+        let tasks: Vec<Task> = conn.response_json();
         assert_eq!(vec![task1, task2], tasks);
         Ok(())
     }
@@ -188,7 +188,7 @@ mod create {
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+        let conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
@@ -199,8 +199,8 @@ mod create {
         let [helper_provisioning, leader_provisioning] = &logs[..] else {
             panic!("expected exactly two requests");
         };
-        let helper_task_create = helper_provisioning.state.get::<TaskCreate>().unwrap();
-        let leader_task_create = leader_provisioning.state.get::<TaskCreate>().unwrap();
+        let helper_task_create: TaskCreate = helper_provisioning.request_json();
+        let leader_task_create: TaskCreate = leader_provisioning.request_json();
         assert_eq!(
             leader_task_create
                 .collector_auth_token_hash
@@ -212,7 +212,7 @@ mod create {
         assert!(helper_task_create.collector_auth_token_hash.is_none());
 
         assert_response!(conn, 201);
-        let task: Task = conn.response_json().await;
+        let task: Task = conn.response_json();
 
         assert_eq!(task.leader_aggregator_id, leader.id);
         assert_eq!(task.helper_aggregator_id, helper.id);
@@ -237,7 +237,7 @@ mod create {
         leader.features = ActiveValue::Set(Features::default().into());
         let leader = leader.update(app.db()).await?;
 
-        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+        let conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
@@ -248,14 +248,14 @@ mod create {
         let [helper_provisioning, leader_provisioning] = &logs[..] else {
             panic!("expected exactly two requests");
         };
-        let helper_task_create = helper_provisioning.state.get::<TaskCreate>().unwrap();
-        let leader_task_create = leader_provisioning.state.get::<TaskCreate>().unwrap();
+        let helper_task_create: TaskCreate = helper_provisioning.request_json();
+        let leader_task_create: TaskCreate = leader_provisioning.request_json();
 
         assert!(leader_task_create.collector_auth_token_hash.is_none());
         assert!(helper_task_create.collector_auth_token_hash.is_none());
 
         assert_response!(conn, 201);
-        let task: Task = conn.response_json().await;
+        let task: Task = conn.response_json();
 
         assert_eq!(task.leader_aggregator_id, leader.id);
         assert_eq!(task.helper_aggregator_id, helper.id);
@@ -277,15 +277,15 @@ mod create {
         let collector_credential = fixtures::collector_credential(&app, &account).await;
         let leader = leader.tombstone().update(app.db()).await.unwrap();
 
-        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+        let conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
             .run_async(&app)
             .await;
 
-        assert_response!(conn, 400);
-        let error: Value = conn.response_json().await;
+        assert_response!(conn, StatusCode::BAD_REQUEST);
+        let error: Value = conn.response_json();
         assert!(error.get("leader_aggregator_id").is_some());
         assert!(client_logs.is_empty());
         Ok(())
@@ -301,15 +301,15 @@ mod create {
         let collector_credential = fixtures::collector_credential(&app, &account).await;
         let helper = helper.tombstone().update(app.db()).await.unwrap();
 
-        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+        let conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
             .run_async(&app)
             .await;
 
-        assert_response!(conn, 400);
-        let error: Value = conn.response_json().await;
+        assert_response!(conn, StatusCode::BAD_REQUEST);
+        let error: Value = conn.response_json();
         assert!(error.get("helper_aggregator_id").is_some());
         assert!(client_logs.is_empty());
         Ok(())
@@ -319,7 +319,7 @@ mod create {
     async fn invalid(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
 
-        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+        let conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(user)
             .with_request_json(json!({
@@ -332,8 +332,8 @@ mod create {
             .run_async(&app)
             .await;
 
-        assert_response!(conn, 400);
-        let error: Value = conn.response_json().await;
+        assert_response!(conn, StatusCode::BAD_REQUEST);
+        let error: Value = conn.response_json();
         assert!(error.get("vdaf").is_some());
         assert!(error.get("min_batch_size").is_some());
         assert!(error.get("time_precision_seconds").is_some());
@@ -367,7 +367,7 @@ mod create {
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = post("/api/accounts/does-not-exist/tasks")
+        let conn = post("/api/accounts/does-not-exist/tasks")
             .with_api_headers()
             .with_state(user)
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
@@ -386,7 +386,7 @@ mod create {
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+        let conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_state(admin)
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
@@ -394,7 +394,7 @@ mod create {
             .await;
 
         assert_response!(conn, 201);
-        let task: Task = conn.response_json().await;
+        let task: Task = conn.response_json();
         assert!(task.reload(app.db()).await?.is_some());
         Ok(())
     }
@@ -406,7 +406,7 @@ mod create {
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
 
-        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+        let conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
@@ -414,7 +414,7 @@ mod create {
             .await;
 
         assert_response!(conn, 201);
-        let task: Task = conn.response_json().await;
+        let task: Task = conn.response_json();
         assert!(task.reload(app.db()).await?.is_some());
         Ok(())
     }
@@ -426,7 +426,7 @@ mod create {
         let (leader, helper) = fixtures::aggregator_pair(&app, &account).await;
         let collector_credential = fixtures::collector_credential(&app, &account).await;
         let count_before = Tasks::find().count(app.db()).await?;
-        let mut conn = post(format!("/api/accounts/{}/tasks", account.id))
+        let conn = post(format!("/api/accounts/{}/tasks", account.id))
             .with_api_headers()
             .with_auth_header(token)
             .with_request_json(valid_task_json(&collector_credential, &leader, &helper))
@@ -435,7 +435,7 @@ mod create {
         let count_after = Tasks::find().count(app.db()).await?;
         assert_response!(conn, 201);
         assert_eq!(count_before + 1, count_after);
-        let task: Task = conn.response_json().await;
+        let task: Task = conn.response_json();
         assert!(task.reload(app.db()).await?.is_some());
         Ok(())
     }
@@ -466,23 +466,20 @@ mod create {
 
 mod show {
     use super::{assert_eq, test, *};
-    use divviup_api::{
-        entity::aggregator::{Feature, Features},
-        FeatureFlags,
-    };
+    use divviup_api::entity::aggregator::{Feature, Features};
     use time::Duration;
 
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let task = fixtures::task(&app, &account).await;
-        let mut conn = get(format!("/api/tasks/{}", task.id))
+        let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task, task);
         Ok(())
     }
@@ -500,7 +497,7 @@ mod show {
         leader.update(app.db()).await?;
 
         let leader = task.leader_aggregator(app.db()).await?;
-        let mut conn = get(format!("/api/tasks/{}", task.id))
+        let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_state(user.clone())
             .run_async(&app)
@@ -517,17 +514,17 @@ mod show {
         );
         let metrics: TaskUploadMetrics = aggregator_api_request.response_json();
 
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
 
         assert_eq!(metrics, response_task);
         assert!(response_task.updated_at > task.updated_at);
 
-        let mut conn = get(format!("/api/tasks/{}", task.id))
+        let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
-        let second_response_task: Task = conn.response_json().await;
+        let second_response_task: Task = conn.response_json();
         assert_eq!(metrics, second_response_task);
         assert_eq!(second_response_task.updated_at, response_task.updated_at);
 
@@ -535,7 +532,10 @@ mod show {
     }
 
     #[test(harness = with_client_logs)]
-    async fn metrics_refresh_disabled(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
+    async fn no_metrics_refresh_without_aggregator_features(
+        app: DivviupApi,
+        client_logs: ClientLogs,
+    ) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
         let task = fixtures::task(&app, &account).await;
         let mut task = task.into_active_model();
@@ -544,10 +544,6 @@ mod show {
 
         let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
-            .with_state(FeatureFlags {
-                metrics_refresh_enabled: false,
-                ssrf_validation_enabled: false,
-            })
             .with_state(user.clone())
             .run_async(&app)
             .await;
@@ -578,13 +574,13 @@ mod show {
         let (admin, ..) = fixtures::admin(&app).await;
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
-        let mut conn = get(format!("/api/tasks/{}", task.id))
+        let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task, task);
         Ok(())
     }
@@ -606,13 +602,13 @@ mod show {
         let token = fixtures::admin_token(&app).await;
         let account = fixtures::account(&app).await;
         let task = fixtures::task(&app, &account).await;
-        let mut conn = get(format!("/api/tasks/{}", task.id))
+        let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task, task);
         Ok(())
     }
@@ -622,13 +618,13 @@ mod show {
         let account = fixtures::account(&app).await;
         let (_, token) = fixtures::api_token(&app, &account).await;
         let task = fixtures::task(&app, &account).await;
-        let mut conn = get(format!("/api/tasks/{}", task.id))
+        let conn = get(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_auth_header(token)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task, task);
         Ok(())
     }
@@ -660,14 +656,14 @@ mod update {
         let task = fixtures::task(&app, &account).await;
 
         let new_name = format!("new name {}", fixtures::random_name());
-        let mut conn = patch(format!("/api/tasks/{}", task.id))
+        let conn = patch(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_request_json(json!({ "name": &new_name }))
             .with_state(user)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task.name, new_name);
 
         let task_reload = task.reload(app.db()).await?.unwrap();
@@ -685,14 +681,14 @@ mod update {
         let (user, account, ..) = fixtures::member(&app).await;
         let task = fixtures::task(&app, &account).await;
 
-        let mut conn = patch(format!("/api/tasks/{}", task.id))
+        let conn = patch(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_request_json(json!({ "name": "" }))
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_response!(conn, 400);
-        let errors: Value = conn.response_json().await;
+        assert_response!(conn, StatusCode::BAD_REQUEST);
+        let errors: Value = conn.response_json();
         assert!(errors.get("name").is_some());
 
         assert_eq!(
@@ -710,14 +706,14 @@ mod update {
 
         // Set the expiration.
         let now = OffsetDateTime::now_utc();
-        let mut conn = patch(format!("/api/tasks/{}", task.id))
+        let conn = patch(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_request_json(json!({ "expiration": now.format(&Rfc3339).unwrap() }))
             .with_state(user.clone())
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task.expiration, Some(now));
 
         let task_reload = task.reload(app.db()).await?.unwrap();
@@ -731,14 +727,14 @@ mod update {
         );
 
         // Unset the expiration.
-        let mut conn = patch(format!("/api/tasks/{}", task.id))
+        let conn = patch(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_request_json(json!({ "expiration": null }))
             .with_state(user.clone())
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task.expiration, None);
 
         let task_reload = task.reload(app.db()).await?.unwrap();
@@ -754,7 +750,7 @@ mod update {
         // Set both name and expiration.
         let now = OffsetDateTime::now_utc();
         let new_name = format!("new name {}", fixtures::random_name());
-        let mut conn = patch(format!("/api/tasks/{}", task.id))
+        let conn = patch(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_request_json(
                 json!({ "expiration": now.format(&Rfc3339).unwrap(), "name": new_name}),
@@ -763,7 +759,7 @@ mod update {
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task.expiration, Some(now));
         assert_eq!(response_task.name, new_name);
         let task_reload = task.reload(app.db()).await?.unwrap();
@@ -784,7 +780,7 @@ mod update {
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_eq!(conn.status(), Some(Status::BadRequest));
+        assert_response!(conn, StatusCode::BAD_REQUEST);
 
         // Task should be unchanged.
         let task_reload = task.reload(app.db()).await?.unwrap();
@@ -821,14 +817,14 @@ mod update {
         let task = fixtures::task(&app, &account).await;
 
         let new_name = format!("new name {}", fixtures::random_name());
-        let mut conn = patch(format!("/api/tasks/{}", task.id))
+        let conn = patch(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_request_json(json!({ "name": &new_name }))
             .with_state(admin)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task.name, new_name);
         assert_eq!(task.reload(app.db()).await?.unwrap().name, new_name);
         Ok(())
@@ -854,14 +850,14 @@ mod update {
         let task = fixtures::task(&app, &account).await;
 
         let new_name = format!("new name {}", fixtures::random_name());
-        let mut conn = patch(format!("/api/tasks/{}", task.id))
+        let conn = patch(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_request_json(json!({ "name": &new_name }))
             .with_auth_header(token)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task.name, new_name);
         assert_eq!(task.reload(app.db()).await?.unwrap().name, new_name);
         Ok(())
@@ -874,14 +870,14 @@ mod update {
         let task = fixtures::task(&app, &account).await;
 
         let new_name = format!("new name {}", fixtures::random_name());
-        let mut conn = patch(format!("/api/tasks/{}", task.id))
+        let conn = patch(format!("/api/tasks/{}", task.id))
             .with_api_headers()
             .with_request_json(json!({ "name": &new_name }))
             .with_auth_header(token)
             .run_async(&app)
             .await;
         assert_ok!(conn);
-        let response_task: Task = conn.response_json().await;
+        let response_task: Task = conn.response_json();
         assert_eq!(response_task.name, new_name);
         assert_eq!(task.reload(app.db()).await?.unwrap().name, new_name);
         Ok(())
@@ -909,9 +905,8 @@ mod update {
 }
 
 mod delete {
-    use divviup_api::DivviupApi;
+    use axum::Router;
     use janus_messages::Time as JanusTime;
-    use test_support::tracing::install_test_trace_subscriber;
 
     use super::{assert_eq, test, *};
 
@@ -947,7 +942,7 @@ mod delete {
             .with_state(user.clone())
             .run_async(&app)
             .await;
-        assert_status!(conn, Status::NoContent);
+        assert_status!(conn, StatusCode::NO_CONTENT);
         let task_reload = task.reload(app.db()).await?.unwrap();
         assert!(task_reload.expiration.is_some());
         assert!(task_reload.expiration <= Some(OffsetDateTime::now_utc()));
@@ -962,7 +957,7 @@ mod delete {
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_status!(conn, Status::NoContent);
+        assert_status!(conn, StatusCode::NO_CONTENT);
         let task_reload_2 = task.reload(app.db()).await?.unwrap();
         assert_eq!(task_reload.deleted_at, task_reload_2.deleted_at);
         assert_eq!(client_logs_len, client_logs.len());
@@ -971,20 +966,9 @@ mod delete {
 
     #[tokio::test]
     async fn force() -> TestResult {
-        install_test_trace_subscriber();
-        let client_logs = ClientLogs::default();
-        let mut app = DivviupApi::new(
-            config((
-                client_logs.clone(),
-                // Stub out aggregator API mocks to simulate a FUBAR aggregator.
-                |conn: Conn| async move { conn.with_status(Status::InternalServerError) },
-            ))
-            .await,
-        )
-        .await;
-        set_up_schema(app.db()).await;
-        let mut info = "testing".into();
-        app.init(&mut info).await;
+        // Stub out aggregator API mocks to simulate a FUBAR aggregator.
+        let mock = Router::new().fallback(|| async { StatusCode::INTERNAL_SERVER_ERROR });
+        let (app, client_logs) = build_test_app_with_mock(mock).await;
 
         let (user, account, ..) = fixtures::member(&app).await;
         let task = fixtures::task(&app, &account).await;
@@ -994,7 +978,7 @@ mod delete {
             .with_state(user.clone())
             .run_async(&app)
             .await;
-        assert_status!(conn, Status::NoContent);
+        assert_status!(conn, StatusCode::NO_CONTENT);
         let task_reload = task.reload(app.db()).await?.unwrap();
         assert!(task_reload.expiration.is_some());
         assert!(task_reload.expiration <= Some(OffsetDateTime::now_utc()));
@@ -1005,8 +989,8 @@ mod delete {
         let [leader, helper] = &logs[..] else {
             panic!("expected exactly two requests");
         };
-        assert_eq!(leader.response_status, Status::InternalServerError);
-        assert_eq!(helper.response_status, Status::InternalServerError);
+        assert_eq!(leader.response_status, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(helper.response_status, StatusCode::INTERNAL_SERVER_ERROR);
 
         Ok(())
     }
@@ -1024,7 +1008,7 @@ mod delete {
             .with_state(user.clone())
             .run_async(&app)
             .await;
-        assert_status!(conn, Status::NoContent);
+        assert_status!(conn, StatusCode::NO_CONTENT);
         let task_reload = task.reload(app.db()).await?.unwrap();
         assert!(task_reload.expiration.is_some());
         assert!(task_reload.expiration <= Some(OffsetDateTime::now_utc()));
@@ -1047,7 +1031,7 @@ mod delete {
             .with_state(user)
             .run_async(&app)
             .await;
-        assert_status!(conn, Status::NoContent);
+        assert_status!(conn, StatusCode::NO_CONTENT);
         let task_reload = task.reload(app.db()).await?.unwrap();
         // Shouldn't re-expire an already expired task.
         assert_eq!(task_reload.expiration, task.expiration);
@@ -1086,7 +1070,7 @@ mod delete {
             .with_state(admin)
             .run_async(&app)
             .await;
-        assert_status!(conn, Status::NoContent);
+        assert_status!(conn, StatusCode::NO_CONTENT);
         let task_reload = task.reload(app.db()).await?.unwrap();
         assert!(task_reload.expiration.is_some());
         assert!(task_reload.expiration <= Some(OffsetDateTime::now_utc()));
@@ -1118,7 +1102,7 @@ mod delete {
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_status!(conn, Status::NoContent);
+        assert_status!(conn, StatusCode::NO_CONTENT);
         let task_reload = task.reload(app.db()).await?.unwrap();
         assert!(task_reload.expiration.is_some());
         assert!(task_reload.expiration <= Some(OffsetDateTime::now_utc()));
@@ -1138,7 +1122,7 @@ mod delete {
             .with_auth_header(token)
             .run_async(&app)
             .await;
-        assert_status!(conn, Status::NoContent);
+        assert_status!(conn, StatusCode::NO_CONTENT);
         let task_reload = task.reload(app.db()).await?.unwrap();
         assert!(task_reload.expiration.is_some());
         assert!(task_reload.expiration <= Some(OffsetDateTime::now_utc()));
