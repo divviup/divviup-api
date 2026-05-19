@@ -235,7 +235,7 @@ impl OauthClient {
             .set_token_uri(TokenUrl::from_url(config.token_url.clone()))
             .set_redirect_uri(RedirectUrl::from_url(config.redirect_url.clone()));
 
-        let reqwest_client = reqwest::Client::new();
+        let reqwest_client = config.http_client.reqwest_client().clone();
 
         Self(Arc::new(OauthClientInner {
             oauth_config: config.clone(),

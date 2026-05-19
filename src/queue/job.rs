@@ -29,9 +29,8 @@ pub enum JobError {
     #[error("{0}")]
     ClientOther(String),
 
-    #[error("unexpected http status {method} {url} {status:?}: {body}")]
+    #[error("unexpected http status {url} {status:?}: {body}")]
     HttpStatusNotSuccess {
-        method: String,
         url: Url,
         status: Option<u16>,
         body: String,
@@ -57,7 +56,6 @@ impl From<ClientError> for JobError {
     fn from(value: ClientError) -> Self {
         match value {
             ClientError::HttpStatusNotSuccess(e) => Self::HttpStatusNotSuccess {
-                method: e.method,
                 url: e.url,
                 status: e.status.map(|s| s.as_u16()),
                 body: e.body,

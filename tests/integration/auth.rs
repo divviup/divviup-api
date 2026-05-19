@@ -1,4 +1,4 @@
-use test_support::{assert_eq, test, *};
+use test_support::{assert_eq, entity::session, test, *};
 
 #[test(harness = set_up)]
 async fn first_use_of_a_token_updates_last_used_at(app: DivviupApi) -> TestResult {
@@ -90,8 +90,12 @@ async fn logout(app: DivviupApi) -> TestResult {
         .run_async(&app)
         .await;
 
-    // TODO(Part 10): verify the session is destroyed (was `conn.session().is_destroyed()`)
     assert_response!(conn, 302);
+
+    // session.flush() in the logout handler should delete any session that was
+    // created during the request — verify no sessions remain in the store.
+    let session_count = session::Entity::find().count(app.db()).await?;
+    assert_eq!(session_count, 0, "session should be destroyed after logout");
     let location: Url = conn
         .header_str(headers::LOCATION.as_str())
         .unwrap()

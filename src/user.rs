@@ -80,15 +80,14 @@ impl User {
         Db: FromRef<S>,
         S: Send + Sync,
     {
-        // Cache: return early if already extracted and admin-populated.
-        // Cleanup after Trillium is removed.
+        // Return early if already extracted and admin-populated
         if let Some(user) = parts.extensions.get::<Self>() {
             if user.admin.is_some() {
                 return Ok(Some(user.clone()));
             }
         }
 
-        // Get a mutable user, preferring extensions and falling back to session.
+        // Prefer extensions, fall back to session.
         let mut user = if let Some(user) = parts.extensions.remove::<Self>() {
             user
         } else {

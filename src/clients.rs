@@ -37,6 +37,10 @@ impl HttpClient {
         }
     }
 
+    pub(crate) fn reqwest_client(&self) -> &reqwest::Client {
+        &self.inner
+    }
+
     pub fn with_base(mut self, url: impl Into<Url>) -> Self {
         let mut url = url.into();
         if !url.path().ends_with('/') {
@@ -139,7 +143,6 @@ impl HttpClient {
 
 #[derive(Debug)]
 pub struct HttpStatusNotSuccess {
-    pub method: String,
     pub url: Url,
     pub status: Option<StatusCode>,
     pub body: String,
@@ -147,7 +150,7 @@ pub struct HttpStatusNotSuccess {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {
-    #[error("unexpected http status {} {} {:?}: {}", .0.method, .0.url, .0.status, .0.body)]
+    #[error("unexpected http status {} {:?}: {}", .0.url, .0.status, .0.body)]
     HttpStatusNotSuccess(Box<HttpStatusNotSuccess>),
 
     #[error(transparent)]
@@ -178,7 +181,6 @@ impl ResponseExt for reqwest::Response {
             let body = self.text().await.unwrap_or_default();
             Err(ClientError::HttpStatusNotSuccess(Box::new(
                 HttpStatusNotSuccess {
-                    method: String::new(),
                     url,
                     status: Some(status),
                     body,

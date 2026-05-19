@@ -114,6 +114,11 @@ pub async fn build_app(config: Config) -> BuiltApp {
     // TODO(Part 10): add OpenTelemetry HTTP metrics middleware. The deleted
     // trillium-opentelemetry handler provided http.server.* histograms and
     // optional OTLP per-request spans; TraceLayer only emits tracing events.
+    //
+    // TODO(Part 10): restore X-Forwarded-For / Forwarded header propagation.
+    // The deleted trillium-forwarding::Forwarding::trust_always() updated the
+    // peer IP from proxy headers so trace spans logged the client IP. Without
+    // it, TraceLayer records the proxy/load-balancer IP instead.
     let middleware = ServiceBuilder::new()
         .layer(TraceLayer::new_for_http())
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_SIZE))
