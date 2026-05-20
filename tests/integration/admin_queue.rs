@@ -10,13 +10,13 @@ mod index {
         let queue_item = Job::new_invitation_flow(&fixtures::build_membership(&app).await)
             .insert(app.db())
             .await?;
-        let conn = get("/api/admin/queue")
+        let resp = get("/api/admin/queue")
             .with_api_headers()
             .with_state(admin)
             .run_async(&app)
             .await;
-        assert_ok!(conn);
-        assert_eq!(conn.response_json::<Vec<QueueItem>>(), vec![queue_item]);
+        assert_ok!(resp);
+        assert_eq!(resp.response_json::<Vec<QueueItem>>(), vec![queue_item]);
         Ok(())
     }
 
@@ -28,13 +28,13 @@ mod index {
             .insert(app.db())
             .await?;
 
-        let conn = get("/api/admin/queue")
+        let resp = get("/api/admin/queue")
             .with_api_headers()
             .with_state(user)
             .run_async(&app)
             .await;
 
-        assert_status!(conn, 404);
+        assert_status!(resp, 404);
         Ok(())
     }
 

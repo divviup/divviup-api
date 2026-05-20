@@ -12,23 +12,17 @@ async fn get_task_ids(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
     assert_eq!(task_ids.len(), 25); // two pages of 10 plus a final page of 5
 
     let logs = client_logs.logs();
-    assert!(logs.iter().all(|log| {
-        log.request_headers
-            .get(headers::ACCEPT)
-            .unwrap()
-            .to_str()
-            .unwrap()
-            == "application/vnd.janus.aggregator+json;version=0.1"
-    }));
-
-    assert!(logs.iter().all(|log| {
-        log.request_headers
-            .get(headers::AUTHORIZATION)
-            .unwrap()
-            .to_str()
-            .unwrap()
-            == format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
-    }));
+    let expected_token = format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap());
+    for log in &logs {
+        assert_eq!(
+            log.request_headers.get(headers::ACCEPT).unwrap(),
+            "application/vnd.janus.aggregator+json;version=0.1"
+        );
+        assert_eq!(
+            log.request_headers.get(headers::AUTHORIZATION).unwrap(),
+            expected_token.as_str()
+        );
+    }
 
     let queries = logs.iter().map(|log| log.url.query()).collect::<Vec<_>>();
     assert_eq!(

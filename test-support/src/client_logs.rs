@@ -90,14 +90,11 @@ fn reconstruct_url(req: &Request) -> Url {
         .get("host")
         .and_then(|h| h.to_str().ok())
         .unwrap_or("unknown");
-    let path = req.uri().path();
-    let query = req.uri().query();
-    let url_str = match query {
-        Some(q) => format!("https://{host}{path}?{q}"),
-        None => format!("https://{host}{path}"),
-    };
-    Url::parse(&url_str)
-        .unwrap_or_else(|e| panic!("reconstruct_url: malformed Host or path: {url_str}: {e}"))
+    let mut url = Url::parse(&format!("https://{host}"))
+        .unwrap_or_else(|e| panic!("reconstruct_url: malformed Host: {host}: {e}"));
+    url.set_path(req.uri().path());
+    url.set_query(req.uri().query());
+    url
 }
 
 pub async fn client_logs_middleware(

@@ -251,6 +251,9 @@ where
     })
 }
 
+/// Create a single-threaded tokio runtime and run `future` to completion.
+/// The `test_harness::test` macro calls harness functions (e.g. `set_up`)
+/// from a synchronous context, so this is the async entry point for tests.
 pub fn block_on<F: Future<Output = T>, T>(future: F) -> T {
     runtime::Builder::new_current_thread()
         .enable_all()
@@ -448,21 +451,21 @@ impl TestResponse {
 
 #[macro_export]
 macro_rules! assert_ok {
-    ($conn:expr) => {{
-        let ref __conn = $conn;
-        assert_eq!(__conn.status(), $crate::StatusCode::OK);
+    ($resp:expr) => {{
+        let ref __resp = $resp;
+        assert_eq!(__resp.status(), $crate::StatusCode::OK);
     }};
 
-    ($conn:expr, $body:expr $(, $header_name:expr => $header_val:expr)*) => {{
-        let ref __conn = $conn;
-        assert_eq!(__conn.status(), $crate::StatusCode::OK);
+    ($resp:expr, $body:expr $(, $header_name:expr => $header_val:expr)*) => {{
+        let ref __resp = $resp;
+        assert_eq!(__resp.status(), $crate::StatusCode::OK);
         assert_eq!(
-            __conn.response_body_string().unwrap_or_default(),
+            __resp.response_body_string().unwrap_or_default(),
             $body
         );
         $(
             assert_eq!(
-                __conn.header_str($header_name),
+                __resp.header_str($header_name),
                 Some($header_val),
                 concat!("expected header ", stringify!($header_name)),
             );
@@ -472,32 +475,32 @@ macro_rules! assert_ok {
 
 #[macro_export]
 macro_rules! assert_not_found {
-    ($conn:expr) => {{
-        let ref __conn = $conn;
-        assert_eq!(__conn.status(), $crate::StatusCode::NOT_FOUND);
-        assert_eq!(__conn.response_body_string().unwrap_or_default(), "");
+    ($resp:expr) => {{
+        let ref __resp = $resp;
+        assert_eq!(__resp.status(), $crate::StatusCode::NOT_FOUND);
+        assert_eq!(__resp.response_body_string().unwrap_or_default(), "");
     }};
 }
 
 #[macro_export]
 macro_rules! assert_response {
-    ($conn:expr, $status:expr) => {{
-        let ref __conn = $conn;
+    ($resp:expr, $status:expr) => {{
+        let ref __resp = $resp;
         let expected = $crate::IntoTestStatus::into_status($status);
-        assert_eq!(__conn.status(), expected);
+        assert_eq!(__resp.status(), expected);
     }};
 
-    ($conn:expr, $status:expr, $body:expr $(, $header_name:expr => $header_val:expr)*) => {{
-        let ref __conn = $conn;
+    ($resp:expr, $status:expr, $body:expr $(, $header_name:expr => $header_val:expr)*) => {{
+        let ref __resp = $resp;
         let expected = $crate::IntoTestStatus::into_status($status);
-        assert_eq!(__conn.status(), expected);
+        assert_eq!(__resp.status(), expected);
         assert_eq!(
-            __conn.response_body_string().unwrap_or_default(),
+            __resp.response_body_string().unwrap_or_default(),
             $body
         );
         $(
             assert_eq!(
-                __conn.header_str($header_name),
+                __resp.header_str($header_name),
                 Some($header_val),
                 concat!("expected header ", stringify!($header_name)),
             );
@@ -507,18 +510,18 @@ macro_rules! assert_response {
 
 #[macro_export]
 macro_rules! assert_status {
-    ($conn:expr, $status:expr) => {{
-        let ref __conn = $conn;
+    ($resp:expr, $status:expr) => {{
+        let ref __resp = $resp;
         let expected = $crate::IntoTestStatus::into_status($status);
-        assert_eq!(__conn.status(), expected);
+        assert_eq!(__resp.status(), expected);
     }};
 }
 
 #[macro_export]
 macro_rules! assert_body_contains {
-    ($conn:expr, $pattern:expr) => {{
-        let ref __conn = $conn;
-        let body = __conn.response_body_string().unwrap_or_default();
+    ($resp:expr, $pattern:expr) => {{
+        let ref __resp = $resp;
+        let body = __resp.response_body_string().unwrap_or_default();
         assert!(
             body.contains($pattern),
             "expected body to contain {:?}, got {:?}",
@@ -530,11 +533,11 @@ macro_rules! assert_body_contains {
 
 #[macro_export]
 macro_rules! assert_headers {
-    ($conn:expr, $($header_name:expr => $header_val:expr),+ $(,)?) => {{
-        let ref __conn = $conn;
+    ($resp:expr, $($header_name:expr => $header_val:expr),+ $(,)?) => {{
+        let ref __resp = $resp;
         $(
             assert_eq!(
-                __conn.header_str($header_name),
+                __resp.header_str($header_name),
                 Some($header_val),
                 concat!("expected header ", stringify!($header_name)),
             );

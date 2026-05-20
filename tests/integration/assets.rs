@@ -46,12 +46,12 @@ async fn api_url(app: DivviupApi) -> TestResult {
 
 #[test(harness = set_up)]
 async fn missing_asset_is_not_cached(app: DivviupApi) -> TestResult {
-    let conn = get("/assets/does-not-exist.js")
+    let resp = get("/assets/does-not-exist.js")
         .with_app_host()
         .run_async(&app)
         .await;
-    assert_not_found!(&conn);
-    assert_headers!(&conn, "cache-control" => "no-cache");
+    assert_not_found!(&resp);
+    assert_headers!(&resp, "cache-control" => "no-cache");
     Ok(())
 }
 

@@ -1,5 +1,6 @@
 use super::{client_logs::client_logs_middleware, ClientLogs, AUTH0_URL, POSTMARK_URL};
 use axum::{middleware, Router};
+use divviup_api::api_mocks::ApiMocks as DivviupApiMocks;
 
 #[derive(Debug)]
 pub struct ApiMocks {
@@ -17,7 +18,7 @@ impl ApiMocks {
     pub fn new() -> Self {
         let client_logs = ClientLogs::default();
 
-        let inner = divviup_api::api_mocks::ApiMocks::new(POSTMARK_URL, AUTH0_URL);
+        let inner = DivviupApiMocks::new(POSTMARK_URL, AUTH0_URL);
         let router = inner.into_router().layer(middleware::from_fn_with_state(
             client_logs.clone(),
             client_logs_middleware,

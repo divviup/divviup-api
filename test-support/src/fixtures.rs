@@ -204,7 +204,7 @@ pub async fn api_token(app: &DivviupApi, account: &Account) -> (ApiToken, Header
     let api_token = api_token.insert(app.db()).await.unwrap();
     (
         api_token,
-        HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
+        HeaderValue::try_from(format!("Bearer {token}")).unwrap(),
     )
 }
 
