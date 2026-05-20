@@ -2,7 +2,7 @@ use crate::{
     clients::{ClientError, HttpClient, ResponseExt},
     Config,
 };
-use axum::http::{header, HeaderName};
+use axum::http::{header, HeaderName, Method};
 use email_address::EmailAddress;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -77,7 +77,7 @@ impl PostmarkClient {
             .json(json)
             .send()
             .await?
-            .success_or_client_error()
+            .success_or_client_error(Method::POST)
             .await?
             .json()
             .await

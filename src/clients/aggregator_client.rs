@@ -4,7 +4,7 @@ use crate::{
     handler::Error,
 };
 use api_types::TaskAggregationJobMetrics;
-use axum::http::header;
+use axum::http::{header, Method};
 use janus_messages::Time as JanusTime;
 use serde::{de::DeserializeOwned, Serialize};
 use url::Url;
@@ -42,7 +42,7 @@ impl AggregatorClient {
             .header(header::ACCEPT, CONTENT_TYPE)
             .send()
             .await?
-            .success_or_client_error()
+            .success_or_client_error(Method::GET)
             .await?
             .json()
             .await
@@ -113,7 +113,7 @@ impl AggregatorClient {
             .get(path)
             .send()
             .await?
-            .success_or_client_error()
+            .success_or_client_error(Method::GET)
             .await?
             .json()
             .await
@@ -131,7 +131,7 @@ impl AggregatorClient {
             .json(body)
             .send()
             .await?
-            .success_or_client_error()
+            .success_or_client_error(Method::POST)
             .await?
             .json()
             .await
@@ -149,7 +149,7 @@ impl AggregatorClient {
             .json(body)
             .send()
             .await?
-            .success_or_client_error()
+            .success_or_client_error(Method::PATCH)
             .await?
             .json()
             .await

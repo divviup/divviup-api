@@ -35,7 +35,7 @@ where
     Out: Termination,
 {
     with_client_logs(move |app, _api_logs| async move {
-        install_test_trace_subscriber();
+        tracing::install_test_trace_subscriber();
         let client_logs = ClientLogs::default();
         let router = app
             .router()

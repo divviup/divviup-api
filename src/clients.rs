@@ -143,6 +143,7 @@ impl HttpClient {
 
 #[derive(Debug)]
 pub struct HttpStatusNotSuccess {
+    pub method: Method,
     pub url: Url,
     pub status: Option<StatusCode>,
     pub body: String,
@@ -150,7 +151,7 @@ pub struct HttpStatusNotSuccess {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {
-    #[error("unexpected http status {} {:?}: {}", .0.url, .0.status, .0.body)]
+    #[error("unexpected http status {} {} {:?}: {}", .0.method, .0.url, .0.status, .0.body)]
     HttpStatusNotSuccess(Box<HttpStatusNotSuccess>),
 
     #[error(transparent)]
@@ -167,12 +168,18 @@ pub enum ClientError {
 /// and convert non-success into [`ClientError`].
 #[async_trait::async_trait]
 pub trait ResponseExt: Sized {
-    async fn success_or_client_error(self) -> Result<reqwest::Response, ClientError>;
+    async fn success_or_client_error(
+        self,
+        method: Method,
+    ) -> Result<reqwest::Response, ClientError>;
 }
 
 #[async_trait::async_trait]
 impl ResponseExt for reqwest::Response {
-    async fn success_or_client_error(self) -> Result<reqwest::Response, ClientError> {
+    async fn success_or_client_error(
+        self,
+        method: Method,
+    ) -> Result<reqwest::Response, ClientError> {
         let status = self.status();
         if status.is_success() {
             Ok(self)
@@ -181,6 +188,7 @@ impl ResponseExt for reqwest::Response {
             let body = self.text().await.unwrap_or_default();
             Err(ClientError::HttpStatusNotSuccess(Box::new(
                 HttpStatusNotSuccess {
+                    method,
                     url,
                     status: Some(status),
                     body,
