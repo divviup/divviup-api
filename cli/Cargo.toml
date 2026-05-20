@@ -42,6 +42,6 @@ rand = { version = "0.8.5", optional = true }
 janus_client = "0.7.106"
 janus_collector = "0.7.106"
 url = "2.5.8"
-janus_messages = "0.7.121"
+janus_messages = "0.7.122"
 prio = "0.16.7"
 tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros"] }
