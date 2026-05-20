@@ -36,8 +36,8 @@ fastrand = "2.4.1"
 futures-lite = "2.6.1"
 test-support.workspace = true
 tokio = { version = "1", features = ["net"] }
-trillium = "0.2.20"
-trillium-http = "0.3.14"
-trillium-testing = { version = "0.7.0", features = ["tokio"] }
-trillium-tokio = "0.4.0"
+trillium = "1.1.0"
+trillium-http = "1.2.2"
+trillium-testing = { version = "0.9.0", features = ["tokio"] }
+trillium-tokio = "0.6.1"
 divviup-client = { path = ".", features = ["admin"] }
