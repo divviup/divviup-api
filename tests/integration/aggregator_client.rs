@@ -12,19 +12,17 @@ async fn get_task_ids(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
     assert_eq!(task_ids.len(), 25); // two pages of 10 plus a final page of 5
 
     let logs = client_logs.logs();
-    assert!(logs.iter().all(|log| {
-        log.request_headers
-            .get_str(KnownHeaderName::Accept)
-            .unwrap()
-            == "application/vnd.janus.aggregator+json;version=0.1"
-    }));
-
-    assert!(logs.iter().all(|log| {
-        log.request_headers
-            .get_str(KnownHeaderName::Authorization)
-            .unwrap()
-            == format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
-    }));
+    let expected_token = format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap());
+    for log in &logs {
+        assert_eq!(
+            log.request_headers.get(headers::ACCEPT).unwrap(),
+            "application/vnd.janus.aggregator+json;version=0.1"
+        );
+        assert_eq!(
+            log.request_headers.get(headers::AUTHORIZATION).unwrap(),
+            expected_token.as_str()
+        );
+    }
 
     let queries = logs.iter().map(|log| log.url.query()).collect::<Vec<_>>();
     assert_eq!(
@@ -48,13 +46,17 @@ async fn get_task_metrics(app: DivviupApi, client_logs: ClientLogs) -> TestResul
     let log = client_logs.last();
     assert_eq!(
         log.request_headers
-            .get_str(KnownHeaderName::Accept)
+            .get(headers::ACCEPT)
+            .unwrap()
+            .to_str()
             .unwrap(),
         "application/vnd.janus.aggregator+json;version=0.1"
     );
     assert_eq!(
         log.request_headers
-            .get_str(KnownHeaderName::Authorization)
+            .get(headers::AUTHORIZATION)
+            .unwrap()
+            .to_str()
             .unwrap(),
         &format!("Bearer {}", aggregator.bearer_token(app.crypter()).unwrap())
     );
@@ -81,13 +83,17 @@ async fn get_config(app: DivviupApi, client_logs: ClientLogs) -> TestResult {
     let log = client_logs.last();
     assert_eq!(
         log.request_headers
-            .get_str(KnownHeaderName::Accept)
+            .get(headers::ACCEPT)
+            .unwrap()
+            .to_str()
             .unwrap(),
         "application/vnd.janus.aggregator+json;version=0.1"
     );
     assert_eq!(
         log.request_headers
-            .get_str(KnownHeaderName::Authorization)
+            .get(headers::AUTHORIZATION)
+            .unwrap()
+            .to_str()
             .unwrap(),
         "Bearer token"
     );
@@ -109,8 +115,9 @@ async fn get_config_bad_token(app: DivviupApi) -> TestResult {
 }
 
 mod prefixes {
-    use divviup_api::{clients::aggregator_client::TaskUploadMetrics, handler::origin_router};
-    use trillium_router::router;
+    use divviup_api::clients::aggregator_client::TaskUploadMetrics;
+
+    use axum::Router;
 
     use super::{assert_eq, test, *};
 
@@ -120,23 +127,15 @@ mod prefixes {
         Fut: std::future::Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,
     {
         block_on(async move {
-            let client_logs = ClientLogs::default();
             let prefix = fixtures::random_name();
+            let mock = Router::new().nest(&format!("/{prefix}"), aggregator_api::mock());
+            let (app, client_logs) = build_test_app_with_mock(mock).await;
+
             let api_url = Url::parse(&format!(
-                "https://api.{}.divviup.org/{prefix}",
+                "https://api.{}.divviup.org/{prefix}/",
                 fixtures::random_name()
             ))
             .unwrap();
-            let api_mocks = (
-                trillium_logger::logger(),
-                client_logs.clone(),
-                origin_router().with_handler(
-                    &api_url.origin().ascii_serialization(),
-                    router().all(format!("/{prefix}/*"), aggregator_api::mock()),
-                ),
-            );
-            let mut app = DivviupApi::new(config(api_mocks).await).await;
-            set_up_schema(app.db()).await;
             let mut aggregator = fixtures::aggregator(&app, None).await.into_active_model();
             aggregator.encrypted_bearer_token = ActiveValue::Set(
                 app.crypter()
@@ -148,8 +147,6 @@ mod prefixes {
             );
             aggregator.api_url = ActiveValue::Set(api_url.into());
             let aggregator = aggregator.update(app.db()).await.unwrap();
-            let mut info = "testing".into();
-            app.init(&mut info).await;
             f(app, client_logs, aggregator).await
         })
         .unwrap()
@@ -171,9 +168,9 @@ mod prefixes {
                 .map(|l| l.url.as_ref())
                 .collect::<Vec<_>>(),
             vec![
-                format!("{}/task_ids", aggregator.api_url),
-                format!("{}/task_ids?pagination_token=second", aggregator.api_url),
-                format!("{}/task_ids?pagination_token=last", aggregator.api_url)
+                format!("{}task_ids", aggregator.api_url),
+                format!("{}task_ids?pagination_token=second", aggregator.api_url),
+                format!("{}task_ids?pagination_token=last", aggregator.api_url)
             ]
         );
         assert_eq!(client_logs.logs().len(), 3);
@@ -193,10 +190,10 @@ mod prefixes {
             client_logs.last().response_json::<TaskUploadMetrics>(),
             metrics
         );
-        assert_eq!(client_logs.last().method, Method::Get);
+        assert_eq!(client_logs.last().method, Method::GET);
         assert_eq!(
             client_logs.last().url.as_ref(),
-            format!("{}/tasks/fake-task-id/metrics/uploads", aggregator.api_url)
+            format!("{}tasks/fake-task-id/metrics/uploads", aggregator.api_url)
         );
         assert_eq!(client_logs.logs().len(), 1);
         Ok(())

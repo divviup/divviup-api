@@ -1,10 +1,10 @@
-use super::{ClientLogs, AUTH0_URL, POSTMARK_URL};
-use trillium_macros::Handler;
+use super::{client_logs::client_logs_middleware, ClientLogs, AUTH0_URL, POSTMARK_URL};
+use axum::{middleware, Router};
+use divviup_api::api_mocks::ApiMocks as DivviupApiMocks;
 
-#[derive(Handler, Debug)]
+#[derive(Debug)]
 pub struct ApiMocks {
-    #[handler]
-    handler: (ClientLogs, divviup_api::api_mocks::ApiMocks),
+    router: Router,
     client_logs: ClientLogs,
 }
 
@@ -18,16 +18,23 @@ impl ApiMocks {
     pub fn new() -> Self {
         let client_logs = ClientLogs::default();
 
+        let inner = DivviupApiMocks::new(POSTMARK_URL, AUTH0_URL);
+        let router = inner.into_router().layer(middleware::from_fn_with_state(
+            client_logs.clone(),
+            client_logs_middleware,
+        ));
+
         Self {
-            handler: (
-                client_logs.clone(),
-                divviup_api::api_mocks::ApiMocks::new(POSTMARK_URL, AUTH0_URL),
-            ),
+            router,
             client_logs,
         }
     }
 
     pub fn client_logs(&self) -> ClientLogs {
         self.client_logs.clone()
+    }
+
+    pub fn into_router(self) -> Router {
+        self.router
     }
 }

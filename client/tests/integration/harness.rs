@@ -1,28 +1,20 @@
 pub use divviup_client::DivviupClient;
 use std::{future::Future, net::Ipv6Addr, process::Termination};
-use test_support::tracing::install_test_trace_subscriber;
 use tokio::net::TcpListener;
-use trillium_http::Stopper;
 use url::Url;
 
 pub use std::sync::Arc;
 pub use test_support::*;
 
-async fn spawn_test_server(app: impl trillium::Handler) -> (Url, Stopper) {
+async fn spawn_test_server(router: axum::Router) -> Url {
     let listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0)).await.unwrap();
     let port = listener.local_addr().unwrap().port();
-    let stopper = Stopper::new();
-
-    tokio::spawn(
-        trillium_tokio::config()
-            .without_signals()
-            .with_stopper(stopper.clone())
-            .with_prebound_server(listener)
-            .run_async(app),
-    );
-
-    let url = Url::parse(&format!("http://[::1]:{port}/")).unwrap();
-    (url, stopper)
+    tokio::spawn(async move {
+        axum::serve(listener, router)
+            .await
+            .expect("test server error");
+    });
+    Url::parse(&format!("http://[::1]:{port}/")).unwrap()
 }
 
 pub fn with_configured_client<F, Fut, Out>(f: F) -> Out
@@ -42,12 +34,17 @@ where
     Fut: Future<Output = Out> + Send + 'static,
     Out: Termination,
 {
-    with_client_logs(move |app, _api_logs| async move {
-        install_test_trace_subscriber();
-        let client_logs = ClientLogs::default();
+    with_client_logs(move |app, client_logs| async move {
+        tracing::install_test_trace_subscriber();
+        let router = app
+            .router()
+            .clone()
+            .layer(axum::middleware::from_fn_with_state(
+                client_logs.clone(),
+                client_logs::client_logs_middleware,
+            ));
+        let base_url = spawn_test_server(router).await;
         let app = Arc::new(app);
-
-        let (base_url, _stopper) = spawn_test_server((client_logs.clone(), app.clone())).await;
 
         let account = fixtures::account(&app).await;
         let (api_token, token) = ApiToken::build(&account);

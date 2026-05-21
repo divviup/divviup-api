@@ -46,23 +46,23 @@ async fn api_url(app: DivviupApi) -> TestResult {
 
 #[test(harness = set_up)]
 async fn missing_asset_is_not_cached(app: DivviupApi) -> TestResult {
-    let mut conn = get("/assets/does-not-exist.js")
+    let resp = get("/assets/does-not-exist.js")
         .with_app_host()
         .run_async(&app)
         .await;
-    assert_not_found!(&mut conn);
-    assert_headers!(&conn, "cache-control" => "no-cache");
+    assert_not_found!(&resp);
+    assert_headers!(&resp, "cache-control" => "no-cache");
     Ok(())
 }
 
 #[test(harness = set_up)]
 async fn static_files(app: DivviupApi) -> TestResult {
-    let mut html_conn = get("/").with_app_host().run_async(&app).await;
+    let html_conn = get("/").with_app_host().run_async(&app).await;
 
     assert_ok!(&html_conn);
     assert_headers!(&html_conn, "cache-control" => "no-cache");
 
-    let html = html_conn.take_response_body_string().unwrap();
+    let html = html_conn.response_body_string().unwrap();
 
     let regex = regex::Regex::new(r#"script type="module" crossorigin src="([^"]+)""#).unwrap();
     let js_path = &regex.captures_iter(&html).next().unwrap()[1];

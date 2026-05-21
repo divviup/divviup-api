@@ -6,12 +6,7 @@ pub(crate) mod custom_mime_types;
 pub(crate) mod error;
 pub(crate) mod extract;
 pub(crate) mod oauth2;
-// TODO: remove origin_router in Part 9/10 (used by api_mocks)
-pub(crate) mod origin_router;
 pub(crate) mod session_store;
-
-// TODO: remove proxy in Part 9 (only kept for DivviupApi test shim)
-pub(crate) mod proxy;
 
 use crate::{
     clients::{Auth0Client, HttpClient},
@@ -24,23 +19,15 @@ use axum::{
     routing,
 };
 use cors::axum_cors_layer;
-use error::ErrorHandler;
 use oauth2::OauthClient;
-// TODO: remove proxy + trillium imports in Part 9 (test-support rewrite)
-use proxy::AxumProxy;
 use session_store::axum_session_layer;
-use std::{net::Ipv6Addr, sync::Arc};
-use tokio::net::TcpListener;
-use tokio_util::sync::CancellationToken;
+use std::sync::Arc;
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer, set_header::SetResponseHeaderLayer, trace::TraceLayer,
 };
-use trillium::{Handler, Info};
-use trillium_macros::Handler;
 
 pub use error::Error;
-pub use origin_router::origin_router;
 
 /// Shared state for the Axum application.
 #[derive(Clone, Debug)]
@@ -124,9 +111,14 @@ pub async fn build_app(config: Config) -> BuiltApp {
         client: config.client.clone(),
     };
 
-    // TODO(Part 9): add OpenTelemetry HTTP metrics middleware. The deleted
+    // TODO(Part 10): add OpenTelemetry HTTP metrics middleware. The deleted
     // trillium-opentelemetry handler provided http.server.* histograms and
     // optional OTLP per-request spans; TraceLayer only emits tracing events.
+    //
+    // TODO(Part 10): restore X-Forwarded-For / Forwarded header propagation.
+    // The deleted trillium-forwarding::Forwarding::trust_always() updated the
+    // peer IP from proxy headers so trace spans logged the client IP. Without
+    // it, TraceLayer records the proxy/load-balancer IP instead.
     let middleware = ServiceBuilder::new()
         .layer(TraceLayer::new_for_http())
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_SIZE))
@@ -140,9 +132,6 @@ pub async fn build_app(config: Config) -> BuiltApp {
 
     #[cfg(feature = "integration-testing")]
     let middleware = middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
-
-    #[cfg(feature = "test-header-injection")]
-    let middleware = middleware.layer(axum::middleware::from_fn(inject_test_header_user));
 
     #[cfg(assets)]
     let middleware = middleware.layer(axum::middleware::from_fn_with_state(
@@ -162,109 +151,8 @@ pub async fn build_app(config: Config) -> BuiltApp {
     BuiltApp { router, db, config }
 }
 
-// ---------------------------------------------------------------------------
-// Test-only shim: DivviupApi
-//
-// test-support constructs a DivviupApi, calls .db()/.config()/.init(), and
-// passes it to trillium_testing's .run_async(&app). This shim keeps that
-// working by spawning the Axum router on a loopback port and proxying via
-// AxumProxy.
-//
-// TODO: remove in Part 9 (test-support rewrite)
-// ---------------------------------------------------------------------------
-
-#[derive(Handler, Debug)]
-pub struct DivviupApi {
-    #[handler(except = init)]
-    handler: Box<dyn Handler>,
-    db: Db,
-    config: Arc<Config>,
-}
-
-impl DivviupApi {
-    pub async fn init(&mut self, info: &mut Info) {
-        *info.server_description_mut() = format!("divviup-api {}", env!("CARGO_PKG_VERSION"));
-        self.handler.init(info).await
-    }
-
-    pub async fn new(config: Config) -> Self {
-        let app = build_app(config).await;
-
-        let axum_listener = TcpListener::bind((Ipv6Addr::LOCALHOST, 0))
-            .await
-            .expect("failed to bind Axum listener on IPv6 loopback");
-        let axum_addr = axum_listener
-            .local_addr()
-            .expect("failed to get Axum listener address");
-        tokio::spawn(async move {
-            if let Err(e) = axum::serve(axum_listener, app.router).await {
-                log::error!("axum server error: {e}");
-            }
-        });
-
-        let proxy = AxumProxy::new(axum_addr);
-
-        Self {
-            handler: Box::new((
-                #[cfg(feature = "test-header-injection")]
-                inject_test_user_trillium,
-                proxy,
-                ErrorHandler,
-            )),
-            db: app.db,
-            config: app.config,
-        }
-    }
-
-    pub fn db(&self) -> &Db {
-        &self.db
-    }
-
-    pub fn config(&self) -> &Config {
-        &self.config
-    }
-
-    pub fn crypter(&self) -> &crate::Crypter {
-        &self.config.crypter
-    }
-}
-
-// TODO: remove in Part 9 (test-support rewrite)
-// NOTE: the CancellationToken created here is never cancelled, so workers
-// spawned from this Queue would run forever. This is fine because callers
-// only use perform_one_queue_job(), never spawn_workers().
-impl From<&DivviupApi> for crate::Queue {
-    fn from(app: &DivviupApi) -> Self {
-        Self::new(app.db(), app.config(), CancellationToken::new())
-    }
-}
-
-impl AsRef<Db> for DivviupApi {
-    fn as_ref(&self) -> &Db {
-        &self.db
-    }
-}
-
-/// Trillium-side test shim: if a `User` was injected via `.with_state()`
-/// (legacy test pattern), serialize it into the `X-Integration-Testing-User`
-/// header so the proxy forwards it to Axum.
-// TODO: remove in Part 9 (test-support rewrite — tests will set the header directly)
-#[cfg(feature = "test-header-injection")]
-async fn inject_test_user_trillium(mut conn: trillium::Conn) -> trillium::Conn {
-    if let Some(json) = conn
-        .state::<crate::User>()
-        .and_then(|u| serde_json::to_string(u).ok())
-    {
-        conn.request_headers_mut()
-            .insert("x-integration-testing-user", json);
-    }
-    conn
-}
-
-/// Axum middleware that unconditionally injects an admin
-/// [`User`](crate::User) into every request. This is the Axum equivalent of
-/// the Trillium `state(User::for_integration_testing())` that was in the old
-/// `api()` handler chain.
+/// Axum middleware that injects an admin [`User`](crate::User) into every
+/// request that doesn't already have one in extensions.
 ///
 /// Only compiled under `--features integration-testing` (enabled by
 /// `compose.dev.override.yaml`). Never compiled into deployed builds.
@@ -273,29 +161,10 @@ async fn inject_integration_testing_user(
     mut request: axum::extract::Request,
     next: axum::middleware::Next,
 ) -> axum::response::Response {
-    request
-        .extensions_mut()
-        .insert(crate::User::for_integration_testing());
-    next.run(request).await
-}
-
-/// Axum middleware that reads an `X-Integration-Testing-User` header and
-/// injects the decoded [`User`](crate::User) into request extensions.
-/// Used by `test-support` to impersonate specific users in tests.
-///
-/// Only compiled under `--features test-header-injection` (enabled by
-/// `test-support`). Never compiled into deployed builds.
-#[cfg(feature = "test-header-injection")]
-async fn inject_test_header_user(
-    mut request: axum::extract::Request,
-    next: axum::middleware::Next,
-) -> axum::response::Response {
-    if let Some(user) = request
-        .headers()
-        .get("x-integration-testing-user")
-        .and_then(|v| serde_json::from_slice::<crate::User>(v.as_bytes()).ok())
-    {
-        request.extensions_mut().insert(user);
+    if request.extensions().get::<crate::User>().is_none() {
+        request
+            .extensions_mut()
+            .insert(crate::User::for_integration_testing());
     }
     next.run(request).await
 }

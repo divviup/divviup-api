@@ -1,5 +1,5 @@
 use async_lock::RwLock;
-use axum::http::{header, StatusCode};
+use axum::http::{header, Method, StatusCode};
 use educe::Educe;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::{de::DeserializeOwned, Serialize};
@@ -154,7 +154,7 @@ impl Auth0Client {
             }))
             .send()
             .await?
-            .success_or_client_error()
+            .success_or_client_error(Method::POST)
             .await?
             .json()
             .await?;
@@ -184,7 +184,7 @@ impl Auth0Client {
             .json(json)
             .send()
             .await?
-            .success_or_client_error()
+            .success_or_client_error(Method::POST)
             .await?
             .json()
             .await
@@ -201,7 +201,7 @@ impl Auth0Client {
             .header(header::AUTHORIZATION, format!("Bearer {token}"))
             .send()
             .await?
-            .success_or_client_error()
+            .success_or_client_error(Method::GET)
             .await?
             .json()
             .await

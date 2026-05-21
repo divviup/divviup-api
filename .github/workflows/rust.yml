@@ -40,8 +40,6 @@ jobs:
         continue-on-error: true
       - name: Format
         run: cargo fmt --all -- --check
-      - name: check +api-mocks
-        run: cargo check --features api-mocks --locked
       - name: check +otlp-trace
         run: cargo check --features otlp-trace --locked
       - name: check cli +default +admin

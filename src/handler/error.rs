@@ -7,16 +7,6 @@ use serde_json::json;
 use std::sync::Arc;
 use validator::ValidationErrors;
 
-// TODO: remove in Part 9 (test-support rewrite) — ErrorHandler is only kept
-// in the DivviupApi test shim's handler tuple.
-pub struct ErrorHandler;
-#[trillium::async_trait]
-impl trillium::Handler for ErrorHandler {
-    async fn run(&self, conn: trillium::Conn) -> trillium::Conn {
-        conn
-    }
-}
-
 /// API-layer errors surfaced by extractors and content-type negotiation.
 #[derive(thiserror::Error, Debug, Clone)]
 pub enum ApiError {

@@ -57,7 +57,7 @@ impl From<ClientError> for JobError {
     fn from(value: ClientError) -> Self {
         match value {
             ClientError::HttpStatusNotSuccess(e) => Self::HttpStatusNotSuccess {
-                method: e.method,
+                method: e.method.to_string(),
                 url: e.url,
                 status: e.status.map(|s| s.as_u16()),
                 body: e.body,

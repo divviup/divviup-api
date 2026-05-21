@@ -37,6 +37,10 @@ impl HttpClient {
         }
     }
 
+    pub(crate) fn reqwest_client(&self) -> &reqwest::Client {
+        &self.inner
+    }
+
     pub fn with_base(mut self, url: impl Into<Url>) -> Self {
         let mut url = url.into();
         if !url.path().ends_with('/') {
@@ -139,7 +143,7 @@ impl HttpClient {
 
 #[derive(Debug)]
 pub struct HttpStatusNotSuccess {
-    pub method: String,
+    pub method: Method,
     pub url: Url,
     pub status: Option<StatusCode>,
     pub body: String,
@@ -164,12 +168,18 @@ pub enum ClientError {
 /// and convert non-success into [`ClientError`].
 #[async_trait::async_trait]
 pub trait ResponseExt: Sized {
-    async fn success_or_client_error(self) -> Result<reqwest::Response, ClientError>;
+    async fn success_or_client_error(
+        self,
+        method: Method,
+    ) -> Result<reqwest::Response, ClientError>;
 }
 
 #[async_trait::async_trait]
 impl ResponseExt for reqwest::Response {
-    async fn success_or_client_error(self) -> Result<reqwest::Response, ClientError> {
+    async fn success_or_client_error(
+        self,
+        method: Method,
+    ) -> Result<reqwest::Response, ClientError> {
         let status = self.status();
         if status.is_success() {
             Ok(self)
@@ -178,7 +188,7 @@ impl ResponseExt for reqwest::Response {
             let body = self.text().await.unwrap_or_default();
             Err(ClientError::HttpStatusNotSuccess(Box::new(
                 HttpStatusNotSuccess {
-                    method: String::new(),
+                    method,
                     url,
                     status: Some(status),
                     body,

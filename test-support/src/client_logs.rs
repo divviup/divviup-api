@@ -1,84 +1,49 @@
+use axum::{
+    body::Body,
+    extract::{Request, State},
+    http::{HeaderMap, Method, StatusCode},
+    middleware::Next,
+    response::Response,
+};
 use divviup_api::clients::ORIGINAL_URL_HEADER;
+use http_body_util::BodyExt;
 use serde::Deserialize;
 use std::{
-    fmt::{Display, Formatter, Result},
+    fmt::{Display, Formatter, Result as FmtResult},
     sync::{Arc, RwLock},
 };
-use trillium::{async_trait, Body, Conn, Handler, Headers, Method, StateSet, Status};
 use url::Url;
 
 #[derive(Debug, Clone)]
 pub struct LoggedConn {
     pub url: Url,
     pub method: Method,
+    pub request_headers: HeaderMap,
+    pub request_body: Option<String>,
     pub response_body: Option<String>,
-    pub response_status: Status,
-    pub request_headers: Headers,
-    pub response_headers: Headers,
-    pub state: Arc<StateSet>,
+    pub response_status: StatusCode,
+    pub response_headers: HeaderMap,
 }
 
 impl LoggedConn {
     pub fn response_json<'a: 'de, 'de, T: Deserialize<'de>>(&'a self) -> T {
         serde_json::from_str(self.response_body.as_ref().unwrap()).expect("deserialization error")
     }
-}
 
-impl From<&mut Conn> for LoggedConn {
-    fn from(conn: &mut Conn) -> Self {
-        let url = conn
-            .request_headers()
-            .get_str(ORIGINAL_URL_HEADER.as_str())
-            .and_then(|s| Url::parse(s).ok())
-            .unwrap_or_else(|| {
-                Url::parse(&format!(
-                    "{}://{}{}{}",
-                    if conn.is_secure() { "https" } else { "http" },
-                    conn.inner().host().unwrap(),
-                    conn.path(),
-                    match conn.querystring() {
-                        "" => "".into(),
-                        q => format!("?{q}"),
-                    }
-                ))
-                .unwrap()
-            });
-
-        let state = Arc::new(std::mem::take(conn.inner_mut().state_mut()));
-
-        let request_headers = match state.get() {
-            Some(OriginalRequestHeaders(headers)) => headers.clone(),
-            None => conn.request_headers().clone(),
-        };
-
-        Self {
-            url,
-            state,
-            method: conn.method(),
-            response_body: conn
-                .inner()
-                .response_body()
-                .and_then(Body::static_bytes)
-                .map(|s| String::from_utf8_lossy(s).to_string()),
-            response_status: conn.status().unwrap_or(Status::NotFound),
-            request_headers,
-            response_headers: conn.response_headers().clone(),
-        }
+    pub fn request_json<T: serde::de::DeserializeOwned>(&self) -> T {
+        serde_json::from_str(self.request_body.as_ref().unwrap()).expect("deserialization error")
     }
 }
 
 impl Display for LoggedConn {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        f.write_fmt(format_args!(
-            "{} {}: {}",
-            self.method, self.url, self.response_status
-        ))
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        write!(f, "{} {}: {}", self.method, self.url, self.response_status)
     }
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct ClientLogs {
-    pub(super) logged_conns: Arc<RwLock<Vec<LoggedConn>>>,
+    logged_conns: Arc<RwLock<Vec<LoggedConn>>>,
 }
 
 impl ClientLogs {
@@ -109,20 +74,74 @@ impl ClientLogs {
     }
 }
 
-#[derive(Debug)]
-struct OriginalRequestHeaders(Headers);
+fn reconstruct_url(req: &Request) -> Url {
+    if let Some(original) = req
+        .headers()
+        .get(ORIGINAL_URL_HEADER.as_str())
+        .and_then(|v| v.to_str().ok())
+    {
+        if let Ok(url) = Url::parse(original) {
+            return url;
+        }
+    }
 
-#[async_trait]
-impl Handler for ClientLogs {
-    async fn run(&self, conn: Conn) -> Conn {
-        let request_headers = conn.request_headers().clone();
-        conn.with_state(OriginalRequestHeaders(request_headers))
-    }
-    async fn before_send(&self, mut conn: Conn) -> Conn {
-        self.logged_conns
-            .write()
-            .unwrap()
-            .push(LoggedConn::from(&mut conn));
-        conn
-    }
+    let host = req
+        .headers()
+        .get("host")
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("unknown");
+    let mut url = Url::parse(&format!("https://{host}"))
+        .unwrap_or_else(|e| panic!("reconstruct_url: malformed Host: {host}: {e}"));
+    url.set_path(req.uri().path());
+    url.set_query(req.uri().query());
+    url
+}
+
+pub async fn client_logs_middleware(
+    State(logs): State<ClientLogs>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let method = request.method().clone();
+    let request_headers = request.headers().clone();
+    let url = reconstruct_url(&request);
+
+    let (parts, body) = request.into_parts();
+    let body_bytes = body
+        .collect()
+        .await
+        .expect("failed to read request body")
+        .to_bytes();
+    let request_body = if body_bytes.is_empty() {
+        None
+    } else {
+        Some(String::from_utf8(body_bytes.to_vec()).expect("could not decode body as UTF-8"))
+    };
+    let request = Request::from_parts(parts, Body::from(body_bytes));
+
+    let response = next.run(request).await;
+
+    let (parts, body) = response.into_parts();
+    let response_bytes = body
+        .collect()
+        .await
+        .expect("failed to read response body")
+        .to_bytes();
+    let response_body = if response_bytes.is_empty() {
+        None
+    } else {
+        Some(String::from_utf8(response_bytes.to_vec()).expect("could not decode body as UTF-8"))
+    };
+
+    logs.logged_conns.write().unwrap().push(LoggedConn {
+        url,
+        method,
+        request_headers,
+        request_body,
+        response_body,
+        response_status: parts.status,
+        response_headers: parts.headers.clone(),
+    });
+
+    Response::from_parts(parts, Body::from(response_bytes))
 }

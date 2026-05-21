@@ -16,13 +16,17 @@ async fn default_headers(
     );
 
     assert_eq!(
-        log.request_headers.get_str(KnownHeaderName::Accept),
+        log.request_headers
+            .get(headers::ACCEPT)
+            .and_then(|v| v.to_str().ok()),
         Some(CONTENT_TYPE)
     );
 
     assert!(log
         .request_headers
-        .get_str(KnownHeaderName::Authorization)
+        .get(headers::AUTHORIZATION)
+        .unwrap()
+        .to_str()
         .unwrap()
         .starts_with("Bearer "));
 }
