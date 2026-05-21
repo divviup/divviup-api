@@ -435,7 +435,7 @@ impl TestResponse {
         if self.body.is_empty() {
             None
         } else {
-            String::from_utf8(self.body.to_vec()).ok()
+            Some(String::from_utf8(self.body.to_vec()).expect("could not decode body as UTF-8"))
         }
     }
 
@@ -453,12 +453,12 @@ impl TestResponse {
 macro_rules! assert_ok {
     ($resp:expr) => {{
         let ref __resp = $resp;
-        assert_eq!(__resp.status(), $crate::StatusCode::OK);
+        assert_eq!(__resp.status(), ::axum::http::StatusCode::OK);
     }};
 
     ($resp:expr, $body:expr $(, $header_name:expr => $header_val:expr)*) => {{
         let ref __resp = $resp;
-        assert_eq!(__resp.status(), $crate::StatusCode::OK);
+        assert_eq!(__resp.status(), ::axum::http::StatusCode::OK);
         assert_eq!(
             __resp.response_body_string().unwrap_or_default(),
             $body
@@ -477,7 +477,7 @@ macro_rules! assert_ok {
 macro_rules! assert_not_found {
     ($resp:expr) => {{
         let ref __resp = $resp;
-        assert_eq!(__resp.status(), $crate::StatusCode::NOT_FOUND);
+        assert_eq!(__resp.status(), ::axum::http::StatusCode::NOT_FOUND);
         assert_eq!(__resp.response_body_string().unwrap_or_default(), "");
     }};
 }

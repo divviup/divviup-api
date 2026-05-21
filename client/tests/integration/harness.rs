@@ -34,9 +34,8 @@ where
     Fut: Future<Output = Out> + Send + 'static,
     Out: Termination,
 {
-    with_client_logs(move |app, _api_logs| async move {
+    with_client_logs(move |app, client_logs| async move {
         tracing::install_test_trace_subscriber();
-        let client_logs = ClientLogs::default();
         let router = app
             .router()
             .clone()

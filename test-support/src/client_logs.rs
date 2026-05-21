@@ -115,7 +115,7 @@ pub async fn client_logs_middleware(
     let request_body = if body_bytes.is_empty() {
         None
     } else {
-        String::from_utf8(body_bytes.to_vec()).ok()
+        Some(String::from_utf8(body_bytes.to_vec()).expect("could not decode body as UTF-8"))
     };
     let request = Request::from_parts(parts, Body::from(body_bytes));
 
@@ -130,7 +130,7 @@ pub async fn client_logs_middleware(
     let response_body = if response_bytes.is_empty() {
         None
     } else {
-        String::from_utf8(response_bytes.to_vec()).ok()
+        Some(String::from_utf8(response_bytes.to_vec()).expect("could not decode body as UTF-8"))
     };
 
     logs.logged_conns.write().unwrap().push(LoggedConn {

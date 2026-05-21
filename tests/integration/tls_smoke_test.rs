@@ -28,8 +28,11 @@ async fn https_connection() {
     server_config.alpn_protocols = vec![b"http/1.1".to_vec()];
     let tls_acceptor = TlsAcceptor::from(Arc::new(server_config));
 
-    // Bind to "localhost" (not Ipv6Addr::LOCALHOST) so the address matches the
-    // self-signed certificate's SAN and the reqwest client's hostname validation.
+    // Bind to "localhost" so the resolved address matches the loopback IP that
+    // reqwest and rcgen use for hostname verification. The hostname in the
+    // listener doesn't need to match the cert's SAN — only the hostname passed
+    // to reqwest and rcgen matters — but "localhost" ensures we listen on
+    // whichever loopback address the OS resolves it to.
     let listener = TcpListener::bind("localhost:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
 

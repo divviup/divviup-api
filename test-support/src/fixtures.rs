@@ -9,8 +9,6 @@ use divviup_api::{
 };
 use rand::random;
 use uuid::Uuid;
-use HeaderValue;
-
 pub fn user() -> User {
     User {
         email: random_email(),
