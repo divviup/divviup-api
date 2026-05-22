@@ -1,7 +1,6 @@
 use divviup_api::{
     handler::build_app, telemetry, trace, trace::install_trace_subscriber, Config, Queue,
 };
-use prometheus::Registry;
 use rustls::crypto::aws_lc_rs;
 use std::sync::Arc;
 use tokio::{
@@ -15,14 +14,7 @@ use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug)]
 struct MonitoringState {
-    registry: Registry,
     trace_reload_handle: Arc<trace::TraceReloadHandle>,
-}
-
-impl axum::extract::FromRef<MonitoringState> for Registry {
-    fn from_ref(state: &MonitoringState) -> Self {
-        state.registry.clone()
-    }
 }
 
 impl axum::extract::FromRef<MonitoringState> for Arc<trace::TraceReloadHandle> {
@@ -49,14 +41,14 @@ async fn main() {
     let (_guards, trace_reload_handle) = install_trace_subscriber(&config.trace_config()).unwrap();
     let cancel = CancellationToken::new();
 
-    // Monitoring server (metrics + traceconfig)
-    let registry = telemetry::install_metrics().expect("failed to install metrics provider");
+    // Telemetry providers (OTLP push — endpoint via OTEL_EXPORTER_OTLP_ENDPOINT)
+    let telemetry = telemetry::install_telemetry().expect("failed to install telemetry providers");
+
+    // Monitoring server (traceconfig)
     let monitoring_state = MonitoringState {
-        registry,
         trace_reload_handle: Arc::new(trace_reload_handle),
     };
     let monitoring_router = axum::Router::new()
-        .route("/metrics", axum::routing::get(telemetry::metrics_handler))
         .route(
             "/traceconfig",
             axum::routing::get(trace::get_traceconfig).put(trace::put_traceconfig),
@@ -105,6 +97,11 @@ async fn main() {
     }
 
     let _ = monitoring_handle.await;
+
+    // Shut down telemetry providers last so in-flight spans and metrics from
+    // the servers and queue workers are flushed before the OTLP exporters are
+    // dropped. Traces are flushed before metrics.
+    telemetry.shutdown();
 }
 
 async fn shutdown_signal(cancel: CancellationToken) {

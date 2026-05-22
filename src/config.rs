@@ -51,7 +51,7 @@ pub struct Config {
     pub postmark_url: Url,
     /// The address to listen on for the main HTTP server.
     pub listen_address: SocketAddr,
-    /// The address to listen on for prometheus metrics and tracing configuration.
+    /// The address to listen on for the monitoring server (tracing configuration).
     pub monitoring_listen_address: SocketAddr,
     /// Comma-joined unpadded base64url encoded cryptographically random secrets, 32 bytes long
     /// after decoding. The first one is used for new sessions.

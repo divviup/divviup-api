@@ -28,7 +28,6 @@ pub use db::Db;
 pub use handler::{
     build_app, custom_mime_types::DIVVIUP_API_MEDIA_TYPE, AxumAppState, BuiltApp, Error,
 };
-pub use opentelemetry;
 pub use permissions::{AdminPermissionsActor, Permissions, PermissionsActor};
 pub use queue::Queue;
 use serde::{Deserialize, Deserializer};

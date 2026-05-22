@@ -1,27 +1,37 @@
-use axum::{
-    extract::State,
-    http::{header, StatusCode},
-    response::IntoResponse,
-};
 use git_version::git_version;
 use opentelemetry::{global, KeyValue};
-use opentelemetry_sdk::{
-    metrics::{MetricError, SdkMeterProvider},
-    Resource,
-};
-use prometheus::{Encoder, Registry, TextEncoder};
+use opentelemetry_otlp::MetricExporter;
+use opentelemetry_sdk::{metrics::SdkMeterProvider, Resource};
 
-/// Install the Prometheus metrics provider and return the [`Registry`] so it
-/// can be shared with the metrics HTTP handler.
-pub fn install_metrics() -> Result<Registry, MetricError> {
-    let registry = Registry::new();
-    let exporter = opentelemetry_prometheus::exporter()
-        .with_registry(registry.clone())
-        .build()
-        .unwrap();
+#[cfg(feature = "otlp-trace")]
+use opentelemetry_sdk::trace::SdkTracerProvider;
 
-    // Note that the implementation of `Default` pulls in attributes set via environment variables.
-    let default_resource = Resource::default();
+#[derive(Debug)]
+pub struct TelemetryProviders {
+    meter_provider: SdkMeterProvider,
+    #[cfg(feature = "otlp-trace")]
+    tracer_provider: SdkTracerProvider,
+}
+
+impl TelemetryProviders {
+    pub fn shutdown(self) {
+        #[cfg(feature = "otlp-trace")]
+        if let Err(e) = self.tracer_provider.shutdown() {
+            tracing::error!("tracer provider shutdown error: {e}");
+        }
+        if let Err(e) = self.meter_provider.shutdown() {
+            tracing::error!("meter provider shutdown error: {e}");
+        }
+    }
+}
+
+/// Install OTLP telemetry providers. Metrics (and optionally traces) are
+/// pushed to the collector endpoint configured via
+/// `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`).
+///
+/// Returns [`TelemetryProviders`] so callers can shut down gracefully.
+pub fn install_telemetry() -> Result<TelemetryProviders, Box<dyn std::error::Error>> {
+    let exporter = MetricExporter::builder().with_http().build()?;
 
     let mut git_revision: &str = git_version!(fallback = "unknown");
     if git_revision == "unknown" {
@@ -29,49 +39,43 @@ pub fn install_metrics() -> Result<Registry, MetricError> {
             git_revision = value;
         }
     }
-    let version_info_resource = Resource::new([
-        KeyValue::new("service.name", "divviup-api"),
-        KeyValue::new(
-            "service.version",
-            format!("{}-{}", env!("CARGO_PKG_VERSION"), git_revision),
-        ),
-        KeyValue::new("process.runtime.name", "Rust"),
-        KeyValue::new("process.runtime.version", env!("RUSTC_SEMVER")),
-    ]);
 
-    let resource = default_resource.merge(&version_info_resource);
+    let resource = Resource::builder()
+        .with_attributes([
+            KeyValue::new("service.name", "divviup-api"),
+            KeyValue::new(
+                "service.version",
+                format!("{}-{}", env!("CARGO_PKG_VERSION"), git_revision),
+            ),
+            KeyValue::new("process.runtime.name", "Rust"),
+            KeyValue::new("process.runtime.version", env!("RUSTC_SEMVER")),
+        ])
+        .build();
 
-    global::set_meter_provider(
-        SdkMeterProvider::builder()
-            .with_reader(exporter)
-            .with_resource(resource.clone())
-            .build(),
-    );
+    let meter_provider = SdkMeterProvider::builder()
+        .with_periodic_exporter(exporter)
+        .with_resource(resource.clone())
+        .build();
+
+    global::set_meter_provider(meter_provider.clone());
 
     #[cfg(feature = "otlp-trace")]
-    global::set_tracer_provider({
+    let tracer_provider = {
         use opentelemetry_otlp::SpanExporter;
-        use opentelemetry_sdk::{runtime::Tokio, trace::TracerProvider};
 
-        TracerProvider::builder()
+        let provider = SdkTracerProvider::builder()
             .with_resource(resource)
-            .with_batch_exporter(SpanExporter::builder().with_tonic().build().unwrap(), Tokio)
-            .build()
-    });
+            .with_batch_exporter(
+                SpanExporter::builder().with_http().build()?,
+            )
+            .build();
+        global::set_tracer_provider(provider.clone());
+        provider
+    };
 
-    Ok(registry)
-}
-
-/// Axum handler that serves Prometheus metrics in text format.
-pub async fn metrics_handler(
-    State(registry): State<Registry>,
-) -> Result<impl IntoResponse, (axum::http::StatusCode, String)> {
-    let encoder = TextEncoder::new();
-    let content_type = encoder.format_type().to_owned();
-    let metrics = registry.gather();
-    let mut buf = String::new();
-    encoder
-        .encode_utf8(&metrics, &mut buf)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    Ok(([(header::CONTENT_TYPE, content_type)], buf))
+    Ok(TelemetryProviders {
+        meter_provider,
+        #[cfg(feature = "otlp-trace")]
+        tracer_provider,
+    })
 }

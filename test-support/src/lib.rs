@@ -446,8 +446,7 @@ impl TestResponse {
     }
 }
 
-// These are reimplementations of the Trillium assertion macros atop Axum. In Part 10
-// we can decide whether to keep these or refactor the tests, but they're used heavily.
+// Assertion macros for Axum test responses, modeled after Trillium's test assertions.
 
 #[macro_export]
 macro_rules! assert_ok {
