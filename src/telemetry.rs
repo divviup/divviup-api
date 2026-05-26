@@ -65,9 +65,7 @@ pub fn install_telemetry() -> Result<TelemetryProviders, Box<dyn std::error::Err
 
         let provider = SdkTracerProvider::builder()
             .with_resource(resource)
-            .with_batch_exporter(
-                SpanExporter::builder().with_http().build()?,
-            )
+            .with_batch_exporter(SpanExporter::builder().with_http().build()?)
             .build();
         global::set_tracer_provider(provider.clone());
         provider
