@@ -6,7 +6,6 @@ all-features = true
 version = 2
 ignore = [
     "RUSTSEC-2025-0056", # Used by console-subscriber
-    "RUSTSEC-2024-0437", # protobuf 2.28.0 via opentelemetry-prometheus → prometheus
     "RUSTSEC-2025-0134", # rustls-pemfile 2.2.0 via reqwest
 ]
 

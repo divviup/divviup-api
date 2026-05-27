@@ -27,7 +27,7 @@ default-run = "divviup_api_bin"
 [features]
 default = []
 integration-testing = []
-otlp-trace = ["opentelemetry/trace", "opentelemetry-otlp", "opentelemetry_sdk/trace"]
+otlp-trace = ["opentelemetry/trace", "opentelemetry_sdk/trace", "opentelemetry-otlp/trace"]
 
 [dependencies]
 aes-gcm = "0.10.3"
@@ -46,10 +46,8 @@ git-version = "0.3.9"
 httpdate = "1.0.3"
 janus_messages = "0.7.96"
 log = "0.4.27"
-opentelemetry = { version = "0.27.1", features = ["metrics", "logs"] }
-opentelemetry-prometheus = { version = "0.27.0", features = ["prometheus-encoding"] }
+opentelemetry = { version = "0.32.0", features = ["metrics", "logs"] }
 prio = "0.16.7"
-prometheus = "0.13.4"
 querystrong = "0.4.0"
 rand = "0.8.5"
 # This crate does not actually need to depend on rustls-webpki directly, but we need to make sure the feature "std" is enabled. See Janus issue #3744.
@@ -82,8 +80,8 @@ rustls = { version = "0.23", default-features = false, features = ["aws_lc_rs"] 
 tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = ["trace", "cors", "compression-full", "set-header", "fs"] }
 tower-sessions = { version = "0.15", features = ["axum-core", "signed"] }
-opentelemetry_sdk = { version = "0.27.1", features = ["rt-tokio", "logs", "metrics"] }
-opentelemetry-otlp = { version = "0.27.0", optional = true }
+opentelemetry_sdk = { version = "0.32.0", features = ["rt-tokio", "logs", "metrics"] }
+opentelemetry-otlp = { version = "0.32.0", features = ["metrics", "http-proto", "reqwest-client"] }
 
 [dependencies.oauth2]
 version = "5.0.0"

@@ -5,6 +5,7 @@ pub(crate) mod cors;
 pub(crate) mod custom_mime_types;
 pub(crate) mod error;
 pub(crate) mod extract;
+pub(crate) mod http_metrics;
 pub(crate) mod oauth2;
 pub(crate) mod session_store;
 
@@ -14,11 +15,13 @@ use crate::{
     Config, Crypter, Db, FeatureFlags,
 };
 use axum::{
+    body::Body,
     extract::{DefaultBodyLimit, FromRef},
-    http::{header, HeaderValue},
+    http::{header, HeaderValue, Request},
     routing,
 };
 use cors::axum_cors_layer;
+use http_metrics::HttpMetrics;
 use oauth2::OauthClient;
 use session_store::axum_session_layer;
 use std::sync::Arc;
@@ -111,16 +114,32 @@ pub async fn build_app(config: Config) -> BuiltApp {
         client: config.client.clone(),
     };
 
-    // TODO(Part 10): add OpenTelemetry HTTP metrics middleware. The deleted
-    // trillium-opentelemetry handler provided http.server.* histograms and
-    // optional OTLP per-request spans; TraceLayer only emits tracing events.
-    //
-    // TODO(Part 10): restore X-Forwarded-For / Forwarded header propagation.
-    // The deleted trillium-forwarding::Forwarding::trust_always() updated the
-    // peer IP from proxy headers so trace spans logged the client IP. Without
-    // it, TraceLayer records the proxy/load-balancer IP instead.
     let middleware = ServiceBuilder::new()
-        .layer(TraceLayer::new_for_http())
+        .layer(axum::middleware::from_fn_with_state(
+            HttpMetrics::new(), // instruments are registered once here, then cloned per request
+            http_metrics::http_metrics_middleware,
+        ))
+        .layer(
+            TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
+                let client_ip = request
+                    .headers()
+                    .get("x-forwarded-for")
+                    .and_then(|v| v.to_str().ok())
+                    .and_then(|s| s.rsplit(',').next())
+                    .map(str::trim);
+                let span = tracing::debug_span!(
+                    "request",
+                    method = %request.method(),
+                    uri = %request.uri(),
+                    version = ?request.version(),
+                    client.address = tracing::field::Empty,
+                );
+                if let Some(ip) = client_ip {
+                    span.record("client.address", ip);
+                }
+                span
+            }),
+        )
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_SIZE))
         .layer(CompressionLayer::new())
         .layer(SetResponseHeaderLayer::if_not_present(
