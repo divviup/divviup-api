@@ -27,7 +27,7 @@ default-run = "divviup_api_bin"
 [features]
 default = []
 integration-testing = []
-otlp-trace = ["opentelemetry/trace", "opentelemetry_sdk/trace"]
+otlp-trace = ["opentelemetry/trace", "opentelemetry_sdk/trace", "opentelemetry-otlp/trace"]
 
 [dependencies]
 aes-gcm = "0.10.3"

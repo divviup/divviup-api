@@ -82,10 +82,7 @@ pub async fn http_metrics_middleware(
     let method_attr = KeyValue::new("http.request.method", method.to_owned());
     let scheme_attr = KeyValue::new("url.scheme", scheme.to_owned());
 
-    let mut active_attrs = vec![method_attr.clone(), scheme_attr.clone()];
-    if let Some(ref route) = route {
-        active_attrs.push(KeyValue::new("http.route", route.clone()));
-    }
+    let active_attrs = [method_attr.clone(), scheme_attr.clone()];
     metrics.active_requests.add(1, &active_attrs);
     let _guard = ActiveGuard {
         counter: &metrics.active_requests,
