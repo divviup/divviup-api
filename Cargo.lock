@@ -394,7 +394,7 @@ dependencies = [
  "getrandom 0.2.16",
  "instant",
  "pin-project-lite",
- "rand 0.8.5",
+ "rand 0.8.6",
  "tokio",
 ]
 
@@ -801,7 +801,7 @@ dependencies = [
  "hkdf",
  "hmac",
  "percent-encoding",
- "rand 0.8.5",
+ "rand 0.8.6",
  "sha2",
  "subtle",
  "time",
@@ -1085,7 +1085,7 @@ dependencies = [
  "opentelemetry_sdk",
  "prio",
  "querystrong",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rcgen",
  "regex",
  "reqwest 0.12.15",
@@ -1136,7 +1136,7 @@ dependencies = [
  "janus_collector",
  "janus_messages",
  "prio",
- "rand 0.8.5",
+ "rand 0.8.6",
  "reqwest 0.12.15",
  "serde",
  "serde_json",
@@ -1784,7 +1784,7 @@ dependencies = [
  "getrandom 0.2.16",
  "hpke",
  "num_enum",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "wasm-bindgen",
  "zeroize",
@@ -1792,9 +1792,9 @@ dependencies = [
 
 [[package]]
 name = "http"
-version = "1.4.0"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3ba2a386d7f85a81f119ad7498ebe444d2e22c2af0b86b069416ace48b3311a"
+checksum = "8be7462df143984c4598a256ef469b251d7d7f9e271135073e78fc535414f3d0"
 dependencies = [
  "bytes",
  "itoa",
@@ -1860,9 +1860,9 @@ checksum = "135b12329e5e3ce057a9f972339ea52bc954fe1e9358ef27f95e89716fbc5424"
 
 [[package]]
 name = "hyper"
-version = "1.9.0"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6299f016b246a94207e63da54dbe807655bf9e00044f73ded42c3ac5305fbcca"
+checksum = "eb92f162bf56536459fc83c79b974bb12837acfed43d6bc370a7916d0ae15ecc"
 dependencies = [
  "atomic-waker",
  "bytes",
@@ -2181,7 +2181,7 @@ dependencies = [
  "janus_core",
  "janus_messages",
  "prio",
- "rand 0.8.5",
+ "rand 0.8.6",
  "reqwest 0.12.15",
  "thiserror 2.0.18",
  "tokio",
@@ -2202,7 +2202,7 @@ dependencies = [
  "janus_core",
  "janus_messages",
  "prio",
- "rand 0.8.5",
+ "rand 0.8.6",
  "reqwest 0.12.15",
  "retry-after",
  "serde",
@@ -2234,7 +2234,7 @@ dependencies = [
  "http-api-problem",
  "janus_messages",
  "prio",
- "rand 0.8.5",
+ "rand 0.8.6",
  "regex",
  "reqwest 0.12.15",
  "serde",
@@ -2248,9 +2248,9 @@ dependencies = [
 
 [[package]]
 name = "janus_messages"
-version = "0.7.122"
+version = "0.7.123"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14ebff8b7b1c374fb24813d600dae86a94d342d48950d6e8b8b12aed22565af3"
+checksum = "1b12515be91e74bb57ab30be2cf833e3f276ac6172780532bdb032b2d3086aa9"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -2258,7 +2258,7 @@ dependencies = [
  "hex",
  "num_enum",
  "prio",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
  "thiserror 2.0.18",
  "url",
@@ -2381,9 +2381,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.29"
+version = "0.4.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
+checksum = "616ec5685824bcc94416c6d4a7a446eea774a31efd7062c8480ba6fd06d7a6e5"
 
 [[package]]
 name = "lru-slab"
@@ -2539,7 +2539,7 @@ checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
  "serde",
 ]
 
@@ -2554,7 +2554,7 @@ dependencies = [
  "num-integer",
  "num-iter",
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
  "smallvec",
  "zeroize",
 ]
@@ -2648,7 +2648,7 @@ dependencies = [
  "chrono",
  "getrandom 0.2.16",
  "http",
- "rand 0.8.5",
+ "rand 0.8.6",
  "reqwest 0.12.15",
  "serde",
  "serde_json",
@@ -2709,7 +2709,7 @@ dependencies = [
  "bytes",
  "http",
  "opentelemetry",
- "reqwest 0.13.3",
+ "reqwest 0.13.4",
 ]
 
 [[package]]
@@ -2724,7 +2724,7 @@ dependencies = [
  "opentelemetry-proto",
  "opentelemetry_sdk",
  "prost",
- "reqwest 0.13.3",
+ "reqwest 0.13.4",
  "thiserror 2.0.18",
 ]
 
@@ -2741,9 +2741,9 @@ dependencies = [
 
 [[package]]
 name = "opentelemetry_sdk"
-version = "0.32.0"
+version = "0.32.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "368afaed344110f40b179bb8fbe54bc52d98f9bd2b281799ef32487c2650c956"
+checksum = "9b59f80e1ac4d5ff7a2db8fb6c80badb7f0f3f858211fba08dd9aaec750894f9"
 dependencies = [
  "futures-channel",
  "futures-executor",
@@ -3037,7 +3037,7 @@ dependencies = [
  "num-iter",
  "num-rational",
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rand_core 0.6.4",
  "serde",
  "sha2",
@@ -3252,9 +3252,9 @@ checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
 
 [[package]]
 name = "rand"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
+checksum = "5ca0ecfa931c29007047d1bc58e623ab12e5590e8c7cc53200d5202b69266d8a"
 dependencies = [
  "libc",
  "rand_chacha 0.3.1",
@@ -3417,9 +3417,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.13.3"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62e0021ea2c22aed41653bc7e1419abb2c97e038ff2c33d0e1309e49a97deec0"
+checksum = "219c5811de6525e5416c7d5d53bb656d3afdbc6c5af816e0802bcfa42dbdc1c3"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -3530,7 +3530,7 @@ dependencies = [
  "borsh",
  "bytes",
  "num-traits",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rkyv",
  "serde",
  "serde_json",
@@ -3853,9 +3853,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.149"
+version = "1.0.150"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
+checksum = "e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9"
 dependencies = [
  "itoa",
  "memchr",
@@ -4178,7 +4178,7 @@ dependencies = [
  "memchr",
  "once_cell",
  "percent-encoding",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rsa",
  "rust_decimal",
  "serde",
@@ -4222,7 +4222,7 @@ dependencies = [
  "memchr",
  "num-bigint",
  "once_cell",
- "rand 0.8.5",
+ "rand 0.8.6",
  "rust_decimal",
  "serde",
  "serde_json",
@@ -4406,7 +4406,7 @@ dependencies = [
  "http-body-util",
  "pretty_assertions",
  "querystrong",
- "rand 0.8.5",
+ "rand 0.8.6",
  "reqwest 0.12.15",
  "sea-orm",
  "serde",
@@ -4563,12 +4563,11 @@ dependencies = [
 
 [[package]]
 name = "tokio-rustls"
-version = "0.26.0"
+version = "0.26.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c7bc40d0e5a97695bb96e27995cd3a08538541b0a846f65bba7a359f36700d4"
+checksum = "1729aa945f29d91ba541258c8df89027d5792d85a8841fb65e8bf0f4ede4ef61"
 dependencies = [
  "rustls",
- "rustls-pki-types",
  "tokio",
 ]
 
