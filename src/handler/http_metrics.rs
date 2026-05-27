@@ -96,15 +96,12 @@ pub async fn http_metrics_middleware(
     let response = next.run(request).await;
     let duration = start.elapsed().as_secs_f64();
 
-    let status_code = response.status();
-    let status = KeyValue::new("http.response.status_code", i64::from(status_code.as_u16()));
+    let status = KeyValue::new(
+        "http.response.status_code",
+        i64::from(response.status().as_u16()),
+    );
     let mut duration_attrs = vec![method_attr, scheme_attr, status];
-    if status_code.is_server_error() || status_code.is_client_error() {
-        duration_attrs.push(KeyValue::new(
-            "error.type",
-            status_code.as_u16().to_string(),
-        ));
-    }
+
     if let Some(route) = route {
         duration_attrs.push(KeyValue::new("http.route", route));
     }
