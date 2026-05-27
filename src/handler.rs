@@ -116,7 +116,7 @@ pub async fn build_app(config: Config) -> BuiltApp {
 
     let middleware = ServiceBuilder::new()
         .layer(axum::middleware::from_fn_with_state(
-            HttpMetrics::new(),
+            HttpMetrics::new(), // instruments are registered once here, then cloned per request
             http_metrics::http_metrics_middleware,
         ))
         .layer(
@@ -126,15 +126,18 @@ pub async fn build_app(config: Config) -> BuiltApp {
                     .get("x-forwarded-for")
                     .and_then(|v| v.to_str().ok())
                     .and_then(|s| s.rsplit(',').next())
-                    .map(str::trim)
-                    .unwrap_or("");
-                tracing::debug_span!(
+                    .map(str::trim);
+                let span = tracing::debug_span!(
                     "request",
                     method = %request.method(),
                     uri = %request.uri(),
                     version = ?request.version(),
-                    client.address = client_ip,
-                )
+                    client.address = tracing::field::Empty,
+                );
+                if let Some(ip) = client_ip {
+                    span.record("client.address", ip);
+                }
+                span
             }),
         )
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_SIZE))

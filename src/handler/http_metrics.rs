@@ -59,6 +59,10 @@ impl HttpMetrics {
                 .f64_histogram("http.server.request.duration")
                 .with_unit("s")
                 .with_description("Duration of HTTP server requests")
+                .with_boundaries(vec![
+                    0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0,
+                    7.5, 10.0,
+                ])
                 .build(),
             active_requests: meter
                 .i64_up_down_counter("http.server.active_requests")
@@ -93,11 +97,18 @@ pub async fn http_metrics_middleware(
     let response = next.run(request).await;
     let duration = start.elapsed().as_secs_f64();
 
+    let status_code = response.status();
     let status = KeyValue::new(
         "http.response.status_code",
-        i64::from(response.status().as_u16()),
+        i64::from(status_code.as_u16()),
     );
     let mut duration_attrs = vec![method_attr, scheme_attr, status];
+    if status_code.is_server_error() || status_code.is_client_error() {
+        duration_attrs.push(KeyValue::new(
+            "error.type",
+            status_code.as_u16().to_string(),
+        ));
+    }
     if let Some(route) = route {
         duration_attrs.push(KeyValue::new("http.route", route));
     }
