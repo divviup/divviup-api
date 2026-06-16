@@ -5,6 +5,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     target-branch: "main"
     open-pull-requests-limit: 20
     groups:
@@ -22,6 +24,8 @@ updates:
     directory: "app"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     target-branch: "main"
     open-pull-requests-limit: 20
     groups:
@@ -42,9 +46,13 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     target-branch: "main"
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     target-branch: "main"
