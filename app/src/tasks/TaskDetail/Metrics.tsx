@@ -69,6 +69,10 @@ function UploadMetrics({ task }: { task: Promise<Task> }) {
                   name="Task Expired Failure"
                   counter={task.report_counter_task_expired}
                 />
+                <FailedMetric
+                  name="Duplicate Extension Failure"
+                  counter={task.report_counter_duplicate_extension}
+                />
               </ListGroup>
             )}
           </Await>

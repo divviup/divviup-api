@@ -739,6 +739,8 @@ components:
           type: number
         report_counter_task_expired:
           type: number
+        report_counter_duplicate_extension:
+          type: number
     Membership:
       type: object
       properties:

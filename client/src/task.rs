@@ -38,6 +38,7 @@ pub struct Task {
     pub report_counter_success: i64,
     pub report_counter_too_early: i64,
     pub report_counter_task_expired: i64,
+    pub report_counter_duplicate_extension: i64,
 
     #[serde(default)]
     pub aggregation_job_counter_success: i64,
