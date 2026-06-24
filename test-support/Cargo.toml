@@ -6,33 +6,33 @@ publish = false
 license.workspace = true
 
 [dependencies]
-async-trait = "0.1"
-axum = "0.8"
-bytes = "1"
-fastrand = "2.4.1"
-http-body-util = "0.1"
-time = "0.3.47"
+async-trait.workspace = true
+axum.workspace = true
+bytes.workspace = true
+fastrand.workspace = true
+http-body-util.workspace = true
+time.workspace = true
 divviup-api = { workspace = true }
-serde = "1.0.228"
-serde_json = "1.0.150"
-thiserror = "2.0.18"
-tracing = "0.1.44"
-tracing-log = "0.2.0"
-tracing-subscriber = { version = "0.3.23", features = [
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-log.workspace = true
+tracing-subscriber = { workspace = true, features = [
         "json",
         "env-filter",
         "std",
         "fmt",
 ] }
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
-tokio = { version = "1", features = ["net", "rt"] }
-tokio-util = { version = "0.7", features = ["rt"] }
-tower = { version = "0.5", features = ["util"] }
-url = "2.5.8"
-uuid = { version = "1.20.0", features = ["v4", "fast-rng", "serde"] }
-sea-orm = { version = "1.1.20", features = ["sqlx-sqlite"] }
-pretty_assertions = "1.4.1"
-rand = "0.8.5"
-base64 = "0.22.1"
-querystrong = "0.4.0"
-test-harness = "0.3.1"
+reqwest = { workspace = true, default-features = false, features = ["rustls-tls", "json"] }
+tokio = { workspace = true, features = ["net", "rt"] }
+tokio-util = { workspace = true, features = ["rt"] }
+tower = { workspace = true, features = ["util"] }
+url.workspace = true
+uuid = { workspace = true, features = ["v4", "fast-rng", "serde"] }
+sea-orm = { workspace = true, features = ["sqlx-sqlite"] }
+pretty_assertions.workspace = true
+rand.workspace = true
+base64.workspace = true
+querystrong.workspace = true
+test-harness.workspace = true

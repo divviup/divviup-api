@@ -19,29 +19,29 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"
-clap = { version = "4.6.1", features = ["derive", "env"] }
-thiserror = "2.0.18"
+clap = { workspace = true, features = ["derive", "env"] }
+thiserror.workspace = true
 divviup-client = { workspace = true }
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
-serde = "1.0.228"
-email_address = "0.2.9"
-humantime = "2.3.0"
-base64 = "0.22.1"
-time = { version = "0.3.47", features = [
+reqwest = { workspace = true, default-features = false, features = ["rustls-tls"] }
+serde.workspace = true
+email_address.workspace = true
+humantime.workspace = true
+base64.workspace = true
+time = { workspace = true, features = [
     "serde",
     "serde-well-known",
     "local-offset",
 ] }
-serde_json = "1.0.150"
-serde_yaml = "0.9.34"
-env_logger = "0.11.10"
-colored = "3.1.1"
-const_format = "0.2.36"
-hpke-dispatch = { version = "0.7.0", features = ["serde"], optional = true }
-rand = { version = "0.8.5", optional = true }
-janus_client = "0.7.106"
-janus_collector = "0.7.106"
-url = "2.5.8"
-janus_messages = "0.7.124"
-prio = "0.16.7"
-tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros"] }
+serde_json.workspace = true
+serde_yaml.workspace = true
+env_logger.workspace = true
+colored.workspace = true
+const_format.workspace = true
+hpke-dispatch = { workspace = true, features = ["serde"], optional = true }
+rand = { workspace = true, optional = true }
+janus_client.workspace = true
+janus_collector.workspace = true
+url.workspace = true
+janus_messages.workspace = true
+prio.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

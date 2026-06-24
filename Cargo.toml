@@ -9,10 +9,79 @@ homepage = "https://divviup.org"
 repository = "https://github.com/divviup/divviup-api"
 
 [workspace.dependencies]
+aes-gcm = "0.10.3"
+async-lock = "3.4.1"
+async-trait = "0.1"
+axum = "0.8"
+base64 = "0.22.1"
+bytes = "1"
+clap = "4.6.1"
+colored = "3.1.1"
+console-subscriber = "0.5.0"
+const_format = "0.2.36"
+cookie = "0.18"
 divviup-client = { path = "./client", version = "0.5.0-pre.1" }
 divviup-cli = { path = "./cli", version = "0.5.0-pre.1" }
 divviup-api.path = "."
+educe = "0.6.0"
+email_address = "0.2.9"
+env_logger = "0.11.10"
+fastrand = "2.3.0"
+futures-lite = "2.6.1"
+git-version = "0.3.9"
+hpke-dispatch = "0.7.0"
+http = "1"
+http-body-util = "0.1"
+httpdate = "1.0.3"
+humantime = "2.3.0"
+janus_client = "0.7.106"
+janus_collector = "0.7.106"
+janus_messages = "0.7.124"
+log = "0.4.32"
+num-bigint = "0.4.6"
+num-rational = "0.4.2"
+oauth2 = { version = "5.0.0", default-features = false }
+opentelemetry = "0.32.0"
+opentelemetry-otlp = "0.32.0"
+opentelemetry_sdk = "0.32.0"
+pad-adapter = "0.1.1"
+pretty_assertions = "1.4.1"
+prio = "0.16.7"
+querystrong = "0.4.0"
+rand = "0.8.5"
+rcgen = "0.14.3"
+regex = "1.11.1"
+reqwest = { version = "0.12", default-features = false }
+rustc_version = "0.4.1"
+rustls = { version = "0.23", default-features = false }
+rustls-webpki = "0.103.8"
+sea-orm = "1.1.20"
+sea-orm-migration = "1.1.20"
+serde = "1.0.228"
+serde_json = "1.0.150"
+serde_path_to_error = "0.1.17"
+serde_yaml = "0.9.34"
+sha2 = "0.10.9"
+subtle = "2.6.1"
+test-harness = "0.3.1"
 test-support.path = "./test-support"
+thiserror = "2.0.18"
+time = "0.3.47"
+tokio = "1.52.3"
+tokio-rustls = "0.26"
+tokio-util = "0.7"
+tower = "0.5"
+tower-http = "0.7"
+tower-sessions = "0.15"
+tracing = "0.1.44"
+tracing-chrome = "0.7.2"
+tracing-log = "0.2.0"
+tracing-stackdriver = "0.10.0"
+tracing-subscriber = "0.3.23"
+typenum = "1.18.0"
+url = "2.5.8"
+uuid = "1.20.0"
+validator = "0.20.0"
 
 [package]
 name = "divviup-api"
@@ -30,66 +99,67 @@ integration-testing = []
 otlp-trace = ["opentelemetry/trace", "opentelemetry_sdk/trace", "opentelemetry-otlp/trace"]
 
 [dependencies]
-aes-gcm = "0.10.3"
-async-trait = "0.1"
-axum = "0.8"
-async-lock = "3.4.1"
-base64 = "0.22.1"
-console-subscriber = "0.5.0"
+aes-gcm.workspace = true
+async-trait.workspace = true
+axum.workspace = true
+async-lock.workspace = true
+base64.workspace = true
+console-subscriber.workspace = true
 # Enables Key::derive_from in tower-sessions's re-exported cookie crate (via Cargo feature unification)
-cookie = { version = "0.18", features = ["key-expansion"] }
-educe = "0.6.0"
-email_address = "0.2.9"
-fastrand = "2.3.0"
-futures-lite = "2.6.1"
-git-version = "0.3.9"
-httpdate = "1.0.3"
-janus_messages = "0.7.96"
-log = "0.4.27"
-opentelemetry = { version = "0.32.0", features = ["metrics", "logs"] }
-prio = "0.16.7"
-querystrong = "0.4.0"
-rand = "0.8.5"
+cookie = { workspace = true, features = ["key-expansion"] }
+educe.workspace = true
+email_address.workspace = true
+fastrand.workspace = true
+futures-lite.workspace = true
+git-version.workspace = true
+httpdate.workspace = true
+janus_messages.workspace = true
+log.workspace = true
+opentelemetry = { workspace = true, features = ["metrics", "logs"] }
+prio.workspace = true
+querystrong.workspace = true
+rand.workspace = true
 # This crate does not actually need to depend on rustls-webpki directly, but we need to make sure the feature "std" is enabled. See Janus issue #3744.
-rustls-webpki = { version = "0.103.8", features = ["std"] }
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.142"
-serde_path_to_error = "0.1.17"
-sha2 = "0.10.9"
-subtle = "2.6.1"
-thiserror = "2.0.12"
-time = { version = "0.3.41", features = ["serde", "serde-well-known"] }
-tokio = { version = "1.47.1", features = ["full"] }
-tokio-util = { version = "0.7", features = ["rt"] }
-tracing = "0.1.41"
-tracing-chrome = "0.7.2"
-tracing-log = "0.2.0"
-tracing-stackdriver = "0.10.0"
-tracing-subscriber = { version = "0.3.19", features = [
+rustls-webpki = { workspace = true, features = ["std"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+serde_path_to_error.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+thiserror.workspace = true
+time = { workspace = true, features = ["serde", "serde-well-known"] }
+tokio = { workspace = true, features = ["full"] }
+tokio-rustls.workspace = true
+tokio-util = { workspace = true, features = ["rt"] }
+tracing.workspace = true
+tracing-chrome.workspace = true
+tracing-log.workspace = true
+tracing-stackdriver.workspace = true
+tracing-subscriber = { workspace = true, features = [
         "json",
         "env-filter",
         "std",
         "fmt",
 ] }
-typenum = "1.18.0"
-url = "2.5.2"
-uuid = { version = "1.16.0", features = ["v4", "fast-rng", "serde"] }
-validator = { version = "0.20.0", features = ["derive"] }
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
-rustls = { version = "0.23", default-features = false, features = ["aws_lc_rs"] }
-tower = { version = "0.5", features = ["util"] }
-tower-http = { version = "0.7", features = ["trace", "cors", "compression-full", "set-header", "fs"] }
-tower-sessions = { version = "0.15", features = ["axum-core", "signed"] }
-opentelemetry_sdk = { version = "0.32.0", features = ["rt-tokio", "logs", "metrics"] }
-opentelemetry-otlp = { version = "0.32.0", features = ["metrics", "http-proto", "reqwest-client"] }
+typenum.workspace = true
+url.workspace = true
+uuid = { workspace = true, features = ["v4", "fast-rng", "serde"] }
+validator = { workspace = true, features = ["derive"] }
+reqwest = { workspace = true, default-features = false, features = ["rustls-tls", "json"] }
+rustls = { workspace = true, default-features = false, features = ["aws_lc_rs"] }
+tower = { workspace = true, features = ["util"] }
+tower-http = { workspace = true, features = ["trace", "cors", "compression-full", "set-header", "fs"] }
+tower-sessions = { workspace = true, features = ["axum-core", "signed"] }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "logs", "metrics"] }
+opentelemetry-otlp = { workspace = true, features = ["metrics", "http-proto", "reqwest-client"] }
 
 [dependencies.oauth2]
-version = "5.0.0"
+workspace = true
 default-features = false
 features = ["pkce-plain", "reqwest"]
 
 [dependencies.sea-orm]
-version = "1.1.17"
+workspace = true
 features = [
         "runtime-tokio-rustls",
         "macros",
@@ -99,13 +169,13 @@ features = [
 ]
 
 [dev-dependencies]
-rcgen = "0.14.3"
-regex = "1.11.1"
+rcgen.workspace = true
+regex.workspace = true
 test-support.workspace = true
-tokio-rustls = "0.26"
+tokio-rustls.workspace = true
 
 [build-dependencies]
-rustc_version = "0.4.1"
+rustc_version.workspace = true
 
 [lib]
 name = "divviup_api"

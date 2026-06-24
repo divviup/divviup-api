@@ -13,28 +13,28 @@ default = []
 admin = []
 
 [dependencies]
-base64 = "0.22.1"
-email_address = "0.2.9"
-http = "1"
-prio = "0.16"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
-thiserror = "2.0.18"
-url = { version = "2.5.8", features = ["serde"] }
-uuid = { version = "1.20.0", features = ["v4", "fast-rng", "serde"] }
-time = { version = "0.3.47", features = ["serde", "serde-well-known"] }
-log = "0.4.32"
-pad-adapter = "0.1.1"
-janus_messages = "0.7.124"
-num-bigint = "0.4.6"
-num-rational = "0.4.2"
+base64.workspace = true
+email_address.workspace = true
+http.workspace = true
+prio.workspace = true
+reqwest = { workspace = true, default-features = false, features = ["json", "rustls-tls"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+thiserror.workspace = true
+url = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["v4", "fast-rng", "serde"] }
+time = { workspace = true, features = ["serde", "serde-well-known"] }
+log.workspace = true
+pad-adapter.workspace = true
+janus_messages.workspace = true
+num-bigint.workspace = true
+num-rational.workspace = true
 
 [dev-dependencies]
-axum = "0.8"
+axum.workspace = true
 divviup-api.workspace = true
-fastrand = "2.4.1"
-futures-lite = "2.6.1"
+fastrand.workspace = true
+futures-lite.workspace = true
 test-support.workspace = true
-tokio = { version = "1", features = ["net"] }
+tokio = { workspace = true, features = ["net"] }
 divviup-client = { path = ".", features = ["admin"] }
