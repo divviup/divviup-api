@@ -78,7 +78,7 @@ validator = { version = "0.20.0", features = ["derive"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 rustls = { version = "0.23", default-features = false, features = ["aws_lc_rs"] }
 tower = { version = "0.5", features = ["util"] }
-tower-http = { version = "0.6", features = ["trace", "cors", "compression-full", "set-header", "fs"] }
+tower-http = { version = "0.7", features = ["trace", "cors", "compression-full", "set-header", "fs"] }
 tower-sessions = { version = "0.15", features = ["axum-core", "signed"] }
 opentelemetry_sdk = { version = "0.32.0", features = ["rt-tokio", "logs", "metrics"] }
 opentelemetry-otlp = { version = "0.32.0", features = ["metrics", "http-proto", "reqwest-client"] }
