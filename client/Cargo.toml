@@ -16,25 +16,25 @@ admin = []
 base64.workspace = true
 email_address.workspace = true
 http.workspace = true
+janus_messages.workspace = true
+log.workspace = true
+num-bigint.workspace = true
+num-rational.workspace = true
+pad-adapter.workspace = true
 prio.workspace = true
 reqwest = { workspace = true, default-features = false, features = ["json", "rustls-tls"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 thiserror.workspace = true
+time = { workspace = true, features = ["serde", "serde-well-known"] }
 url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true, features = ["v4", "fast-rng", "serde"] }
-time = { workspace = true, features = ["serde", "serde-well-known"] }
-log.workspace = true
-pad-adapter.workspace = true
-janus_messages.workspace = true
-num-bigint.workspace = true
-num-rational.workspace = true
 
 [dev-dependencies]
 axum.workspace = true
 divviup-api.workspace = true
+divviup-client = { path = ".", features = ["admin"] }
 fastrand.workspace = true
 futures-lite.workspace = true
 test-support.workspace = true
 tokio = { workspace = true, features = ["net"] }
-divviup-client = { path = ".", features = ["admin"] }

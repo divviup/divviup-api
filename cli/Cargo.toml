@@ -8,40 +8,40 @@ repository.workspace = true
 version.workspace = true
 description = "Command line utility for divviup.org"
 
+[[bin]]
+name = "divviup"
+path = "src/main.rs"
+
 [features]
 default = ["hpke"]
 hpke = ["dep:hpke-dispatch", "dep:rand"]
 admin = ["divviup-client/admin"]
 
-[[bin]]
-name = "divviup"
-path = "src/main.rs"
-
 [dependencies]
 anyhow = "1"
+base64.workspace = true
 clap = { workspace = true, features = ["derive", "env"] }
-thiserror.workspace = true
+colored.workspace = true
+const_format.workspace = true
 divviup-client = { workspace = true }
+email_address.workspace = true
+env_logger.workspace = true
+hpke-dispatch = { workspace = true, features = ["serde"], optional = true }
+humantime.workspace = true
+janus_client.workspace = true
+janus_collector.workspace = true
+janus_messages.workspace = true
+prio.workspace = true
+rand = { workspace = true, optional = true }
 reqwest = { workspace = true, default-features = false, features = ["rustls-tls"] }
 serde.workspace = true
-email_address.workspace = true
-humantime.workspace = true
-base64.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+thiserror.workspace = true
 time = { workspace = true, features = [
     "serde",
     "serde-well-known",
     "local-offset",
 ] }
-serde_json.workspace = true
-serde_yaml.workspace = true
-env_logger.workspace = true
-colored.workspace = true
-const_format.workspace = true
-hpke-dispatch = { workspace = true, features = ["serde"], optional = true }
-rand = { workspace = true, optional = true }
-janus_client.workspace = true
-janus_collector.workspace = true
-url.workspace = true
-janus_messages.workspace = true
-prio.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+url.workspace = true

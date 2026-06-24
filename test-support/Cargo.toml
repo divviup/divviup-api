@@ -8,31 +8,31 @@ license.workspace = true
 [dependencies]
 async-trait.workspace = true
 axum.workspace = true
+base64.workspace = true
 bytes.workspace = true
+divviup-api = { workspace = true }
 fastrand.workspace = true
 http-body-util.workspace = true
-time.workspace = true
-divviup-api = { workspace = true }
+pretty_assertions.workspace = true
+querystrong.workspace = true
+rand.workspace = true
+reqwest = { workspace = true, default-features = false, features = ["rustls-tls", "json"] }
+sea-orm = { workspace = true, features = ["sqlx-sqlite"] }
 serde.workspace = true
 serde_json.workspace = true
+test-harness.workspace = true
 thiserror.workspace = true
-tracing.workspace = true
-tracing-log.workspace = true
-tracing-subscriber = { workspace = true, features = [
-        "json",
-        "env-filter",
-        "std",
-        "fmt",
-] }
-reqwest = { workspace = true, default-features = false, features = ["rustls-tls", "json"] }
+time.workspace = true
 tokio = { workspace = true, features = ["net", "rt"] }
 tokio-util = { workspace = true, features = ["rt"] }
 tower = { workspace = true, features = ["util"] }
+tracing.workspace = true
+tracing-log.workspace = true
+tracing-subscriber = { workspace = true, features = [
+    "json",
+    "env-filter",
+    "std",
+    "fmt",
+] }
 url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng", "serde"] }
-sea-orm = { workspace = true, features = ["sqlx-sqlite"] }
-pretty_assertions.workspace = true
-rand.workspace = true
-base64.workspace = true
-querystrong.workspace = true
-test-harness.workspace = true
