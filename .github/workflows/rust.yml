@@ -48,6 +48,10 @@ jobs:
         uses: EmbarkStudios/cargo-deny-action@v2.0.20
         with:
           command: check bans
+      - name: Install cargo-sort
+        uses: taiki-e/install-action@cargo-sort
+      - name: Check Cargo.toml sorting
+        run: cargo sort --workspace --check
 
   rustsec-advisories:
     runs-on: ubuntu-latest
