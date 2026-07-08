@@ -1,5 +1,5 @@
 use aes_gcm::{
-    aead::{AeadCore, AeadInPlace, KeyInit, OsRng},
+    aead::{AeadCore, AeadInOut, Generate, KeyInit},
     Aes128Gcm as AesGcm, Error, KeySizeUser, Nonce,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, DecodeError, Engine};
@@ -38,7 +38,9 @@ impl FromStr for Crypter {
                 URL_SAFE_NO_PAD
                     .decode(s)
                     .map_err(CrypterParseError::Base64)
-                    .and_then(|v| Key::from_exact_iter(v).ok_or(CrypterParseError::IncorrectLength))
+                    .and_then(|v| {
+                        Key::try_from(v.as_slice()).map_err(|_| CrypterParseError::IncorrectLength)
+                    })
             })
             .collect::<Result<VecDeque<Key>, _>>()?;
         let current_key = keys.pop_front().ok_or(CrypterParseError::Missing)?;
@@ -76,7 +78,7 @@ impl Crypter {
     }
 
     pub fn generate_key() -> Key {
-        AesGcm::generate_key(OsRng)
+        Key::generate()
     }
 
     pub fn encrypt(&self, associated_data: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, Error> {
@@ -94,7 +96,7 @@ impl Crypter {
 
 impl CrypterInner {
     fn encrypt(&self, associated_data: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, Error> {
-        let nonce = AesGcm::generate_nonce(&mut OsRng);
+        let nonce = Nonce::generate();
         let mut buffer = plaintext.to_vec();
         self.current_cipher
             .encrypt_in_place(&nonce, associated_data, &mut buffer)?;
@@ -134,9 +136,11 @@ impl CrypterInner {
         nonce: &[u8],
         ciphertext: &[u8],
     ) -> Result<Vec<u8>, Error> {
-        let nonce = Nonce::from_slice(nonce);
+        // `decrypt` has already split off exactly `NonceSize` bytes, so this conversion
+        // cannot fail here.
+        let nonce = Nonce::try_from(nonce).map_err(|_| Error)?;
         let mut bytes = ciphertext.to_vec();
-        cipher.decrypt_in_place(nonce, associated_data, &mut bytes)?;
+        cipher.decrypt_in_place(&nonce, associated_data, &mut bytes)?;
         Ok(bytes)
     }
 }
