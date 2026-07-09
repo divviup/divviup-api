@@ -237,8 +237,7 @@ function Token({ token }: { token: string | null }) {
 
 function ApiTokenRow({ apiToken }: { apiToken: ApiToken }) {
   const actionData = useActionData() as
-    | undefined
-    | (ApiToken & { token: string });
+    undefined | (ApiToken & { token: string });
   const token = actionData?.id == apiToken.id ? actionData?.token : null;
 
   return (
