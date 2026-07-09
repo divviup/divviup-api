@@ -134,12 +134,7 @@ export interface CreateMembership {
 }
 
 export type Role =
-  | "Leader"
-  | "Helper"
-  | "Either"
-  | "leader"
-  | "helper"
-  | "either";
+  "Leader" | "Helper" | "Either" | "leader" | "helper" | "either";
 
 export interface Aggregator {
   id: string;
