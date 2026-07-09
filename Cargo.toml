@@ -19,7 +19,7 @@ homepage = "https://divviup.org"
 repository = "https://github.com/divviup/divviup-api"
 
 [workspace.dependencies]
-aes-gcm = "0.10.3"
+aes-gcm = "0.11.0"
 async-lock = "3.4.1"
 async-trait = "0.1"
 axum = "0.8"
