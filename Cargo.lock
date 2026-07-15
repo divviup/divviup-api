@@ -784,7 +784,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1219,7 +1219,7 @@ dependencies = [
  "base64 0.22.1",
  "console-subscriber",
  "cookie",
- "educe",
+ "educe 0.7.4",
  "email_address",
  "fastrand",
  "futures-lite",
@@ -1349,6 +1349,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "educe"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92c3e1715a2bf74bc8f68cd7bae12ff144f02669c602106ad1fa16f2ba62e646"
+dependencies = [
+ "enum-ordinalize",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "either"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1396,18 +1408,18 @@ dependencies = [
 
 [[package]]
 name = "enum-ordinalize"
-version = "4.3.0"
+version = "4.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fea0dcfa4e54eeb516fe454635a95753ddd39acda650ce703031c6973e315dd5"
+checksum = "07f808d588c10e464ea6f7d3eaed500049eff30aaac103460f61828c2d65b3eb"
 dependencies = [
  "enum-ordinalize-derive",
 ]
 
 [[package]]
 name = "enum-ordinalize-derive"
-version = "4.3.1"
+version = "4.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d28318a75d4aead5c4db25382e8ef717932d0346600cacae6357eb5941bc5ff"
+checksum = "42e528e2d34ba8a67a1a650b86beae8ef69fc5fdb638016f386b973226590432"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2362,7 +2374,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01c4dad212d0e2ae9d867ebf27585c68b3ba7c9d862abd4aea33668504afa14b"
 dependencies = [
  "backoff",
- "educe",
+ "educe 0.6.0",
  "http",
  "itertools",
  "janus_core",
@@ -2384,7 +2396,7 @@ checksum = "56e03a86c6025d937bc88ba4507b6540d108f52642eab54857c8c6ae38b6ba61"
 dependencies = [
  "backoff",
  "chrono",
- "educe",
+ "educe 0.6.0",
  "hpke-dispatch",
  "janus_core",
  "janus_messages",
@@ -2413,7 +2425,7 @@ dependencies = [
  "bytes",
  "chrono",
  "clap",
- "educe",
+ "educe 0.6.0",
  "futures",
  "hex",
  "hpke-dispatch",
@@ -2441,7 +2453,7 @@ checksum = "91ab0d778bc21684a10ae211798924111f0e746da018a7fa3365a4cb477c13b0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
- "educe",
+ "educe 0.6.0",
  "hex",
  "num_enum",
  "prio",
