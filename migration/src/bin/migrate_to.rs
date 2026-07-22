@@ -1,4 +1,4 @@
-use clap::{builder::PossibleValuesParser, command, Parser, ValueEnum};
+use clap::{builder::PossibleValuesParser, Parser, ValueEnum};
 use sea_orm_migration::{
     sea_orm::{ConnectOptions, Database, DatabaseConnection, DbErr, EntityTrait, QueryOrder},
     seaql_migrations, MigratorTrait, SchemaManager,
