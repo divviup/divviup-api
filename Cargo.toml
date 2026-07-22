@@ -124,7 +124,7 @@ httpdate.workspace = true
 janus_messages.workspace = true
 log.workspace = true
 opentelemetry = { workspace = true, features = ["metrics", "logs"] }
-opentelemetry-otlp = { workspace = true, features = ["metrics", "http-proto", "reqwest-client"] }
+opentelemetry-otlp = { workspace = true, features = ["metrics", "http-proto", "reqwest-blocking-client"] }
 opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "logs", "metrics"] }
 prio.workspace = true
 querystrong.workspace = true
