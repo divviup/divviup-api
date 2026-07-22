@@ -13,7 +13,8 @@ env:
 jobs:
   build_rust:
     runs-on: ubuntu-latest
-
+    env:
+      CARGO_BUILD_WARNINGS: deny
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7.0.0

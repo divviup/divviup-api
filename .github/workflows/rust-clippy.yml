@@ -19,6 +19,8 @@ jobs:
     permissions:
       contents: read
       security-events: write
+    env:
+      CARGO_BUILD_WARNINGS: deny
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
