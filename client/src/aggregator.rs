@@ -41,6 +41,7 @@ pub struct NewAggregator {
     pub bearer_token: String,
 }
 
+#[cfg(feature = "admin")]
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct NewSharedAggregator {
     pub name: String,
