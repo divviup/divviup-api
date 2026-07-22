@@ -429,7 +429,7 @@ dependencies = [
  "getrandom 0.2.16",
  "instant",
  "pin-project-lite",
- "rand 0.8.6",
+ "rand 0.8.7",
  "tokio",
 ]
 
@@ -873,7 +873,7 @@ dependencies = [
  "hkdf",
  "hmac",
  "percent-encoding",
- "rand 0.8.6",
+ "rand 0.8.7",
  "sha2",
  "subtle",
  "time",
@@ -1233,7 +1233,7 @@ dependencies = [
  "opentelemetry_sdk",
  "prio",
  "querystrong",
- "rand 0.8.6",
+ "rand 0.10.1",
  "rcgen",
  "regex",
  "reqwest 0.12.15",
@@ -1284,7 +1284,7 @@ dependencies = [
  "janus_collector",
  "janus_messages",
  "prio",
- "rand 0.8.6",
+ "rand 0.10.1",
  "reqwest 0.12.15",
  "serde",
  "serde_json",
@@ -1965,7 +1965,7 @@ dependencies = [
  "getrandom 0.2.16",
  "hpke",
  "num_enum",
- "rand 0.8.6",
+ "rand 0.8.7",
  "serde",
  "wasm-bindgen",
  "zeroize",
@@ -2380,7 +2380,7 @@ dependencies = [
  "janus_core",
  "janus_messages",
  "prio",
- "rand 0.8.6",
+ "rand 0.8.7",
  "reqwest 0.12.15",
  "thiserror 2.0.18",
  "tokio",
@@ -2401,7 +2401,7 @@ dependencies = [
  "janus_core",
  "janus_messages",
  "prio",
- "rand 0.8.6",
+ "rand 0.8.7",
  "reqwest 0.12.15",
  "retry-after",
  "serde",
@@ -2433,7 +2433,7 @@ dependencies = [
  "http-api-problem",
  "janus_messages",
  "prio",
- "rand 0.8.6",
+ "rand 0.8.7",
  "regex",
  "reqwest 0.12.15",
  "serde",
@@ -2457,7 +2457,7 @@ dependencies = [
  "hex",
  "num_enum",
  "prio",
- "rand 0.8.6",
+ "rand 0.8.7",
  "serde",
  "thiserror 2.0.18",
  "url",
@@ -2738,7 +2738,7 @@ checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
  "num-traits",
- "rand 0.8.6",
+ "rand 0.8.7",
  "serde",
 ]
 
@@ -2753,7 +2753,7 @@ dependencies = [
  "num-integer",
  "num-iter",
  "num-traits",
- "rand 0.8.6",
+ "rand 0.8.7",
  "smallvec",
  "zeroize",
 ]
@@ -2847,7 +2847,7 @@ dependencies = [
  "chrono",
  "getrandom 0.2.16",
  "http",
- "rand 0.8.6",
+ "rand 0.8.7",
  "reqwest 0.12.15",
  "serde",
  "serde_json",
@@ -3247,7 +3247,7 @@ dependencies = [
  "num-iter",
  "num-rational",
  "num-traits",
- "rand 0.8.6",
+ "rand 0.8.7",
  "rand_core 0.6.4",
  "serde",
  "sha2",
@@ -3468,9 +3468,9 @@ checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
 
 [[package]]
 name = "rand"
-version = "0.8.6"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ca0ecfa931c29007047d1bc58e623ab12e5590e8c7cc53200d5202b69266d8a"
+checksum = "22f6172bdec972074665ed81ed53b71da00bfc44b65a753cfde883ec4c702a1a"
 dependencies = [
  "libc",
  "rand_chacha 0.3.1",
@@ -3762,7 +3762,7 @@ dependencies = [
  "borsh",
  "bytes",
  "num-traits",
- "rand 0.8.6",
+ "rand 0.8.7",
  "rkyv",
  "serde",
  "serde_json",
@@ -4409,7 +4409,7 @@ dependencies = [
  "memchr",
  "once_cell",
  "percent-encoding",
- "rand 0.8.6",
+ "rand 0.8.7",
  "rsa",
  "rust_decimal",
  "serde",
@@ -4453,7 +4453,7 @@ dependencies = [
  "memchr",
  "num-bigint",
  "once_cell",
- "rand 0.8.6",
+ "rand 0.8.7",
  "rust_decimal",
  "serde",
  "serde_json",
@@ -4631,7 +4631,7 @@ dependencies = [
  "http-body-util",
  "pretty_assertions",
  "querystrong",
- "rand 0.8.6",
+ "rand 0.10.1",
  "reqwest 0.12.15",
  "sea-orm",
  "serde",
