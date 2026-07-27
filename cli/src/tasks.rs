@@ -302,9 +302,18 @@ impl TaskAction {
 
 fn float_to_biguint_ratio(value: f64) -> Option<Ratio<BigUint>> {
     let signed_ratio = Ratio::from_float(value)?;
+
+    // Convert between older and newer versions of num-bigint.
+    let (numerator_sign, numerator_digits) = signed_ratio.numer().to_u32_digits();
+    let (denominator_sign, denominator_digits) = signed_ratio.denom().to_u32_digits();
+    let (num_bigint_4::Sign::Plus, num_bigint_4::Sign::Plus) = (numerator_sign, denominator_sign)
+    else {
+        return None;
+    };
+
     let unsigned_ratio = Ratio::new(
-        signed_ratio.numer().clone().try_into().ok()?,
-        signed_ratio.denom().clone().try_into().ok()?,
+        BigUint::from_slice(&numerator_digits),
+        BigUint::from_slice(&denominator_digits),
     );
     Some(unsigned_ratio)
 }

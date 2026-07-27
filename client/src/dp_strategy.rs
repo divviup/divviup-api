@@ -1,4 +1,4 @@
-use num_bigint::BigUint;
+use num_bigint_5::BigUint;
 use num_rational::Ratio;
 use serde::{Deserialize, Serialize};
 
