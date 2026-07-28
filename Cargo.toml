@@ -48,7 +48,8 @@ janus_client = "0.7.106"
 janus_collector = "0.7.106"
 janus_messages = "0.7.124"
 log = "0.4.32"
-num-bigint = "0.4.6"
+num-bigint-4 = { package = "num-bigint", version = "0.4.2" }
+num-bigint-5 = { package = "num-bigint", version = "0.5.1", features = ["serde"] }
 num-rational = "0.4.2"
 oauth2 = { version = "5.0.0", default-features = false }
 opentelemetry = "0.32.0"

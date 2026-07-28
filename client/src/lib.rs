@@ -43,7 +43,7 @@ pub use janus_messages::{
     HpkeConfig, HpkePublicKey,
 };
 pub use membership::Membership;
-pub use num_bigint::BigUint;
+pub use num_bigint_5::BigUint;
 pub use num_rational::Ratio;
 pub use protocol::Protocol;
 pub use reqwest;
