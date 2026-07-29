@@ -67,7 +67,7 @@ rustc_version = "0.4.1"
 rustls = { version = "0.23", default-features = false }
 rustls-webpki = "0.103.8"
 sea-orm = "1.1.20"
-sea-orm-migration = "1.1.20"
+sea-orm-migration = "2.0.0"
 serde = "1.0.228"
 serde_json = "1.0.150"
 serde_path_to_error = "0.1.17"
