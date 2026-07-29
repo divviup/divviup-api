@@ -44,7 +44,7 @@ impl<T: Encode + Decode> From<Codec<T>> for Value {
         //
         // Ideally we'd do an `impl TryFrom` on this type, but that is insufficient to satisfy the
         // type constraints for a type deriving DeriveEntityModel.
-        Value::Bytes(Some(Box::new(value.0.get_encoded().unwrap())))
+        Value::Bytes(Some(value.0.get_encoded().unwrap()))
     }
 }
 
@@ -98,6 +98,6 @@ impl<T: Encode + Decode> ValueType for Codec<T> {
 
 impl<T: Encode + Decode> Nullable for Codec<T> {
     fn null() -> Value {
-        Value::Bytes(Some(Box::default()))
+        Value::Bytes(Some(Vec::default()))
     }
 }
