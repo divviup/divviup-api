@@ -93,8 +93,7 @@ pub fn encode_hpke_config(hpke_config: api_types::HpkeConfig) -> String {
 }
 
 async fn set_up_schema_for<T: EntityTrait>(schema: &Schema, db: &Db, t: T) {
-    let backend = db.get_database_backend();
-    db.execute(backend.build(&schema.create_table_from_entity(t)))
+    db.execute(&schema.create_table_from_entity(t))
         .await
         .unwrap();
 }

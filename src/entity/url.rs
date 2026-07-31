@@ -39,7 +39,7 @@ impl From<url::Url> for Url {
 }
 impl From<Url> for sea_orm::Value {
     fn from(value: Url) -> Self {
-        sea_orm::Value::String(Some(Box::new(value.to_string())))
+        sea_orm::Value::String(Some(value.to_string()))
     }
 }
 impl PartialEq<str> for Url {

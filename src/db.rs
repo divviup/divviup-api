@@ -1,5 +1,8 @@
 use log::LevelFilter;
-use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn};
+use sea_orm::{
+    ConnectOptions, ConnectionTrait, Database, DbBackend, DbConn, DbErr, ExecResult, QueryResult,
+    Statement,
+};
 use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Debug)]
@@ -29,32 +32,23 @@ impl DerefMut for Db {
 
 #[async_trait::async_trait]
 impl ConnectionTrait for Db {
-    fn get_database_backend(&self) -> sea_orm::DbBackend {
+    fn get_database_backend(&self) -> DbBackend {
         self.0.get_database_backend()
     }
 
-    async fn execute(
-        &self,
-        stmt: sea_orm::Statement,
-    ) -> Result<sea_orm::ExecResult, sea_orm::DbErr> {
-        self.0.execute(stmt).await
+    async fn execute_raw(&self, stmt: Statement) -> Result<ExecResult, DbErr> {
+        self.0.execute_raw(stmt).await
     }
 
-    async fn execute_unprepared(&self, sql: &str) -> Result<sea_orm::ExecResult, sea_orm::DbErr> {
+    async fn execute_unprepared(&self, sql: &str) -> Result<ExecResult, DbErr> {
         self.0.execute_unprepared(sql).await
     }
 
-    async fn query_one(
-        &self,
-        stmt: sea_orm::Statement,
-    ) -> Result<Option<sea_orm::QueryResult>, sea_orm::DbErr> {
-        self.0.query_one(stmt).await
+    async fn query_one_raw(&self, stmt: Statement) -> Result<Option<QueryResult>, DbErr> {
+        self.0.query_one_raw(stmt).await
     }
 
-    async fn query_all(
-        &self,
-        stmt: sea_orm::Statement,
-    ) -> Result<Vec<sea_orm::QueryResult>, sea_orm::DbErr> {
-        self.0.query_all(stmt).await
+    async fn query_all_raw(&self, stmt: Statement) -> Result<Vec<QueryResult>, DbErr> {
+        self.0.query_all_raw(stmt).await
     }
 }
