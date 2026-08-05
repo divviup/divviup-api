@@ -35,7 +35,7 @@ jobs:
       - name: Collect coverage data
         run: cargo llvm-cov nextest --lcov --output-path lcov.info --workspace --locked
       - name: Upload coverage data to coveralls
-        uses: coverallsapp/github-action@v2.3.6
+        uses: coverallsapp/github-action@v2.3.8
         with:
           file: ./lcov.info
         continue-on-error: true
