@@ -1,5 +1,4 @@
 pub(crate) mod account_bearer_token;
-#[cfg(assets)]
 pub(crate) mod assets;
 pub(crate) mod cors;
 pub(crate) mod custom_mime_types;
@@ -152,7 +151,6 @@ pub async fn build_app(config: Config) -> BuiltApp {
     #[cfg(feature = "integration-testing")]
     let middleware = middleware.layer(axum::middleware::from_fn(inject_integration_testing_user));
 
-    #[cfg(assets)]
     let middleware = middleware.layer(axum::middleware::from_fn_with_state(
         assets::AssetConfig::new(&config.api_url, &config.app_url),
         assets::serve_assets,

@@ -38,8 +38,7 @@ COPY src /src/src
 COPY test-support /src/test-support
 COPY client /src/client
 COPY cli /src/cli
-COPY --from=assets /src/app/build /src/app/build
-RUN ASSET_DIR=/src/app/build cargo build --workspace --bins --profile ${RUST_PROFILE} --features ${RUST_FEATURES}
+RUN cargo build --workspace --bins --profile ${RUST_PROFILE} --features ${RUST_FEATURES}
 # Hack: --profile=dev outputs to target/debug, so to interpolate $RUST_PROFILE in the next stage,
 # we need to create this symlink.
 RUN ln -s debug target/dev
@@ -54,4 +53,6 @@ COPY --from=builder /src/target/${RUST_PROFILE}/migration /migration
 COPY --from=builder /src/target/${RUST_PROFILE}/migrate_to /migrate_to
 COPY --from=builder /src/target/${RUST_PROFILE}/divviup_api_bin /divviup_api_bin
 COPY --from=builder /src/target/${RUST_PROFILE}/divviup /divviup
+COPY --from=assets /src/app/build /var/www
+ENV ASSET_DIR=/var/www
 ENTRYPOINT ["/divviup_api_bin"]

@@ -1,10 +1,15 @@
-#![cfg(assets)]
+use std::env;
+
 use test_support::{assert_eq, test, *};
 
 const INDEX_FILE_SNIPPET: &str = "<!DOCTYPE html>";
 
 #[test(harness = set_up)]
 async fn root_serves_index(app: DivviupApi) -> TestResult {
+    if env::var_os("ASSET_DIR").is_none() {
+        return Ok(());
+    }
+
     assert_body_contains!(
         get("/").with_app_host().run_async(&app).await,
         INDEX_FILE_SNIPPET
@@ -14,6 +19,10 @@ async fn root_serves_index(app: DivviupApi) -> TestResult {
 
 #[test(harness = set_up)]
 async fn not_found_path_serves_index(app: DivviupApi) -> TestResult {
+    if env::var_os("ASSET_DIR").is_none() {
+        return Ok(());
+    }
+
     assert_body_contains!(
         get("/this-is/some-arbitrary-path?and-it&does-not-matter")
             .with_app_host()
@@ -26,6 +35,10 @@ async fn not_found_path_serves_index(app: DivviupApi) -> TestResult {
 
 #[test(harness = set_up)]
 async fn api_path_serves_index(app: DivviupApi) -> TestResult {
+    if env::var_os("ASSET_DIR").is_none() {
+        return Ok(());
+    }
+
     assert_body_contains!(
         get("/api/users/me").with_app_host().run_async(&app).await,
         INDEX_FILE_SNIPPET
@@ -35,6 +48,10 @@ async fn api_path_serves_index(app: DivviupApi) -> TestResult {
 
 #[test(harness = set_up)]
 async fn api_url(app: DivviupApi) -> TestResult {
+    if env::var_os("ASSET_DIR").is_none() {
+        return Ok(());
+    }
+
     assert_ok!(
         get("/api_url").with_app_host().run_async(&app).await,
         "https://api.example/",
@@ -46,6 +63,10 @@ async fn api_url(app: DivviupApi) -> TestResult {
 
 #[test(harness = set_up)]
 async fn missing_asset_is_not_cached(app: DivviupApi) -> TestResult {
+    if env::var_os("ASSET_DIR").is_none() {
+        return Ok(());
+    }
+
     let resp = get("/assets/does-not-exist.js")
         .with_app_host()
         .run_async(&app)
@@ -57,6 +78,10 @@ async fn missing_asset_is_not_cached(app: DivviupApi) -> TestResult {
 
 #[test(harness = set_up)]
 async fn static_files(app: DivviupApi) -> TestResult {
+    if env::var_os("ASSET_DIR").is_none() {
+        return Ok(());
+    }
+
     let html_conn = get("/").with_app_host().run_async(&app).await;
 
     assert_ok!(&html_conn);
