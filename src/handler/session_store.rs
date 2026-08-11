@@ -4,7 +4,7 @@ use sea_orm::{
     sea_query::{any, OnConflict},
     ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 use time::{Duration, OffsetDateTime};
 use tower_sessions::{
     cookie::{Key, SameSite},
@@ -100,9 +100,8 @@ impl tower_store::SessionStore for TowerSessionStore {
             .map(|m| {
                 let data: HashMap<String, serde_json::Value> = serde_json::from_value(m.data)
                     .map_err(|e| tower_store::Error::Decode(e.to_string()))?;
-                let id: TowerSessionId = m.id.parse().map_err(|e: base64::DecodeSliceError| {
-                    tower_store::Error::Decode(e.to_string())
-                })?;
+                let id = TowerSessionId::from_str(&m.id)
+                    .map_err(|e| tower_store::Error::Decode(e.to_string()))?;
                 Ok(Record {
                     id,
                     data,
