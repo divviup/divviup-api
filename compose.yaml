@@ -1,7 +1,7 @@
 # Compose file for bringing up a simple local Divvi Up environment. This is not suitable for production!
 
 x-janus-common: &janus_common
-  image: ${JANUS_AGGREGATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_aggregator:0.7.28}
+  image: ${JANUS_AGGREGATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_aggregator:0.7.134}
   restart: always
   healthcheck:
     test: ["CMD", "/bin/sh", "-c", "wget http://0.0.0.0:8000/healthz -O - >/dev/null"]
@@ -14,7 +14,7 @@ x-janus-common: &janus_common
       condition: service_completed_successfully
 
 x-janus-migrate: &janus_migrate
-  image: ${JANUS_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_db_migrator:0.7.28}
+  image: ${JANUS_MIGRATOR_IMAGE:-us-west2-docker.pkg.dev/divviup-artifacts-public/janus/janus_db_migrator:0.7.134}
   command:
     - migrate
     - run
