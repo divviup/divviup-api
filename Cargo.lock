@@ -1427,7 +1427,7 @@ dependencies = [
  "base64 0.23.1",
  "console-subscriber",
  "cookie",
- "educe 0.7.4",
+ "educe 0.7.6",
  "email_address",
  "fastrand",
  "futures-lite",
@@ -1559,14 +1559,14 @@ dependencies = [
 
 [[package]]
 name = "educe"
-version = "0.7.4"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92c3e1715a2bf74bc8f68cd7bae12ff144f02669c602106ad1fa16f2ba62e646"
+checksum = "e451fac8dd8dece16234604bf1efce6e90fddd8ab6ad4d66eec0eca5160959dd"
 dependencies = [
  "enum-ordinalize",
  "proc-macro2",
  "quote",
- "syn 2.0.117",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -2668,7 +2668,7 @@ checksum = "ebcd68ffc7339c34caaed197a957271213a10fa3ec4a812ed390e3683e0c0bfa"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
- "educe 0.7.4",
+ "educe 0.7.6",
  "hex",
  "num_enum",
  "prio",
