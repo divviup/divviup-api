@@ -12,7 +12,7 @@ default-run = "divviup_api_bin"
 members = [".", "cli", "client", "migration", "test-support"]
 
 [workspace.package]
-version = "0.5.0-alpha.2"
+version = "0.5.0-alpha.3"
 edition = "2021"
 license = "MPL-2.0"
 homepage = "https://divviup.org"

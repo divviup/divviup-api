@@ -7,6 +7,7 @@ use axum::{
 };
 use std::{
     convert::Infallible,
+    env,
     future::Future,
     path::{Path, PathBuf},
     pin::Pin,
@@ -14,6 +15,7 @@ use std::{
 };
 use tower::Service;
 use tower_http::services::{ServeDir, ServeFile};
+use tracing::info;
 use url::Url;
 
 #[derive(Clone, Debug)]
@@ -24,9 +26,12 @@ pub struct AssetConfig {
 }
 
 impl AssetConfig {
-    pub fn new(api_url: &Url, app_url: &Url) -> Self {
-        // TODO(#2263): move ASSET_DIR from compile-time to runtime env var
-        let asset_dir = PathBuf::from(env!("ASSET_DIR"));
+    pub fn new(api_url: &Url, app_url: &Url) -> Option<Self> {
+        let Some(asset_dir_os) = env::var_os("ASSET_DIR") else {
+            info!("environment variable ASSET_DIR is not set, only the API will be served");
+            return None;
+        };
+        let asset_dir = PathBuf::from(asset_dir_os);
         let fallback = IndexFallback::new(asset_dir.join("index.html"));
         let serve_dir = ServeDir::new(asset_dir).fallback(fallback);
         let host = app_url.host_str().expect("app_url must have a host");
@@ -34,11 +39,11 @@ impl AssetConfig {
             Some(port) => format!("{host}:{port}"),
             None => host.to_owned(),
         };
-        Self {
+        Some(Self {
             api_url: api_url.clone(),
             app_host,
             serve_dir,
-        }
+        })
     }
 }
 
@@ -90,10 +95,14 @@ fn request_host(headers: &HeaderMap) -> Option<&str> {
 /// (or `X-Forwarded-Host`) matches the configured app origin. Requests
 /// to other hosts pass through to the API routes.
 pub async fn serve_assets(
-    State(config): State<AssetConfig>,
+    State(config): State<Option<AssetConfig>>,
     request: Request,
     next: Next,
 ) -> Response {
+    let Some(config) = config else {
+        return next.run(request).await;
+    };
+
     let host_matches =
         request_host(request.headers()).is_some_and(|h| h.eq_ignore_ascii_case(&config.app_host));
 
