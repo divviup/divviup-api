@@ -11,7 +11,7 @@
     "formik": "^2.4.9",
     "humanize-duration": "^3.34.0",
     "luxon": "^3.7.2",
-    "primereact": "^10.9.8",
+    "primereact": "^11.1.0",
     "react": "^19.2.8",
     "react-bootstrap": "^2.10.10",
     "react-bootstrap-icons": "^1.11.6",
