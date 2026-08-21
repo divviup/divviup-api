@@ -32,7 +32,7 @@ pub enum JobError {
     #[error("unexpected http status {method} {url} {status:?}: {body}")]
     HttpStatusNotSuccess {
         method: String,
-        url: Url,
+        url: Box<Url>,
         status: Option<u16>,
         body: String,
     },
@@ -58,7 +58,7 @@ impl From<ClientError> for JobError {
         match value {
             ClientError::HttpStatusNotSuccess(e) => Self::HttpStatusNotSuccess {
                 method: e.method.to_string(),
-                url: e.url,
+                url: Box::new(e.url),
                 status: e.status.map(|s| s.as_u16()),
                 body: e.body,
             },
