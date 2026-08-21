@@ -36,6 +36,7 @@ use std::{
     process::ExitCode,
 };
 use tasks::TaskAction;
+use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Layer, Registry};
 pub const USER_AGENT: &str = concatcp!(
     "divviup-cli/",
     env!("CARGO_PKG_VERSION"),
@@ -193,7 +194,14 @@ impl ClientBin {
 
 #[tokio::main]
 pub async fn main() -> ExitCode {
-    env_logger::init();
+    let tracing_filter = EnvFilter::from_default_env();
+    let layer = tracing_subscriber::fmt::layer().pretty();
+    let subscriber = Registry::default().with(layer.with_filter(tracing_filter));
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("global default tracing subscriber was already set");
+
+    tracing_log::LogTracer::init().expect("global logger was already set");
+
     ClientBin::parse().run().await
 }
 

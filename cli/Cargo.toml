@@ -25,7 +25,6 @@ colored.workspace = true
 const_format.workspace = true
 divviup-client = { workspace = true }
 email_address.workspace = true
-env_logger.workspace = true
 hpke-dispatch = { workspace = true, features = ["serde"], optional = true }
 humantime.workspace = true
 janus_client.workspace = true
@@ -45,4 +44,7 @@ time = { workspace = true, features = [
     "local-offset",
 ] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tracing.workspace = true
+tracing-log.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "std", "fmt"] }
 url.workspace = true
