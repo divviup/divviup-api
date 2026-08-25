@@ -1432,6 +1432,7 @@ dependencies = [
  "fastrand",
  "futures-lite",
  "git-version",
+ "http-body",
  "httpdate",
  "janus_messages",
  "log",
