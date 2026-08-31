@@ -51,7 +51,6 @@
     ]
   },
   "devDependencies": {
-    "@eslint/compat": "^2.0.2",
     "@eslint/js": "^9.29.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",

@@ -3,7 +3,6 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import prettierConfig from "eslint-config-prettier";
-import { fixupPluginRules } from "@eslint/compat";
 import eslintPluginReact from "eslint-plugin-react";
 import eslintPluginReactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
@@ -18,6 +17,7 @@ export default tseslint.config(
       eslint.configs.recommended,
       ...tseslint.configs.recommended,
       prettierConfig,
+      eslintPluginReactHooks.configs.flat.recommended,
     ],
     settings: {
       react: {
@@ -41,12 +41,10 @@ export default tseslint.config(
     },
     plugins: {
       react: eslintPluginReact,
-      "react-hooks": fixupPluginRules(eslintPluginReactHooks),
     },
     rules: {
       // Recommended rules from plugins that don't yet support flat config:
       ...eslintPluginReact.configs.recommended.rules,
-      ...eslintPluginReactHooks.configs.recommended.rules,
 
       // Rules from eslint-plugin-react's jsx-runtime config:
       "react/react-in-jsx-scope": 0,
