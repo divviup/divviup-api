@@ -5,7 +5,7 @@ import ListGroup from "react-bootstrap/ListGroup";
 import { useFetcher, useParams, useRouteLoaderData } from "react-router-dom";
 import {
   ChangeEvent,
-  FormEvent,
+  SubmitEvent,
   Suspense,
   useCallback,
   useEffect,
@@ -49,7 +49,7 @@ function AccountName() {
   );
   const fetcher = useFetcher();
   const submit = useCallback(
-    (e: FormEvent<HTMLFormElement>) => {
+    (e: SubmitEvent<HTMLFormElement>) => {
       e.preventDefault();
       if (name === originalName) {
         setIsEditingName(false);

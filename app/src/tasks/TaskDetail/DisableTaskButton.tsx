@@ -5,7 +5,7 @@ import {
   useNavigation,
   useParams,
 } from "react-router-dom";
-import React, { FormEvent, useCallback, useEffect, useState } from "react";
+import React, { SubmitEvent, useCallback, useEffect, useState } from "react";
 import { Play, SignStop } from "react-bootstrap-icons";
 import { Button, Modal } from "react-bootstrap";
 import { WithTask } from ".";
@@ -29,7 +29,7 @@ export default function DisableTaskButton() {
   };
 
   const submit = useCallback(
-    (e: FormEvent<HTMLFormElement>) => {
+    (e: SubmitEvent<HTMLFormElement>) => {
       e.preventDefault();
       fetcher.submit(
         { expiration: isExpired ? null : new Date().toISOString() },
