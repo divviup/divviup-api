@@ -94,6 +94,7 @@
     "tree-sitter@0.21.1": true,
     "@tree-sitter-grammars/tree-sitter-yaml@0.7.1": true,
     "core-js-pure": false,
-    "@scarf/scarf@1.4.0": true
+    "@scarf/scarf@1.4.0": true,
+    "@swc/core@1.15.46": true
   }
 }
