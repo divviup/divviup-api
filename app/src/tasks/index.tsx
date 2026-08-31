@@ -13,6 +13,8 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         index: true,
         element: <AccountDetailFull />,
         loader({ params }) {
+          // TODO(#1534): replace this before react-router v7 upgrade.
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
           return defer({
             tasks: apiClient.accountTasks(params.accountId as string),
           });
@@ -32,6 +34,8 @@ export default function tasks(apiClient: ApiClient): RouteObject {
           const collectorCredential = task.then((t) =>
             apiClient.collectorCredential(t.collector_credential_id),
           );
+          // TODO(#1534): replace this before react-router v7 upgrade.
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
           return defer({
             task,
             leaderAggregator,
@@ -69,6 +73,8 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         path: "new",
         element: <TaskForm />,
         loader({ params }) {
+          // TODO(#1534): replace this before react-router v7 upgrade.
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
           return defer({
             aggregators: apiClient.accountAggregators(
               params.accountId as string,

@@ -13,6 +13,8 @@ export default function aggregators(apiClient: ApiClient): RouteObject {
         index: true,
         element: <Aggregators />,
         loader({ params }) {
+          // TODO(#1534): replace this before react-router v7 upgrade.
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
           return defer({
             aggregators: apiClient.accountAggregators(
               params.accountId as string,
@@ -24,6 +26,8 @@ export default function aggregators(apiClient: ApiClient): RouteObject {
         path: ":aggregatorId",
         element: <AggregatorDetail />,
         loader({ params }) {
+          // TODO(#1534): replace this before react-router v7 upgrade.
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
           return defer({
             aggregator: apiClient.aggregator(params.aggregatorId as string),
           });

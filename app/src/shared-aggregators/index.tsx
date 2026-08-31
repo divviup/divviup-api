@@ -12,6 +12,8 @@ export default function sharedAggregators(apiClient: ApiClient): RouteObject {
           return import("./SharedAggregatorList");
         },
         async loader() {
+          // TODO(#1534): replace this before react-router v7 upgrade.
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
           return defer({ aggregators: apiClient.sharedAggregators() });
         },
       },
