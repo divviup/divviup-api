@@ -1,13 +1,14 @@
 // @ts-check
 
 import eslint from "@eslint/js";
+import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 import prettierConfig from "eslint-config-prettier";
 import eslintPluginReact from "eslint-plugin-react";
 import eslintPluginReactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 
-export default tseslint.config(
+export default defineConfig(
   {
     // Global ignores
     ignores: ["build"],
