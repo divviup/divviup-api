@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-import eslint from "vite-plugin-eslint";
 import react from "@vitejs/plugin-react-swc";
 import postcssNesting from "postcss-nesting";
 
@@ -8,7 +7,7 @@ export default defineConfig(() => ({
     sourcemap: true,
     outDir: process.env.BUILD_PATH || "build",
   },
-  plugins: [react(), eslint()],
+  plugins: [react()],
   server: {
     port: 8081,
     strictPort: true,
