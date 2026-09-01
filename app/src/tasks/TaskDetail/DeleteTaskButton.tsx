@@ -2,7 +2,7 @@ import { useFetcher, useNavigation } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { Trash } from "react-bootstrap-icons";
 import { Button, Modal } from "react-bootstrap";
-import { WithTask } from ".";
+import { WithTask } from "./index.js";
 
 export default function DeleteTaskButton() {
   const navigation = useNavigation();

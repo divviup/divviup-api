@@ -1,7 +1,3 @@
-import Breadcrumb from "react-bootstrap/Breadcrumb";
-import Col from "react-bootstrap/Col";
-import Row from "react-bootstrap/Row";
-import ListGroup from "react-bootstrap/ListGroup";
 import { useFetcher, useParams, useRouteLoaderData } from "react-router-dom";
 import {
   ChangeEvent,
@@ -21,11 +17,20 @@ import {
   People,
   ShieldLock,
 } from "react-bootstrap-icons";
-import { Button, Card, FormControl, InputGroup } from "react-bootstrap";
-import { WithAccount } from "../util";
-import Placeholder from "react-bootstrap/Placeholder";
-import NextSteps from "./NextSteps";
-import { Account } from "../ApiClient";
+import {
+  Breadcrumb,
+  Button,
+  Card,
+  Col,
+  FormControl,
+  InputGroup,
+  ListGroup,
+  Placeholder,
+  Row,
+} from "react-bootstrap";
+import { WithAccount } from "../util.js";
+import NextSteps from "./NextSteps/index.js";
+import { Account } from "../ApiClient.js";
 
 function AccountName() {
   const [isEditingName, setIsEditingName] = useState(false);

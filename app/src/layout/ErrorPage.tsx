@@ -1,8 +1,8 @@
 import { AxiosError } from "axios";
-import Alert from "react-bootstrap/Alert";
+import { Alert } from "react-bootstrap";
 import { isRouteErrorResponse, useRouteError } from "react-router-dom";
-import ApiClient from "../ApiClient";
-import Layout from "./Layout";
+import ApiClient from "../ApiClient.js";
+import Layout from "./Layout.js";
 import React from "react";
 
 export default function ErrorPage({ apiClient }: { apiClient: ApiClient }) {

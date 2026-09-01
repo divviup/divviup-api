@@ -1,8 +1,8 @@
-import { NewTask } from "../../ApiClient";
+import { NewTask } from "../../ApiClient.js";
 import { Alert, FormText, FormLabel } from "react-bootstrap";
-import { Field } from ".";
+import { Field } from "./index.js";
 import React from "react";
-import { OutLink } from "../../util";
+import { OutLink } from "../../util.js";
 
 export const HELPS: {
   [K in Field<NewTask>]?: {

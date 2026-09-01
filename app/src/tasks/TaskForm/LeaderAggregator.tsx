@@ -1,10 +1,9 @@
 import { Await, useLoaderData } from "react-router-dom";
-import FormControl from "react-bootstrap/FormControl";
-import FormSelect from "react-bootstrap/FormSelect";
+import { FormControl, FormSelect } from "react-bootstrap";
 import { Suspense } from "react";
-import { Aggregator } from "../../ApiClient";
-import { Props, TaskFormGroup } from ".";
-import { ShortHelpAndLabel } from "./HelpText";
+import { Aggregator } from "../../ApiClient.js";
+import { Props, TaskFormGroup } from "./index.js";
+import { ShortHelpAndLabel } from "./HelpText.js";
 
 export default function LeaderAggregator(props: Props) {
   const { aggregators } = useLoaderData() as {

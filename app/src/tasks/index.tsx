@@ -1,7 +1,7 @@
-import AccountDetailFull from "./TaskList";
-import TaskForm from "./TaskForm";
-import TaskDetail from "./TaskDetail";
-import ApiClient from "../ApiClient";
+import AccountDetailFull from "./TaskList.js";
+import TaskForm from "./TaskForm/index.js";
+import TaskDetail from "./TaskDetail/index.js";
+import ApiClient from "../ApiClient.js";
 import { RouteObject, redirect } from "react-router-dom";
 
 export default function tasks(apiClient: ApiClient): RouteObject {

@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
-import Container from "react-bootstrap/Container";
-import Header, { HeaderPlaceholder } from "./Header";
+import { Container } from "react-bootstrap";
+import Header, { HeaderPlaceholder } from "./Header.js";
 
 export default function Layout({
   error = false,

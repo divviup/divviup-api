@@ -1,7 +1,7 @@
-import FormControl from "react-bootstrap/FormControl";
+import { FormControl } from "react-bootstrap";
 import React, { ChangeEvent } from "react";
-import { Props, TaskFormGroup } from ".";
-import { ShortHelpAndLabel } from "./HelpText";
+import { Props, TaskFormGroup } from "./index.js";
+import { ShortHelpAndLabel } from "./HelpText.js";
 
 export function HistogramBucketSelection(props: Props) {
   const { setFieldValue } = props;

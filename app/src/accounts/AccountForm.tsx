@@ -1,8 +1,5 @@
 import { useState, useCallback, ChangeEvent } from "react";
-import Button from "react-bootstrap/Button";
-import FormGroup from "react-bootstrap/FormGroup";
-import FormLabel from "react-bootstrap/FormLabel";
-import FormControl from "react-bootstrap/FormControl";
+import { Button, FormGroup, FormLabel, FormControl } from "react-bootstrap";
 import { Form } from "react-router-dom";
 import { BuildingAdd } from "react-bootstrap-icons";
 

@@ -8,8 +8,8 @@ import {
   FormLabel,
   Modal,
 } from "react-bootstrap";
-import { WithAggregator } from "./AggregatorDetail";
-import { UpdateAggregator, formikErrors } from "../ApiClient";
+import { WithAggregator } from "./AggregatorDetail.js";
+import { UpdateAggregator, formikErrors } from "../ApiClient.js";
 import { FormikErrors } from "formik";
 
 export default function RotateBearerTokenButton() {

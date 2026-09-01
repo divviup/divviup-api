@@ -1,13 +1,9 @@
 import { Await, useLoaderData } from "react-router-dom";
-import Col from "react-bootstrap/Col";
+import { Card, Col, ListGroup, Placeholder, Row } from "react-bootstrap";
 import { Suspense } from "react";
-import { Aggregator, Task } from "../../ApiClient";
-import Card from "react-bootstrap/Card";
-import ListGroup from "react-bootstrap/ListGroup";
+import { Aggregator, Task } from "../../ApiClient.js";
 import { DateTime } from "luxon";
-import Row from "react-bootstrap/Row";
-import Placeholder from "react-bootstrap/Placeholder";
-import { OutLink, numberFormat } from "../../util";
+import { OutLink, numberFormat } from "../../util.js";
 
 function FailedMetric({ name, counter }: { name: string; counter: number }) {
   if (counter > 0) {

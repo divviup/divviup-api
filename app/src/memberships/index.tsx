@@ -1,6 +1,6 @@
 import { RouteObject } from "react-router-dom";
-import ApiClient from "../ApiClient";
-import Memberships from "./Memberships";
+import ApiClient from "../ApiClient.js";
+import Memberships from "./Memberships.js";
 
 export default function memberships(apiClient: ApiClient): RouteObject {
   return {

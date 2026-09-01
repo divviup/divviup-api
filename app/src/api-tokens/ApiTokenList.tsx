@@ -1,8 +1,16 @@
-import Breadcrumb from "react-bootstrap/Breadcrumb";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Button from "react-bootstrap/Button";
-import { AccountBreadcrumbs, Copy, WithAccount } from "../util";
+import {
+  Breadcrumb,
+  Button,
+  Col,
+  FormControl,
+  FormGroup,
+  InputGroup,
+  Modal,
+  Placeholder,
+  Row,
+  Table,
+} from "react-bootstrap";
+import { AccountBreadcrumbs, Copy, WithAccount } from "../util.js";
 import {
   Check,
   Clipboard,
@@ -21,15 +29,9 @@ import {
   useLoaderData,
   useNavigation,
 } from "react-router-dom";
-import { ApiToken } from "../ApiClient";
-import Table from "react-bootstrap/Table";
+import { ApiToken } from "../ApiClient.js";
 import React from "react";
 import { DateTime } from "luxon";
-import FormControl from "react-bootstrap/FormControl";
-import FormGroup from "react-bootstrap/FormGroup";
-import InputGroup from "react-bootstrap/InputGroup";
-import Modal from "react-bootstrap/Modal";
-import Placeholder from "react-bootstrap/Placeholder";
 
 export default function ApiTokens() {
   const navigation = useNavigation();

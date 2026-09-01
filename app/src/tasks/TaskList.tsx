@@ -1,16 +1,20 @@
-import Breadcrumb from "react-bootstrap/Breadcrumb";
-import Col from "react-bootstrap/Col";
-import Row from "react-bootstrap/Row";
-import ListGroup from "react-bootstrap/ListGroup";
 import { Await, useLoaderData, useAsyncValue } from "react-router-dom";
 import { Suspense } from "react";
-import { Task } from "../ApiClient";
-import { Alert, Button, Spinner } from "react-bootstrap";
+import { Task } from "../ApiClient.js";
+import {
+  Alert,
+  Breadcrumb,
+  Button,
+  Col,
+  ListGroup,
+  Placeholder,
+  Row,
+  Spinner,
+} from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { FileEarmarkCode } from "react-bootstrap-icons";
-import { VdafIcon } from "./VdafIcon";
-import { AccountBreadcrumbs, WithAccount } from "../util";
-import Placeholder from "react-bootstrap/Placeholder";
+import { VdafIcon } from "./VdafIcon.js";
+import { AccountBreadcrumbs, WithAccount } from "../util.js";
 
 function Breadcrumbs() {
   return (

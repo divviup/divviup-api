@@ -1,6 +1,6 @@
 import { RouteObject } from "react-router-dom";
-import ApiClient from "../ApiClient";
-import ApiTokens from "./ApiTokenList";
+import ApiClient from "../ApiClient.js";
+import ApiTokens from "./ApiTokenList.js";
 
 export default function apiTokens(apiClient: ApiClient): RouteObject {
   return {

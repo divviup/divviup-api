@@ -1,4 +1,4 @@
-import { Task } from "../ApiClient";
+import { Task } from "../ApiClient.js";
 import {
   FileEarmarkBarGraph,
   FileEarmarkBarGraphFill,

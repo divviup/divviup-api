@@ -1,17 +1,19 @@
-import Breadcrumb from "react-bootstrap/Breadcrumb";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-import Button from "react-bootstrap/Button";
-import { AccountBreadcrumbs } from "../util";
+import { AccountBreadcrumbs } from "../util.js";
 import { CloudUpload } from "react-bootstrap-icons";
 import React from "react";
 import { LinkContainer } from "react-router-bootstrap";
 import { Formik, FormikErrors, FormikHelpers, FormikProps } from "formik";
-import Form from "react-bootstrap/Form";
-import FormControl from "react-bootstrap/FormControl";
-import FormGroup from "react-bootstrap/FormGroup";
-import FormLabel from "react-bootstrap/FormLabel";
-import ApiClient, { NewAggregator, formikErrors } from "../ApiClient";
+import {
+  Breadcrumb,
+  Button,
+  Col,
+  Form,
+  FormControl,
+  FormGroup,
+  FormLabel,
+  Row,
+} from "react-bootstrap";
+import ApiClient, { NewAggregator, formikErrors } from "../ApiClient.js";
 import {
   NavigateFunction,
   useActionData,
@@ -19,7 +21,7 @@ import {
   useNavigation,
   useParams,
 } from "react-router-dom";
-import { ApiClientContext } from "../ApiClientContext";
+import { ApiClientContext } from "../ApiClientContext.js";
 
 async function submit(
   apiClient: ApiClient,

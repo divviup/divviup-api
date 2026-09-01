@@ -1,10 +1,9 @@
 import { useLoaderData } from "react-router-dom";
-import FormControl from "react-bootstrap/FormControl";
-import FormSelect from "react-bootstrap/FormSelect";
-import { Aggregator } from "../../ApiClient";
-import { usePromise } from "../../util";
-import { Props, TaskFormGroup } from ".";
-import { ShortHelpAndLabel } from "./HelpText";
+import { FormControl, FormSelect } from "react-bootstrap";
+import { Aggregator } from "../../ApiClient.js";
+import { usePromise } from "../../util.js";
+import { Props, TaskFormGroup } from "./index.js";
+import { ShortHelpAndLabel } from "./HelpText.js";
 
 export default function VdafType(props: Props) {
   const { aggregators } = useLoaderData() as {

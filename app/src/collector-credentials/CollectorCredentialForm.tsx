@@ -15,8 +15,8 @@ import {
 } from "react-bootstrap";
 import { KeyFill } from "react-bootstrap-icons";
 import { useFetcher } from "react-router-dom";
-import { formikErrors } from "../ApiClient";
-import { CopyCode } from "../util";
+import { formikErrors } from "../ApiClient.js";
+import { CopyCode } from "../util.js";
 
 export default function CollectorCredentialForm() {
   const fetcher = useFetcher();

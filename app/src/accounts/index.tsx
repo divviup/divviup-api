@@ -1,8 +1,8 @@
 import { RouteObject, redirect } from "react-router-dom";
-import ApiClient, { NewAccount, UpdateAccount } from "../ApiClient";
-import AccountSummary from "./AccountSummary";
-import AccountForm from "./AccountForm";
-import AccountList from "./AccountList";
+import ApiClient, { NewAccount, UpdateAccount } from "../ApiClient.js";
+import AccountSummary from "./AccountSummary.js";
+import AccountForm from "./AccountForm.js";
+import AccountList from "./AccountList.js";
 
 export default function accounts(
   apiClient: ApiClient,

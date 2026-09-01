@@ -1,7 +1,6 @@
-import FormControl from "react-bootstrap/FormControl";
-import FormLabel from "react-bootstrap/FormLabel";
+import { FormControl, FormLabel } from "react-bootstrap";
 import React, { ChangeEvent } from "react";
-import { Props, TaskFormGroup } from ".";
+import { Props, TaskFormGroup } from "./index.js";
 
 export function MaxBatchSize(props: Props) {
   const { values, setFieldValue, errors, handleBlur } = props;

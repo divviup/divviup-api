@@ -1,10 +1,8 @@
 import { useLoaderData } from "react-router-dom";
-import Col from "react-bootstrap/Col";
-import { Tab, Tabs } from "react-bootstrap";
-import { Task, Aggregator } from "../../ApiClient";
-import Card from "react-bootstrap/Card";
+import { Card, Col, Tab, Tabs } from "react-bootstrap";
+import { Task, Aggregator } from "../../ApiClient.js";
 import "@github/relative-time-element";
-import { Copy, OutLink, usePromiseAll3 } from "../../util";
+import { Copy, OutLink, usePromiseAll3 } from "../../util.js";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { github as syntaxStyle } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { useCallback } from "react";

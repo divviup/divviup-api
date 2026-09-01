@@ -1,7 +1,7 @@
-import FormSelect from "react-bootstrap/FormSelect";
+import { FormSelect } from "react-bootstrap";
 import React, { ChangeEvent } from "react";
-import { Props, TaskFormGroup } from ".";
-import { ShortHelpAndLabel } from "./HelpText";
+import { Props, TaskFormGroup } from "./index.js";
+import { ShortHelpAndLabel } from "./HelpText.js";
 
 export function SumBits(props: Props) {
   const { setFieldValue } = props;

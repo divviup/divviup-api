@@ -1,14 +1,11 @@
 import { Await, useParams, useLoaderData, Link } from "react-router-dom";
-import Col from "react-bootstrap/Col";
+import { Card, Col, ListGroup, Placeholder } from "react-bootstrap";
 import { Suspense } from "react";
-import { Task, Aggregator, CollectorCredential } from "../../ApiClient";
+import { Task, Aggregator, CollectorCredential } from "../../ApiClient.js";
 import humanizeDuration from "humanize-duration";
-import Card from "react-bootstrap/Card";
-import ListGroup from "react-bootstrap/ListGroup";
 import { DateTime } from "luxon";
-import { CopyCode } from "../../util";
-import Placeholder from "react-bootstrap/Placeholder";
-import Vdaf from "./Vdaf";
+import { CopyCode } from "../../util.js";
+import Vdaf from "./Vdaf.js";
 
 export default function TaskPropertyTable() {
   const { accountId } = useParams();

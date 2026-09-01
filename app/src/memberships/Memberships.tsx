@@ -1,7 +1,3 @@
-import Breadcrumb from "react-bootstrap/Breadcrumb";
-import Col from "react-bootstrap/Col";
-import Row from "react-bootstrap/Row";
-import ListGroup from "react-bootstrap/ListGroup";
 import {
   Await,
   useLoaderData,
@@ -10,12 +6,19 @@ import {
   useSubmit,
 } from "react-router-dom";
 import React, { Suspense, useState } from "react";
-import { Membership, User } from "../ApiClient";
-import { Button, FormControl } from "react-bootstrap";
+import { Membership, User } from "../ApiClient.js";
+import {
+  Breadcrumb,
+  Button,
+  Col,
+  FormControl,
+  ListGroup,
+  Modal,
+  Placeholder,
+  Row,
+} from "react-bootstrap";
 import { PersonSlash, PersonAdd, People } from "react-bootstrap-icons";
-import Modal from "react-bootstrap/Modal";
-import { AccountBreadcrumbs, WithAccount } from "../util";
-import Placeholder from "react-bootstrap/Placeholder";
+import { AccountBreadcrumbs, WithAccount } from "../util.js";
 
 function Breadcrumbs() {
   return (

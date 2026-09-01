@@ -1,11 +1,11 @@
 import { RouteObject } from "react-router";
-import ApiClient from "../ApiClient";
+import ApiClient from "../ApiClient.js";
 
 export default function queue(apiClient: ApiClient): RouteObject {
   return {
     path: "queue",
     async lazy() {
-      return import("./Queue");
+      return import("./Queue.js");
     },
     async loader({ request }) {
       const params = new URL(request.url).searchParams;
@@ -16,7 +16,7 @@ export default function queue(apiClient: ApiClient): RouteObject {
       {
         path: ":jobId",
         async lazy() {
-          return import("./QueueJob");
+          return import("./QueueJob.js");
         },
 
         async loader({ params }) {
