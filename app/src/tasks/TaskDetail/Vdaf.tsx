@@ -1,5 +1,5 @@
-import { Task } from "../../ApiClient";
-import ListGroup from "react-bootstrap/ListGroup";
+import { Task } from "../../ApiClient.js";
+import { ListGroup } from "react-bootstrap";
 
 export default function Vdaf({ task }: { task: Task }) {
   switch (task.vdaf.type) {

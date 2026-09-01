@@ -8,9 +8,9 @@ import {
   FormLabel,
   Modal,
 } from "react-bootstrap";
-import { UpdateTask, formikErrors } from "../../ApiClient";
+import { UpdateTask, formikErrors } from "../../ApiClient.js";
 import { FormikErrors } from "formik";
-import { WithTask } from ".";
+import { WithTask } from "./index.js";
 
 export default function RenameTaskButton() {
   const [show, setShow] = useState(false);

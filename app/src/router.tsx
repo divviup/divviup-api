@@ -5,20 +5,20 @@ import {
   RouteObject,
   redirect,
 } from "react-router-dom";
-import { ApiClientContext } from "./ApiClientContext";
-import { ApiClient } from "./ApiClient";
-import layout from "./layout";
-import admin from "./admin";
-import memberships from "./memberships";
-import tasks from "./tasks";
-import accounts from "./accounts";
-import apiTokens from "./api-tokens";
-import aggregators from "./aggregators";
+import { ApiClientContext } from "./ApiClientContext.js";
+import { ApiClient } from "./ApiClient.js";
+import layout from "./layout/index.js";
+import admin from "./admin/index.js";
+import memberships from "./memberships/index.js";
+import tasks from "./tasks/index.js";
+import accounts from "./accounts/index.js";
+import apiTokens from "./api-tokens/index.js";
+import aggregators from "./aggregators/index.js";
 import { Spinner } from "react-bootstrap";
-import queue from "./queue";
-import sharedAggregators from "./shared-aggregators";
-import collectorCredentials from "./collector-credentials";
-import swaggerUi from "./swagger-ui";
+import queue from "./queue/index.js";
+import sharedAggregators from "./shared-aggregators/index.js";
+import collectorCredentials from "./collector-credentials/index.js";
+import swaggerUi from "./swagger-ui.js";
 
 function buildRouter(apiClient: ApiClient) {
   return createBrowserRouter([

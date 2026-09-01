@@ -8,8 +8,8 @@ import {
 import React, { SubmitEvent, useCallback, useEffect, useState } from "react";
 import { Play, SignStop } from "react-bootstrap-icons";
 import { Button, Modal } from "react-bootstrap";
-import { WithTask } from ".";
-import { Task } from "../../ApiClient";
+import { WithTask } from "./index.js";
+import { Task } from "../../ApiClient.js";
 
 export default function DisableTaskButton() {
   const { task } = useLoaderData() as {

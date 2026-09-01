@@ -1,7 +1,7 @@
-import Aggregators from "./AggregatorList";
-import AggregatorFormPage from "./AggregatorForm";
-import AggregatorDetail from "./AggregatorDetail";
-import ApiClient from "../ApiClient";
+import Aggregators from "./AggregatorList.js";
+import AggregatorFormPage from "./AggregatorForm.js";
+import AggregatorDetail from "./AggregatorDetail.js";
+import ApiClient from "../ApiClient.js";
 import { RouteObject, redirect } from "react-router-dom";
 
 export default function aggregators(apiClient: ApiClient): RouteObject {

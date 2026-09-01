@@ -1,12 +1,9 @@
 import { Await, Link, useAsyncValue, useLoaderData } from "react-router-dom";
-import Container from "react-bootstrap/Container";
-import Navbar from "react-bootstrap/Navbar";
-import { User } from "../ApiClient";
+import { User } from "../ApiClient.js";
 import { Suspense } from "react";
-import NavDropdown from "react-bootstrap/NavDropdown";
 import logo from "../logo/color/svg/cropped.svg";
 import { LinkContainer } from "react-router-bootstrap";
-import { Nav } from "react-bootstrap";
+import { Container, Nav, Navbar, NavDropdown } from "react-bootstrap";
 
 export function HeaderPlaceholder() {
   return (

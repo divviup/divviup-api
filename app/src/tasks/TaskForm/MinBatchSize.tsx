@@ -1,6 +1,6 @@
-import FormControl from "react-bootstrap/FormControl";
-import { Props, TaskFormGroup } from ".";
-import { ShortHelpAndLabel } from "./HelpText";
+import { FormControl } from "react-bootstrap";
+import { Props, TaskFormGroup } from "./index.js";
+import { ShortHelpAndLabel } from "./HelpText.js";
 
 export default function MinBatchSize(props: Props) {
   return (

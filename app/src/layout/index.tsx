@@ -1,7 +1,7 @@
 import { RouteObject } from "react-router-dom";
-import ApiClient from "../ApiClient";
-import ErrorPage from "./ErrorPage";
-import Layout from "./Layout";
+import ApiClient from "../ApiClient.js";
+import ErrorPage from "./ErrorPage.js";
+import Layout from "./Layout.js";
 export default function layout(
   apiClient: ApiClient,
   children: RouteObject[],

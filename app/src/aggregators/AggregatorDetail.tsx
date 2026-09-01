@@ -1,20 +1,22 @@
 import { Await, useLoaderData, useParams } from "react-router-dom";
-import { Aggregator } from "../ApiClient";
-import { AccountBreadcrumbs } from "../util";
+import { Aggregator } from "../ApiClient.js";
+import { AccountBreadcrumbs } from "../util.js";
 import { LinkContainer } from "react-router-bootstrap";
-import Breadcrumb from "react-bootstrap/Breadcrumb";
 import React, { Suspense } from "react";
-import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
 import { CloudUpload, Trash3Fill } from "react-bootstrap-icons";
-import Table from "react-bootstrap/Table";
 import D from "../logo/color/svg/small.svg";
-import Placeholder from "react-bootstrap/Placeholder";
-import { ButtonGroup } from "react-bootstrap";
-import RotateBearerTokenButton from "./RotateBearerTokenButton";
-import RenameAggregatorButton from "./RenameAggregatorButton";
-import DeleteAggregatorButton from "./DeleteAggregatorButton";
-import Alert from "react-bootstrap/Alert";
+import {
+  Alert,
+  Breadcrumb,
+  ButtonGroup,
+  Col,
+  Placeholder,
+  Row,
+  Table,
+} from "react-bootstrap";
+import RotateBearerTokenButton from "./RotateBearerTokenButton.js";
+import RenameAggregatorButton from "./RenameAggregatorButton.js";
+import DeleteAggregatorButton from "./DeleteAggregatorButton.js";
 
 function Breadcrumbs() {
   const { aggregator } = useLoaderData() as {

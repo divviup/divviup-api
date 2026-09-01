@@ -1,9 +1,9 @@
 import { Button, Col, Row } from "react-bootstrap";
 import { useFetcher, useParams, useRevalidator } from "react-router-dom";
-import { ApiToken } from "../../ApiClient";
+import { ApiToken } from "../../ApiClient.js";
 import React from "react";
-import useInterval from "use-interval";
-import { ApiClientContext } from "../../ApiClientContext";
+import { useInterval } from "use-interval";
+import { ApiClientContext } from "../../ApiClientContext.js";
 import {
   ClipboardCheckFill,
   Icon1CircleFill,
@@ -11,7 +11,7 @@ import {
   Icon3CircleFill,
   Clipboard,
 } from "react-bootstrap-icons";
-import { Copy, OutLink, usePromise } from "../../util";
+import { Copy, OutLink, usePromise } from "../../util.js";
 
 /** This matches the default value of DIVVIUP_API_URL in the divviup CLI tool. */
 const DEFAULT_API_URL = "https://api.divviup.org/";

@@ -17,10 +17,10 @@ import {
   useLoaderData,
   useNavigation,
 } from "react-router-dom";
-import { Aggregator } from "../ApiClient";
+import { Aggregator } from "../ApiClient.js";
 import "@github/relative-time-element";
 import { Suspense, useEffect, useState } from "react";
-import SharedAggregatorForm from "./SharedAggregatorForm";
+import SharedAggregatorForm from "./SharedAggregatorForm.js";
 import { Pencil, PencilSquare, Trash } from "react-bootstrap-icons";
 import React from "react";
 

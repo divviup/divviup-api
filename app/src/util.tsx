@@ -1,12 +1,16 @@
-import Breadcrumb from "react-bootstrap/Breadcrumb";
-import Col from "react-bootstrap/Col";
-import Row from "react-bootstrap/Row";
+import {
+  Breadcrumb,
+  Button,
+  Col,
+  OverlayTrigger,
+  Placeholder,
+  Row,
+  Tooltip,
+} from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import React, { Suspense } from "react";
 import { Await, useRouteLoaderData, useLoaderData } from "react-router-dom";
-import { Account } from "./ApiClient";
-import Placeholder from "react-bootstrap/Placeholder";
-import { Button, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { Account } from "./ApiClient.js";
 import {
   ClipboardCheckFill,
   Clipboard,

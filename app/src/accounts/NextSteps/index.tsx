@@ -6,11 +6,11 @@ import {
   Aggregator,
   CollectorCredential,
   Task,
-} from "../../ApiClient";
+} from "../../ApiClient.js";
 import { LinkContainer } from "react-router-bootstrap";
-import AggregatorTypeSelection from "./AggregatorTypeSelection";
-import InlineCollectorCredentials from "./InlineCollectorCredentials";
-import { usePromise, usePromiseAll3 } from "../../util";
+import AggregatorTypeSelection from "./AggregatorTypeSelection.js";
+import InlineCollectorCredentials from "./InlineCollectorCredentials.js";
+import { usePromise, usePromiseAll3 } from "../../util.js";
 import css from "./index.module.css";
 import { useCallback } from "react";
 

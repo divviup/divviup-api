@@ -1,10 +1,7 @@
-import Col from "react-bootstrap/Col";
-import FormControl from "react-bootstrap/FormControl";
-import FormSelect from "react-bootstrap/FormSelect";
+import { Col, FormControl, FormSelect, Row } from "react-bootstrap";
 import React, { ChangeEvent } from "react";
-import Row from "react-bootstrap/Row";
-import { Props, TaskFormGroup } from ".";
-import { ShortHelpAndLabel } from "./HelpText";
+import { Props, TaskFormGroup } from "./index.js";
+import { ShortHelpAndLabel } from "./HelpText.js";
 
 export const seconds = {
   minute: 60,

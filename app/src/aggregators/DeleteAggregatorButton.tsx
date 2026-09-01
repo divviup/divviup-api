@@ -2,7 +2,7 @@ import { useFetcher, useNavigation } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { Trash } from "react-bootstrap-icons";
 import { Button, Modal } from "react-bootstrap";
-import { WithAggregator } from "./AggregatorDetail";
+import { WithAggregator } from "./AggregatorDetail.js";
 
 export default function DeleteAggregatorButton() {
   const navigation = useNavigation();

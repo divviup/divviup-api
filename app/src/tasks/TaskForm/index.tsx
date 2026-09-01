@@ -4,28 +4,23 @@ import {
   useParams,
   NavigateFunction,
 } from "react-router-dom";
-import Breadcrumb from "react-bootstrap/Breadcrumb";
-import Button from "react-bootstrap/Button";
-import Col from "react-bootstrap/Col";
-import Form from "react-bootstrap/Form";
-import FormGroup from "react-bootstrap/FormGroup";
 import React from "react";
-import Row from "react-bootstrap/Row";
-import { ApiClientContext } from "../../ApiClientContext";
+import { Breadcrumb, Button, Col, Form, FormGroup, Row } from "react-bootstrap";
+import { ApiClientContext } from "../../ApiClientContext.js";
 import { LinkContainer } from "react-router-bootstrap";
-import ApiClient, { NewTask, formikErrors } from "../../ApiClient";
+import ApiClient, { NewTask, formikErrors } from "../../ApiClient.js";
 import { Formik, FormikHelpers, FormikProps } from "formik";
-import { AccountBreadcrumbs } from "../../util";
-import LeaderAggregator from "./LeaderAggregator";
-import HelperAggregator from "./HelperAggregator";
-import QueryType from "./QueryType";
-import CollectorCredentialSelect from "./CollectorCredentialSelect";
-import TaskName from "./TaskName";
-import MinBatchSize from "./MinBatchSize";
-import TimePrecisionSeconds from "./TimePrecisionSeconds";
-import VdafType from "./VdafType";
-import VdafDetails from "./VdafDetails";
-import { LongHelpText } from "./HelpText";
+import { AccountBreadcrumbs } from "../../util.js";
+import LeaderAggregator from "./LeaderAggregator.js";
+import HelperAggregator from "./HelperAggregator.js";
+import QueryType from "./QueryType.js";
+import CollectorCredentialSelect from "./CollectorCredentialSelect.js";
+import TaskName from "./TaskName.js";
+import MinBatchSize from "./MinBatchSize.js";
+import TimePrecisionSeconds from "./TimePrecisionSeconds.js";
+import VdafType from "./VdafType.js";
+import VdafDetails from "./VdafDetails.js";
+import { LongHelpText } from "./HelpText.js";
 
 async function submit(
   apiClient: ApiClient,

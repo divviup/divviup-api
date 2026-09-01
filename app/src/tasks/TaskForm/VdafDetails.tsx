@@ -1,6 +1,6 @@
-import { Props } from ".";
-import { SumBits } from "./SumBits";
-import { HistogramBucketSelection } from "./HistogramBucketSelection";
+import { Props } from "./index.js";
+import { SumBits } from "./SumBits.js";
+import { HistogramBucketSelection } from "./HistogramBucketSelection.js";
 
 export default function VdafDetails(props: Props) {
   switch (props.values.vdaf?.type) {

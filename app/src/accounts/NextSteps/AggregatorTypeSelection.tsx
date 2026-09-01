@@ -18,14 +18,14 @@ import ApiClient, {
   Aggregator,
   NewAggregator,
   formikErrors,
-} from "../../ApiClient";
+} from "../../ApiClient.js";
 import React, { Suspense } from "react";
 
 import { Check, Clock, CodeSlash } from "react-bootstrap-icons";
 import css from "./index.module.css";
-import { AggregatorForm } from "../../aggregators/AggregatorForm";
+import { AggregatorForm } from "../../aggregators/AggregatorForm.js";
 import { FormikHelpers } from "formik";
-import { ApiClientContext } from "../../ApiClientContext";
+import { ApiClientContext } from "../../ApiClientContext.js";
 
 export default function AggregatorTypeSelection() {
   const { aggregators } = useLoaderData() as {

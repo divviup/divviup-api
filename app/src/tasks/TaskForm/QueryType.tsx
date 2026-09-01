@@ -1,11 +1,11 @@
 import { useLoaderData } from "react-router-dom";
 import React, { ChangeEvent } from "react";
-import { Aggregator } from "../../ApiClient";
-import FormCheck from "react-bootstrap/FormCheck";
-import { usePromise } from "../../util";
-import { Props, TaskFormGroup } from ".";
-import { ShortHelpAndLabel } from "./HelpText";
-import { MaxBatchSize } from "./MaxBatchSize";
+import { Aggregator } from "../../ApiClient.js";
+import { FormCheck } from "react-bootstrap";
+import { usePromise } from "../../util.js";
+import { Props, TaskFormGroup } from "./index.js";
+import { ShortHelpAndLabel } from "./HelpText.js";
+import { MaxBatchSize } from "./MaxBatchSize.js";
 
 export default function QueryType(props: Props) {
   const {

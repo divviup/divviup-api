@@ -1,20 +1,24 @@
 import { Await, useParams, useLoaderData } from "react-router-dom";
-import Breadcrumb from "react-bootstrap/Breadcrumb";
 import React, { Suspense } from "react";
-import Row from "react-bootstrap/Row";
 import { LinkContainer } from "react-router-bootstrap";
-import { Task } from "../../ApiClient";
+import { Task } from "../../ApiClient.js";
 import "@github/relative-time-element";
-import { AccountBreadcrumbs } from "../../util";
-import Placeholder from "react-bootstrap/Placeholder";
-import Metrics from "./Metrics";
-import ClientConfig from "./ClientConfig";
-import TaskPropertyTable from "./TaskPropertyTable";
-import { ButtonGroup, ButtonToolbar, Col } from "react-bootstrap";
-import RenameTaskButton from "./RenameTaskButton";
-import DisableTaskButton from "./DisableTaskButton";
-import DeleteTaskButton from "./DeleteTaskButton";
-import { VdafIcon } from "../VdafIcon";
+import { AccountBreadcrumbs } from "../../util.js";
+import Metrics from "./Metrics.js";
+import ClientConfig from "./ClientConfig.js";
+import TaskPropertyTable from "./TaskPropertyTable.js";
+import {
+  Breadcrumb,
+  ButtonGroup,
+  ButtonToolbar,
+  Col,
+  Placeholder,
+  Row,
+} from "react-bootstrap";
+import RenameTaskButton from "./RenameTaskButton.js";
+import DisableTaskButton from "./DisableTaskButton.js";
+import DeleteTaskButton from "./DeleteTaskButton.js";
+import { VdafIcon } from "../VdafIcon.js";
 
 export default function TaskDetail() {
   const { task } = useLoaderData() as {

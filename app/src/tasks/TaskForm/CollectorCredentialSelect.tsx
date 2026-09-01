@@ -1,10 +1,9 @@
-import FormControl from "react-bootstrap/FormControl";
-import FormSelect from "react-bootstrap/FormSelect";
+import { FormControl, FormSelect } from "react-bootstrap";
 import React from "react";
-import { Aggregator, CollectorCredential } from "../../ApiClient";
-import { Props, TaskFormGroup } from ".";
-import { ShortHelpAndLabel } from "./HelpText";
-import { useLoaderPromise } from "../../util";
+import { Aggregator, CollectorCredential } from "../../ApiClient.js";
+import { Props, TaskFormGroup } from "./index.js";
+import { ShortHelpAndLabel } from "./HelpText.js";
+import { useLoaderPromise } from "../../util.js";
 
 export default function CollectorCredentialSelect(props: Props) {
   const collectorCredentials = useLoaderPromise<CollectorCredential[]>(

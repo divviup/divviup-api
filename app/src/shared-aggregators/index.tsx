@@ -1,5 +1,5 @@
 import { RouteObject } from "react-router-dom";
-import ApiClient, { UpdateAggregator } from "../ApiClient";
+import ApiClient, { UpdateAggregator } from "../ApiClient.js";
 
 export default function sharedAggregators(apiClient: ApiClient): RouteObject {
   return {
@@ -9,7 +9,7 @@ export default function sharedAggregators(apiClient: ApiClient): RouteObject {
         path: "",
         index: true,
         async lazy() {
-          return import("./SharedAggregatorList");
+          return import("./SharedAggregatorList.js");
         },
         async loader() {
           return { aggregators: apiClient.sharedAggregators() };
