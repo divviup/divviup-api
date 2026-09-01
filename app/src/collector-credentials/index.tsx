@@ -1,4 +1,4 @@
-import { RouteObject, defer } from "react-router-dom";
+import { RouteObject } from "react-router-dom";
 import ApiClient from "../ApiClient";
 import CollectorCredentials from "./CollectorCredentialList";
 export default function collectorCredentials(
@@ -12,13 +12,11 @@ export default function collectorCredentials(
         index: true,
         element: <CollectorCredentials />,
         loader({ params }) {
-          // TODO(#1534): replace this before react-router v7 upgrade.
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
-          return defer({
+          return {
             collectorCredentials: apiClient.accountCollectorCredentials(
               params.accountId as string,
             ),
-          });
+          };
         },
 
         id: "collectorCredentials",

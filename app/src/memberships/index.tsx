@@ -1,4 +1,4 @@
-import { RouteObject, defer } from "react-router-dom";
+import { RouteObject } from "react-router-dom";
 import ApiClient from "../ApiClient";
 import Memberships from "./Memberships";
 
@@ -7,11 +7,9 @@ export default function memberships(apiClient: ApiClient): RouteObject {
     path: "memberships",
     element: <Memberships />,
     loader({ params }) {
-      // TODO(#1534): replace this before react-router v7 upgrade.
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
-      return defer({
+      return {
         memberships: apiClient.accountMemberships(params.accountId as string),
-      });
+      };
     },
 
     shouldRevalidate(_) {

@@ -2,7 +2,7 @@ import AccountDetailFull from "./TaskList";
 import TaskForm from "./TaskForm";
 import TaskDetail from "./TaskDetail";
 import ApiClient from "../ApiClient";
-import { RouteObject, defer, redirect } from "react-router-dom";
+import { RouteObject, redirect } from "react-router-dom";
 
 export default function tasks(apiClient: ApiClient): RouteObject {
   return {
@@ -13,11 +13,9 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         index: true,
         element: <AccountDetailFull />,
         loader({ params }) {
-          // TODO(#1534): replace this before react-router v7 upgrade.
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
-          return defer({
+          return {
             tasks: apiClient.accountTasks(params.accountId as string),
-          });
+          };
         },
       },
       {
@@ -34,14 +32,12 @@ export default function tasks(apiClient: ApiClient): RouteObject {
           const collectorCredential = task.then((t) =>
             apiClient.collectorCredential(t.collector_credential_id),
           );
-          // TODO(#1534): replace this before react-router v7 upgrade.
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
-          return defer({
+          return {
             task,
             leaderAggregator,
             helperAggregator,
             collectorCredential,
-          });
+          };
         },
 
         async action({ params, request }) {
@@ -73,16 +69,14 @@ export default function tasks(apiClient: ApiClient): RouteObject {
         path: "new",
         element: <TaskForm />,
         loader({ params }) {
-          // TODO(#1534): replace this before react-router v7 upgrade.
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
-          return defer({
+          return {
             aggregators: apiClient.accountAggregators(
               params.accountId as string,
             ),
             collectorCredentials: apiClient.accountCollectorCredentials(
               params.accountId as string,
             ),
-          });
+          };
         },
       },
     ],
