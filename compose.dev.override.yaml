@@ -49,11 +49,11 @@ services:
       # `develop` cannot be used with an `image` directive, so we need to use a minimal dockerfile
       # containing the image we need.
       dockerfile: Dockerfile.vite
-    working_dir: /srv/app
+    working_dir: /srv/divviup-api/app
     volumes:
      - type: bind
-       source: ./app
-       target: /srv/app
+       source: .
+       target: /srv/divviup-api
     entrypoint:
       - /bin/sh
       - -c
