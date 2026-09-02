@@ -7,7 +7,7 @@ import {
   CollectorCredential,
   Task,
 } from "../../ApiClient.js";
-import { LinkContainer } from "react-router-bootstrap";
+import { LinkContainer } from "../../LinkContainer.js";
 import AggregatorTypeSelection from "./AggregatorTypeSelection.js";
 import InlineCollectorCredentials from "./InlineCollectorCredentials.js";
 import { usePromise, usePromiseAll3 } from "../../util.js";

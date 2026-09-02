@@ -1,7 +1,7 @@
 import { Await, useLoaderData, useParams } from "react-router-dom";
 import { Aggregator } from "../ApiClient.js";
 import { AccountBreadcrumbs } from "../util.js";
-import { LinkContainer } from "react-router-bootstrap";
+import { LinkContainer } from "../LinkContainer.js";
 import React, { Suspense } from "react";
 import { CloudUpload, Trash3Fill } from "react-bootstrap-icons";
 import D from "../logo/color/svg/small.svg";

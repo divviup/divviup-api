@@ -10,7 +10,7 @@ import { CheckSquare, Stopwatch, XCircle } from "react-bootstrap-icons";
 import { Outlet, useLoaderData, useRevalidator } from "react-router";
 import { QueueJob } from "../ApiClient.js";
 import { useInterval } from "use-interval";
-import { LinkContainer } from "react-router-bootstrap";
+import { LinkContainer } from "../LinkContainer.js";
 import { useSearchParams } from "react-router-dom";
 import "@github/relative-time-element";
 import { DateTime } from "luxon";

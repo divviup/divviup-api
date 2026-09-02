@@ -7,7 +7,7 @@ import {
 import React from "react";
 import { Breadcrumb, Button, Col, Form, FormGroup, Row } from "react-bootstrap";
 import { ApiClientContext } from "../../ApiClientContext.js";
-import { LinkContainer } from "react-router-bootstrap";
+import { LinkContainer } from "../../LinkContainer.js";
 import ApiClient, { NewTask, formikErrors } from "../../ApiClient.js";
 import { Formik, FormikHelpers, FormikProps } from "formik";
 import { AccountBreadcrumbs } from "../../util.js";

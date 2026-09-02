@@ -2,7 +2,7 @@ import { Await, Link, useAsyncValue, useLoaderData } from "react-router-dom";
 import { User } from "../ApiClient.js";
 import { Suspense } from "react";
 import logo from "../logo/color/svg/cropped.svg";
-import { LinkContainer } from "react-router-bootstrap";
+import { LinkContainer } from "../LinkContainer.js";
 import { Container, Nav, Navbar, NavDropdown } from "react-bootstrap";
 
 export function HeaderPlaceholder() {

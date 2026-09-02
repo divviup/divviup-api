@@ -1,7 +1,7 @@
 import { AccountBreadcrumbs, WithAccount } from "../util.js";
 import { CloudUpload } from "react-bootstrap-icons";
 import { Suspense } from "react";
-import { LinkContainer } from "react-router-bootstrap";
+import { LinkContainer } from "../LinkContainer.js";
 import { Await, useLoaderData } from "react-router-dom";
 import { Aggregator } from "../ApiClient.js";
 import {

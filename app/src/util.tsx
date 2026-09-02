@@ -7,7 +7,7 @@ import {
   Row,
   Tooltip,
 } from "react-bootstrap";
-import { LinkContainer } from "react-router-bootstrap";
+import { LinkContainer } from "./LinkContainer.js";
 import React, { Suspense } from "react";
 import { Await, useRouteLoaderData, useLoaderData } from "react-router-dom";
 import { Account } from "./ApiClient.js";

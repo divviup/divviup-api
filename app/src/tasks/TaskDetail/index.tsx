@@ -1,6 +1,6 @@
 import { Await, useParams, useLoaderData } from "react-router-dom";
 import React, { Suspense } from "react";
-import { LinkContainer } from "react-router-bootstrap";
+import { LinkContainer } from "../../LinkContainer.js";
 import { Task } from "../../ApiClient.js";
 import "@github/relative-time-element";
 import { AccountBreadcrumbs } from "../../util.js";
