@@ -1,7 +1,7 @@
 import React from "react";
 import { useLoaderData, useAsyncValue, Await } from "react-router-dom";
 import { Account } from "../ApiClient.js";
-import { LinkContainer } from "react-router-bootstrap";
+import { LinkContainer } from "../LinkContainer.js";
 import {
   Button,
   Col,

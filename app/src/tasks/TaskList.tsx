@@ -11,7 +11,7 @@ import {
   Row,
   Spinner,
 } from "react-bootstrap";
-import { LinkContainer } from "react-router-bootstrap";
+import { LinkContainer } from "../LinkContainer.js";
 import { FileEarmarkCode } from "react-bootstrap-icons";
 import { VdafIcon } from "./VdafIcon.js";
 import { AccountBreadcrumbs, WithAccount } from "../util.js";
