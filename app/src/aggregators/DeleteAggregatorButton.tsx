@@ -41,7 +41,7 @@ export default function DeleteAggregatorButton() {
           <Button variant="secondary" onClick={close}>
             Close
           </Button>
-          <fetcher.Form method="delete">
+          <fetcher.Form method="DELETE">
             <Button
               variant="danger"
               type="submit"

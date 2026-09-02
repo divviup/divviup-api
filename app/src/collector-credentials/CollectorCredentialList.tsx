@@ -118,7 +118,7 @@ function Name({
   }, [fetcher, setEditing]);
   if (isEditing) {
     return (
-      <fetcher.Form action={collectorCredential.id} method="patch">
+      <fetcher.Form action={collectorCredential.id} method="PATCH">
         <FormGroup>
           <InputGroup>
             <FormControl
@@ -204,7 +204,7 @@ function DeleteButton({
           <Button variant="secondary" onClick={close}>
             Close
           </Button>
-          <fetcher.Form method="delete" action={collectorCredential.id}>
+          <fetcher.Form method="DELETE" action={collectorCredential.id}>
             <Button
               variant="danger"
               type="submit"
