@@ -30,7 +30,7 @@
     "check": "tsc --noEmit -p ./tsconfig.json",
     "format": "prettier -w .",
     "lint": "prettier -c . && eslint",
-    "test": "vitest"
+    "test": "vitest --run"
   },
   "eslintConfig": {
     "extends": [
@@ -72,7 +72,8 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.11.0",
-    "jsdom": "^30.0.1",
+    "happy-dom": "^20.13.1",
+    "msw": "^2.15.0",
     "postcss-nesting": "^14.0.1",
     "prettier": "^3.9.6",
     "source-map-explorer": "^2.5.3",
@@ -88,6 +89,7 @@
     "@tree-sitter-grammars/tree-sitter-yaml@0.7.1": true,
     "core-js-pure": false,
     "@scarf/scarf@1.4.0": true,
-    "@swc/core@1.15.46": true
+    "@swc/core@1.15.46": true,
+    "msw@2.15.0": true
   }
 }
