@@ -86,7 +86,7 @@ export default function CollectorCredentialForm() {
     );
   } else {
     return (
-      <fetcher.Form method="post">
+      <fetcher.Form method="POST">
         <Row>
           <Col sm="5">
             <FormGroup>

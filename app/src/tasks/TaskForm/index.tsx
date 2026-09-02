@@ -107,7 +107,7 @@ export default function TaskForm() {
               return (
                 <Form
                   className="mb-5"
-                  method="post"
+                  method="POST"
                   onSubmit={formikProps.handleSubmit}
                   noValidate
                   autoComplete="off"

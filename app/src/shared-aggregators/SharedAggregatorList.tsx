@@ -176,7 +176,7 @@ function DeleteAggregatorButton({ aggregator }: { aggregator: Aggregator }) {
           <Button variant="secondary" onClick={close}>
             Close
           </Button>
-          <fetcher.Form method="delete" action={aggregator.id}>
+          <fetcher.Form method="DELETE" action={aggregator.id}>
             <Button
               variant="danger"
               type="submit"

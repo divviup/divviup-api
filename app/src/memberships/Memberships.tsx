@@ -48,7 +48,7 @@ function DeleteMembershipButton({ membership }: { membership: Membership }) {
   const open = React.useCallback(() => setShow(true), []);
 
   const deleteMembership = React.useCallback(() => {
-    submit({ membershipId: membership.id }, { method: "delete" });
+    submit({ membershipId: membership.id }, { method: "DELETE" });
   }, [membership, submit]);
 
   return (
@@ -83,7 +83,7 @@ function AddMembershipForm() {
   return (
     <Form
       action="."
-      method="post"
+      method="POST"
       onSubmit={React.useCallback(() => {
         setEmail("");
       }, [setEmail])}

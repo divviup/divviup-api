@@ -51,7 +51,7 @@ export default function ApiTokens() {
       </Row>
       <Row className="mb-3">
         <Col>
-          <Form method="post">
+          <Form method="POST">
             <Button
               variant="primary"
               type="submit"
@@ -120,7 +120,7 @@ function TokenName({ apiToken }: { apiToken: ApiToken }) {
   }, [fetcher, setEditing]);
   if (isEditing) {
     return (
-      <fetcher.Form action={apiToken.id} method="patch">
+      <fetcher.Form action={apiToken.id} method="PATCH">
         <FormGroup>
           <InputGroup>
             <FormControl
@@ -205,7 +205,7 @@ function DeleteButton({ apiToken }: { apiToken: ApiToken }) {
           <Button variant="secondary" onClick={close}>
             Close
           </Button>
-          <fetcher.Form method="delete" action={apiToken.id}>
+          <fetcher.Form method="DELETE" action={apiToken.id}>
             <Button
               variant="danger"
               type="submit"

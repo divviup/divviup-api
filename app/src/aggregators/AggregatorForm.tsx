@@ -74,7 +74,7 @@ export function AggregatorForm({
     >
       {(props) => (
         <Form
-          method="post"
+          method="POST"
           onSubmit={props.handleSubmit}
           noValidate
           autoComplete="off"
