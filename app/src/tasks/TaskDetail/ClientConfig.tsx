@@ -3,9 +3,12 @@ import { Card, Col, Tab, Tabs } from "react-bootstrap";
 import { Task, Aggregator } from "../../ApiClient.js";
 import "@github/relative-time-element";
 import { Copy, OutLink, usePromiseAll3 } from "../../util.js";
-import SyntaxHighlighter from "react-syntax-highlighter";
+import { LightAsync as SyntaxHighlighter } from "react-syntax-highlighter";
+import js from "react-syntax-highlighter/dist/esm/languages/hljs/javascript";
 import { github as syntaxStyle } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { useCallback } from "react";
+
+SyntaxHighlighter.registerLanguage("javascript", js);
 
 export default function ClientConfig() {
   return (
