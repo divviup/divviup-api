@@ -1,5 +1,10 @@
 import { Button, Col, Row } from "react-bootstrap";
-import { useFetcher, useParams, useRevalidator } from "react-router-dom";
+import {
+  useFetcher,
+  useLoaderData,
+  useParams,
+  useRevalidator,
+} from "react-router-dom";
 import { ApiToken } from "../../ApiClient.js";
 import React from "react";
 import { useInterval } from "use-interval";
@@ -65,6 +70,9 @@ export default function InlineCollectorCredentials() {
   const [inFlight, setInFlight] = React.useState(false);
   useInterval(
     React.useCallback(() => {
+      if (apiClient === undefined) {
+        throw new Error("must be within context provider for ApiClient");
+      }
       if (inFlight || anyCollectorCredentials) return;
       setInFlight(true);
       apiClient
@@ -86,7 +94,9 @@ export default function InlineCollectorCredentials() {
 
   const [token, setToken] = React.useState<string>("«TOKEN»");
   const { revalidate, state } = useRevalidator();
-  const apiUrl = usePromise(apiClient.apiUrl(), DEFAULT_API_URL);
+
+  const { apiUrl } = useLoaderData() as { apiUrl: Promise<string> };
+  const apiUrlOutput = usePromise(apiUrl, DEFAULT_API_URL);
 
   if (anyCollectorCredentials) {
     return (
@@ -99,9 +109,9 @@ export default function InlineCollectorCredentials() {
     );
   } else {
     const command =
-      apiUrl == DEFAULT_API_URL
+      apiUrlOutput == DEFAULT_API_URL
         ? `divviup -t ${token} collector-credential generate`
-        : `divviup -u ${apiUrl} -t ${token} collector-credential generate`;
+        : `divviup -u ${apiUrlOutput} -t ${token} collector-credential generate`;
     return (
       <>
         <ol className="list-unstyled">

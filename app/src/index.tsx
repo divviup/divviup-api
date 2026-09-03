@@ -2,13 +2,10 @@ import React, { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 //import reportWebVitals from "./reportWebVitals";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { ApiClientContext } from "./ApiClientContext.js";
-import { ApiClient } from "./ApiClient.js";
-import Router from "./router.js";
-import { PrimeReactProvider } from "primereact/api";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import { RelativeTimeElement } from "@github/relative-time-element";
+import App from "./App.js";
 
 declare module "react" {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -26,17 +23,6 @@ declare module "react" {
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );
-
-function App() {
-  const apiClient = React.useMemo(() => new ApiClient(), []);
-  return (
-    <ApiClientContext.Provider value={apiClient}>
-      <PrimeReactProvider>
-        <Router />
-      </PrimeReactProvider>
-    </ApiClientContext.Provider>
-  );
-}
 
 root.render(
   <StrictMode>

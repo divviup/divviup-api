@@ -23,12 +23,15 @@ import VdafDetails from "./VdafDetails.js";
 import { LongHelpText } from "./HelpText.js";
 
 async function submit(
-  apiClient: ApiClient,
+  apiClient: ApiClient | undefined,
   accountId: string,
   newTask: NewTask,
   actions: FormikHelpers<NewTask>,
   navigate: NavigateFunction,
 ) {
+  if (apiClient === undefined) {
+    throw new Error("must be within context provider for ApiClient");
+  }
   const task = await apiClient.createTask(accountId, newTask);
 
   if ("error" in task) {

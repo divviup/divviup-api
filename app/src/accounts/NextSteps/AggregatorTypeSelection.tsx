@@ -200,12 +200,15 @@ export default function AggregatorTypeSelection() {
 }
 
 async function submit(
-  apiClient: ApiClient,
+  apiClient: ApiClient | undefined,
   accountId: string,
   newAggregator: NewAggregator,
   actions: FormikHelpers<NewAggregator>,
   setAggregator: (aggregator: Aggregator) => void,
 ) {
+  if (apiClient === undefined) {
+    throw new Error("must be within context provider for ApiClient");
+  }
   const aggregator = await apiClient.createAggregator(accountId, newAggregator);
 
   if ("error" in aggregator) {
