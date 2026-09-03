@@ -41,6 +41,7 @@ function buildRouter(apiClient: ApiClient) {
       future: {
         v7_relativeSplatPath: true,
         v7_normalizeFormMethod: true,
+        v7_partialHydration: true,
       },
     },
   );
