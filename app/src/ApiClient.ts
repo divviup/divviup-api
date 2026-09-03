@@ -82,6 +82,7 @@ export interface Task {
   report_counter_success: number;
   report_counter_too_early: number;
   report_counter_task_expired: number;
+  report_counter_duplicate_extension: number;
   aggregation_job_counter_success: number;
   aggregation_job_counter_helper_batch_collected: number;
   aggregation_job_counter_helper_report_replayed: number;
@@ -115,7 +116,7 @@ export type NewTask = Omit<
   | "report_counter_success"
   | "report_counter_too_early"
   | "report_counter_task_expired"
-  | "report_counter_task_expired"
+  | "report_counter_duplicate_extension"
 > & {
   vdaf: {
     type: "sum" | "count" | "histogram";
