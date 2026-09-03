@@ -41,7 +41,9 @@ function buildRouter(apiClient: ApiClient) {
       future: {
         v7_relativeSplatPath: true,
         v7_normalizeFormMethod: true,
+        v7_fetcherPersist: true,
         v7_partialHydration: true,
+        v7_skipActionErrorRevalidation: true,
       },
     },
   );
@@ -53,7 +55,9 @@ export default function Router() {
     throw new Error("must be within context provider for ApiClient");
   }
   const router = React.useMemo(() => buildRouter(apiClient), [apiClient]);
-  return <RouterProvider router={router} />;
+  return (
+    <RouterProvider router={router} future={{ v7_startTransition: true }} />
+  );
 }
 
 function root(_apiClient: ApiClient): RouteObject {
