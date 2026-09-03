@@ -6,11 +6,14 @@ import { ApiClientContext } from "../ApiClientContext.js";
 import React from "react";
 
 async function submit(
-  apiClient: ApiClient,
+  apiClient: ApiClient | undefined,
   newAggregator: NewAggregator,
   actions: FormikHelpers<NewAggregator>,
   revalidate: () => void,
 ) {
+  if (apiClient === undefined) {
+    throw new Error("must be within context provider for ApiClient");
+  }
   const aggregator = await apiClient.createSharedAggregator(newAggregator);
 
   if ("error" in aggregator) {

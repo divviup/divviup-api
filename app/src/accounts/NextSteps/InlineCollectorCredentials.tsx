@@ -70,6 +70,9 @@ export default function InlineCollectorCredentials() {
   const [inFlight, setInFlight] = React.useState(false);
   useInterval(
     React.useCallback(() => {
+      if (apiClient === undefined) {
+        throw new Error("must be within context provider for ApiClient");
+      }
       if (inFlight || anyCollectorCredentials) return;
       setInFlight(true);
       apiClient
