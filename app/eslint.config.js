@@ -11,7 +11,7 @@ import globals from "globals";
 export default defineConfig(
   {
     // Global ignores
-    ignores: ["build"],
+    ignores: ["build", "coverage"],
   },
   {
     extends: [
