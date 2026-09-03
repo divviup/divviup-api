@@ -85,6 +85,7 @@ export default function accounts(
                   apiClient.accountCollectorCredentials(accountId),
                 aggregators: apiClient.accountAggregators(accountId),
                 account: apiClient.account(accountId),
+                apiUrl: apiClient.apiUrl(),
               };
             },
           },
