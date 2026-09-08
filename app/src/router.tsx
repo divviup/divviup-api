@@ -59,6 +59,7 @@ export default function Router() {
 function root(_apiClient: ApiClient): RouteObject {
   return {
     path: "",
+    element: null,
     async loader() {
       return redirect("/accounts");
     },
