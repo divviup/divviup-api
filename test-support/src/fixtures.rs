@@ -106,7 +106,7 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
     let collector_credential = collector_credential(app, account).await;
 
     Task {
-        id: random::<TaskId>().to_string(),
+        id: TaskId::from(random::<[u8; TaskId::LEN]>()).to_string(),
         account_id: account.id,
         name: random_name(),
         vdaf: task::vdaf::Vdaf::Count.into(),

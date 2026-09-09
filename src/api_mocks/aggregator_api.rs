@@ -163,7 +163,7 @@ pub fn task_response(task_create: TaskCreate) -> TaskResponse {
 
 pub fn random_hpke_config() -> HpkeConfig {
     HpkeConfig::new(
-        random(),
+        random::<u8>().into(),
         HpkeKemId::P256HkdfSha256,
         HpkeKdfId::HkdfSha512,
         HpkeAeadId::Aes256Gcm,

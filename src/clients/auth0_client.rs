@@ -1,7 +1,7 @@
 use async_lock::RwLock;
 use axum::http::{header, Method, StatusCode};
 use educe::Educe;
-use rand::distributions::{Alphanumeric, DistString};
+use rand::distr::{Alphanumeric, SampleString};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -28,7 +28,7 @@ pub struct Auth0Client {
 }
 
 fn generate_password() -> String {
-    Alphanumeric.sample_string(&mut rand::thread_rng(), 60)
+    Alphanumeric.sample_string(&mut rand::rng(), 60)
 }
 
 fn extract_user_id(user: &serde_json::Value) -> Result<String, ClientError> {
