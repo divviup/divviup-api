@@ -8,7 +8,7 @@ use crate::{
     handler::Error,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use rand::Rng;
+use rand::RngExt;
 use sea_orm::{ColumnTrait, ConnectionTrait, EntityTrait, QueryFilter};
 use sha2::{Digest, Sha256};
 use std::borrow::Cow;
@@ -80,7 +80,7 @@ async fn load_aggregator(
 const VDAF_BYTES: usize = 16;
 fn generate_vdaf_verify_key_and_expected_task_id() -> (String, String) {
     let mut verify_key = [0; VDAF_BYTES];
-    rand::thread_rng().fill(&mut verify_key);
+    rand::rng().fill(&mut verify_key);
     (
         URL_SAFE_NO_PAD.encode(verify_key),
         URL_SAFE_NO_PAD.encode(Sha256::digest(verify_key)),

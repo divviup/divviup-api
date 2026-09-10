@@ -1,4 +1,4 @@
-use rand::{distributions::Standard, prelude::Distribution};
+use rand::{distr::StandardUniform, prelude::Distribution};
 use sea_orm::{prelude::StringLen, DeriveActiveEnum, EnumIter};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -15,7 +15,7 @@ pub enum Protocol {
     Dap09,
 }
 
-impl Distribution<Protocol> for Standard {
+impl Distribution<Protocol> for StandardUniform {
     fn sample<R: rand::Rng + ?Sized>(&self, _rng: &mut R) -> Protocol {
         Protocol::Dap09
     }

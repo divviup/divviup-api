@@ -1,4 +1,4 @@
-use rand::{distributions::Standard, prelude::Distribution};
+use rand::{distr::StandardUniform, prelude::Distribution, RngExt};
 use sea_orm::{DeriveActiveEnum, EnumIter};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -18,9 +18,9 @@ pub enum Role {
     Either,
 }
 
-impl Distribution<Role> for Standard {
+impl Distribution<Role> for StandardUniform {
     fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Role {
-        match rng.gen_range(0..3) {
+        match rng.random_range(0..3) {
             0 => Role::Leader,
             1 => Role::Helper,
             _ => Role::Either,
