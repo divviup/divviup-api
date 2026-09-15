@@ -18,6 +18,7 @@ export default function layout(
       return false;
     },
     errorElement: <ErrorPage apiClient={apiClient} />,
+    hydrateFallbackElement: <div />,
     children,
   };
 }
