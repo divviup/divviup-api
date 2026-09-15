@@ -1,10 +1,6 @@
 import React from "react";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  RouteObject,
-  redirect,
-} from "react-router-dom";
+import { createBrowserRouter, RouteObject, redirect } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import { ApiClientContext } from "./ApiClientContext.js";
 import { ApiClient } from "./ApiClient.js";
 import layout from "./layout/index.js";
@@ -21,32 +17,21 @@ import collectorCredentials from "./collector-credentials/index.js";
 import swaggerUi from "./swagger-ui.js";
 
 function buildRouter(apiClient: ApiClient) {
-  return createBrowserRouter(
-    [
-      swaggerUi(),
-      layout(apiClient, [
-        logout(apiClient),
-        root(apiClient),
-        admin(apiClient, [queue(apiClient), sharedAggregators(apiClient)]),
-        accounts(apiClient, [
-          aggregators(apiClient),
-          apiTokens(apiClient),
-          memberships(apiClient),
-          tasks(apiClient),
-          collectorCredentials(apiClient),
-        ]),
+  return createBrowserRouter([
+    swaggerUi(),
+    layout(apiClient, [
+      logout(apiClient),
+      root(apiClient),
+      admin(apiClient, [queue(apiClient), sharedAggregators(apiClient)]),
+      accounts(apiClient, [
+        aggregators(apiClient),
+        apiTokens(apiClient),
+        memberships(apiClient),
+        tasks(apiClient),
+        collectorCredentials(apiClient),
       ]),
-    ],
-    {
-      future: {
-        v7_relativeSplatPath: true,
-        v7_normalizeFormMethod: true,
-        v7_fetcherPersist: true,
-        v7_partialHydration: true,
-        v7_skipActionErrorRevalidation: true,
-      },
-    },
-  );
+    ]),
+  ]);
 }
 
 export default function Router() {
@@ -55,9 +40,7 @@ export default function Router() {
     throw new Error("must be within context provider for ApiClient");
   }
   const router = React.useMemo(() => buildRouter(apiClient), [apiClient]);
-  return (
-    <RouterProvider router={router} future={{ v7_startTransition: true }} />
-  );
+  return <RouterProvider router={router} />;
 }
 
 function root(_apiClient: ApiClient): RouteObject {

@@ -1,6 +1,6 @@
 import { useState, useCallback, ChangeEvent } from "react";
 import { Button, FormGroup, FormLabel, FormControl } from "react-bootstrap";
-import { Form } from "react-router-dom";
+import { Form } from "react-router";
 import { BuildingAdd } from "react-bootstrap-icons";
 
 export default function AccountForm() {

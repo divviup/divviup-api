@@ -1,4 +1,4 @@
-import { Await, useParams, useLoaderData, Link } from "react-router-dom";
+import { Await, useParams, useLoaderData, Link } from "react-router";
 import { Card, Col, ListGroup, Placeholder } from "react-bootstrap";
 import { Suspense } from "react";
 import { Task, Aggregator, CollectorCredential } from "../../ApiClient.js";

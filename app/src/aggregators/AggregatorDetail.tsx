@@ -1,4 +1,4 @@
-import { Await, useLoaderData, useParams } from "react-router-dom";
+import { Await, useLoaderData, useParams } from "react-router";
 import { Aggregator } from "../ApiClient.js";
 import { AccountBreadcrumbs } from "../util.js";
 import { LinkContainer } from "../LinkContainer.js";

@@ -9,7 +9,7 @@ import {
 } from "react-bootstrap";
 import { LinkContainer } from "./LinkContainer.js";
 import React, { Suspense } from "react";
-import { Await, useRouteLoaderData, useLoaderData } from "react-router-dom";
+import { Await, useRouteLoaderData, useLoaderData } from "react-router";
 import { Account } from "./ApiClient.js";
 import {
   ClipboardCheckFill,
