@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData } from "react-router";
 import { FormControl, FormSelect } from "react-bootstrap";
 import { Aggregator } from "../../ApiClient.js";
 import { usePromise } from "../../util.js";

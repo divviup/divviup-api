@@ -58,9 +58,7 @@ test("AccountSummary renders", async () => {
     },
   );
 
-  render(
-    <RouterProvider router={router} future={{ v7_startTransition: true }} />,
-  );
+  render(<RouterProvider router={router} />);
 
   await screen.findByText("Test account");
 });

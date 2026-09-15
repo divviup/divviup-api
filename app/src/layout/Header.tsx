@@ -1,4 +1,4 @@
-import { Await, Link, useAsyncValue, useLoaderData } from "react-router-dom";
+import { Await, Link, useAsyncValue, useLoaderData } from "react-router";
 import { User } from "../ApiClient.js";
 import { Suspense } from "react";
 import logo from "../logo/color/svg/cropped.svg";

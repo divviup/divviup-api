@@ -1,4 +1,4 @@
-import { RouteObject } from "react-router-dom";
+import { RouteObject } from "react-router";
 import ApiClient from "../ApiClient.js";
 import ErrorPage from "./ErrorPage.js";
 import Layout from "./Layout.js";

@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useHref, To } from "react-router-dom";
+import { useNavigate, useHref, To } from "react-router";
 
 type LinkContainerProps = {
   children: React.ReactElement<LinkProps>;
