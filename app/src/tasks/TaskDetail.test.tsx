@@ -13,6 +13,7 @@ test("TaskDetail renders", async () => {
     {
       path: "/accounts/:account_id",
       id: "account",
+      HydrateFallback: () => null,
       async loader({ params }) {
         const { accountId } = params as { accountId: string };
         return {

@@ -15,6 +15,7 @@ test("AccountSummary renders", async () => {
       path: "/accounts/:account_id",
       id: "account",
       Component: AccountSummary,
+      HydrateFallback: () => null,
       async loader({ params }) {
         const { accountId } = params as { accountId: string };
         return {
