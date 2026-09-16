@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData } from "react-router";
 import { Card, Col, Tab, Tabs } from "react-bootstrap";
 import { Task, Aggregator } from "../../ApiClient.js";
 import "@github/relative-time-element";

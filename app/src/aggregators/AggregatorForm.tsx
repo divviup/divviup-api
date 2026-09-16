@@ -20,7 +20,7 @@ import {
   useNavigate,
   useNavigation,
   useParams,
-} from "react-router-dom";
+} from "react-router";
 import { ApiClientContext } from "../ApiClientContext.js";
 
 async function submit(

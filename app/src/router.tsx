@@ -1,10 +1,6 @@
 import React from "react";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  RouteObject,
-  redirect,
-} from "react-router-dom";
+import { createBrowserRouter, RouteObject, redirect } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import { ApiClientContext } from "./ApiClientContext.js";
 import { ApiClient } from "./ApiClient.js";
 import layout from "./layout/index.js";
@@ -55,9 +51,7 @@ export default function Router() {
     throw new Error("must be within context provider for ApiClient");
   }
   const router = React.useMemo(() => buildRouter(apiClient), [apiClient]);
-  return (
-    <RouterProvider router={router} future={{ v7_startTransition: true }} />
-  );
+  return <RouterProvider router={router} />;
 }
 
 function root(_apiClient: ApiClient): RouteObject {

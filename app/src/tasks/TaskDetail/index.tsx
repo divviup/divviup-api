@@ -1,4 +1,4 @@
-import { Await, useParams, useLoaderData } from "react-router-dom";
+import { Await, useParams, useLoaderData } from "react-router";
 import React, { Suspense } from "react";
 import { LinkContainer } from "../../LinkContainer.js";
 import { Task } from "../../ApiClient.js";

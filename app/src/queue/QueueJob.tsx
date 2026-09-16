@@ -1,10 +1,9 @@
 import React from "react";
 import { Col, Table } from "react-bootstrap";
 import { CheckSquare, Stopwatch, XCircle } from "react-bootstrap-icons";
-import { useLoaderData } from "react-router";
+import { useLoaderData, Link } from "react-router";
 import { QueueJob } from "../ApiClient.js";
 import { DateTime } from "luxon";
-import { Link } from "react-router-dom";
 
 export const Component = QueueJobComponent;
 
