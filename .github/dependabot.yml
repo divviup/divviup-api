@@ -47,6 +47,10 @@ updates:
         patterns:
           - 'react-router'
           - 'react-router-dom'
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
