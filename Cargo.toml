@@ -33,7 +33,7 @@ cookie = "0.18"
 divviup-api.path = "."
 divviup-cli = { path = "./cli", version = "0.5.3" }
 divviup-client = { path = "./client", version = "0.5.3" }
-educe = "0.7.4"
+educe = "0.8.1"
 email_address = "0.2.9"
 fastrand = "2.3.0"
 futures-lite = "2.6.1"
