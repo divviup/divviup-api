@@ -1,9 +1,9 @@
 use super::*;
 use crate::{
-    clients::aggregator_client::api_types::{AggregatorVdaf, QueryType},
+    clients::aggregator_client::api_types::AggregatorVdaf,
     entity::{
-        aggregator::{Feature, Role},
-        Account, CollectorCredential, Protocol,
+        aggregator::{Feature, QueryTypeName, Role},
+        task, Account, CollectorCredential, Protocol,
     },
     handler::Error,
 };
@@ -28,6 +28,8 @@ pub struct NewTask {
 
     #[validate(required, nested)]
     pub vdaf: Option<Vdaf>,
+
+    pub query_type: Option<task::QueryType>,
 
     #[validate(required, range(min = 100))]
     pub min_batch_size: Option<u64>,
@@ -98,15 +100,19 @@ impl NewTask {
         }
     }
 
-    fn validate_batch_time_window_size(&self, errors: &mut ValidationErrors) {
+    fn validate_batch_time_window_size(
+        &self,
+        query_type: QueryType,
+        errors: &mut ValidationErrors,
+    ) {
         let window = self.batch_time_window_size_seconds;
         if let Some(window) = window {
-            if self.max_batch_size.is_none() {
+            if query_type != QueryType::FixedSize {
                 errors.add(
                     "batch_time_window_size_seconds",
-                    ValidationError::new("missing-max-batch-size"),
+                    ValidationError::new("wrong-query-type"),
                 );
-            }
+            };
             if let Some(precision) = self.time_precision_seconds {
                 if window % precision != 0 {
                     errors.add(
@@ -327,11 +333,30 @@ impl NewTask {
         &self,
         leader: &Aggregator,
         helper: &Aggregator,
+        query_type: &QueryTypeName,
         errors: &mut ValidationErrors,
     ) {
-        let name = self.query_type().name();
-        if !leader.query_types.contains(&name) || !helper.query_types.contains(&name) {
-            errors.add("max_batch_size", ValidationError::new("not-supported"));
+        if !leader.query_types.contains(query_type) || !helper.query_types.contains(query_type) {
+            errors.add("query_type", ValidationError::new("not-supported"));
+        }
+    }
+
+    fn validate_query_type(
+        &self,
+        query_type: task::QueryType,
+        protocol: &Protocol,
+        errors: &mut ValidationErrors,
+    ) {
+        // Note DAP draft-09 says that `max_batch_size` is optional. In DAP draft-04,
+        // `max_batch_size` was mandatory for fixed size tasks, and previous versions of divviup-api
+        // relied on that linkage.
+        match (protocol, query_type, self.max_batch_size) {
+            (Protocol::Dap09, QueryType::TimeInterval, None)
+            | (Protocol::Dap09, QueryType::FixedSize, Some(_))
+            | (Protocol::Dap09, QueryType::FixedSize, None) => {}
+            (Protocol::Dap09, QueryType::TimeInterval, Some(_)) => {
+                errors.add("max_batch_size", ValidationError::new("conflict"));
+            }
         }
     }
 
@@ -341,8 +366,19 @@ impl NewTask {
         db: &impl ConnectionTrait,
     ) -> Result<ProvisionableTask, ValidationErrors> {
         let mut errors = Validate::validate(self).err().unwrap_or_default();
+
+        // Backfill the query type from `max_batch_size` if necessary.
+        //
+        // This was previously not part of requests. For the initial support of DAP draft-04, the
+        // query type was inferred from the presence or absence of a `max_batch_size` value.
+        let query_type = self.query_type.unwrap_or(match self.max_batch_size {
+            Some(_) => task::QueryType::FixedSize,
+            None => task::QueryType::TimeInterval,
+        });
+        let query_type_name = QueryTypeName::from(query_type);
+
         self.validate_min_lte_max(&mut errors);
-        self.validate_batch_time_window_size(&mut errors);
+        self.validate_batch_time_window_size(query_type, &mut errors);
         let aggregators = self.validate_aggregators(&account, db, &mut errors).await;
         let collector_credential = self
             .validate_collector_credential(
@@ -354,7 +390,8 @@ impl NewTask {
             .await;
 
         let aggregator_vdaf = if let Some((leader, helper, protocol)) = aggregators.as_ref() {
-            self.validate_query_type_is_supported(leader, helper, &mut errors);
+            self.validate_query_type(query_type, protocol, &mut errors);
+            self.validate_query_type_is_supported(leader, helper, &query_type_name, &mut errors);
             self.populate_chunk_length(protocol);
             self.validate_vdaf_is_supported(leader, helper, protocol, &mut errors)
         } else {
@@ -380,6 +417,7 @@ impl NewTask {
                 leader_aggregator,
                 helper_aggregator,
                 vdaf: self.vdaf.clone().unwrap(),
+                query_type,
                 aggregator_vdaf: aggregator_vdaf.unwrap(),
                 min_batch_size: self.min_batch_size.unwrap(),
                 max_batch_size: self.max_batch_size,
@@ -392,17 +430,6 @@ impl NewTask {
             })
         } else {
             Err(errors)
-        }
-    }
-
-    pub fn query_type(&self) -> QueryType {
-        if let Some(max_batch_size) = self.max_batch_size {
-            QueryType::FixedSize {
-                max_batch_size,
-                batch_time_window_size: self.batch_time_window_size_seconds,
-            }
-        } else {
-            QueryType::TimeInterval
         }
     }
 }

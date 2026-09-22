@@ -95,7 +95,22 @@ async fn time_bucketed_fixed_size(app: DivviupApi) -> TestResult {
             ..Default::default()
         },
         "batch_time_window_size_seconds",
-        &["missing-max-batch-size"],
+        &["wrong-query-type"],
+    )
+    .await;
+
+    assert_errors(
+        &app,
+        &mut NewTask {
+            leader_aggregator_id: Some(leader.id.to_string()),
+            helper_aggregator_id: Some(helper.id.to_string()),
+            time_precision_seconds: Some(300),
+            query_type: Some(task::QueryType::TimeInterval),
+            batch_time_window_size_seconds: Some(300),
+            ..Default::default()
+        },
+        "batch_time_window_size_seconds",
+        &["wrong-query-type"],
     )
     .await;
 
@@ -123,6 +138,22 @@ async fn time_bucketed_fixed_size(app: DivviupApi) -> TestResult {
             time_precision_seconds: Some(123),
             min_batch_size: Some(100),
             max_batch_size: Some(100),
+            batch_time_window_size_seconds: Some(300),
+            ..Default::default()
+        },
+        "leader_aggregator_id",
+    )
+    .await;
+
+    assert_no_errors(
+        &app,
+        &mut NewTask {
+            leader_aggregator_id: Some(leader.id.to_string()),
+            helper_aggregator_id: Some(helper.id.to_string()),
+            time_precision_seconds: Some(123),
+            query_type: Some(task::QueryType::FixedSize),
+            min_batch_size: Some(100),
+            max_batch_size: None,
             batch_time_window_size_seconds: Some(300),
             ..Default::default()
         },

@@ -11,7 +11,7 @@ This is the standard migrator CLI that comes with SeaORM.
 
 - Generate a new migration file
     ```sh
-    cargo run -- migrate generate MIGRATION_NAME
+    cargo run -- generate MIGRATION_NAME
     ```
 - Apply all pending migrations
     ```sh

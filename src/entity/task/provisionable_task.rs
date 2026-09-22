@@ -2,7 +2,7 @@ use super::*;
 use crate::clients::HttpClient;
 use crate::{
     clients::aggregator_client::api_types::{AggregatorVdaf, AuthenticationToken, QueryType},
-    entity::{Account, CollectorCredential, Protocol, Task},
+    entity::{task, Account, CollectorCredential, Protocol, Task},
     handler::Error,
     Crypter,
 };
@@ -19,6 +19,7 @@ pub struct ProvisionableTask {
     pub helper_aggregator: Aggregator,
     pub vdaf: Vdaf,
     pub aggregator_vdaf: AggregatorVdaf,
+    pub query_type: task::QueryType,
     pub min_batch_size: u64,
     pub max_batch_size: Option<u64>,
     pub batch_time_window_size_seconds: Option<u64>,
@@ -88,6 +89,7 @@ impl ProvisionableTask {
             account_id: self.account.id,
             name: self.name,
             vdaf: self.vdaf.into(),
+            query_type: self.query_type,
             min_batch_size: self.min_batch_size.try_into()?,
             max_batch_size: self.max_batch_size.map(TryInto::try_into).transpose()?,
             batch_time_window_size_seconds: self
@@ -127,13 +129,12 @@ impl ProvisionableTask {
     }
 
     pub fn query_type(&self) -> QueryType {
-        if let Some(max_batch_size) = self.max_batch_size {
-            QueryType::FixedSize {
-                max_batch_size,
+        match self.query_type {
+            task::QueryType::TimeInterval => QueryType::TimeInterval,
+            task::QueryType::FixedSize => QueryType::FixedSize {
+                max_batch_size: self.max_batch_size,
                 batch_time_window_size: self.batch_time_window_size_seconds,
-            }
-        } else {
-            QueryType::TimeInterval
+            },
         }
     }
 }

@@ -154,7 +154,8 @@ impl From<AggregatorVdaf> for Vdaf {
 pub enum QueryType {
     TimeInterval,
     FixedSize {
-        max_batch_size: u64,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        max_batch_size: Option<u64>,
         #[serde(skip_serializing_if = "Option::is_none")]
         batch_time_window_size: Option<u64>,
     },
