@@ -1,5 +1,6 @@
 import React, { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
+import "react-router";
 //import reportWebVitals from "./reportWebVitals";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
@@ -17,6 +18,12 @@ declare module "react" {
       > &
         Partial<Omit<RelativeTimeElement, keyof HTMLElement>>;
     }
+  }
+}
+
+declare module "react-router" {
+  interface Future {
+    v8_middleware: true;
   }
 }
 
