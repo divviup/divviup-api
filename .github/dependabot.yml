@@ -28,11 +28,6 @@ updates:
       default-days: 7
     target-branch: "main"
     open-pull-requests-limit: 20
-    ignore:
-      # TODO(#1534): Temporarily ignore react-router updates until we have had a
-      # chance to do a controlled migration, and test the results.
-      - dependency-name: react-router
-      - dependency-name: react-router-dom
     groups:
       eslint:
         patterns:
@@ -43,10 +38,6 @@ updates:
           - '@types/react'
           - 'react-dom'
           - '@types/react-dom'
-      react-router:
-        patterns:
-          - 'react-router'
-          - 'react-router-dom'
       vitest:
         patterns:
           - 'vitest'
