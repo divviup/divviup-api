@@ -4,7 +4,7 @@ import {
   useLoaderData,
   useParams,
   useRevalidator,
-} from "react-router-dom";
+} from "react-router";
 import { ApiToken } from "../../ApiClient.js";
 import React from "react";
 import { useInterval } from "use-interval";
