@@ -104,6 +104,10 @@ services:
           --name=helper --api-url=http://janus_2_aggregator:8080/aggregator-api \
           --bearer-token=0000 && \
         touch /tmp/done)
+    volumes:
+      - type: volume
+        source: pair_aggregator_state
+        target: /tmp
     network_mode: service:divviup_api
     depends_on:
       divviup_api:
@@ -276,6 +280,9 @@ services:
     environment:
       CONFIG_FILE: /janus_2_garbage_collector.yaml
       <<: *janus_environment
+
+volumes:
+  pair_aggregator_state:
 
 configs:
   postgres_init:
