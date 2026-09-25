@@ -1,8 +1,8 @@
 use crate::{
     clients::aggregator_client::{api_types::TaskAggregationJobMetrics, TaskUploadMetrics},
     entity::{
-        account, json::Json, membership, AccountColumn, Accounts, Aggregator, AggregatorColumn,
-        Aggregators, CollectorCredentialColumn, CollectorCredentials,
+        account, json::Json, membership, task::QueryType, AccountColumn, Accounts, Aggregator,
+        AggregatorColumn, Aggregators, CollectorCredentialColumn, CollectorCredentials,
     },
 };
 use sea_orm::{
@@ -26,6 +26,7 @@ pub struct Model {
     pub account_id: Uuid,
     pub name: String,
     pub vdaf: Json<Vdaf>,
+    pub query_type: QueryType,
     pub min_batch_size: i64,
     pub max_batch_size: Option<i64>,
     pub batch_time_window_size_seconds: Option<i64>,
