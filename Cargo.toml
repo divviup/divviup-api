@@ -52,9 +52,9 @@ num-bigint-4 = { package = "num-bigint", version = "0.4.2" }
 num-bigint-5 = { package = "num-bigint", version = "0.5.1", features = ["serde"] }
 num-rational = "0.4.2"
 oauth2 = { version = "5.0.0", default-features = false }
-opentelemetry = "0.32.0"
-opentelemetry-otlp = "0.32.0"
-opentelemetry_sdk = "0.32.0"
+opentelemetry = "0.33.0"
+opentelemetry-otlp = "0.33.0"
+opentelemetry_sdk = "0.33.0"
 pad-adapter = "0.1.1"
 pretty_assertions = "1.4.1"
 prio = "0.16.7"
