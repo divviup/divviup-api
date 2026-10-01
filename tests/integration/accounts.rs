@@ -2,6 +2,7 @@ use test_support::*;
 
 mod index {
     use super::{assert_eq, test, *};
+
     #[test(harness = set_up)]
     async fn as_member(app: DivviupApi) -> TestResult {
         let (user, account, ..) = fixtures::member(&app).await;
@@ -185,6 +186,8 @@ mod show {
 mod create {
     use super::{assert_eq, test, *};
 
+    use std::slice;
+
     #[test(harness = set_up)]
     async fn not_logged_in(app: DivviupApi) -> TestResult {
         let resp = post("/api/accounts")
@@ -217,7 +220,7 @@ mod create {
 
         let accounts = Accounts::find().all(app.db()).await?;
 
-        assert_eq!(accounts, [account.clone()]);
+        assert_eq!(accounts, slice::from_ref(&account));
 
         let memberships = Memberships::find().all(app.db()).await?;
         assert_eq!(memberships.len(), 1);
