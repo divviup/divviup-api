@@ -110,6 +110,7 @@ pub async fn task(app: &DivviupApi, account: &Account) -> Task {
         account_id: account.id,
         name: random_name(),
         vdaf: task::vdaf::Vdaf::Count.into(),
+        query_type: task::QueryType::FixedSize,
         min_batch_size: 100,
         max_batch_size: Some(200),
         batch_time_window_size_seconds: None,

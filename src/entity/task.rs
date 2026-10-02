@@ -20,6 +20,8 @@ mod provisionable_task;
 pub use provisionable_task::ProvisionableTask;
 pub mod model;
 pub use model::*;
+pub mod query_type;
+pub use query_type::*;
 
 pub const DEFAULT_EXPIRATION_DURATION: Duration = Duration::days(365);
 

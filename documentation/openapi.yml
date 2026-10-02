@@ -276,6 +276,9 @@ paths:
                   format: uuid
                 vdaf:
                   $ref: "#/components/schemas/Vdaf"
+                query_type:
+                  type: string
+                  enum: [TimeInterval, FixedSize]
                 min_batch_size:
                   type: number
                 max_batch_size:
@@ -694,6 +697,9 @@ components:
           format: uuid
         vdaf:
           $ref: "#/components/schemas/Vdaf"
+        query_type:
+          type: string
+          enum: [TimeInterval, FixedSize]
         min_batch_size:
           type: number
         max_batch_size:
@@ -929,8 +935,10 @@ components:
         is_first_party:
           type: boolean
         query_types:
-          type: string
-          enum: [TimeInterval, FixedSize]
+          type: array
+          items:
+            type: string
+            enum: [TimeInterval, FixedSize]
         vdafs:
           type: string
           examples:

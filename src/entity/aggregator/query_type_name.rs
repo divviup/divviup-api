@@ -9,6 +9,8 @@ use std::{
     str::FromStr,
 };
 
+use crate::entity::task;
+
 /// https://www.ietf.org/archive/id/draft-ietf-ppm-dap-05.html#name-queries
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash, PartialOrd, Ord)]
 pub enum QueryTypeName {
@@ -58,6 +60,15 @@ impl From<String> for QueryTypeName {
 impl From<&str> for QueryTypeName {
     fn from(value: &str) -> Self {
         value.parse().unwrap()
+    }
+}
+
+impl From<task::QueryType> for QueryTypeName {
+    fn from(value: task::QueryType) -> Self {
+        match value {
+            task::QueryType::TimeInterval => Self::TimeInterval,
+            task::QueryType::FixedSize => Self::FixedSize,
+        }
     }
 }
 

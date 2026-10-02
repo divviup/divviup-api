@@ -576,3 +576,16 @@ where
         serde_json::to_value(expected).unwrap()
     );
 }
+
+// TODO(#2554): Remove this once divviup-client is updated to reflect query types.
+#[track_caller]
+pub fn assert_same_json_representation_ignoring_query_type(
+    actual: &impl Serialize,
+    expected: &impl Serialize,
+) {
+    let mut modified = serde_json::to_value(actual).unwrap();
+    // Ignore the new query type field in divviup-api, as it has not been reflected in
+    // divviup-client yet.
+    modified.as_object_mut().unwrap().remove("query_type");
+    assert_same_json_representation(&modified, expected);
+}
