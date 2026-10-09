@@ -14,7 +14,10 @@ import { WithTask } from "./index.js";
 
 export default function RenameTaskButton() {
   const [show, setShow] = useState(false);
-  const close = useCallback(() => setShow(false), []);
+  const close = useCallback(() => {
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    setShow(false);
+  }, []);
   const open = useCallback(() => setShow(true), []);
   const fetcher = useFetcher();
   const [errors, setErrors] = useState(null as null | FormikErrors<UpdateTask>);
@@ -22,10 +25,11 @@ export default function RenameTaskButton() {
   useEffect(() => {
     if (fetcher.data) {
       if ("error" in fetcher.data) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+        // eslint-disable-next-line @eslint-react/set-state-in-effect
         setErrors(formikErrors(fetcher.data.error));
       } else {
         close();
+        // eslint-disable-next-line @eslint-react/set-state-in-effect
         setErrors(null);
       }
     }

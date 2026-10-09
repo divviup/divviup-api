@@ -83,12 +83,14 @@ function RenameAggregatorButton({ aggregator }: { aggregator: Aggregator }) {
   const navigation = useNavigation();
 
   const [show, setShow] = useState(false);
-  const close = React.useCallback(() => setShow(false), []);
+  const close = React.useCallback(() => {
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    setShow(false);
+  }, []);
   const open = React.useCallback(() => setShow(true), []);
   const fetcher = useFetcher();
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (fetcher.data) close();
   }, [fetcher, close]);
 
@@ -140,12 +142,14 @@ function DeleteAggregatorButton({ aggregator }: { aggregator: Aggregator }) {
   const navigation = useNavigation();
 
   const [show, setShow] = useState(false);
-  const close = React.useCallback(() => setShow(false), []);
+  const close = React.useCallback(() => {
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    setShow(false);
+  }, []);
   const open = React.useCallback(() => setShow(true), []);
   const fetcher = useFetcher();
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (fetcher.data) close();
   }, [fetcher, close]);
 

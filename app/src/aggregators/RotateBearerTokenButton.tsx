@@ -14,7 +14,10 @@ import { FormikErrors } from "formik";
 
 export default function RotateBearerTokenButton() {
   const [show, setShow] = React.useState(false);
-  const close = React.useCallback(() => setShow(false), []);
+  const close = React.useCallback(() => {
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    setShow(false);
+  }, []);
   const open = React.useCallback(() => setShow(true), []);
   const fetcher = useFetcher();
   const [errors, setErrors] = React.useState(
@@ -24,9 +27,11 @@ export default function RotateBearerTokenButton() {
   React.useEffect(() => {
     if (fetcher.data) {
       if ("error" in fetcher.data) {
+        // eslint-disable-next-line @eslint-react/set-state-in-effect
         setErrors(formikErrors(fetcher.data.error));
       } else {
         close();
+        // eslint-disable-next-line @eslint-react/set-state-in-effect
         setErrors(null);
       }
     }

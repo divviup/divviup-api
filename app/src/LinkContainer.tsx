@@ -54,7 +54,9 @@ export function LinkContainer({
   );
 
   // Assert only one child element was passed in.
+  // eslint-disable-next-line @eslint-react/no-children-only
   const child = React.Children.only(children);
 
+  // eslint-disable-next-line @eslint-react/no-clone-element
   return React.cloneElement(child, { href, onClick });
 }
