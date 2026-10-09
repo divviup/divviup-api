@@ -5,9 +5,25 @@ const handlers = [
   http.get("http://localhost:3000/api_url", () => {
     return HttpResponse.text("http://api.invalid/");
   }),
+  http.options("http://api.invalid/api/users/me", () => {
+    return new HttpResponse(null, {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
+    });
+  }),
   http.get("http://api.invalid/api/users/me", () => {
     return HttpResponse.json({
       admin: false,
+    });
+  }),
+  http.options("http://api.invalid/api/accounts", () => {
+    return new HttpResponse(null, {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
     });
   }),
   http.get("http://api.invalid/api/accounts", () => {
