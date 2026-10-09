@@ -221,7 +221,7 @@ async function submit(
 function InlineAggregatorForm() {
   const params = useParams();
   const accountId = params.accountId as string;
-  const apiClient = React.useContext(ApiClientContext);
+  const apiClient = React.use(ApiClientContext);
   const [aggregator, setAggregator] = React.useState<Aggregator | null>(null);
   const handleSubmit = React.useCallback(
     (values: NewAggregator, actions: FormikHelpers<NewAggregator>) =>

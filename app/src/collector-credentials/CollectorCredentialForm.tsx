@@ -45,8 +45,9 @@ export default function CollectorCredentialForm() {
   const ref = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
     if (typeof fetcher.data === "object" && !("error" in fetcher.data)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setName("");
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setCollectorCredential("");
       if (ref.current) {
         ref.current.value = "";

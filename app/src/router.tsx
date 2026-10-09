@@ -35,7 +35,7 @@ function buildRouter(apiClient: ApiClient) {
 }
 
 export default function Router() {
-  const apiClient = React.useContext(ApiClientContext);
+  const apiClient = React.use(ApiClientContext);
   if (apiClient === undefined) {
     throw new Error("must be within context provider for ApiClient");
   }

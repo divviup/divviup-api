@@ -25,7 +25,7 @@ async function submit(
 }
 
 export default function SharedAggreatorForm() {
-  const apiClient = React.useContext(ApiClientContext);
+  const apiClient = React.use(ApiClientContext);
   const { revalidate } = useRevalidator();
   const handleSubmit = React.useCallback(
     (values: NewAggregator, actions: FormikHelpers<NewAggregator>) =>
