@@ -190,7 +190,7 @@ export default function AccountSummary() {
               <Card.Title>Billing Metrics</Card.Title>
             </Card.Body>
             <ListGroup variant="flush">
-              {[...new Array(4)].map((_, n) => (
+              {[0, 1, 2, 3].map((n, _) => (
                 <ListGroup.Item key={n} className="placeholder-wave">
                   <Placeholder className="col-7" />
                 </ListGroup.Item>
@@ -205,7 +205,7 @@ export default function AccountSummary() {
               <Card.Title>System Messages</Card.Title>
             </Card.Body>
             <ListGroup variant="flush">
-              {[...new Array(6)].map((_, n) => (
+              {[0, 1, 2, 3, 4, 5].map((n, _) => (
                 <ListGroup.Item key={n} className="placeholder-wave">
                   <Placeholder className="col-7" />
                 </ListGroup.Item>

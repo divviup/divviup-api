@@ -65,7 +65,7 @@ export function TaskFormGroup({
 
 export default function TaskForm() {
   const { accountId } = useParams();
-  const apiClient = React.useContext(ApiClientContext);
+  const apiClient = React.use(ApiClientContext);
   const navigate = useNavigate();
   const handleSubmit = React.useCallback(
     (values: NewTask, actions: FormikHelpers<NewTask>) =>

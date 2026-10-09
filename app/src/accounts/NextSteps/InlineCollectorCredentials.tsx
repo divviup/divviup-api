@@ -63,7 +63,7 @@ function SaveApiToken({ onToken }: { onToken: (token: string) => void }) {
 }
 
 export default function InlineCollectorCredentials() {
-  const apiClient = React.useContext(ApiClientContext);
+  const apiClient = React.use(ApiClientContext);
   const { accountId } = useParams() as { accountId: string };
   const [anyCollectorCredentials, setAnyCollectorCredentials] =
     React.useState(false);

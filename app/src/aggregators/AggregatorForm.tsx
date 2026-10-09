@@ -103,7 +103,7 @@ export default function AggregatorFormPage() {
   const params = useParams();
   const accountId = params.accountId as string;
   const navigate = useNavigate();
-  const apiClient = React.useContext(ApiClientContext);
+  const apiClient = React.use(ApiClientContext);
   const handleSubmit = React.useCallback(
     (values: NewAggregator, actions: FormikHelpers<NewAggregator>) =>
       submit(apiClient, accountId as string, values, actions, navigate),
