@@ -72,7 +72,7 @@
     "globals": "^17.12.0",
     "happy-dom": "^20.14.5",
     "msw": "^3.0.0",
-    "postcss-nesting": "^14.0.2",
+    "postcss-nesting": "^14.0.3",
     "prettier": "^3.9.9",
     "source-map-explorer": "^2.5.3",
     "typescript": "^6.0.3",
