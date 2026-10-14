@@ -7,10 +7,10 @@ import { PrimeReactProvider } from "primereact/api";
 export default function App() {
   const apiClient = React.useMemo(() => new ApiClient(), []);
   return (
-    <ApiClientContext.Provider value={apiClient}>
+    <ApiClientContext value={apiClient}>
       <PrimeReactProvider>
         <Router />
       </PrimeReactProvider>
-    </ApiClientContext.Provider>
+    </ApiClientContext>
   );
 }

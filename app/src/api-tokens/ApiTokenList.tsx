@@ -111,13 +111,13 @@ function ApiTokenList() {
 }
 
 function TokenName({ apiToken }: { apiToken: ApiToken }) {
-  const [isEditing, setEditing] = useState(false);
-  const edit = useCallback(() => setEditing(true), [setEditing]);
+  const [isEditing, setIsEditing] = useState(false);
+  const edit = useCallback(() => setIsEditing(true), [setIsEditing]);
   const fetcher = useFetcher();
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (fetcher.data) setEditing(false);
-  }, [fetcher, setEditing]);
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    if (fetcher.data) setIsEditing(false);
+  }, [fetcher, setIsEditing]);
   if (isEditing) {
     return (
       <fetcher.Form action={apiToken.id} method="PATCH">
@@ -168,12 +168,14 @@ function DeleteButton({ apiToken }: { apiToken: ApiToken }) {
   const navigation = useNavigation();
 
   const [show, setShow] = useState(false);
-  const close = React.useCallback(() => setShow(false), []);
+  const close = React.useCallback(() => {
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    setShow(false);
+  }, []);
   const open = React.useCallback(() => setShow(true), []);
   const fetcher = useFetcher();
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (fetcher.data) close();
   }, [fetcher, close]);
 
