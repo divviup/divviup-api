@@ -121,6 +121,7 @@ email_address.workspace = true
 fastrand.workspace = true
 futures-lite.workspace = true
 git-version.workspace = true
+http.workspace = true
 http-body.workspace = true
 httpdate.workspace = true
 janus_messages.workspace = true
@@ -166,7 +167,7 @@ validator = { workspace = true, features = ["derive"] }
 [dependencies.oauth2]
 workspace = true
 default-features = false
-features = ["pkce-plain", "reqwest"]
+features = ["pkce-plain"]
 
 [dependencies.sea-orm]
 workspace = true
