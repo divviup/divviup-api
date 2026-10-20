@@ -44,7 +44,7 @@ pub enum CollectorCredentialAction {
     /// the private key will be output to stdout or a local file, but will not be recorded anywhere
     /// else
     Generate {
-        #[arg(short, long, default_value = "x25519-sha256")]
+        #[arg(short, long, default_value = "xwing")]
         /// key encapsulation mechanism
         kem: Kem,
 
