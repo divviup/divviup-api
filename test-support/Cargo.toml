@@ -16,7 +16,7 @@ http-body-util.workspace = true
 pretty_assertions.workspace = true
 querystrong.workspace = true
 rand.workspace = true
-reqwest = { workspace = true, default-features = false, features = ["rustls-tls", "json"] }
+reqwest = { workspace = true, default-features = false, features = ["rustls", "json"] }
 sea-orm = { workspace = true, features = ["sqlx-sqlite"] }
 serde.workspace = true
 serde_json.workspace = true

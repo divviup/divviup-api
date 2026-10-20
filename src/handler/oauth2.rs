@@ -4,14 +4,15 @@ use axum::{
     http::{header, StatusCode},
     response::{IntoResponse, Response},
 };
+use http::{Request as HttpRequest, Response as HttpResponse};
 use oauth2::{
     basic::{BasicClient, BasicErrorResponseType},
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, EndpointNotSet, EndpointSet,
-    HttpClientError, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, RequestTokenError, Scope,
-    StandardErrorResponse, TokenResponse, TokenUrl,
+    AsyncHttpClient, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, EndpointNotSet,
+    EndpointSet, HttpClientError, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl,
+    RequestTokenError, Scope, StandardErrorResponse, TokenResponse, TokenUrl,
 };
 use serde::Deserialize;
-use std::sync::Arc;
+use std::{future::Future, pin::Pin, sync::Arc};
 use tower_sessions::Session;
 use url::Url;
 
@@ -205,7 +206,7 @@ impl OauthClient {
             .exchange_code(auth_code)
             .set_pkce_verifier(pkce_verifier)
             .add_extra_param("audience", &self.0.oauth_config.audience)
-            .request_async(&self.0.reqwest_client)
+            .request_async(&*self.0)
             .await?;
 
         let userinfo_url = self.0.oauth_config.base_url.join("/userinfo")?;
@@ -246,5 +247,31 @@ impl OauthClient {
 
     pub fn oauth2_client(&self) -> &ConfiguredOauthClient {
         &self.0.oauth2_client
+    }
+}
+
+impl<'c> AsyncHttpClient<'c> for OauthClientInner {
+    type Error = oauth2::HttpClientError<reqwest::Error>;
+
+    type Future = Pin<
+        Box<dyn Future<Output = Result<HttpResponse<Vec<u8>>, Self::Error>> + Send + Sync + 'c>,
+    >;
+
+    fn call(&'c self, request: HttpRequest<Vec<u8>>) -> Self::Future {
+        Box::pin(async move {
+            let response = self
+                .reqwest_client
+                .execute(request.try_into().map_err(Box::new)?)
+                .await
+                .map_err(Box::new)?;
+            let mut builder = Response::builder().status(response.status());
+            builder = builder.version(response.version());
+            for (name, value) in response.headers().iter() {
+                builder = builder.header(name, value);
+            }
+            builder
+                .body(response.bytes().await.map_err(Box::new)?.to_vec())
+                .map_err(Into::into)
+        })
     }
 }
