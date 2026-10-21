@@ -911,7 +911,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1426,7 +1426,7 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
- "prio",
+ "prio 0.18.1",
  "querystrong",
  "rand 0.10.3",
  "rcgen",
@@ -1478,7 +1478,7 @@ dependencies = [
  "janus_collector",
  "janus_messages",
  "num-bigint 0.4.8",
- "prio",
+ "prio 0.18.1",
  "rand 0.10.3",
  "reqwest",
  "serde",
@@ -1510,7 +1510,7 @@ dependencies = [
  "num-bigint 0.5.1",
  "num-rational",
  "pad-adapter",
- "prio",
+ "prio 0.18.1",
  "reqwest",
  "serde",
  "serde_json",
@@ -2555,7 +2555,7 @@ dependencies = [
  "itertools 0.15.0",
  "janus_core",
  "janus_messages",
- "prio",
+ "prio 0.16.8",
  "rand 0.8.6",
  "reqwest",
  "thiserror 2.0.21",
@@ -2576,7 +2576,7 @@ dependencies = [
  "hpke-dispatch",
  "janus_core",
  "janus_messages",
- "prio",
+ "prio 0.16.8",
  "rand 0.8.6",
  "reqwest",
  "retry-after",
@@ -2608,7 +2608,7 @@ dependencies = [
  "http",
  "http-api-problem",
  "janus_messages",
- "prio",
+ "prio 0.16.8",
  "rand 0.8.6",
  "regex",
  "reqwest",
@@ -2632,7 +2632,7 @@ dependencies = [
  "educe",
  "hex",
  "num_enum",
- "prio",
+ "prio 0.16.8",
  "rand 0.8.6",
  "serde",
  "thiserror 2.0.21",
@@ -3154,7 +3154,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51e219e79014df21a225b1860a479e2dcd7cbd9130f4defd4bd0e191ea31d67d"
 dependencies = [
- "base64 0.21.7",
+ "base64 0.22.1",
  "chrono",
  "getrandom 0.2.16",
  "http",
@@ -3540,6 +3540,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "prio"
+version = "0.18.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "162d6098987bb003e804d937ac50f8f514fa11edf4fa63a23d944cc7a6692b0c"
+dependencies = [
+ "aes 0.9.1",
+ "byteorder",
+ "ctr 0.10.1",
+ "hmac 0.13.0",
+ "num-bigint 0.4.8",
+ "num-bigint 0.5.1",
+ "num-integer",
+ "num-iter",
+ "num-rational",
+ "num-traits",
+ "rand 0.10.3",
+ "rand_core 0.10.1",
+ "serde",
+ "sha2 0.11.1",
+ "subtle",
+ "thiserror 2.0.21",
+ "turboshake",
+]
+
+[[package]]
 name = "proc-macro-crate"
 version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3731,7 +3756,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4092,7 +4117,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5860,7 +5885,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
