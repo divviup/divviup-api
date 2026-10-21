@@ -70,7 +70,7 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.13.0",
     "happy-dom": "^20.14.5",
-    "msw": "^3.0.0",
+    "msw": "^3.0.3",
     "postcss-nesting": "^14.0.3",
     "prettier": "^3.9.10",
     "source-map-explorer": "^2.5.3",
