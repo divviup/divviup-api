@@ -91,23 +91,17 @@ services:
       - /bin/sh
       - -c
       - |
-        test -f /tmp/done || \
-        (/divviup --url=http://localhost:8080 --token="" \
-          aggregator create \
+        export DIVVIUP_API_URL=http://localhost:8080 && \
+        export DIVVIUP_TOKEN="" && \
+        /divviup aggregator list | grep helper || \
+        (/divviup aggregator create \
           --name=leader --api-url=http://janus_1_aggregator:8080/aggregator-api \
           --bearer-token=0000 \
           --first-party --shared && \
-        /divviup --url=http://localhost:8080 --token="" \
-          account create demo && \
-        /divviup --url=http://localhost:8080 --token="" \
-          aggregator create \
+        /divviup account create demo && \
+        /divviup aggregator create \
           --name=helper --api-url=http://janus_2_aggregator:8080/aggregator-api \
-          --bearer-token=0000 && \
-        touch /tmp/done)
-    volumes:
-      - type: volume
-        source: pair_aggregator_state
-        target: /tmp
+          --bearer-token=0000)
     network_mode: service:divviup_api
     depends_on:
       divviup_api:
@@ -280,9 +274,6 @@ services:
     environment:
       CONFIG_FILE: /janus_2_garbage_collector.yaml
       <<: *janus_environment
-
-volumes:
-  pair_aggregator_state:
 
 configs:
   postgres_init:
