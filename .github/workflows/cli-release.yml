@@ -15,6 +15,86 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  get-api-version:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Get API version
+        id: get-v
+        run: |
+          set -E -e -u -o pipefail || exit $?
+          trap exit ERR
+          v=${{ inputs.tag }}
+          if [[ ! $v ]]; then
+            if [[ $GITHUB_REF_TYPE != tag ]]; then
+              printf '%s\n' "GITHUB_REF=${GITHUB_REF@Q} is not a tag" >&2
+              exit 1
+            fi
+            v=$GITHUB_REF_NAME
+          fi
+          printf '%s\n' v=$v >>$GITHUB_OUTPUT
+    outputs:
+      v: ${{ steps.get-v.outputs.v }}
+
+  get-janus-version:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Get Janus version
+        id: get-v
+        run: |
+          set -E -e -u -o pipefail || exit $?
+          trap exit ERR
+          git clone https://github.com/divviup/janus.git
+          cd janus
+          v=$(git describe --tags --abbrev=0)
+          printf '%s\n' v=$v >>$GITHUB_OUTPUT
+    outputs:
+      v: ${{ steps.get-v.outputs.v }}
+
+  upload-bring-your-own:
+    needs:
+      - get-api-version
+      - get-janus-version
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Pick directory name
+        id: pick-d
+        run: |
+          d=divviup-bring-your-own
+          printf '%s\n' d=$d >>$GITHUB_OUTPUT
+      - name: Create archive
+        run: |
+          set -E -e -u -o pipefail || exit $?
+          trap exit ERR
+          d=${{ steps.pick-d.outputs.d }}
+          v=${{ needs.get-api-version.outputs.v }}
+          jv=${{ needs.get-janus-version.outputs.v }}
+          mv bring-your-own $d
+          sed -i "
+            /DIVVIUP/ s|:latest\$|:$v|
+            /JANUS/ s|:latest\$|:$jv|
+          " $d/*/.env
+          tar czf $d.tar.gz $d
+      - name: Publish archive
+        env:
+          GH_TOKEN: ${{ secrets.DIVVIUP_GITHUB_AUTOMATION_RELEASE_PAT }}
+        run: |
+          set -E -e -u -o pipefail || exit $?
+          trap exit ERR
+          d=${{ steps.pick-d.outputs.d }}
+          v=${{ needs.get-api-version.outputs.v }}
+          gh release upload $v $d.tar.gz
+
   upload-compose-yaml:
     runs-on: ubuntu-latest
     steps:
