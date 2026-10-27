@@ -1403,7 +1403,7 @@ dependencies = [
 
 [[package]]
 name = "divviup-api"
-version = "0.5.8"
+version = "0.5.9"
 dependencies = [
  "aes-gcm",
  "async-lock",
@@ -1463,7 +1463,7 @@ dependencies = [
 
 [[package]]
 name = "divviup-cli"
-version = "0.5.8"
+version = "0.5.9"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
@@ -1495,7 +1495,7 @@ dependencies = [
 
 [[package]]
 name = "divviup-client"
-version = "0.5.8"
+version = "0.5.9"
 dependencies = [
  "axum",
  "base64 0.23.1",
@@ -2924,7 +2924,7 @@ dependencies = [
 
 [[package]]
 name = "migration"
-version = "0.5.8"
+version = "0.5.9"
 dependencies = [
  "clap",
  "sea-orm",
@@ -4957,7 +4957,7 @@ dependencies = [
 
 [[package]]
 name = "test-support"
-version = "0.5.8"
+version = "0.5.9"
 dependencies = [
  "async-trait",
  "axum",
