@@ -65,7 +65,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/swagger-ui-react": "^5.18.0",
     "@vitejs/plugin-react-swc": "^4.3.3",
-    "@vitest/coverage-v8": "^5.0.4",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.13.0",
