@@ -792,6 +792,7 @@ dependencies = [
  "cipher 0.5.2",
  "cpufeatures 0.3.0",
  "rand_core 0.10.1",
+ "zeroize",
 ]
 
 [[package]]
@@ -804,6 +805,7 @@ dependencies = [
  "chacha20",
  "cipher 0.5.2",
  "poly1305",
+ "zeroize",
 ]
 
 [[package]]
@@ -908,7 +910,7 @@ version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1489,7 +1491,7 @@ dependencies = [
  "const_format",
  "divviup-client",
  "email_address",
- "hpke-dispatch",
+ "hpke-dispatch 0.10.0",
  "humantime",
  "janus_client",
  "janus_collector",
@@ -2145,12 +2147,52 @@ dependencies = [
 ]
 
 [[package]]
+name = "hpke"
+version = "0.15.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f512e325a1a71bf3273fb9b7fc9e5d96dac136fb4a95d0e6637001b12ea3e09"
+dependencies = [
+ "aead",
+ "aes-gcm",
+ "chacha20poly1305",
+ "curve25519-dalek",
+ "getrandom 0.4.3",
+ "hkdf 0.13.0",
+ "hybrid-array",
+ "ml-kem",
+ "p256",
+ "p384",
+ "p521",
+ "rand_core 0.10.1",
+ "sha2 0.11.1",
+ "sha3 0.12.0",
+ "shake",
+ "subtle",
+ "turboshake",
+ "x-wing",
+ "x25519-dalek",
+ "zeroize",
+]
+
+[[package]]
 name = "hpke-dispatch"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f46015c7dfdd7d1052cf2dfc6970f597a2b110ab86da7edcc943de89975c1321"
 dependencies = [
- "hpke",
+ "hpke 0.14.1",
+ "num_enum",
+ "serde",
+ "zeroize",
+]
+
+[[package]]
+name = "hpke-dispatch"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d220f35adf3bca4de1f09524961bf8c81419039e17b1e64d08beac4e9d8f81d"
+dependencies = [
+ "hpke 0.15.1",
  "num_enum",
  "serde",
  "zeroize",
@@ -2591,7 +2633,7 @@ dependencies = [
  "backoff",
  "chrono",
  "educe",
- "hpke-dispatch",
+ "hpke-dispatch 0.9.0",
  "janus_core",
  "janus_messages",
  "prio",
@@ -2622,7 +2664,7 @@ dependencies = [
  "educe",
  "futures",
  "hex",
- "hpke-dispatch",
+ "hpke-dispatch 0.9.0",
  "http",
  "http-api-problem",
  "janus_messages",
@@ -3173,7 +3215,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51e219e79014df21a225b1860a479e2dcd7cbd9130f4defd4bd0e191ea31d67d"
 dependencies = [
- "base64 0.21.7",
+ "base64 0.22.1",
  "chrono",
  "getrandom 0.2.16",
  "http",
@@ -3750,7 +3792,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4111,7 +4153,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5885,7 +5927,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
