@@ -1491,7 +1491,7 @@ dependencies = [
  "const_format",
  "divviup-client",
  "email_address",
- "hpke-dispatch 0.10.0",
+ "hpke-dispatch",
  "humantime",
  "janus_client",
  "janus_collector",
@@ -2121,33 +2121,6 @@ dependencies = [
 
 [[package]]
 name = "hpke"
-version = "0.14.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5324110b02044183df000f0bd7d2d7e61f1000631508627e77f63983b6fdffb"
-dependencies = [
- "aead",
- "aes-gcm",
- "chacha20poly1305",
- "getrandom 0.4.3",
- "hkdf 0.13.0",
- "hybrid-array",
- "ml-kem",
- "p256",
- "p384",
- "p521",
- "rand_core 0.10.1",
- "sha2 0.11.1",
- "sha3 0.12.0",
- "shake",
- "subtle",
- "turboshake",
- "x-wing",
- "x25519-dalek",
- "zeroize",
-]
-
-[[package]]
-name = "hpke"
 version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f512e325a1a71bf3273fb9b7fc9e5d96dac136fb4a95d0e6637001b12ea3e09"
@@ -2176,23 +2149,11 @@ dependencies = [
 
 [[package]]
 name = "hpke-dispatch"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f46015c7dfdd7d1052cf2dfc6970f597a2b110ab86da7edcc943de89975c1321"
-dependencies = [
- "hpke 0.14.1",
- "num_enum",
- "serde",
- "zeroize",
-]
-
-[[package]]
-name = "hpke-dispatch"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6d220f35adf3bca4de1f09524961bf8c81419039e17b1e64d08beac4e9d8f81d"
 dependencies = [
- "hpke 0.15.1",
+ "hpke",
  "num_enum",
  "serde",
  "zeroize",
@@ -2605,9 +2566,9 @@ checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "janus_client"
-version = "0.7.144"
+version = "0.7.145"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbbfb83bd4d565171aed6f9fcd96a0cde7e715eca3a6bcd7214d9e99921cfe46"
+checksum = "d83d6eb6ea1f0dc48ad8ec57cdae8f67c829a78ac0813000381381867dfd892b"
 dependencies = [
  "backoff",
  "educe",
@@ -2626,14 +2587,14 @@ dependencies = [
 
 [[package]]
 name = "janus_collector"
-version = "0.7.144"
+version = "0.7.145"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d6876cc10a083dab5b2c2c5788a0f88ea6380767acba94c7f30cbfeb57cab1a"
+checksum = "d0b798c2db37e0a380b4b1f0de4f612e6c7cd450450b3396dfb15920ccaf7406"
 dependencies = [
  "backoff",
  "chrono",
  "educe",
- "hpke-dispatch 0.9.0",
+ "hpke-dispatch",
  "janus_core",
  "janus_messages",
  "prio",
@@ -2650,9 +2611,9 @@ dependencies = [
 
 [[package]]
 name = "janus_core"
-version = "0.7.144"
+version = "0.7.145"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa02a9c562561e4577ad45a1d100e00ad9241814fb48eb21625e5a9663d2bd73"
+checksum = "ab8d50445f9f6f673cfb456272a6016116caf2a3467f5a36404d694ab0e14537"
 dependencies = [
  "anyhow",
  "aws-lc-rs",
@@ -2664,7 +2625,7 @@ dependencies = [
  "educe",
  "futures",
  "hex",
- "hpke-dispatch 0.9.0",
+ "hpke-dispatch",
  "http",
  "http-api-problem",
  "janus_messages",
@@ -2683,9 +2644,9 @@ dependencies = [
 
 [[package]]
 name = "janus_messages"
-version = "0.7.144"
+version = "0.7.145"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7a91697c702021c48b8b99352d86364a6a9611826cfd78c924c0535bf01157d"
+checksum = "56527519f15363802a605ff711ce9d36ba2eb165419378c9a969490fdab4e39a"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
@@ -3215,7 +3176,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51e219e79014df21a225b1860a479e2dcd7cbd9130f4defd4bd0e191ea31d67d"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.21.7",
  "chrono",
  "getrandom 0.2.16",
  "http",
