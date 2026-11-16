@@ -31,7 +31,6 @@ console-subscriber = "0.5.0"
 const_format = "0.2.36"
 cookie = "0.18"
 divviup-api.path = "."
-divviup-cli = { path = "./cli", version = "0.5.11" }
 divviup-client = { path = "./client", version = "0.5.11" }
 educe = "0.8.1"
 email_address = "0.2.9"
@@ -130,7 +129,6 @@ opentelemetry = { workspace = true, features = ["metrics", "logs"] }
 opentelemetry-otlp = { workspace = true, features = ["metrics", "http-proto", "reqwest-blocking-client"] }
 opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "logs", "metrics"] }
 prio.workspace = true
-querystrong.workspace = true
 rand.workspace = true
 reqwest = { workspace = true, default-features = false, features = ["rustls", "json"] }
 rustls = { workspace = true, default-features = false, features = ["aws_lc_rs"] }
