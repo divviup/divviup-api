@@ -69,7 +69,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           path: checkout
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
       - run: cargo build --package divviup-cli --profile release --locked
         working-directory: checkout
       - run: |
