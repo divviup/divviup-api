@@ -37,6 +37,7 @@ jobs:
         run: cargo install clippy-sarif sarif-fmt
 
       - name: Run rust-clippy
+        shell: bash  # This enables the pipefail option
         run: cargo clippy
           --all-targets
           --all-features
