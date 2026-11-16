@@ -43,9 +43,9 @@ jobs:
           --all-features
           --locked
           --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
-        continue-on-error: true
 
       - name: Upload analysis results to GitHub
+        if: success() || failure()
         uses: github/codeql-action/upload-sarif@v4.39.3
         with:
           sarif_file: rust-clippy-results.sarif
