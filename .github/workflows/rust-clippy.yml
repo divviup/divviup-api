@@ -1,24 +1,17 @@
-name: rust-clippy analyze
+name: Clippy
 
 on:
   push:
     branches: ["main"]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: ["main"]
-  schedule:
-    - cron: "26 8 * * 6"
-
-env:
-  SKIP_APP_COMPILATION: true
 
 jobs:
-  rust-clippy-analyze:
-    name: Run rust-clippy analyzing
+  clippy:
+    name: Run Clippy
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
     env:
       CARGO_BUILD_WARNINGS: deny
     steps:
@@ -33,20 +26,8 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install required crates
-        run: cargo install clippy-sarif sarif-fmt
-
-      - name: Run rust-clippy
-        shell: bash  # This enables the pipefail option
+      - name: Run Clippy
         run: cargo clippy
           --all-targets
           --all-features
           --locked
-          --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
-
-      - name: Upload analysis results to GitHub
-        if: success() || failure()
-        uses: github/codeql-action/upload-sarif@v4.39.3
-        with:
-          sarif_file: rust-clippy-results.sarif
-          wait-for-processing: true
