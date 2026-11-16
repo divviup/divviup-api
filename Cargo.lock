@@ -1446,7 +1446,6 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "prio",
- "querystrong",
  "rand 0.10.3",
  "rcgen",
  "regex",
