@@ -47,3 +47,7 @@ where
 {
     Deserialize::deserialize(deserializer).map(Some)
 }
+
+pub fn warn_about_me() -> Result<(), [u8; 4096]> {
+    Ok(())
+}
