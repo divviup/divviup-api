@@ -4,6 +4,10 @@ all-features = true
 
 [advisories]
 version = 2
+ignore = [
+    # We only use SQLite in tests.
+    "RUSTSEC-2026-0459",
+]
 
 [bans]
 multiple-versions = "allow"
