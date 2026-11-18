@@ -1,10 +1,11 @@
 use crate::{CliResult, DetermineAccountId, Error, Output};
+use anyhow::anyhow;
 use clap::Subcommand;
 use divviup_client::{
     dp_strategy::{self, PureDpBudget, PureDpDiscreteLaplace},
     BigUint, DivviupClient, Histogram, NewTask, Ratio, SumVec, Uuid, Vdaf,
 };
-use humantime::{Duration, Timestamp};
+use jiff::{SignedDuration, Timestamp};
 use std::time::SystemTime;
 use time::OffsetDateTime;
 
@@ -45,9 +46,9 @@ pub enum TaskAction {
         #[arg(long)]
         max_batch_size: Option<u64>,
         #[arg(long, requires = "max_batch_size")]
-        batch_time_window_size: Option<Duration>,
+        batch_time_window_size: Option<SignedDuration>,
         #[arg(long)]
-        time_precision: Duration,
+        time_precision: SignedDuration,
         #[arg(long)]
         collector_credential_id: Uuid,
         #[arg(long, value_delimiter = ',')]
@@ -248,9 +249,12 @@ impl TaskAction {
                     }
                 };
 
-                let time_precision_seconds = time_precision.as_secs();
-                let batch_time_window_size_seconds =
-                    batch_time_window_size.map(|window| window.as_secs());
+                let time_precision_seconds = u64::try_from(time_precision.as_secs())
+                    .map_err(|_| anyhow!("time precision is negative"))?;
+                let batch_time_window_size_seconds = batch_time_window_size
+                    .map(|window| u64::try_from(window.as_secs()))
+                    .transpose()
+                    .map_err(|_| anyhow!("batch time window size is negative"))?;
 
                 let task = NewTask {
                     name,
@@ -286,7 +290,13 @@ impl TaskAction {
                 let expiration = if now {
                     Some(OffsetDateTime::now_utc())
                 } else {
-                    expiration.map(|e| OffsetDateTime::from(Into::<SystemTime>::into(e)))
+                    match expiration {
+                        Some(timestamp) => Some(OffsetDateTime::from(
+                            TryInto::<SystemTime>::try_into(timestamp)
+                                .map_err(|e| Error::Anyhow(e.into()))?,
+                        )),
+                        None => None,
+                    }
                 };
                 output.display(
                     client

@@ -42,10 +42,10 @@ http = "1"
 http-body = "1.0"
 http-body-util = "0.1"
 httpdate = "1.0.3"
-humantime = "2.3.0"
 janus_client = "0.7.106"
 janus_collector = "0.7.106"
 janus_messages = "0.7.124"
+jiff = "1.0.0"
 log = "0.4.32"
 num-bigint-4 = { package = "num-bigint", version = "0.4.2" }
 num-bigint-5 = { package = "num-bigint", version = "0.5.1", features = ["serde"] }
