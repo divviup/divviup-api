@@ -7,6 +7,11 @@ version = 2
 ignore = [
     # We only use SQLite in tests.
     "RUSTSEC-2026-0459",
+
+    # The chrono crate is unmaintained. This is currently used in Janus,
+    # sea-orm, sqlx, retry-after, oauth2, and humantime.
+    "RUSTSEC-2026-0542",
+    "RUSTSEC-2026-0543",
 ]
 
 [bans]
