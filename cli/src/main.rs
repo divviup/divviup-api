@@ -245,9 +245,82 @@ impl Resource {
 
 #[cfg(test)]
 mod tests {
+    use std::assert_matches;
+
+    use clap::{CommandFactory, Parser};
+
+    use crate::{
+        tasks::{TaskAction, VdafName},
+        ClientBin, Resource,
+    };
+
     #[test]
     fn debug_assert() {
-        use clap::CommandFactory;
-        super::ClientBin::command().debug_assert();
+        ClientBin::command().debug_assert();
+    }
+
+    #[test]
+    fn create_task_args() {
+        // This test case is adapted from the Docker Compose demo script CI job.
+
+        let args = [
+            "divviup",
+            "--token=DUATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "task",
+            "create",
+            "--name=name",
+            "--leader-aggregator-id=00000000-0000-0000-0000-000000000000",
+            "--helper-aggregator-id=00000000-0000-0000-0000-000000000000",
+            "--collector-credential-id=00000000-0000-0000-0000-000000000000",
+            "--vdaf=histogram",
+            "--categorical-buckets=0,1,2,3,4,5,6,7,8,9,10",
+            "--min-batch-size=100",
+            "--max-batch-size=200",
+            "--time-precision=60sec",
+        ];
+        let parsed = match ClientBin::try_parse_from(args) {
+            Ok(parsed) => parsed,
+            Err(e) => panic!("{e}"),
+        };
+
+        let Resource::Task(TaskAction::Create {
+            vdaf,
+            min_batch_size,
+            max_batch_size,
+            time_precision,
+            categorical_buckets,
+            ..
+        }) = parsed.command
+        else {
+            panic!("wrong command: {:?}", parsed.command);
+        };
+
+        assert_matches!(vdaf, VdafName::Histogram);
+        assert_eq!(min_batch_size, 100);
+        assert_eq!(max_batch_size, Some(200));
+        assert_eq!(time_precision.as_secs(), 60);
+        assert_matches!(categorical_buckets, Some(_));
+    }
+
+    #[test]
+    fn set_expiration_args() {
+        let args = [
+            "divviup",
+            "--token=DUATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "task",
+            "set-expiration",
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "1970-01-01T00:00:00Z",
+        ];
+        let parsed = match ClientBin::try_parse_from(args) {
+            Ok(parsed) => parsed,
+            Err(e) => panic!("{e}"),
+        };
+
+        let Resource::Task(TaskAction::SetExpiration { expiration, .. }) = parsed.command else {
+            panic!("wrong command: {:?}", parsed.command);
+        };
+        let expiration = expiration.unwrap();
+        assert_eq!(expiration.to_string(), "1970-01-01T00:00:00Z");
     }
 }
