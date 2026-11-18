@@ -26,10 +26,10 @@ const_format.workspace = true
 divviup-client = { workspace = true }
 email_address.workspace = true
 hpke-dispatch = { workspace = true, features = ["serde"], optional = true }
-humantime.workspace = true
 janus_client.workspace = true
 janus_collector.workspace = true
 janus_messages.workspace = true
+jiff.workspace = true
 num-bigint-4.workspace = true
 prio.workspace = true
 rand = { workspace = true, optional = true }
