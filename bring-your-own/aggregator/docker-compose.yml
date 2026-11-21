@@ -1,0 +1,215 @@
+x-janus-common: &janus-common
+  depends_on:
+    janus-migrator:
+      condition: service_completed_successfully
+  image: ${JANUS_AGGREGATOR_IMAGE?}
+  healthcheck:
+    test: wget -O - http://127.0.0.1:8000/healthz
+    start_period: 60s
+  restart: ${RESTART_POLICY?}
+
+x-janus-environment: &janus-environment
+  RUST_LOG: info
+  DATASTORE_KEYS: ${DATASTORE_KEYS?}
+  AGGREGATOR_API_AUTH_TOKENS: ${AGGREGATOR_API_AUTH_TOKENS?}
+
+services:
+
+  postgres:
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB?}
+      POSTGRES_USER: ${POSTGRES_USER?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?}
+    healthcheck:
+      test: pg_isready -U ${POSTGRES_USER?} -d ${POSTGRES_DB?}
+      start_period: 60s
+    restart: ${RESTART_POLICY?}
+
+  janus-migrator:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    image: ${JANUS_MIGRATOR_IMAGE?}
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER?}:${POSTGRES_PASSWORD?}@postgres:5432/${POSTGRES_DB?}
+    command: migrate run --source /migrations --connect-timeout 60
+
+  janus-aggregator-http:
+    <<: *janus-common
+    profiles:
+      - http
+    configs:
+      - janus-aggregator-http.yml
+    extra_hosts:
+      host.docker.internal: host-gateway
+    environment:
+      <<: *janus-environment
+      CONFIG_FILE: /janus-aggregator-http.yml
+    entrypoint: /janus_aggregator aggregator
+    ports:
+      - "${LISTEN_HOST?}:${LISTEN_PORT_HTTP?}:80"
+
+  janus-aggregator-https:
+    <<: *janus-common
+    profiles:
+      - https
+    configs:
+      - janus-aggregator-https.yml
+    environment:
+      <<: *janus-environment
+      CONFIG_FILE: /janus-aggregator-https.yml
+      LETSENCRYPT_EMAIL: ${HTTPS_ADMIN_EMAIL?}
+      LETSENCRYPT_HOST: ${PUBLIC_HOST?}
+      VIRTUAL_HOST: ${PUBLIC_HOST?}
+    entrypoint: /janus_aggregator aggregator
+
+  janus-aggregation-job-creator:
+    <<: *janus-common
+    configs:
+      - janus-aggregation-job-creator.yml
+    extra_hosts:
+      host.docker.internal: host-gateway
+    environment:
+      <<: *janus-environment
+      CONFIG_FILE: /janus-aggregation-job-creator.yml
+    entrypoint: /janus_aggregator aggregation_job_creator
+
+  janus-aggregation-job-driver:
+    <<: *janus-common
+    configs:
+      - janus-aggregation-job-driver.yml
+    extra_hosts:
+      host.docker.internal: host-gateway
+    environment:
+      <<: *janus-environment
+      CONFIG_FILE: /janus-aggregation-job-driver.yml
+    entrypoint: /janus_aggregator aggregation_job_driver
+
+  janus-collection-job-driver:
+    <<: *janus-common
+    configs:
+      - janus-collection-job-driver.yml
+    extra_hosts:
+      host.docker.internal: host-gateway
+    environment:
+      <<: *janus-environment
+      CONFIG_FILE: /janus-collection-job-driver.yml
+    entrypoint: /janus_aggregator collection_job_driver
+
+  janus-garbage-collector:
+    <<: *janus-common
+    configs:
+      - janus-garbage-collector.yml
+    extra_hosts:
+      host.docker.internal: host-gateway
+    environment:
+      <<: *janus-environment
+      CONFIG_FILE: /janus-garbage-collector.yml
+    entrypoint: /janus_aggregator garbage_collector
+
+  nginx-proxy:
+    profiles:
+      - https
+    image: ${NGINX_PROXY_IMAGE?}
+    ports:
+      - "${LISTEN_HOST?}:${LISTEN_PORT_HTTP?}:80"
+      - "${LISTEN_HOST?}:${LISTEN_PORT_HTTPS?}:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs
+      - html:/usr/share/nginx/html
+    restart: ${RESTART_POLICY?}
+
+  acme-companion:
+    profiles:
+      - https
+    image: ${ACME_COMPANION_IMAGE?}
+    environment:
+      ACME_CA_URI: ${ACME_CA_URI?}
+      DEFAULT_EMAIL: ${HTTPS_ADMIN_EMAIL?}
+    volumes_from:
+      - nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - acme:/etc/acme.sh
+    restart: ${RESTART_POLICY?}
+
+volumes:
+  acme:
+  certs:
+  html:
+
+configs:
+
+  janus-aggregator-http.yml:
+    content: |
+      database:
+        url: postgres://${POSTGRES_USER?}:${POSTGRES_PASSWORD?}@postgres:5432/${POSTGRES_DB?}
+      health_check_listen_address: 0.0.0.0:8000
+      listen_address: 0.0.0.0:80
+      max_upload_batch_size: 100
+      max_upload_batch_write_delay_ms: 250
+      batch_aggregation_shard_count: 32
+      aggregator_api:
+        public_dap_url: http://${PUBLIC_HOST?}:${PUBLIC_PORT_HTTP?}
+        path_prefix: ${AGGREGATOR_API_PATH_PREFIX?}
+
+  janus-aggregator-https.yml:
+    content: |
+      database:
+        url: postgres://${POSTGRES_USER?}:${POSTGRES_PASSWORD?}@postgres:5432/${POSTGRES_DB?}
+      health_check_listen_address: 0.0.0.0:8000
+      listen_address: 0.0.0.0:80
+      max_upload_batch_size: 100
+      max_upload_batch_write_delay_ms: 250
+      batch_aggregation_shard_count: 32
+      aggregator_api:
+        public_dap_url: https://${PUBLIC_HOST?}:${PUBLIC_PORT_HTTPS?}
+        path_prefix: ${AGGREGATOR_API_PATH_PREFIX?}
+
+  janus-aggregation-job-creator.yml:
+    content: |
+      database:
+        url: postgres://${POSTGRES_USER?}:${POSTGRES_PASSWORD?}@postgres:5432/${POSTGRES_DB?}
+      health_check_listen_address: 0.0.0.0:8000
+      batch_aggregation_shard_count: 32
+      tasks_update_frequency_secs: 10
+      aggregation_job_creation_interval_secs: 10
+      min_aggregation_job_size: ${MIN_AGGREGATION_JOB_SIZE?}
+      max_aggregation_job_size: ${MAX_AGGREGATION_JOB_SIZE?}
+
+  janus-aggregation-job-driver.yml:
+    content: |
+      database:
+        url: postgres://${POSTGRES_USER?}:${POSTGRES_PASSWORD?}@postgres:5432/${POSTGRES_DB?}
+      health_check_listen_address: 0.0.0.0:8000
+      job_discovery_interval_secs: 10
+      max_concurrent_job_workers: 10
+      worker_lease_duration_secs: 600
+      worker_lease_clock_skew_allowance_secs: 60
+      maximum_attempts_before_failure: 10
+      batch_aggregation_shard_count: 32
+
+  janus-collection-job-driver.yml:
+    content: |
+      database:
+        url: postgres://${POSTGRES_USER?}:${POSTGRES_PASSWORD?}@postgres:5432/${POSTGRES_DB?}
+      health_check_listen_address: 0.0.0.0:8000
+      job_discovery_interval_secs: 10
+      max_concurrent_job_workers: 10
+      worker_lease_duration_secs: 600
+      worker_lease_clock_skew_allowance_secs: 60
+      maximum_attempts_before_failure: 10
+      batch_aggregation_shard_count: 32
+
+  janus-garbage-collector.yml:
+    content: |
+      database:
+        url: postgres://${POSTGRES_USER?}:${POSTGRES_PASSWORD?}@postgres:5432/${POSTGRES_DB?}
+      health_check_listen_address: 0.0.0.0:8000
+      garbage_collection:
+        gc_frequency_s: 60
+        report_limit: 5000
+        aggregation_limit: 500
+        collection_limit: 50
