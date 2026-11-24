@@ -16,7 +16,7 @@ jobs:
     env:
       CARGO_BUILD_WARNINGS: deny
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
         with:
           node-version: latest
@@ -28,7 +28,7 @@ jobs:
         with:
           toolchain: stable
           components: llvm-tools-preview, rustfmt
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.9.3
       - name: Install latest nextest release
         uses: taiki-e/install-action@v2.90.5
         with:
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - name: cargo deny
         uses: EmbarkStudios/cargo-deny-action@v2.1.1
         with:
